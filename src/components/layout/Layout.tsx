@@ -17,7 +17,7 @@ export default function Layout() {
       <main className="flex-1 overflow-y-auto pb-20">
         <Outlet />
       </main>
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-gray-800 border-t border-gray-700">
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-gray-800 border-t border-gray-700 z-40">
         <div className="flex">
           {NAV.map(({ to, label, icon }) => (
             <NavLink
@@ -29,7 +29,7 @@ export default function Layout() {
                 }`
               }
             >
-              <span className="text-xl">{icon}</span>
+              <span className="text-xl" aria-hidden="true">{icon}</span>
               {label}
             </NavLink>
           ))}
