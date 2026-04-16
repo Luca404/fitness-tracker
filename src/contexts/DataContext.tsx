@@ -1,9 +1,9 @@
 // src/contexts/DataContext.tsx
 import {
-  createContext, useContext, useState, useCallback, ReactNode
+  createContext, useContext, useState, useCallback, useMemo, ReactNode
 } from 'react'
 import type {
-  UserHealthProfile, UserGoals, Meal, MealItem, Workout, DaySummary
+  UserHealthProfile, UserGoals, Meal, MealItem, MealType, Workout, DaySummary
 } from '../types'
 import * as api from '../services/api'
 
@@ -18,11 +18,11 @@ interface DataContextType {
   fetchProfile: () => Promise<void>
   saveProfile: (p: Omit<UserHealthProfile, 'created_at' | 'updated_at'>) => Promise<void>
   saveGoals: (g: Omit<UserGoals, 'updated_at'>) => Promise<void>
-  addMealItem: (mealType: string, item: Omit<MealItem, 'id' | 'created_at'>, date: string, userId: string) => Promise<void>
+  addMealItem: (mealType: MealType, item: Omit<MealItem, 'id' | 'created_at'>, date: string, userId: string) => Promise<void>
   removeMealItem: (mealItemId: string, mealId: string) => Promise<void>
   addWorkout: (w: Omit<Workout, 'id' | 'created_at'>) => Promise<void>
   removeWorkout: (id: string) => Promise<void>
-  getDaySummary: () => DaySummary
+  daySummary: DaySummary
   showToast: (msg: string) => void
 }
 
@@ -36,17 +36,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
-  function showToast(msg: string) {
+  const showToast = useCallback((msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
-  }
+  }, [])
 
   const fetchProfile = useCallback(async () => {
-    const p = await api.getHealthProfile()
-    setProfile(p)
-    const g = await api.getUserGoals()
-    setGoals(g)
-  }, [])
+    try {
+      const [p, g] = await Promise.all([api.getHealthProfile(), api.getUserGoals()])
+      setProfile(p)
+      setGoals(g)
+    } catch {
+      showToast('Errore caricamento profilo')
+    }
+  }, [showToast])
 
   const fetchForDate = useCallback(async (date: string) => {
     setLoading(true)
@@ -62,13 +65,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [showToast])
 
   const saveProfile = useCallback(async (
     p: Omit<UserHealthProfile, 'created_at' | 'updated_at'>
   ) => {
     await api.upsertHealthProfile(p)
-    setProfile({ ...p, created_at: '', updated_at: new Date().toISOString() })
+    setProfile(prev => ({
+      ...p,
+      created_at: prev?.created_at ?? '',
+      updated_at: new Date().toISOString(),
+    }))
   }, [])
 
   const saveGoals = useCallback(async (g: Omit<UserGoals, 'updated_at'>) => {
@@ -77,7 +84,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const addMealItem = useCallback(async (
-    mealType: string,
+    mealType: MealType,
     item: Omit<MealItem, 'id' | 'created_at'>,
     date: string,
     userId: string
@@ -85,7 +92,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Find or create meal for this meal_type + date
     let meal = meals.find(m => m.meal_type === mealType && m.date === date)
     if (!meal) {
-      meal = await api.addMeal({ user_id: userId, date, meal_type: mealType as any, name: null })
+      meal = await api.addMeal({ user_id: userId, date, meal_type: mealType, name: null })
       setMeals(prev => [...prev, meal!])
     }
     const newItem = await api.addMealItem({ ...item, meal_id: meal.id })
@@ -113,23 +120,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setWorkouts(prev => prev.filter(w => w.id !== id))
   }, [])
 
-  function getDaySummary(): DaySummary {
+  const daySummary = useMemo<DaySummary>(() => {
     const allItems = meals.flatMap(m => m.items)
     return {
-      calories: allItems.reduce((s, i) => s + i.calories, 0),
-      protein_g: allItems.reduce((s, i) => s + i.protein_g, 0),
-      carbs_g: allItems.reduce((s, i) => s + i.carbs_g, 0),
-      fat_g: allItems.reduce((s, i) => s + i.fat_g, 0),
+      calories:        allItems.reduce((s, i) => s + i.calories, 0),
+      protein_g:       allItems.reduce((s, i) => s + i.protein_g, 0),
+      carbs_g:         allItems.reduce((s, i) => s + i.carbs_g, 0),
+      fat_g:           allItems.reduce((s, i) => s + i.fat_g, 0),
       calories_burned: workouts.reduce((s, w) => s + w.calories_burned, 0),
     }
-  }
+  }, [meals, workouts])
 
   return (
     <DataContext.Provider value={{
       profile, goals, meals, workouts, loading, toast,
       fetchForDate, fetchProfile, saveProfile, saveGoals,
       addMealItem, removeMealItem, addWorkout, removeWorkout,
-      getDaySummary, showToast,
+      daySummary, showToast,
     }}>
       {children}
     </DataContext.Provider>
