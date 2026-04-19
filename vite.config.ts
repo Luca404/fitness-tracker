@@ -8,8 +8,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'calTrackr',
-        short_name: 'calTrackr',
+        name: 'fitTrackr',
+        short_name: 'fitTrackr',
         theme_color: '#10b981',
         background_color: '#111827',
         display: 'standalone',
