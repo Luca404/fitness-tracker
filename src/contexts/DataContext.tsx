@@ -1,7 +1,8 @@
 // src/contexts/DataContext.tsx
 import {
-  createContext, useContext, useState, useCallback, useMemo, ReactNode
+  createContext, useContext, useState, useCallback, useMemo
 } from 'react'
+import type { ReactNode } from 'react'
 import type {
   UserHealthProfile, UserGoals, Meal, MealItem, MealType, Workout, DaySummary
 } from '../types'
