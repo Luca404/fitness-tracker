@@ -59,7 +59,7 @@ export default function OnboardingPage() {
             <div
               key={i}
               className={`h-1 flex-1 rounded-full transition-colors ${
-                i < step ? 'bg-emerald-500' : 'bg-gray-700'
+                i < step ? 'bg-primary-600' : 'bg-gray-700'
               }`}
             />
           ))}

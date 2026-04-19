@@ -60,7 +60,7 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
             })}
             className={`w-full p-4 rounded-xl border-2 text-left transition-colors ${
               data.objective === key
-                ? 'border-emerald-500 bg-emerald-500/10'
+                ? 'border-primary-500 bg-primary-600/10'
                 : 'border-gray-700 bg-gray-800'
             }`}
           >
@@ -82,7 +82,7 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
             max={300}
             value={data.target_weight_kg ?? ''}
             onChange={e => set('target_weight_kg', e.target.value ? parseFloat(e.target.value) : null)}
-            className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-emerald-500 outline-none"
+            className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
           />
         </div>
       )}
@@ -95,10 +95,10 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
             value={data.target_date ?? defaultTargetDate}
             min={format(new Date(), 'yyyy-MM-dd')}
             onChange={e => set('target_date', e.target.value)}
-            className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-emerald-500 outline-none"
+            className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
           />
           {rateKgPerWeek && (
-            <p className={`text-sm mt-2 ${isAggressive ? 'text-orange-400' : 'text-emerald-400'}`}>
+            <p className={`text-sm mt-2 ${isAggressive ? 'text-orange-400' : 'text-primary-400'}`}>
               {isAggressive && '⚠️ '}Ritmo stimato: {rateKgPerWeek} kg/settimana
               {isAggressive && ' — considera un obiettivo più graduale'}
             </p>
@@ -113,7 +113,7 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
         <button
           onClick={onNext}
           disabled={!valid}
-          className="flex-1 py-4 rounded-xl bg-emerald-500 font-semibold disabled:opacity-40"
+          className="flex-1 py-4 rounded-xl bg-primary-600 font-semibold disabled:opacity-40"
         >
           Continua →
         </button>

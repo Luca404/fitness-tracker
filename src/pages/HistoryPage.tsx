@@ -48,12 +48,12 @@ export default function HistoryPage() {
     : 0
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 pb-24 space-y-6">
       <div className="flex gap-2">
         {([7, 30] as Range[]).map(r => (
           <button key={r} type="button" onClick={() => setRange(r)}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-              range === r ? 'bg-emerald-500 text-white' : 'bg-gray-800 text-gray-400'
+              range === r ? 'bg-primary-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-gray-200'
             }`}>
             {r} giorni
           </button>
@@ -63,7 +63,7 @@ export default function HistoryPage() {
       {loading ? (
         <div className="h-48 bg-gray-800 rounded-xl animate-pulse" />
       ) : (
-        <div className="bg-gray-800 rounded-xl p-4">
+        <div className="card">
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={chartData}>
               <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 11 }} />
@@ -91,11 +91,11 @@ export default function HistoryPage() {
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-gray-800 rounded-xl p-4">
+        <div className="card">
           <p className="text-xs text-gray-400 mb-1">Media kcal/giorno</p>
-          <p className="text-2xl font-bold text-emerald-400">{Math.round(avgConsumed)}</p>
+          <p className="text-2xl font-bold text-primary-400">{Math.round(avgConsumed)}</p>
         </div>
-        <div className="bg-gray-800 rounded-xl p-4">
+        <div className="card">
           <p className="text-xs text-gray-400 mb-1">Media bruciate/giorno</p>
           <p className="text-2xl font-bold text-orange-400">{Math.round(avgBurned)}</p>
         </div>

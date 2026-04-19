@@ -26,7 +26,7 @@ export default function StepLifestyle({ value, onChange, onNext, onBack }: Props
             onClick={() => onChange(key)}
             className={`w-full p-4 rounded-xl border-2 text-left transition-colors ${
               value === key
-                ? 'border-emerald-500 bg-emerald-500/10'
+                ? 'border-primary-500 bg-primary-600/10'
                 : 'border-gray-700 bg-gray-800'
             }`}
           >
@@ -39,7 +39,7 @@ export default function StepLifestyle({ value, onChange, onNext, onBack }: Props
         <button onClick={onBack} className="flex-1 py-4 rounded-xl border border-gray-600 text-gray-400">
           ← Indietro
         </button>
-        <button onClick={onNext} className="flex-1 py-4 rounded-xl bg-emerald-500 font-semibold">
+        <button onClick={onNext} className="flex-1 py-4 rounded-xl bg-primary-600 font-semibold">
           Continua →
         </button>
       </div>

@@ -28,7 +28,7 @@ export default function MealSection({ meal, onDeleteItem, onAddItem }: Props) {
       ))}
       <button
         onClick={() => onAddItem(meal.meal_type)}
-        className="text-sm text-emerald-400 mt-2 flex items-center gap-1"
+        className="text-sm text-primary-400 hover:text-primary-300 mt-2 flex items-center gap-1 transition-colors"
       >
         + Aggiungi alimento
       </button>

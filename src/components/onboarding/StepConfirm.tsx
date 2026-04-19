@@ -30,7 +30,7 @@ export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
         <div className="flex justify-between"><span className="text-gray-400">TDEE</span><span>{Math.round(tdee)} kcal</span></div>
         <div className="flex justify-between">
           <span className="text-gray-400">Aggiustamento</span>
-          <span className={deficit < 0 ? 'text-orange-400' : 'text-emerald-400'}>
+          <span className={deficit < 0 ? 'text-orange-400' : 'text-primary-400'}>
             {deficit > 0 ? '+' : ''}{Math.round(deficit)} kcal
           </span>
         </div>
@@ -56,7 +56,7 @@ export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
             type="number"
             value={val}
             onChange={e => set(parseInt(e.target.value) || 0)}
-            className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-emerald-500 outline-none"
+            className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
           />
         </div>
       ))}
@@ -67,7 +67,7 @@ export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
         </button>
         <button
           onClick={() => onConfirm({ calorie_target: calories, protein_g: protein, carbs_g: carbs, fat_g: fat })}
-          className="flex-1 py-4 rounded-xl bg-emerald-500 font-semibold text-lg"
+          className="flex-1 py-4 rounded-xl bg-primary-600 font-semibold text-lg"
         >
           Inizia!
         </button>

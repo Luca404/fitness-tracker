@@ -3,58 +3,92 @@ import { useAuth } from '../contexts/AuthContext'
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth()
+  const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const fn = mode === 'login' ? signIn : signUp
-    const { error } = await fn(email, password)
+    const { error } = await (isLogin ? signIn : signUp)(email, password)
     setError(error)
     setLoading(false)
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-primary-800 to-gray-900 px-4 pt-20">
       <div className="w-full max-w-sm">
-        <h1 className="text-3xl font-bold text-emerald-400 text-center mb-8">calTrackr</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            className="w-full px-4 py-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:border-emerald-500 outline-none"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            className="w-full px-4 py-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:border-emerald-500 outline-none"
-          />
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-lg bg-emerald-500 text-white font-semibold disabled:opacity-50"
-          >
-            {loading ? '...' : mode === 'login' ? 'Accedi' : 'Registrati'}
-          </button>
-        </form>
-        <button
-          onClick={() => setMode(m => m === 'login' ? 'signup' : 'login')}
-          className="mt-4 w-full text-center text-gray-400 text-sm"
-        >
-          {mode === 'login' ? 'Non hai un account? Registrati' : 'Hai già un account? Accedi'}
-        </button>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-white mb-2">fitTrackr</h1>
+          <p className="text-primary-300 text-sm">Tieni traccia di pasti e allenamenti</p>
+        </div>
+
+        <div className="card">
+          {/* Toggle */}
+          <div className="flex mb-6 bg-gray-700 rounded-lg p-1">
+            <button
+              type="button"
+              onClick={() => { setIsLogin(true); setError(null) }}
+              className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors text-sm ${
+                isLogin ? 'bg-gray-600 text-white shadow-sm' : 'text-gray-400'
+              }`}
+            >
+              Accedi
+            </button>
+            <button
+              type="button"
+              onClick={() => { setIsLogin(false); setError(null) }}
+              className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors text-sm ${
+                !isLogin ? 'bg-gray-600 text-white shadow-sm' : 'text-gray-400'
+              }`}
+            >
+              Registrati
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+              <input
+                id="email"
+                type="email"
+                placeholder="la@tua.email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">Password</label>
+              <input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="input-field"
+              />
+            </div>
+            {error && (
+              <div className="bg-red-900/30 border border-red-800 text-red-400 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? '...' : isLogin ? 'Accedi' : 'Registrati'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )

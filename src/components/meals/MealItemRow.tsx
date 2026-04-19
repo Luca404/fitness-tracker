@@ -14,7 +14,7 @@ export default function MealItemRow({ item, onDelete }: Props) {
         <p className="text-xs text-gray-500">{item.quantity_g}g · P {item.protein_g}g · C {item.carbs_g}g · G {item.fat_g}g</p>
       </div>
       <div className="flex items-center gap-3 ml-2">
-        <span className="text-sm text-emerald-400 font-medium">{Math.round(item.calories)} kcal</span>
+        <span className="text-sm text-primary-400 font-medium">{Math.round(item.calories)} kcal</span>
         <button onClick={onDelete} className="text-gray-600 hover:text-red-400 transition-colors text-lg">
           ✕
         </button>

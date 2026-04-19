@@ -74,13 +74,13 @@ export default function FoodSearch({ mealType: _mealType, onAdd, onClose }: Prop
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
               placeholder="Cerca alimento..."
-              className="flex-1 px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 outline-none focus:border-emerald-500"
+              className="flex-1 px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 outline-none focus:border-primary-500"
             />
             <button
               type="button"
               onClick={handleSearch}
               disabled={loading}
-              className="px-4 py-2 bg-emerald-500 rounded-lg disabled:opacity-50"
+              className="px-4 py-2 bg-primary-600 rounded-lg disabled:opacity-50"
             >
               {loading ? '...' : '🔍'}
             </button>
@@ -116,13 +116,13 @@ export default function FoodSearch({ mealType: _mealType, onAdd, onClose }: Prop
               {(() => {
                 const n = calcNutrition(selected, qty)
                 return (
-                  <p className="text-sm text-emerald-400">
+                  <p className="text-sm text-primary-400">
                     {n.calories} kcal · P {n.protein_g}g · C {n.carbs_g}g · G {n.fat_g}g
                   </p>
                 )
               })()}
               <button type="button" onClick={handleAdd}
-                className="w-full py-3 bg-emerald-500 rounded-lg font-semibold">
+                className="w-full py-3 bg-primary-600 rounded-lg font-semibold">
                 Aggiungi
               </button>
             </div>
@@ -156,7 +156,7 @@ export default function FoodSearch({ mealType: _mealType, onAdd, onClose }: Prop
             </div>
           ))}
           <button type="button" onClick={handleAdd} disabled={!manualName}
-            className="w-full py-3 bg-emerald-500 rounded-lg font-semibold disabled:opacity-40">
+            className="w-full py-3 bg-primary-600 rounded-lg font-semibold disabled:opacity-40">
             Aggiungi
           </button>
         </div>

@@ -31,7 +31,7 @@ export default function StepPhysical({ data, onChange, onNext }: Props) {
             key={s}
             onClick={() => set('sex', s)}
             className={`flex-1 py-3 rounded-lg border-2 font-medium transition-colors ${
-              data.sex === s ? 'border-emerald-500 text-emerald-400' : 'border-gray-600 text-gray-400'
+              data.sex === s ? 'border-primary-500 text-primary-400' : 'border-gray-600 text-gray-400'
             }`}
           >
             {s === 'male' ? '♂ Maschio' : '♀ Femmina'}
@@ -52,7 +52,7 @@ export default function StepPhysical({ data, onChange, onNext }: Props) {
             max={max}
             value={data[key] || ''}
             onChange={e => set(key, parseFloat(e.target.value) || 0)}
-            className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-emerald-500 outline-none"
+            className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
           />
         </div>
       ))}
@@ -65,14 +65,14 @@ export default function StepPhysical({ data, onChange, onNext }: Props) {
           max={60}
           value={data.body_fat_pct ?? ''}
           onChange={e => set('body_fat_pct', e.target.value ? parseFloat(e.target.value) : null)}
-          className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-emerald-500 outline-none"
+          className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
         />
       </div>
 
       <button
         onClick={onNext}
         disabled={!valid}
-        className="w-full py-4 rounded-xl bg-emerald-500 font-semibold text-lg disabled:opacity-40"
+        className="w-full py-4 rounded-xl bg-primary-600 font-semibold text-lg disabled:opacity-40"
       >
         Continua →
       </button>

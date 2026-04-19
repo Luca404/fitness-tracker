@@ -21,7 +21,7 @@ function AppRoutes() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-emerald-400 text-2xl" aria-label="Caricamento">⏳</div>
+        <div className="text-primary-400 text-2xl" aria-label="Caricamento">⏳</div>
       </div>
     )
   }

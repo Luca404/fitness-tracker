@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
-import { format, addDays, subDays, parseISO } from 'date-fns'
-import { it } from 'date-fns/locale'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { useSettings } from '../contexts/SettingsContext'
 import ActivityGrid from '../components/workout/ActivityGrid'
 import WorkoutDrawer from '../components/workout/WorkoutDrawer'
 import WorkoutRow from '../components/workout/WorkoutRow'
+import DaySelector from '../components/common/DaySelector'
 
 export default function WorkoutPage() {
   const { user } = useAuth()
@@ -19,7 +18,6 @@ export default function WorkoutPage() {
   }, [selectedDate, fetchForDate])
 
   const totalBurned = workouts.reduce((s, w) => s + w.calories_burned, 0)
-  const dateLabel = format(parseISO(selectedDate), 'EEEE d MMMM', { locale: it })
 
   async function handleSave(activityKey: string, durationMin: number, caloriesBurned: number) {
     if (!user) return
@@ -39,27 +37,8 @@ export default function WorkoutPage() {
   }
 
   return (
-    <div className="p-4 space-y-6">
-      {/* Date navigation */}
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => setSelectedDate(format(subDays(parseISO(selectedDate), 1), 'yyyy-MM-dd'))}
-          className="text-gray-400 text-2xl px-2"
-          aria-label="Giorno precedente"
-        >
-          ‹
-        </button>
-        <span className="capitalize text-sm font-medium text-gray-300">{dateLabel}</span>
-        <button
-          type="button"
-          onClick={() => setSelectedDate(format(addDays(parseISO(selectedDate), 1), 'yyyy-MM-dd'))}
-          className="text-gray-400 text-2xl px-2"
-          aria-label="Giorno successivo"
-        >
-          ›
-        </button>
-      </div>
+    <div className="p-4 pb-24 space-y-6">
+      <DaySelector date={selectedDate} onChange={setSelectedDate} />
 
       <h2 className="font-semibold text-gray-300">Seleziona attività</h2>
 

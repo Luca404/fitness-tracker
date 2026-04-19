@@ -41,11 +41,11 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 pb-24 space-y-6">
       <h1 className="text-xl font-bold">Impostazioni</h1>
 
       {profile && (
-        <div className="bg-gray-800 rounded-xl p-4 space-y-1 text-sm">
+        <div className="card space-y-1 text-sm">
           <h2 className="font-semibold mb-2">Profilo</h2>
           <p className="text-gray-400">Peso: <span className="text-white">{profile.weight_kg} kg</span></p>
           <p className="text-gray-400">Altezza: <span className="text-white">{profile.height_cm} cm</span></p>
@@ -57,7 +57,7 @@ export default function SettingsPage() {
         <div className="flex justify-between items-center">
           <h2 className="font-semibold">Goal calorici</h2>
           <button type="button" onClick={handleRecalculate}
-            className="text-xs text-emerald-400 border border-emerald-400 px-3 py-1 rounded-full">
+            className="text-xs text-primary-400 border border-primary-600 px-3 py-1 rounded-full hover:bg-primary-900/30 transition-colors">
             Ricalcola da TDEE
           </button>
         </div>
@@ -72,12 +72,12 @@ export default function SettingsPage() {
             <label className="text-sm text-gray-400 mb-1 block">{label}</label>
             <input type="number" value={val}
               onChange={e => set(parseInt(e.target.value) || 0)}
-              className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-emerald-500 outline-none" />
+              className="input-field py-3" />
           </div>
         ))}
 
         <button type="button" onClick={handleSaveGoals}
-          className="w-full py-3 bg-emerald-500 rounded-xl font-semibold">
+          className="w-full btn-primary py-3">
           Salva goal
         </button>
       </div>

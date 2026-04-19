@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react'
-import { format, addDays, subDays, parseISO } from 'date-fns'
-import { it } from 'date-fns/locale'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { useSettings } from '../contexts/SettingsContext'
@@ -9,6 +7,7 @@ import MacroBars from '../components/meals/MacroBars'
 import MealSection from '../components/meals/MealSection'
 import FoodSearch from '../components/meals/FoodSearch'
 import Modal from '../components/common/Modal'
+import DaySelector from '../components/common/DaySelector'
 import type { MealType } from '../types'
 
 const MEAL_ORDER: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
@@ -36,30 +35,9 @@ export default function MealsPage() {
     setFoodSearchOpen(true)
   }
 
-  const dateLabel = format(parseISO(selectedDate), 'EEEE d MMMM', { locale: it })
-
   return (
-    <div className="p-4 space-y-6">
-      {/* Date navigation */}
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => setSelectedDate(format(subDays(parseISO(selectedDate), 1), 'yyyy-MM-dd'))}
-          className="text-gray-400 text-2xl px-2"
-          aria-label="Giorno precedente"
-        >
-          ‹
-        </button>
-        <span className="capitalize text-sm font-medium text-gray-300">{dateLabel}</span>
-        <button
-          type="button"
-          onClick={() => setSelectedDate(format(addDays(parseISO(selectedDate), 1), 'yyyy-MM-dd'))}
-          className="text-gray-400 text-2xl px-2"
-          aria-label="Giorno successivo"
-        >
-          ›
-        </button>
-      </div>
+    <div className="p-4 pb-24 space-y-6">
+      <DaySelector date={selectedDate} onChange={setSelectedDate} />
 
       {/* Calorie ring */}
       <div className="flex justify-center">
@@ -111,7 +89,7 @@ export default function MealsPage() {
       <button
         type="button"
         onClick={() => openFoodSearch('lunch')}
-        className="fixed bottom-24 right-4 w-14 h-14 rounded-full bg-emerald-500 text-white text-2xl shadow-lg flex items-center justify-center"
+        className="fixed bottom-24 right-4 w-14 h-14 rounded-full bg-primary-600 hover:bg-primary-500 text-white text-2xl shadow-lg flex items-center justify-center transition-colors"
         aria-label="Aggiungi alimento"
       >
         +
