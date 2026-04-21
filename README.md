@@ -1,4 +1,4 @@
-# CalTrackr
+# fitTrackr
 
 Calorie and nutrition tracker PWA for logging meals, workouts, and weight. Data is stored in Supabase — sign in from any device.
 
