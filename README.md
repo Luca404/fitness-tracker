@@ -30,7 +30,7 @@ Create `.env.local`:
 
 ```env
 VITE_SUPABASE_URL=https://<project>.supabase.co
-VITE_SUPABASE_ANON_KEY=...
+VITE_SUPABASE_PUBLISHABLE_KEY=...
 ```
 
 ```bash
