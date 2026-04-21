@@ -5,6 +5,7 @@ import Toast from '../common/Toast'
 const NAV = [
   { to: '/meals',   label: 'Pasti',   icon: '🍽️' },
   { to: '/workout', label: 'Workout', icon: '💪' },
+  { to: '/weight',  label: 'Peso',    icon: '⚖️' },
   { to: '/history', label: 'Storico', icon: '📈' },
 ]
 

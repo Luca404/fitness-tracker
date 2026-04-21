@@ -10,9 +10,10 @@ interface Props {
     source: 'openfoodfacts' | 'manual'; off_food_id: string | null
   }) => void
   onClose: () => void
+  hideHeader?: boolean
 }
 
-export default function FoodSearch({ mealType: _mealType, onAdd, onClose }: Props) {
+export default function FoodSearch({ mealType: _mealType, onAdd, onClose, hideHeader }: Props) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<OFFProduct[]>([])
   const [selected, setSelected] = useState<OFFProduct | null>(null)
@@ -61,10 +62,12 @@ export default function FoodSearch({ mealType: _mealType, onAdd, onClose }: Prop
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">Aggiungi alimento</h2>
-        <button onClick={onClose} className="text-gray-400 text-xl" aria-label="Chiudi">✕</button>
-      </div>
+      {!hideHeader && (
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Aggiungi alimento</h2>
+          <button onClick={onClose} className="text-gray-400 text-xl" aria-label="Chiudi">✕</button>
+        </div>
+      )}
 
       {!offlineMode ? (
         <>

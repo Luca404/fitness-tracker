@@ -13,7 +13,7 @@ export default function CalorieRing({ consumed, target }: Props) {
   const over = consumed > target
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="relative" style={{ width: 148, height: 148 }}>
       <svg width={148} height={148} className="-rotate-90">
         <circle cx={74} cy={74} r={r} fill="none" stroke="#374151" strokeWidth={12} />
         <circle
@@ -26,7 +26,7 @@ export default function CalorieRing({ consumed, target }: Props) {
           className="transition-all duration-500"
         />
       </svg>
-      <div className="-mt-[90px] flex flex-col items-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-3xl font-bold">{Math.round(consumed)}</span>
         <span className="text-gray-400 text-sm">/ {target} kcal</span>
       </div>

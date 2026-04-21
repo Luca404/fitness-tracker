@@ -1,7 +1,7 @@
 // src/services/api.ts
 import { supabase } from './supabase'
 import type {
-  UserHealthProfile, UserGoals, Meal, MealItem, Workout
+  UserHealthProfile, UserGoals, Meal, MealItem, Workout, WeightLog
 } from '../types'
 
 // --- Health Profile ---
@@ -137,6 +137,38 @@ export async function addWorkout(
 
 export async function deleteWorkout(id: string): Promise<void> {
   const { error } = await supabase.from('workouts').delete().eq('id', id)
+  if (error) throw error
+}
+
+// --- History ---
+
+// --- Weight Logs ---
+
+export async function getWeightLogs(from: string, to: string): Promise<WeightLog[]> {
+  const { data, error } = await supabase
+    .from('weight_logs')
+    .select('*')
+    .gte('date', from)
+    .lte('date', to)
+    .order('date')
+  if (error) throw error
+  return (data ?? []) as WeightLog[]
+}
+
+export async function upsertWeightLog(
+  entry: Pick<WeightLog, 'user_id' | 'date' | 'weight_kg' | 'notes'>
+): Promise<WeightLog> {
+  const { data, error } = await supabase
+    .from('weight_logs')
+    .upsert(entry, { onConflict: 'user_id,date' })
+    .select()
+    .single()
+  if (error) throw error
+  return data as WeightLog
+}
+
+export async function deleteWeightLog(id: string): Promise<void> {
+  const { error } = await supabase.from('weight_logs').delete().eq('id', id)
   if (error) throw error
 }
 

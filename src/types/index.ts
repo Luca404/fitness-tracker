@@ -92,3 +92,12 @@ export interface SuggestedGoals {
   carbs_g: number
   fat_g: number
 }
+
+export interface WeightLog {
+  id: string
+  user_id: string
+  date: string       // YYYY-MM-DD
+  weight_kg: number
+  notes: string | null
+  created_at: string
+}

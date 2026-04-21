@@ -9,6 +9,7 @@ import MealsPage from './pages/MealsPage'
 import WorkoutPage from './pages/WorkoutPage'
 import HistoryPage from './pages/HistoryPage'
 import SettingsPage from './pages/SettingsPage'
+import WeightPage from './pages/WeightPage'
 
 function AppRoutes() {
   const { user, loading: authLoading } = useAuth()
@@ -37,6 +38,7 @@ function AppRoutes() {
         <Route path="/meals" element={<MealsPage />} />
         <Route path="/workout" element={<WorkoutPage />} />
         <Route path="/history" element={<HistoryPage />} />
+        <Route path="/weight" element={<WeightPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
       <Route path="/onboarding" element={<OnboardingPage />} />
