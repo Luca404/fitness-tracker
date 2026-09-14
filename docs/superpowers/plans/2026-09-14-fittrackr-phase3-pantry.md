@@ -1,5 +1,10 @@
 # fitTrackr Phase 3 — Barcode + Dispensa
 
+> Stato: implementata e poi rifinita nella pagina **Cucina**. La dispensa è oggi il
+> tab `/kitchen?tab=pantry`; `/pantry` resta solo un redirect compatibile. Le ricette
+> suggerite in base alle scorte, inizialmente rimandate, sono ora disponibili nel tab
+> Piatti insieme al ricettario curato.
+
 **Goal:** tracciare gli alimenti acquistati (dispensa), popolabili via scansione barcode o inserimento manuale, e farli emergere per primi nella ricerca ingredienti quando si compone un pasto.
 
 **Decisioni concordate con l'utente:**
@@ -22,7 +27,7 @@
 ## Pagina Dispensa
 
 - [x] `api.ts`: `getPantryItems()`, `addPantryItem()`, `updatePantryItemQuantity()`, `deletePantryItem()`.
-- [x] `src/pages/PantryPage.tsx`, route `/pantry`, voce "🧺 Dispensa" in bottom nav (`Layout.tsx`).
+- [x] `src/pages/PantryPage.tsx`, tab Dispensa dentro `/kitchen` (con redirect legacy da `/pantry`).
 - [x] Flusso di aggiunta: scegli tra 📷 scansiona barcode / 🔍 cerca alimento base / ✏️ inserisci a mano → poi specifichi quantità + unità → salvi in `pantry_items`.
 - [x] Elenco dispensa con eliminazione articolo (nessuna modifica quantità dalla UI per ora, solo aggiunta/rimozione).
 
@@ -33,7 +38,7 @@
 ## Non in scope ora (rimandato)
 
 - Decremento automatico delle quantità in dispensa quando un ingrediente viene usato in un pasto.
-- Ricette suggerite in base agli ingredienti disponibili.
+- ~~Ricette suggerite in base agli ingredienti disponibili.~~ Implementate nel tab Piatti con ricette curate e verifica disponibilità.
 - Modifica/editing di un articolo dispensa già salvato (per ora solo aggiungi/elimina).
 - Foto + AI stima calorie.
 - "Buone abitudini" OMS.

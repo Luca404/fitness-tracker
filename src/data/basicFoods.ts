@@ -1,8 +1,6 @@
 // Alimenti base italiani comuni, valori nutrizionali per 100g.
 // Fonte: valori medi indicativi (uso da tracker personale, non clinico).
-export type FoodCategory =
-  | 'grain' | 'legume' | 'vegetable' | 'fruit' | 'meat' | 'fish'
-  | 'dairy' | 'egg' | 'fat' | 'sweet' | 'alcohol' | 'beverage' | 'other'
+import type { FoodCategory } from '../types'
 
 export interface BasicFood {
   id: string
@@ -123,6 +121,30 @@ export const BASIC_FOODS: BasicFood[] = [
   { id: 'semi-chia', name: 'Semi di chia', category: 'fat', calories: 486, protein_g: 17, carbs_g: 42, fat_g: 31 },
   { id: 'burro-arachidi', name: 'Burro d\'arachidi', category: 'fat', calories: 588, protein_g: 25, carbs_g: 20, fat_g: 50 },
 
+  // Salse e sughi
+  { id: 'passata-pomodoro', name: 'Passata di pomodoro', category: 'sauce', calories: 29, protein_g: 1.4, carbs_g: 4.8, fat_g: 0.2 },
+  { id: 'polpa-pomodoro', name: 'Polpa di pomodoro', category: 'sauce', calories: 26, protein_g: 1.2, carbs_g: 4.2, fat_g: 0.2 },
+  { id: 'pomodori-pelati', name: 'Pomodori pelati', category: 'sauce', calories: 24, protein_g: 1.2, carbs_g: 3.5, fat_g: 0.2 },
+  { id: 'sugo-pomodoro', name: 'Sugo di pomodoro', category: 'sauce', calories: 55, protein_g: 1.5, carbs_g: 7.5, fat_g: 2.2 },
+  { id: 'pesto-genovese', name: 'Pesto alla genovese', category: 'sauce', calories: 450, protein_g: 5, carbs_g: 6, fat_g: 45 },
+  { id: 'ragu-carne', name: 'Ragù di carne', category: 'sauce', calories: 120, protein_g: 7, carbs_g: 6, fat_g: 7 },
+  { id: 'besciamella', name: 'Besciamella', category: 'sauce', calories: 140, protein_g: 4, carbs_g: 10, fat_g: 9 },
+  { id: 'panna-cucina', name: 'Panna da cucina', category: 'sauce', calories: 195, protein_g: 2.5, carbs_g: 4, fat_g: 19 },
+  { id: 'maionese', name: 'Maionese', category: 'sauce', calories: 680, protein_g: 1, carbs_g: 1, fat_g: 75 },
+  { id: 'ketchup', name: 'Ketchup', category: 'sauce', calories: 112, protein_g: 1.3, carbs_g: 26, fat_g: 0.2 },
+  { id: 'senape', name: 'Senape', category: 'sauce', calories: 66, protein_g: 4.4, carbs_g: 5.8, fat_g: 3.3 },
+  { id: 'salsa-soia', name: 'Salsa di soia', category: 'sauce', calories: 53, protein_g: 8.1, carbs_g: 4.9, fat_g: 0.6 },
+  { id: 'brodo-vegetale', name: 'Brodo vegetale', category: 'sauce', calories: 7, protein_g: 0.3, carbs_g: 1, fat_g: 0.2 },
+
+  // Spezie ed erbe aromatiche
+  { id: 'sale', name: 'Sale', category: 'seasoning', calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 },
+  { id: 'pepe-nero', name: 'Pepe nero', category: 'seasoning', calories: 251, protein_g: 10, carbs_g: 64, fat_g: 3.3 },
+  { id: 'basilico', name: 'Basilico', category: 'seasoning', calories: 23, protein_g: 3.2, carbs_g: 2.7, fat_g: 0.6 },
+  { id: 'prezzemolo', name: 'Prezzemolo', category: 'seasoning', calories: 36, protein_g: 3, carbs_g: 6.3, fat_g: 0.8 },
+  { id: 'origano', name: 'Origano', category: 'seasoning', calories: 265, protein_g: 9, carbs_g: 69, fat_g: 4.3 },
+  { id: 'rosmarino', name: 'Rosmarino', category: 'seasoning', calories: 131, protein_g: 3.3, carbs_g: 21, fat_g: 5.9 },
+  { id: 'aglio', name: 'Aglio', category: 'seasoning', calories: 149, protein_g: 6.4, carbs_g: 33, fat_g: 0.5 },
+
   // Dolci
   { id: 'cioccolato-fondente-70', name: 'Cioccolato fondente 70%', category: 'sweet', calories: 598, protein_g: 8.0, carbs_g: 45, fat_g: 43 },
   { id: 'cioccolato-latte', name: 'Cioccolato al latte', category: 'sweet', calories: 535, protein_g: 7.6, carbs_g: 59, fat_g: 30 },
@@ -133,11 +155,15 @@ export const BASIC_FOODS: BasicFood[] = [
   { id: 'biscotti-secchi', name: 'Biscotti secchi', category: 'sweet', calories: 430, protein_g: 7.0, carbs_g: 75, fat_g: 12 },
 
   // Bevande e alcolici
+  { id: 'acqua-naturale', name: 'Acqua naturale', category: 'beverage', calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 },
+  { id: 'acqua-frizzante', name: 'Acqua frizzante', category: 'beverage', calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 },
   { id: 'birra-chiara', name: 'Birra chiara', category: 'alcohol', calories: 43, protein_g: 0.5, carbs_g: 3.6, fat_g: 0 },
   { id: 'vino-rosso', name: 'Vino rosso', category: 'alcohol', calories: 85, protein_g: 0.1, carbs_g: 2.6, fat_g: 0 },
   { id: 'vino-bianco', name: 'Vino bianco', category: 'alcohol', calories: 82, protein_g: 0.1, carbs_g: 2.6, fat_g: 0 },
   { id: 'spritz', name: 'Spritz', category: 'alcohol', calories: 90, protein_g: 0, carbs_g: 6.0, fat_g: 0 },
   { id: 'coca-cola', name: 'Coca Cola', category: 'beverage', calories: 42, protein_g: 0, carbs_g: 10.6, fat_g: 0 },
+  { id: 'coca-cola-zero', name: 'Coca Cola Zero', category: 'beverage', calories: 0.2, protein_g: 0, carbs_g: 0, fat_g: 0 },
   { id: 'succo-arancia', name: 'Succo d\'arancia', category: 'beverage', calories: 45, protein_g: 0.7, carbs_g: 10, fat_g: 0.2 },
+  { id: 'te-freddo', name: 'Tè freddo', category: 'beverage', calories: 28, protein_g: 0, carbs_g: 7, fat_g: 0 },
   { id: 'caffe-nero', name: 'Caffè (nero)', category: 'beverage', calories: 1, protein_g: 0.1, carbs_g: 0, fat_g: 0 },
 ]

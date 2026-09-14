@@ -19,7 +19,10 @@ export default function StepPhysical({ data, onChange, onNext }: Props) {
     onChange({ ...data, [key]: value })
   }
 
-  const valid = data.age > 0 && data.height_cm > 0 && data.weight_kg > 0
+  const valid = data.age >= 10 && data.age <= 120 &&
+    data.height_cm >= 100 && data.height_cm <= 250 &&
+    data.weight_kg >= 20 && data.weight_kg <= 400 &&
+    (data.body_fat_pct === null || (data.body_fat_pct >= 1 && data.body_fat_pct <= 75))
 
   return (
     <div className="space-y-5">
@@ -40,9 +43,9 @@ export default function StepPhysical({ data, onChange, onNext }: Props) {
       </div>
 
       {[
-        { label: 'Età (anni)', key: 'age' as const, min: 10, max: 100 },
+        { label: 'Età (anni)', key: 'age' as const, min: 10, max: 120 },
         { label: 'Altezza (cm)', key: 'height_cm' as const, min: 100, max: 250 },
-        { label: 'Peso (kg)', key: 'weight_kg' as const, min: 30, max: 300 },
+        { label: 'Peso (kg)', key: 'weight_kg' as const, min: 20, max: 400 },
       ].map(({ label, key, min, max }) => (
         <div key={key}>
           <label className="text-sm text-gray-400 mb-1 block">{label}</label>
@@ -61,8 +64,8 @@ export default function StepPhysical({ data, onChange, onNext }: Props) {
         <label className="text-sm text-gray-400 mb-1 block">% Grasso corporeo (opzionale)</label>
         <input
           type="number"
-          min={3}
-          max={60}
+          min={1}
+          max={75}
           value={data.body_fat_pct ?? ''}
           onChange={e => set('body_fat_pct', e.target.value ? parseFloat(e.target.value) : null)}
           className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"

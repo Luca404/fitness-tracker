@@ -6,6 +6,11 @@ export type Objective = 'lose_weight' | 'gain_muscle' | 'maintain'
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'drinks'
 export type FoodSource = 'manual' | 'basic' | 'openfoodfacts' | 'ai_photo' | 'barcode' | 'pantry'
 export type PantryUnit = 'g' | 'ml' | 'pz'
+export type MealItemUnit = 'g' | 'ml'
+export type FoodCategory =
+  | 'grain' | 'legume' | 'vegetable' | 'fruit' | 'meat' | 'fish'
+  | 'dairy' | 'egg' | 'fat' | 'sauce' | 'seasoning' | 'sweet'
+  | 'alcohol' | 'beverage' | 'other'
 
 export interface UserHealthProfile {
   user_id: string
@@ -39,14 +44,27 @@ export interface Meal {
   meal_type: MealType
   name: string | null
   created_at: string
-  items: MealItem[]  // hydrated client-side
+  entries: MealEntry[] // hydrated client-side: dishes actually eaten
+  items: MealItem[]    // flattened from entries for daily/history totals
+}
+
+export interface MealEntry {
+  id: string
+  meal_id: string
+  name: string
+  created_at: string
+  items: MealItem[]
 }
 
 export interface MealItem {
   id: string
   meal_id: string
+  entry_id: string
   food_name: string
   quantity_g: number
+  unit: MealItemUnit
+  category: FoodCategory
+  food_key: string | null
   calories: number
   protein_g: number
   carbs_g: number
@@ -54,6 +72,10 @@ export interface MealItem {
   source: FoodSource
   off_food_id: string | null
   created_at: string
+}
+
+export type MealItemInput = Omit<MealItem, 'id' | 'meal_id' | 'entry_id' | 'created_at' | 'unit'> & {
+  unit?: MealItemUnit
 }
 
 export interface Workout {
@@ -97,6 +119,8 @@ export interface FoodResult {
   name: string
   brand: string | null
   source: 'pantry' | 'basic' | 'openfoodfacts'
+  category: FoodCategory
+  food_key: string | null
   calories_100g: number
   protein_100g: number
   carbs_100g: number
@@ -113,7 +137,8 @@ export interface PantryItem {
   protein_100g: number
   carbs_100g: number
   fat_100g: number
-  category: string | null
+  category: FoodCategory
+  food_key: string | null
   source: FoodSource
   off_food_id: string | null
   created_at: string
@@ -133,6 +158,8 @@ export interface DishItem {
   dish_id: string
   food_name: string
   quantity_g: number
+  category: FoodCategory
+  food_key: string | null
   calories: number
   protein_g: number
   carbs_g: number

@@ -81,6 +81,16 @@ describe('calculateDeficit', () => {
     }
     expect(calculateDeficit(profile)).toBe(-1000)
   })
+
+  it('does not create a surplus when a loss target is above current weight', () => {
+    const profile: UserHealthProfile = {
+      ...baseProfile,
+      objective: 'lose_weight',
+      target_weight_kg: 90,
+      target_date: format(addDays(new Date(), 70), 'yyyy-MM-dd'),
+    }
+    expect(calculateDeficit(profile)).toBe(0)
+  })
 })
 
 describe('suggestGoals', () => {
@@ -93,5 +103,9 @@ describe('suggestGoals', () => {
     expect(goals.carbs_g).toBeCloseTo(200, 0)
     // fat: 30% of 2000 = 600 kcal / 9 = 66.7g
     expect(goals.fat_g).toBeCloseTo(66.7, 0)
+  })
+
+  it('never suggests a target below the safety floor', () => {
+    expect(suggestGoals(900, -500).calorie_target).toBe(1200)
   })
 })

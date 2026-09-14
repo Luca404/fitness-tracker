@@ -9,7 +9,7 @@ import DaySelector from '../components/common/DaySelector'
 
 export default function WorkoutPage() {
   const { user } = useAuth()
-  const { workouts, profile, loading, fetchForDate, addWorkout, removeWorkout, showToast } = useData()
+  const { workouts, currentWeightKg, loading, fetchForDate, addWorkout, removeWorkout, showToast } = useData()
   const { selectedDate, setSelectedDate } = useSettings()
   const [selectedActivity, setSelectedActivity] = useState<string | null>(null)
 
@@ -21,6 +21,10 @@ export default function WorkoutPage() {
 
   async function handleSave(activityKey: string, durationMin: number, caloriesBurned: number) {
     if (!user) return
+    if (durationMin <= 0 || caloriesBurned < 0) {
+      showToast('Durata workout non valida')
+      return
+    }
     try {
       await addWorkout({
         user_id: user.id,
@@ -33,6 +37,14 @@ export default function WorkoutPage() {
       setSelectedActivity(null)
     } catch {
       showToast('Errore salvataggio workout')
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await removeWorkout(id)
+    } catch {
+      showToast('Errore eliminazione workout')
     }
   }
 
@@ -56,7 +68,7 @@ export default function WorkoutPage() {
             <span className="text-sm text-orange-400">🔥 {Math.round(totalBurned)} kcal</span>
           </div>
           {workouts.map(w => (
-            <WorkoutRow key={w.id} workout={w} onDelete={() => removeWorkout(w.id)} />
+            <WorkoutRow key={w.id} workout={w} onDelete={() => handleDelete(w.id)} />
           ))}
         </div>
       )}
@@ -64,7 +76,7 @@ export default function WorkoutPage() {
       {/* Drawer */}
       <WorkoutDrawer
         activityKey={selectedActivity}
-        weightKg={profile?.weight_kg ?? 70}
+        weightKg={currentWeightKg ?? 70}
         onSave={handleSave}
         onClose={() => setSelectedActivity(null)}
       />

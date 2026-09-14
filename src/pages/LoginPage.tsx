@@ -7,14 +7,19 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setMessage(null)
     const { error } = await (isLogin ? signIn : signUp)(email, password)
     setError(error)
+    if (!error && !isLogin) {
+      setMessage('Registrazione completata. Se richiesto, conferma l’indirizzo email prima di accedere.')
+    }
     setLoading(false)
   }
 
@@ -31,7 +36,7 @@ export default function LoginPage() {
           <div className="flex mb-6 bg-gray-700 rounded-lg p-1">
             <button
               type="button"
-              onClick={() => { setIsLogin(true); setError(null) }}
+              onClick={() => { setIsLogin(true); setError(null); setMessage(null) }}
               className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors text-sm ${
                 isLogin ? 'bg-gray-600 text-white shadow-sm' : 'text-gray-400'
               }`}
@@ -40,7 +45,7 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => { setIsLogin(false); setError(null) }}
+              onClick={() => { setIsLogin(false); setError(null); setMessage(null) }}
               className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors text-sm ${
                 !isLogin ? 'bg-gray-600 text-white shadow-sm' : 'text-gray-400'
               }`}
@@ -78,6 +83,11 @@ export default function LoginPage() {
             {error && (
               <div className="bg-red-900/30 border border-red-800 text-red-400 px-4 py-3 rounded-lg text-sm">
                 {error}
+              </div>
+            )}
+            {message && (
+              <div className="bg-primary-900/30 border border-primary-800 text-primary-300 px-4 py-3 rounded-lg text-sm" role="status">
+                {message}
               </div>
             )}
             <button

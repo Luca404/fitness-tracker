@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import FoodSearch from './FoodSearch'
-import type { DishItem } from '../../types'
+import type { DishItem, MealItemUnit } from '../../types'
+import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 
-export type DishItemDraft = Omit<DishItem, 'id' | 'dish_id' | 'created_at'>
+export type DishItemDraft = Omit<DishItem, 'id' | 'dish_id' | 'created_at'> & {
+  unit?: MealItemUnit
+}
 
 interface Props {
   initialName: string
@@ -21,11 +24,17 @@ export default function DishEditor({
   const [items, setItems] = useState<DishItemDraft[]>(initialItems)
   const [searchKey, setSearchKey] = useState(0)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const totalWeight = items.reduce((s, i) => s + i.quantity_g, 0)
+  const totalWeight = items.reduce((s, i) => s + (i.unit === 'ml' ? 0 : i.quantity_g), 0)
+  const totalVolume = items.reduce((s, i) => s + (i.unit === 'ml' ? i.quantity_g : 0), 0)
   const totalKcal = items.reduce((s, i) => s + i.calories, 0)
+  const totalProtein = items.reduce((s, i) => s + i.protein_g, 0)
+  const totalCarbs = items.reduce((s, i) => s + i.carbs_g, 0)
+  const totalFat = items.reduce((s, i) => s + i.fat_g, 0)
 
   function updateQuantity(index: number, quantity_g: number) {
+    if (!Number.isFinite(quantity_g) || quantity_g <= 0) return
     setItems(prev => prev.map((it, i) => {
       if (i !== index) return it
       const factor = it.quantity_g > 0 ? quantity_g / it.quantity_g : 0
@@ -45,73 +54,106 @@ export default function DishEditor({
   }
 
   const nameValid = !requireName || name.trim().length > 0
-  const canSave = nameValid && items.length > 0 && !saving
+  const itemsValid = items.every(i => i.quantity_g > 0 &&
+    i.calories >= 0 && i.protein_g >= 0 && i.carbs_g >= 0 && i.fat_g >= 0)
+  const canSave = nameValid && items.length > 0 && itemsValid && !saving
 
   async function handleSave() {
     if (!canSave) return
     setSaving(true)
+    setError(null)
     try {
       await onSave(name.trim(), items)
+    } catch {
+      setError('Operazione non riuscita. Riprova.')
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {requireName && (
-        <div>
-          <label className="text-sm text-gray-400">Nome piatto</label>
+        <div className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4 focus-within:border-primary-600">
+          <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Nome del piatto</label>
           <input value={name} onChange={e => setName(e.target.value)}
             placeholder="Es. Pasta al pomodoro"
-            className="w-full mt-1 px-3 py-2 rounded bg-gray-700 border border-gray-600 outline-none focus:border-primary-500" />
+            className="mt-1 w-full bg-transparent text-xl font-semibold text-white outline-none placeholder:text-gray-600" />
         </div>
       )}
 
-      <FoodSearch
-        key={searchKey}
-        hideHeader
-        onClose={() => {}}
-        onAdd={(item) => {
-          setItems(prev => [...prev, item])
-          setSearchKey(k => k + 1)
-        }}
-      />
+      <section>
+        <div className="mb-2 flex items-center justify-between px-1">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Aggiungi ingredienti</p>
+          <span className="text-xs text-gray-600">{items.length} nel piatto</span>
+        </div>
+        <div className="rounded-2xl border border-gray-700/80 bg-gray-900/25 p-3">
+          <FoodSearch
+            key={searchKey}
+            hideHeader
+            onClose={() => {}}
+            onAdd={(item) => {
+              setItems(prev => [...prev, item])
+              setSearchKey(k => k + 1)
+            }}
+          />
+        </div>
+      </section>
 
-      <div className="space-y-1">
+      <section className="space-y-2">
+        {items.length > 0 && (
+          <p className="px-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Composizione</p>
+        )}
         {items.length === 0 && (
-          <p className="text-sm text-gray-500 text-center py-2">Nessun ingrediente aggiunto.</p>
+          <div className="rounded-2xl border border-dashed border-gray-700 py-7 text-center">
+            <span className="text-2xl">🥕</span>
+            <p className="mt-2 text-sm text-gray-500">Cerca e aggiungi il primo ingrediente</p>
+          </div>
         )}
         {items.map((item, i) => (
-          <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800">
+          <div key={`${item.food_name}-${i}`} className="flex items-center justify-between rounded-2xl bg-gray-900/35 p-3 ring-1 ring-gray-700/60">
+            <div className="mr-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-700/70 text-sm">{FOOD_CATEGORY_BY_ID[item.category].icon}</div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{item.food_name}</p>
-              <span className="text-sm text-primary-400">{Math.round(item.calories)} kcal</span>
+              <span className="text-xs text-primary-400">{Math.round(item.calories)} kcal</span>
             </div>
             <input
               type="number" min={1} value={item.quantity_g}
-              onChange={e => updateQuantity(i, parseFloat(e.target.value) || 0)}
-              className="w-16 mx-2 px-2 py-1 rounded bg-gray-700 border border-gray-600 text-sm text-right outline-none"
+              onChange={e => updateQuantity(i, parseFloat(e.target.value))}
+              onFocus={e => e.currentTarget.select()}
+              className="mx-2 w-16 rounded-lg border border-gray-600 bg-gray-700 px-2 py-1.5 text-right text-sm outline-none focus:border-primary-500"
             />
-            <span className="text-xs text-gray-500 mr-2">g</span>
+            <span className="text-xs text-gray-500 mr-2">{item.unit ?? 'g'}</span>
             <button type="button" onClick={() => removeItem(i)} className="text-gray-600 hover:text-red-400 text-lg">✕</button>
           </div>
         ))}
-      </div>
+      </section>
 
       {items.length > 0 && (
-        <p className="text-sm text-gray-400 text-center">
-          Totale: {Math.round(totalWeight)}g · {Math.round(totalKcal)} kcal
-        </p>
+        <div className="rounded-3xl bg-gradient-to-r from-primary-600/20 to-emerald-400/5 p-4 ring-1 ring-primary-500/20">
+          <div className="flex items-end justify-between">
+            <div><p className="text-xs text-gray-500">Totale piatto</p><p className="text-2xl font-bold">{Math.round(totalKcal)} <span className="text-sm font-normal text-primary-400">kcal</span></p></div>
+            <p className="text-sm text-gray-400">
+              {Math.round(totalWeight)} g{totalVolume > 0 ? ` + ${Math.round(totalVolume)} ml` : ''}
+            </p>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">P <b className="text-gray-200">{Math.round(totalProtein)}g</b></span>
+            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">C <b className="text-gray-200">{Math.round(totalCarbs)}g</b></span>
+            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">G <b className="text-gray-200">{Math.round(totalFat)}g</b></span>
+          </div>
+        </div>
       )}
 
-      <div className="flex gap-3">
+      {error && <p className="text-sm text-red-400" role="alert">{error}</p>}
+
+      <div className="grid grid-cols-[auto_1fr] gap-3 pt-1">
         <button type="button" onClick={onCancel}
-          className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium">
+          className="rounded-2xl border border-gray-700 px-5 py-3.5 font-medium text-gray-400 hover:bg-gray-700">
           Annulla
         </button>
         <button type="button" onClick={handleSave} disabled={!canSave}
-          className="flex-1 py-3 bg-primary-600 rounded-lg font-semibold disabled:opacity-40">
+          className="rounded-2xl bg-primary-500 px-5 py-3.5 font-semibold shadow-lg shadow-primary-900/30 hover:bg-primary-400 disabled:opacity-40">
           {saveLabel}
         </button>
       </div>

@@ -15,7 +15,7 @@ function toLocalISODate(d: Date) {
 
 export default function WeightPage() {
   const { user } = useAuth()
-  const { profile } = useData()
+  const { profile, refreshCurrentWeight, showToast } = useData()
 
   const [logs, setLogs] = useState<WeightLog[]>([])
   const [range, setRange] = useState<Range>('30')
@@ -29,21 +29,26 @@ export default function WeightPage() {
     setLoading(true)
     const to = new Date()
     const from = new Date()
-    from.setDate(from.getDate() - parseInt(range))
+    from.setDate(from.getDate() - (parseInt(range) - 1))
     try {
       const data = await getWeightLogs(toLocalISODate(from), toLocalISODate(to))
       setLogs(data)
+    } catch {
+      showToast('Errore caricamento peso')
     } finally {
       setLoading(false)
     }
-  }, [range])
+  }, [range, showToast])
 
   useEffect(() => { fetchLogs() }, [fetchLogs])
 
   async function handleSave() {
     if (!user || !weightInput) return
     const kg = parseFloat(weightInput)
-    if (isNaN(kg) || kg <= 0) return
+    if (isNaN(kg) || kg < 20 || kg > 400) {
+      showToast('Inserisci un peso tra 20 e 400 kg')
+      return
+    }
     setSaving(true)
     try {
       const saved = await upsertWeightLog({ user_id: user.id, date, weight_kg: kg, notes: null })
@@ -52,14 +57,22 @@ export default function WeightPage() {
         return [...filtered, saved].sort((a, b) => a.date.localeCompare(b.date))
       })
       setWeightInput('')
+      await refreshCurrentWeight()
+    } catch {
+      showToast('Errore salvataggio peso')
     } finally {
       setSaving(false)
     }
   }
 
   async function handleDelete(id: string, logDate: string) {
-    await deleteWeightLog(id)
-    setLogs(prev => prev.filter(l => l.id !== id || l.date !== logDate))
+    try {
+      await deleteWeightLog(id)
+      setLogs(prev => prev.filter(l => l.id !== id || l.date !== logDate))
+      await refreshCurrentWeight()
+    } catch {
+      showToast('Errore eliminazione peso')
+    }
   }
 
   const latest = logs.at(-1)
@@ -157,6 +170,7 @@ export default function WeightPage() {
         <div className="flex gap-3">
           <input
             type="date"
+            max={toLocalISODate(new Date())}
             value={date}
             onChange={e => setDate(e.target.value)}
             className="flex-1 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 outline-none focus:border-primary-500 text-sm"
@@ -166,7 +180,7 @@ export default function WeightPage() {
               type="number"
               step="0.1"
               min="20"
-              max="300"
+              max="400"
               value={weightInput}
               onChange={e => setWeightInput(e.target.value)}
               placeholder="es. 75.5"

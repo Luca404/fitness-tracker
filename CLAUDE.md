@@ -6,7 +6,9 @@ Calorie and nutrition tracker PWA. React 18 + TypeScript + Vite + Supabase direc
 
 ## Stack
 
-React 18 TS, Vite + vite-plugin-pwa, Tailwind CSS, Supabase (`@supabase/supabase-js`), react-i18next.
+React 19 TS, Vite + vite-plugin-pwa, Tailwind CSS, Supabase (`@supabase/supabase-js`). Italian UI.
+
+The mobile navigation contains Pasti, Cucina, Workout, Peso and Storico. Cucina groups the saved-dishes and pantry tabs.
 
 ## Commands
 
@@ -25,7 +27,9 @@ VITE_SUPABASE_PUBLISHABLE_KEY=...
 
 ## Supabase schema (fitness-only tables)
 
-`user_health_profiles`, `user_goals`, `meals`, `meal_items`, `workouts`, `weight_logs`, `dishes`, `dish_items`, `pantry_items`. See `supabase/schema.sql` for DDL.
+`user_health_profiles`, `user_goals`, `meals`, `meal_entries`, `meal_items`, `workouts`, `weight_logs`, `dishes`, `dish_items`, `pantry_items`. See `supabase/schema.sql` for DDL.
+
+Apply `supabase/migrations/` before deploying a frontend that uses the transactional RPC functions.
 
 ## Docs
 

@@ -1,8 +1,35 @@
 // src/services/api.ts
 import { supabase } from './supabase'
 import type {
-  UserHealthProfile, UserGoals, Meal, MealItem, Workout, WeightLog, Dish, DishItem, PantryItem
+  UserHealthProfile, UserGoals, Meal, MealEntry, MealItemInput, Workout, WeightLog, Dish, DishItem, PantryItem
 } from '../types'
+import { BASIC_FOODS } from '../data/basicFoods'
+import { normalizeIngredientName } from '../utils/ingredientMatching'
+
+function catalogFoodForName(name: string) {
+  const normalized = normalizeIngredientName(name)
+  return BASIC_FOODS.find(food => normalizeIngredientName(food.name) === normalized)
+}
+
+function enrichLegacyFoodItem<T extends { food_name: string; category?: string | null; food_key?: string | null }>(item: T) {
+  const catalogFood = (!item.food_key || !item.category || item.category === 'other')
+    ? catalogFoodForName(item.food_name)
+    : undefined
+  return {
+    ...item,
+    category: item.category && item.category !== 'other' ? item.category : (catalogFood?.category ?? 'other'),
+    food_key: item.food_key ?? (catalogFood ? `basic:${catalogFood.id}` : null),
+  }
+}
+
+function enrichLegacyPantryItem(item: PantryItem): PantryItem {
+  const catalogFood = (!item.food_key || item.category === 'other') ? catalogFoodForName(item.name) : undefined
+  return {
+    ...item,
+    category: item.category !== 'other' ? item.category : (catalogFood?.category ?? 'other'),
+    food_key: item.food_key ?? (catalogFood ? `basic:${catalogFood.id}` : null),
+  }
+}
 
 // --- Health Profile ---
 
@@ -13,15 +40,6 @@ export async function getHealthProfile(): Promise<UserHealthProfile | null> {
     .maybeSingle()
   if (error) throw error
   return data
-}
-
-export async function upsertHealthProfile(
-  profile: Omit<UserHealthProfile, 'created_at' | 'updated_at'>
-): Promise<void> {
-  const { error } = await supabase
-    .from('user_health_profiles')
-    .upsert({ ...profile, updated_at: new Date().toISOString() })
-  if (error) throw error
 }
 
 // --- Goals ---
@@ -55,45 +73,73 @@ export async function getMealsForDate(date: string): Promise<Meal[]> {
   if (mError) throw mError
   if (!meals || meals.length === 0) return []
 
+  return hydrateMeals(meals)
+}
+
+async function hydrateMeals(meals: Omit<Meal, 'entries' | 'items'>[]): Promise<Meal[]> {
   const mealIds = meals.map(m => m.id)
+  const { data: entries, error: eError } = await supabase
+    .from('meal_entries')
+    .select('*')
+    .in('meal_id', mealIds)
+    .order('created_at')
+  if (eError) throw eError
+
+  if (!entries || entries.length === 0) {
+    return meals.map(m => ({ ...m, entries: [], items: [] })) as Meal[]
+  }
+
   const { data: items, error: iError } = await supabase
     .from('meal_items')
     .select('*')
-    .in('meal_id', mealIds)
+    .in('entry_id', entries.map(e => e.id))
+    .order('created_at')
   if (iError) throw iError
 
   return meals.map(m => ({
     ...m,
-    items: (items ?? []).filter(i => i.meal_id === m.id),
+    entries: entries.filter(e => e.meal_id === m.id).map(e => ({
+      ...e,
+      items: (items ?? []).filter(i => i.entry_id === e.id).map(enrichLegacyFoodItem),
+    })),
+    items: (items ?? []).filter(i => i.meal_id === m.id).map(enrichLegacyFoodItem),
   })) as Meal[]
 }
 
-export async function addMeal(
-  meal: Omit<Meal, 'id' | 'created_at' | 'items'>
-): Promise<Meal> {
-  const { data, error } = await supabase
-    .from('meals')
-    .insert(meal)
-    .select()
-    .single()
+export async function addMealEntry(
+  userId: string,
+  date: string,
+  mealType: Meal['meal_type'],
+  name: string,
+  items: MealItemInput[]
+): Promise<{ meal: Omit<Meal, 'entries' | 'items'>; entry: MealEntry }> {
+  const { data, error } = await supabase.rpc('add_meal_entry', {
+    p_user_id: userId,
+    p_date: date,
+    p_meal_type: mealType,
+    p_name: name,
+    p_items: items,
+  })
   if (error) throw error
-  return { ...data, items: [] } as Meal
+  return data as { meal: Omit<Meal, 'entries' | 'items'>; entry: MealEntry }
 }
 
-export async function addMealItem(
-  item: Omit<MealItem, 'id' | 'created_at'>
-): Promise<MealItem> {
-  const { data, error } = await supabase
-    .from('meal_items')
-    .insert(item)
-    .select()
-    .single()
+export async function updateMealEntry(
+  entryId: string,
+  name: string,
+  items: MealItemInput[]
+): Promise<MealEntry> {
+  const { data, error } = await supabase.rpc('update_meal_entry', {
+    p_entry_id: entryId,
+    p_name: name,
+    p_items: items,
+  })
   if (error) throw error
-  return data as MealItem
+  return data as MealEntry
 }
 
-export async function deleteMealItem(id: string): Promise<void> {
-  const { error } = await supabase.from('meal_items').delete().eq('id', id)
+export async function deleteMealEntry(id: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_meal_entry', { p_entry_id: id })
   if (error) throw error
 }
 
@@ -155,6 +201,18 @@ export async function getWeightLogs(from: string, to: string): Promise<WeightLog
   return (data ?? []) as WeightLog[]
 }
 
+export async function getLatestWeightLog(to: string): Promise<WeightLog | null> {
+  const { data, error } = await supabase
+    .from('weight_logs')
+    .select('*')
+    .lte('date', to)
+    .order('date', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  return data as WeightLog | null
+}
+
 export async function upsertWeightLog(
   entry: Pick<WeightLog, 'user_id' | 'date' | 'weight_kg' | 'notes'>
 ): Promise<WeightLog> {
@@ -183,17 +241,7 @@ export async function getMealsForRange(from: string, to: string): Promise<Meal[]
   if (mError) throw mError
   if (!meals || meals.length === 0) return []
 
-  const mealIds = meals.map(m => m.id)
-  const { data: items, error: iError } = await supabase
-    .from('meal_items')
-    .select('*')
-    .in('meal_id', mealIds)
-  if (iError) throw iError
-
-  return meals.map(m => ({
-    ...m,
-    items: (items ?? []).filter(i => i.meal_id === m.id),
-  })) as Meal[]
+  return hydrateMeals(meals)
 }
 
 // --- Dishes (piatti salvati) ---
@@ -215,7 +263,7 @@ export async function getDishes(): Promise<Dish[]> {
 
   return dishes.map(d => ({
     ...d,
-    items: (items ?? []).filter(i => i.dish_id === d.id),
+    items: (items ?? []).filter(i => i.dish_id === d.id).map(enrichLegacyFoodItem),
   })) as Dish[]
 }
 
@@ -224,20 +272,13 @@ export async function createDish(
   name: string,
   items: Omit<DishItem, 'id' | 'dish_id' | 'created_at'>[]
 ): Promise<Dish> {
-  const { data: dish, error: dError } = await supabase
-    .from('dishes')
-    .insert({ user_id: userId, name })
-    .select()
-    .single()
-  if (dError) throw dError
-
-  const { data: dishItems, error: iError } = await supabase
-    .from('dish_items')
-    .insert(items.map(i => ({ ...i, dish_id: dish.id })))
-    .select()
-  if (iError) throw iError
-
-  return { ...dish, items: dishItems ?? [] } as Dish
+  const { data, error } = await supabase.rpc('create_dish_with_items', {
+    p_user_id: userId,
+    p_name: name,
+    p_items: items,
+  })
+  if (error) throw error
+  return data as Dish
 }
 
 export async function updateDish(
@@ -245,24 +286,24 @@ export async function updateDish(
   name: string,
   items: Omit<DishItem, 'id' | 'dish_id' | 'created_at'>[]
 ): Promise<Dish> {
-  const { data: dish, error: dError } = await supabase
-    .from('dishes')
-    .update({ name, updated_at: new Date().toISOString() })
-    .eq('id', dishId)
-    .select()
-    .single()
-  if (dError) throw dError
+  const { data, error } = await supabase.rpc('update_dish_with_items', {
+    p_dish_id: dishId,
+    p_name: name,
+    p_items: items,
+  })
+  if (error) throw error
+  return data as Dish
+}
 
-  const { error: delError } = await supabase.from('dish_items').delete().eq('dish_id', dishId)
-  if (delError) throw delError
-
-  const { data: dishItems, error: iError } = await supabase
-    .from('dish_items')
-    .insert(items.map(i => ({ ...i, dish_id: dishId })))
-    .select()
-  if (iError) throw iError
-
-  return { ...dish, items: dishItems ?? [] } as Dish
+export async function completeOnboarding(
+  profile: Omit<UserHealthProfile, 'created_at' | 'updated_at'>,
+  goals: Omit<UserGoals, 'updated_at'>
+): Promise<void> {
+  const { error } = await supabase.rpc('complete_health_onboarding', {
+    p_profile: profile,
+    p_goals: goals,
+  })
+  if (error) throw error
 }
 
 export async function deleteDish(id: string): Promise<void> {
@@ -278,7 +319,7 @@ export async function getPantryItems(): Promise<PantryItem[]> {
     .select('*')
     .order('name')
   if (error) throw error
-  return (data ?? []) as PantryItem[]
+  return ((data ?? []) as PantryItem[]).map(enrichLegacyPantryItem)
 }
 
 export async function addPantryItem(

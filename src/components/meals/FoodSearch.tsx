@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { searchBasicFoods, searchFood, calcNutrition } from '../../services/nutrition'
 import * as api from '../../services/api'
-import type { FoodResult, FoodSource, PantryItem } from '../../types'
+import { useData } from '../../contexts/DataContext'
+import { FOOD_CATEGORIES } from '../../data/foodCategories'
+import type { FoodResult, FoodSource, PantryItem, FoodCategory } from '../../types'
 
 function pantryItemToFoodResult(p: PantryItem): FoodResult {
   return {
@@ -9,6 +11,8 @@ function pantryItemToFoodResult(p: PantryItem): FoodResult {
     name: p.name,
     brand: null,
     source: 'pantry',
+    category: p.category,
+    food_key: p.food_key,
     calories_100g: p.calories_100g,
     protein_100g: p.protein_100g,
     carbs_100g: p.carbs_100g,
@@ -21,12 +25,14 @@ interface Props {
     food_name: string; quantity_g: number; calories: number
     protein_g: number; carbs_g: number; fat_g: number
     source: FoodSource; off_food_id: string | null
+    category: FoodResult['category']; food_key: string | null
   }) => void
   onClose: () => void
   hideHeader?: boolean
 }
 
 export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
+  const { showToast } = useData()
   const [query, setQuery] = useState('')
   const [offResults, setOffResults] = useState<FoodResult[]>([])
   const [offSearched, setOffSearched] = useState(false)
@@ -40,11 +46,14 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
   const [manualProt, setManualProt] = useState(0)
   const [manualCarbs, setManualCarbs] = useState(0)
   const [manualFat, setManualFat] = useState(0)
+  const [manualCategory, setManualCategory] = useState<FoodCategory>('other')
   const [pantryItems, setPantryItems] = useState<PantryItem[]>([])
 
   useEffect(() => {
-    api.getPantryItems().then(setPantryItems).catch(() => {})
-  }, [])
+    api.getPantryItems().then(setPantryItems).catch(() => {
+      showToast('Dispensa non disponibile')
+    })
+  }, [showToast])
 
   const basicResults = useMemo(() => searchBasicFoods(query), [query])
 
@@ -71,11 +80,12 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
 
   function handleAdd() {
     if (manualMode) {
+      if (!manualName.trim() || qty <= 0 || [manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0)) return
       onAdd({
-        food_name: manualName, quantity_g: qty,
+        food_name: manualName.trim(), quantity_g: qty,
         calories: manualCal, protein_g: manualProt,
         carbs_g: manualCarbs, fat_g: manualFat,
-        source: 'manual', off_food_id: null,
+        source: 'manual', off_food_id: null, category: manualCategory, food_key: null,
       })
       return
     }
@@ -87,6 +97,8 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
       ...nutrition,
       source: selected.source,
       off_food_id: selected.source === 'openfoodfacts' ? selected.id : null,
+      category: selected.category,
+      food_key: selected.food_key,
     })
   }
 
@@ -101,19 +113,28 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
 
       {!manualMode ? (
         <>
-          <input
-            value={query}
-            onChange={e => { setQuery(e.target.value); setOffResults([]); setOffSearched(false) }}
-            placeholder="Cerca alimento..."
-            className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 outline-none focus:border-primary-500"
-          />
+          <div className="flex items-center gap-3 rounded-2xl border border-gray-700 bg-gray-800/80 px-4 py-3 focus-within:border-primary-500">
+            <svg className="h-5 w-5 shrink-0 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="11" cy="11" r="7" strokeWidth="2" />
+              <path d="m20 20-4-4" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <input
+              value={query}
+              onChange={e => { setQuery(e.target.value); setOffResults([]); setOffSearched(false) }}
+              placeholder="Cerca un ingrediente..."
+              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-gray-600"
+            />
+            {query && !selected && (
+              <button type="button" onClick={() => setQuery('')} className="text-gray-600 hover:text-gray-300" aria-label="Cancella ricerca">✕</button>
+            )}
+          </div>
 
           {!selected && pantryResults.length > 0 && (
             <div className="max-h-40 overflow-y-auto space-y-1">
               <p className="text-xs uppercase tracking-wide text-gray-500 px-1">La tua dispensa</p>
               {pantryResults.map(f => (
                 <button key={f.id} type="button" onClick={() => setSelected(f)}
-                  className="w-full text-left px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">
+                  className="w-full rounded-xl bg-gray-800 px-3 py-2.5 text-left text-sm hover:bg-gray-700">
                   <span className="font-medium">🧺 {f.name}</span>
                   <span className="text-gray-500 ml-2">{Math.round(f.calories_100g)} kcal/100g</span>
                 </button>
@@ -126,7 +147,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
               <p className="text-xs uppercase tracking-wide text-gray-500 px-1">Alimenti base</p>
               {basicResults.map(f => (
                 <button key={f.id} type="button" onClick={() => setSelected(f)}
-                  className="w-full text-left px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">
+                  className="w-full rounded-xl bg-gray-800 px-3 py-2.5 text-left text-sm hover:bg-gray-700">
                   <span className="font-medium">{f.name}</span>
                   <span className="text-gray-500 ml-2">{Math.round(f.calories_100g)} kcal/100g</span>
                 </button>
@@ -139,7 +160,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
               type="button"
               onClick={handleOffSearch}
               disabled={loading}
-              className="w-full py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm disabled:opacity-50"
+              className="w-full rounded-xl border border-gray-700 py-2.5 text-sm text-gray-300 hover:bg-gray-700 disabled:opacity-50"
             >
               {loading ? 'Cerco...' : '🔍 Cerca prodotti confezionati (Open Food Facts)'}
             </button>
@@ -157,7 +178,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
               )}
               {offResults.map(p => (
                 <button key={p.id} type="button" onClick={() => setSelected(p)}
-                  className="w-full text-left px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">
+                  className="w-full rounded-xl bg-gray-800 px-3 py-2.5 text-left text-sm hover:bg-gray-700">
                   <span className="font-medium">{p.name}</span>
                   {p.brand && <span className="text-gray-400 ml-2">· {p.brand}</span>}
                   <span className="text-gray-500 ml-2">{Math.round(p.calories_100g)} kcal/100g</span>
@@ -167,65 +188,103 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
           )}
 
           {selected && (
-            <div className="bg-gray-700 rounded-lg p-3 space-y-3">
+            <div className="space-y-4 rounded-2xl bg-gradient-to-br from-primary-600/15 to-gray-800 p-4 ring-1 ring-primary-500/20">
               <div className="flex justify-between">
                 <span className="font-medium text-sm">{selected.name}</span>
                 <button type="button" onClick={() => setSelected(null)} className="text-gray-400 text-sm">Cambia</button>
               </div>
               <div>
-                <label className="text-sm text-gray-400">Quantità (g)</label>
-                <input type="number" min={1} value={qty}
+                <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quantità</label>
+                <div className="mt-1 flex items-center rounded-xl border border-gray-600 bg-gray-800/70 px-3">
+                  <input type="number" min={1} value={qty}
                   onChange={e => setQty(parseInt(e.target.value) || 100)}
-                  className="w-full mt-1 px-3 py-2 rounded bg-gray-600 border border-gray-500 outline-none" />
+                  onFocus={e => e.currentTarget.select()}
+                  className="min-w-0 flex-1 bg-transparent py-2.5 text-lg font-semibold outline-none" />
+                  <span className="text-sm text-gray-500">grammi</span>
+                </div>
               </div>
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Categoria</span>
+                <select
+                  value={selected.category}
+                  onChange={event => setSelected({ ...selected, category: event.target.value as FoodCategory })}
+                  className="mt-1 w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2.5 text-sm outline-none focus:border-primary-500"
+                >
+                  {FOOD_CATEGORIES.map(category => (
+                    <option key={category.id} value={category.id}>{category.icon} {category.label}</option>
+                  ))}
+                </select>
+              </label>
               {(() => {
                 const n = calcNutrition(selected, qty)
                 return (
-                  <p className="text-sm text-primary-400">
-                    {n.calories} kcal · P {n.protein_g}g · C {n.carbs_g}g · G {n.fat_g}g
-                  </p>
+                  <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
+                    <span className="rounded-lg bg-black/10 py-2 text-primary-400"><b>{n.calories}</b><small className="block text-[9px] text-gray-500">kcal</small></span>
+                    <span className="rounded-lg bg-black/10 py-2"><b>{n.protein_g}g</b><small className="block text-[9px] text-gray-500">proteine</small></span>
+                    <span className="rounded-lg bg-black/10 py-2"><b>{n.carbs_g}g</b><small className="block text-[9px] text-gray-500">carbo</small></span>
+                    <span className="rounded-lg bg-black/10 py-2"><b>{n.fat_g}g</b><small className="block text-[9px] text-gray-500">grassi</small></span>
+                  </div>
                 )
               })()}
               <button type="button" onClick={handleAdd}
-                className="w-full py-3 bg-primary-600 rounded-lg font-semibold">
-                Aggiungi
+                className="w-full rounded-xl bg-primary-500 py-3 font-semibold hover:bg-primary-400">
+                + Aggiungi ingrediente
               </button>
             </div>
           )}
 
           <button type="button" onClick={() => setManualMode(true)}
-            className="text-sm text-gray-500 text-center w-full">
-            Inserimento manuale
+            className="w-full rounded-xl border border-dashed border-gray-700 py-2.5 text-center text-sm text-gray-500 hover:border-gray-600 hover:text-gray-300">
+            Non lo trovi? Inseriscilo manualmente
           </button>
         </>
       ) : (
-        <div className="space-y-3">
-          <div>
-            <label className="text-sm text-gray-400">Nome alimento</label>
-            <input value={manualName} onChange={e => setManualName(e.target.value)}
-              className="w-full mt-1 px-3 py-2 rounded bg-gray-700 border border-gray-600 outline-none" />
-          </div>
-          {[
-            { label: 'Quantità (g)', val: qty, set: (v: number) => setQty(v) },
-            { label: 'Calorie (kcal)', val: manualCal, set: (v: number) => setManualCal(v) },
-            { label: 'Proteine (g)', val: manualProt, set: (v: number) => setManualProt(v) },
-            { label: 'Carboidrati (g)', val: manualCarbs, set: (v: number) => setManualCarbs(v) },
-            { label: 'Grassi (g)', val: manualFat, set: (v: number) => setManualFat(v) },
-          ].map(({ label, val, set }) => (
-            <div key={label}>
-              <label className="text-sm text-gray-400">{label}</label>
-              <input type="number" value={val || ''}
-                onChange={e => set(parseFloat(e.target.value) || 0)}
-                className="w-full mt-1 px-3 py-2 rounded bg-gray-700 border border-gray-600 outline-none" />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Voce personalizzata</p>
+              <p className="text-sm text-gray-500">Inserisci i valori della porzione</p>
             </div>
-          ))}
-          <button type="button" onClick={handleAdd} disabled={!manualName}
-            className="w-full py-3 bg-primary-600 rounded-lg font-semibold disabled:opacity-40">
-            Aggiungi
-          </button>
-          <button type="button" onClick={() => setManualMode(false)}
-            className="text-sm text-gray-500 text-center w-full">
-            Torna alla ricerca
+            <button type="button" onClick={() => setManualMode(false)} className="text-sm text-gray-400 hover:text-white">← Ricerca</button>
+          </div>
+          <div className="rounded-xl border border-gray-700 bg-gray-800/80 px-3 py-2.5 focus-within:border-primary-500">
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Nome alimento</label>
+            <input value={manualName} onChange={e => setManualName(e.target.value)}
+              placeholder="Es. Tiramisù della casa"
+              className="mt-1 w-full bg-transparent font-medium outline-none placeholder:text-gray-600" />
+          </div>
+          <label className="block rounded-xl border border-gray-700 bg-gray-800/80 px-3 py-2.5 focus-within:border-primary-500">
+            <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">Categoria</span>
+            <select value={manualCategory} onChange={event => setManualCategory(event.target.value as FoodCategory)}
+              className="mt-1 w-full bg-transparent text-sm font-medium outline-none">
+              {FOOD_CATEGORIES.map(category => (
+                <option key={category.id} value={category.id} className="bg-gray-800">{category.icon} {category.label}</option>
+              ))}
+            </select>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: 'Quantità', unit: 'g', val: qty, set: (v: number) => setQty(v), min: 1 },
+              { label: 'Calorie', unit: 'kcal', val: manualCal, set: (v: number) => setManualCal(v), min: 0 },
+              { label: 'Proteine', unit: 'g', val: manualProt, set: (v: number) => setManualProt(v), min: 0 },
+              { label: 'Carboidrati', unit: 'g', val: manualCarbs, set: (v: number) => setManualCarbs(v), min: 0 },
+              { label: 'Grassi', unit: 'g', val: manualFat, set: (v: number) => setManualFat(v), min: 0 },
+            ].map(({ label, unit, val, set, min }, index) => (
+              <label key={label} className={`rounded-xl border border-gray-700 bg-gray-800/80 p-3 focus-within:border-primary-500 ${index === 0 ? 'col-span-2' : ''}`}>
+                <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">{label}</span>
+                <span className="mt-1 flex items-center gap-2">
+                  <input type="number" min={min} value={val || ''}
+                    onChange={e => set(parseFloat(e.target.value) || 0)}
+                    className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none" />
+                  <span className="text-xs text-gray-600">{unit}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <button type="button" onClick={handleAdd}
+            disabled={!manualName.trim() || qty <= 0 || [manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0)}
+            className="w-full rounded-xl bg-primary-500 py-3 font-semibold hover:bg-primary-400 disabled:opacity-40">
+            + Aggiungi ingrediente
           </button>
         </div>
       )}

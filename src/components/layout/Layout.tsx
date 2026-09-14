@@ -1,17 +1,14 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useData } from '../../contexts/DataContext'
-import Toast from '../common/Toast'
 
 const NAV = [
   { to: '/meals',   label: 'Pasti',    icon: '🍽️' },
-  { to: '/pantry',  label: 'Dispensa', icon: '🧺' },
+  { to: '/kitchen', label: 'Cucina',   icon: '🍳' },
   { to: '/workout', label: 'Workout',  icon: '💪' },
   { to: '/weight',  label: 'Peso',     icon: '⚖️' },
   { to: '/history', label: 'Storico',  icon: '📈' },
 ]
 
 export default function Layout() {
-  const { toast } = useData()
   const navigate = useNavigate()
 
   return (
@@ -60,8 +57,6 @@ export default function Layout() {
           ))}
         </div>
       </nav>
-
-      {toast && <Toast message={toast} />}
     </div>
   )
 }

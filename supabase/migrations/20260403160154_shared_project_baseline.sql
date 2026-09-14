@@ -1,0 +1,4 @@
+-- This Supabase project is shared with the other Trackrs applications.
+-- Migration 20260403160154 was applied by the finance project before
+-- fitTrackr adopted local migrations. It does not modify the health schema;
+-- this marker only keeps the shared migration history consistent.

@@ -9,7 +9,7 @@
 ## Parte A — Dataset alimenti base ✅
 
 - [x] `src/data/basicFoods.ts`: ~115 alimenti comuni (cucina italiana), ciascuno con:
-  `{ id, name, calories, protein_g, carbs_g, fat_g }` (per 100g) + `category` (`vegetable | fruit | legume | grain | meat | fish | dairy | egg | fat | alcohol | sweet | beverage | other`) — la category serve da base per la Fase "buone abitudini" futura, non usata attivamente ora.
+  `{ id, name, calories, protein_g, carbs_g, fat_g }` (per 100g) + `category` (categoria culinaria condivisa, ora usata anche da Dispensa e suggerimenti Cucina).
 - [x] `nutrition.ts`: nuova funzione `searchBasicFoods(query): FoodResult[]` — match locale (substring case-insensitive), nessuna chiamata di rete.
 - [x] Tipo unificato `FoodResult` in `types/index.ts` per non duplicare la UI tra risultati locali e OFF.
 - [x] `FoodSearch.tsx`: la ricerca interroga prima `searchBasicFoods` (istantanea, mentre digiti), mostrata come sezione "Alimenti base"; la ricerca OFF resta un'azione esplicita separata ("Cerca prodotti confezionati") sotto, non più il default.
@@ -24,7 +24,7 @@
   - Lista piatti salvati con nome + kcal totali + peso di riferimento (`SavedDishes.tsx`).
   - Selezione piatto → campo "peso totale" (default = peso salvato) → scala proporzionalmente tutti gli ingredienti → aggiunge ciascun ingrediente come `meal_item` del pasto corrente.
   - Icona ingranaggio per piatto → apre `DishEditor.tsx` (rinomina, aggiungi/rimuovi/modifica quantità ingredienti tramite `FoodSearch` riutilizzato) → salva su `dishes`/`dish_items`.
-  - Da un pasto già composto: azione "💾 Salva come piatto" per ogni sezione pasto → snapshot degli ingredienti correnti in un nuovo `dish`.
+  - ~~Da un pasto già composto: azione "💾 Salva come piatto".~~ Rimossa nel redesign successivo: il diario mostra direttamente i piatti consumati e il salvataggio delle ricette avviene nel composer.
 
 ## Iterazione UX — hub unico per pasto ✅
 
@@ -46,4 +46,4 @@ Feedback: la creazione/modifica di un piatto passava per una vista separata solo
 
 - Foto + AI stima calorie
 - Barcode scanner + dispensa (Fase 3)
-- Buone abitudini OMS (dipende dalla `category` introdotta in Parte A, ma l'implementazione arriva dopo)
+- Indicatori “Buone abitudini” in UI: il dataset di riferimento è ora presente in `src/data/nutritionGuidelines.ts`, mentre dashboard e avvisi restano da progettare.

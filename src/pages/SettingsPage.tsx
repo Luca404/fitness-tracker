@@ -4,8 +4,8 @@ import { useData } from '../contexts/DataContext'
 import { calculateBMR, calculateTDEE, calculateDeficit, suggestGoals } from '../utils/bmr'
 
 export default function SettingsPage() {
-  const { signOut } = useAuth()
-  const { profile, goals, saveGoals, showToast } = useData()
+  const { user, signOut } = useAuth()
+  const { profile, currentWeightKg, goals, saveGoals, showToast } = useData()
 
   const [calories, setCalories] = useState(goals?.calorie_target ?? 2000)
   const [protein, setProtein] = useState(goals?.protein_g ?? 150)
@@ -13,10 +13,14 @@ export default function SettingsPage() {
   const [fat, setFat] = useState(goals?.fat_g ?? 67)
 
   async function handleSaveGoals() {
-    if (!goals) return
+    if (!user) return
+    if (calories <= 0 || protein < 0 || carbs < 0 || fat < 0) {
+      showToast('I valori dei goal non sono validi')
+      return
+    }
     try {
       await saveGoals({
-        user_id: goals.user_id,
+        user_id: user.id,
         calorie_target: calories,
         protein_g: protein,
         carbs_g: carbs,
@@ -30,14 +34,23 @@ export default function SettingsPage() {
 
   function handleRecalculate() {
     if (!profile) return
-    const bmr = calculateBMR(profile)
+    const effectiveProfile = { ...profile, weight_kg: currentWeightKg ?? profile.weight_kg }
+    const bmr = calculateBMR(effectiveProfile)
     const tdee = calculateTDEE(bmr, profile.activity_level)
-    const deficit = calculateDeficit(profile)
+    const deficit = calculateDeficit(effectiveProfile)
     const suggested = suggestGoals(tdee, deficit)
     setCalories(suggested.calorie_target)
     setProtein(suggested.protein_g)
     setCarbs(suggested.carbs_g)
     setFat(suggested.fat_g)
+  }
+
+  async function handleSignOut() {
+    try {
+      await signOut()
+    } catch {
+      showToast('Errore durante il logout')
+    }
   }
 
   return (
@@ -47,7 +60,7 @@ export default function SettingsPage() {
       {profile && (
         <div className="card space-y-1 text-sm">
           <h2 className="font-semibold mb-2">Profilo</h2>
-          <p className="text-gray-400">Peso: <span className="text-white">{profile.weight_kg} kg</span></p>
+          <p className="text-gray-400">Peso: <span className="text-white">{currentWeightKg ?? profile.weight_kg} kg</span></p>
           <p className="text-gray-400">Altezza: <span className="text-white">{profile.height_cm} cm</span></p>
           <p className="text-gray-400">Obiettivo: <span className="text-white capitalize">{profile.objective.replace('_', ' ')}</span></p>
         </div>
@@ -70,7 +83,7 @@ export default function SettingsPage() {
         ].map(({ label, val, set }) => (
           <div key={label}>
             <label className="text-sm text-gray-400 mb-1 block">{label}</label>
-            <input type="number" value={val}
+            <input type="number" min={label.startsWith('Calorie') ? 1 : 0} value={val}
               onChange={e => set(parseInt(e.target.value) || 0)}
               className="input-field py-3" />
           </div>
@@ -82,7 +95,7 @@ export default function SettingsPage() {
         </button>
       </div>
 
-      <button type="button" onClick={signOut}
+      <button type="button" onClick={handleSignOut}
         className="w-full py-3 border border-red-500 text-red-400 rounded-xl font-semibold mt-8">
         Logout
       </button>

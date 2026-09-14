@@ -8,7 +8,7 @@ import type { Meal, Workout } from '../types'
 type Range = 7 | 30
 
 export default function HistoryPage() {
-  const { goals } = useData()
+  const { goals, showToast } = useData()
   const [range, setRange] = useState<Range>(7)
   const [meals, setMeals] = useState<Meal[]>([])
   const [workouts, setWorkouts] = useState<Workout[]>([])
@@ -26,6 +26,8 @@ export default function HistoryPage() {
         if (cancelled) return
         setMeals(m)
         setWorkouts(w)
+      } catch {
+        if (!cancelled) showToast('Errore caricamento storico')
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -33,7 +35,7 @@ export default function HistoryPage() {
 
     load()
     return () => { cancelled = true }
-  }, [range])
+  }, [range, showToast])
 
   const chartData = useMemo(() => {
     const to = new Date()

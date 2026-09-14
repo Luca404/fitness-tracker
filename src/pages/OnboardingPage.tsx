@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import StepPhysical from '../components/onboarding/StepPhysical'
@@ -12,8 +11,7 @@ const TOTAL_STEPS = 4
 
 export default function OnboardingPage() {
   const { user } = useAuth()
-  const { saveProfile, saveGoals, showToast } = useData()
-  const navigate = useNavigate()
+  const { completeOnboarding, showToast } = useData()
   const [step, setStep] = useState(1)
 
   const [physical, setPhysical] = useState({
@@ -29,17 +27,15 @@ export default function OnboardingPage() {
   async function handleConfirm(goals: SuggestedGoals) {
     if (!user) return
     try {
-      await saveProfile({
+      await completeOnboarding({
         user_id: user.id,
         ...physical,
         activity_level: activityLevel,
         ...objective,
         bmr_override: null,
-      })
-      await saveGoals({ user_id: user.id, ...goals })
-      navigate('/meals')
+      }, goals)
     } catch {
-      showToast('Errore salvataggio profilo')
+      showToast('Errore salvataggio profilo e obiettivi')
     }
   }
 
@@ -96,13 +92,6 @@ export default function OnboardingPage() {
             onBack={() => setStep(3)}
           />
         )}
-
-        <button
-          onClick={() => navigate('/meals')}
-          className="mt-6 w-full text-center text-gray-500 text-sm"
-        >
-          Salta per ora
-        </button>
       </div>
     </div>
   )

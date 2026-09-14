@@ -37,11 +37,13 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
   }, [data, currentWeightKg])
 
   const isAggressive = rateKgPerWeek !== null && parseFloat(rateKgPerWeek) > 1
+  const invalidLossTarget = data.objective === 'lose_weight' &&
+    data.target_weight_kg !== null && data.target_weight_kg >= currentWeightKg
 
   const valid =
     data.objective === 'maintain' ||
     data.objective === 'gain_muscle' ||
-    (data.objective === 'lose_weight' && !!data.target_weight_kg && !!data.target_date)
+    (data.objective === 'lose_weight' && !!data.target_weight_kg && !!data.target_date && !invalidLossTarget)
 
   const defaultTargetDate = format(addMonths(new Date(), 3), 'yyyy-MM-dd')
 
@@ -84,6 +86,9 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
             onChange={e => set('target_weight_kg', e.target.value ? parseFloat(e.target.value) : null)}
             className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
           />
+          {invalidLossTarget && (
+            <p className="text-sm text-orange-400 mt-2">Il peso target deve essere inferiore al peso attuale.</p>
+          )}
         </div>
       )}
 

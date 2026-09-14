@@ -20,6 +20,7 @@ export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
   const [fat, setFat] = useState(suggested.fat_g)
 
   const isAggressive = deficit < -900
+  const goalsValid = calories > 0 && protein >= 0 && carbs >= 0 && fat >= 0
 
   return (
     <div className="space-y-5">
@@ -54,6 +55,7 @@ export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
           <label className="text-sm text-gray-400 mb-1 block">{label}</label>
           <input
             type="number"
+            min={label.startsWith('Calorie') ? 1 : 0}
             value={val}
             onChange={e => set(parseInt(e.target.value) || 0)}
             className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
@@ -67,7 +69,8 @@ export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
         </button>
         <button
           onClick={() => onConfirm({ calorie_target: calories, protein_g: protein, carbs_g: carbs, fat_g: fat })}
-          className="flex-1 py-4 rounded-xl bg-primary-600 font-semibold text-lg"
+          disabled={!goalsValid}
+          className="flex-1 py-4 rounded-xl bg-primary-600 font-semibold text-lg disabled:opacity-40"
         >
           Inizia!
         </button>

@@ -28,6 +28,7 @@ export function calculateDeficit(profile: UserHealthProfile): number {
   // lose_weight
   if (!profile.target_weight_kg || !profile.target_date) return 0
   const deltaKg = profile.weight_kg - profile.target_weight_kg
+  if (deltaKg <= 0) return 0
   const [targetYear, targetMonth, targetDay] = profile.target_date.split('-').map(Number)
   const targetDate = new Date(targetYear, targetMonth - 1, targetDay)
   const daysTotal = Math.max(1, differenceInCalendarDays(targetDate, new Date()))
@@ -36,7 +37,9 @@ export function calculateDeficit(profile: UserHealthProfile): number {
 }
 
 export function suggestGoals(tdee: number, deficit: number): SuggestedGoals {
-  const calorie_target = Math.round(tdee + deficit)
+  // Safety floor: never generate a zero or negative nutritional target from
+  // unusual profile inputs or an aggressive deadline.
+  const calorie_target = Math.max(1200, Math.round(tdee + deficit))
   return {
     calorie_target,
     protein_g: Math.round((calorie_target * 0.30) / 4),
