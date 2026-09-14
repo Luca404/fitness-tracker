@@ -3,8 +3,9 @@
 export type Sex = 'male' | 'female'
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
 export type Objective = 'lose_weight' | 'gain_muscle' | 'maintain'
-export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
-export type FoodSource = 'manual' | 'openfoodfacts' | 'ai_photo' | 'barcode'
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'drinks'
+export type FoodSource = 'manual' | 'basic' | 'openfoodfacts' | 'ai_photo' | 'barcode' | 'pantry'
+export type PantryUnit = 'g' | 'ml' | 'pz'
 
 export interface UserHealthProfile {
   user_id: string
@@ -74,18 +75,6 @@ export interface DaySummary {
   calories_burned: number
 }
 
-export interface OFFProduct {
-  code: string
-  product_name: string
-  brands: string
-  nutriments: {
-    'energy-kcal_100g': number
-    proteins_100g: number
-    carbohydrates_100g: number
-    fat_100g: number
-  }
-}
-
 export interface SuggestedGoals {
   calorie_target: number
   protein_g: number
@@ -99,5 +88,56 @@ export interface WeightLog {
   date: string       // YYYY-MM-DD
   weight_kg: number
   notes: string | null
+  created_at: string
+}
+
+// Unified shape for a food, whether from the pantry, the local basic-foods dataset, or Open Food Facts.
+export interface FoodResult {
+  id: string
+  name: string
+  brand: string | null
+  source: 'pantry' | 'basic' | 'openfoodfacts'
+  calories_100g: number
+  protein_100g: number
+  carbs_100g: number
+  fat_100g: number
+}
+
+export interface PantryItem {
+  id: string
+  user_id: string
+  name: string
+  quantity: number
+  unit: PantryUnit
+  calories_100g: number
+  protein_100g: number
+  carbs_100g: number
+  fat_100g: number
+  category: string | null
+  source: FoodSource
+  off_food_id: string | null
+  created_at: string
+}
+
+export interface Dish {
+  id: string
+  user_id: string
+  name: string
+  created_at: string
+  updated_at: string
+  items: DishItem[]  // hydrated client-side
+}
+
+export interface DishItem {
+  id: string
+  dish_id: string
+  food_name: string
+  quantity_g: number
+  calories: number
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+  source: FoodSource
+  off_food_id: string | null
   created_at: string
 }

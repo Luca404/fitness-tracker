@@ -20,12 +20,12 @@ npm run lint
 
 ```env
 VITE_SUPABASE_URL=...
-VITE_SUPABASE_ANON_KEY=...
+VITE_SUPABASE_PUBLISHABLE_KEY=...
 ```
 
 ## Supabase schema (fitness-only tables)
 
-`user_health_profiles`, `user_goals`, `meals`, `meal_items`, `workouts`, `weight_logs`. See `supabase/schema.sql` for DDL.
+`user_health_profiles`, `user_goals`, `meals`, `meal_items`, `workouts`, `weight_logs`, `dishes`, `dish_items`, `pantry_items`. See `supabase/schema.sql` for DDL.
 
 ## Docs
 

@@ -5,27 +5,43 @@ import { useSettings } from '../contexts/SettingsContext'
 import CalorieRing from '../components/meals/CalorieRing'
 import MacroBars from '../components/meals/MacroBars'
 import MealItemRow from '../components/meals/MealItemRow'
-import FoodSearch from '../components/meals/FoodSearch'
+import MealHub from '../components/meals/MealHub'
+import DishEditor, { type DishItemDraft } from '../components/meals/DishEditor'
 import Modal from '../components/common/Modal'
 import DaySelector from '../components/common/DaySelector'
-import type { MealType } from '../types'
+import * as api from '../services/api'
+import type { Meal, MealType } from '../types'
 
 const MEAL_TYPES: { type: MealType; label: string }[] = [
   { type: 'breakfast', label: '☀️ Colazione' },
   { type: 'lunch',     label: '🍽️ Pranzo' },
   { type: 'dinner',   label: '🌙 Cena' },
   { type: 'snack',    label: '🍎 Spuntino' },
+  { type: 'drinks',   label: '🍸 Spuntino alcolico' },
 ]
+
+function mealItemToDraft(item: Meal['items'][number]): DishItemDraft {
+  return {
+    food_name: item.food_name,
+    quantity_g: item.quantity_g,
+    calories: item.calories,
+    protein_g: item.protein_g,
+    carbs_g: item.carbs_g,
+    fat_g: item.fat_g,
+    source: item.source,
+    off_food_id: item.off_food_id,
+  }
+}
 
 export default function MealsPage() {
   const { user } = useAuth()
-  const { meals, workouts, goals, daySummary, loading, fetchForDate, addMealItem, removeMealItem } = useData()
+  const { meals, workouts, goals, daySummary, loading, fetchForDate, addMealItem, removeMealItem, showToast } = useData()
   const { selectedDate, setSelectedDate } = useSettings()
 
   const [foodSearchOpen, setFoodSearchOpen] = useState(false)
   const [activeMealType, setActiveMealType] = useState<MealType>('lunch')
-  const [modalStep, setModalStep] = useState<'meal-type' | 'food-search'>('meal-type')
-  const [foodAddKey, setFoodAddKey] = useState(0)
+  const [modalStep, setModalStep] = useState<'meal-type' | 'meal-hub' | 'save-as-dish'>('meal-type')
+  const [mealToSave, setMealToSave] = useState<Meal | null>(null)
 
   useEffect(() => {
     fetchForDate(selectedDate)
@@ -38,8 +54,21 @@ export default function MealsPage() {
 
   function openNewMeal() {
     setModalStep('meal-type')
-    setFoodAddKey(k => k + 1)
     setFoodSearchOpen(true)
+  }
+
+  function openSaveAsDish(meal: Meal) {
+    setMealToSave(meal)
+    setModalStep('save-as-dish')
+    setFoodSearchOpen(true)
+  }
+
+  async function handleAddDishItems(items: DishItemDraft[]) {
+    if (!user) return
+    for (const item of items) {
+      await addMealItem(activeMealType, { ...item, meal_id: '' }, selectedDate, user.id)
+    }
+    showToast('Piatto aggiunto al pasto')
   }
 
   const activeMealLabel = MEAL_TYPES.find(m => m.type === activeMealType)?.label ?? activeMealType
@@ -112,7 +141,16 @@ export default function MealsPage() {
                   <div key={type}>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-semibold text-gray-400">{label}</span>
-                      <span className="text-xs text-gray-600">{Math.round(total)} kcal</span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => meal && openSaveAsDish(meal)}
+                          className="text-xs text-gray-500 hover:text-primary-400"
+                        >
+                          💾 Salva come piatto
+                        </button>
+                        <span className="text-xs text-gray-600">{Math.round(total)} kcal</span>
+                      </div>
                     </div>
                     {items.map(item => (
                       <MealItemRow
@@ -142,7 +180,7 @@ export default function MealsPage() {
                 <button
                   key={type}
                   type="button"
-                  onClick={() => { setActiveMealType(type); setModalStep('food-search') }}
+                  onClick={() => { setActiveMealType(type); setModalStep('meal-hub') }}
                   className="py-5 rounded-xl bg-gray-700 hover:bg-gray-600 font-medium text-center transition-colors text-base"
                 >
                   {label}
@@ -150,7 +188,7 @@ export default function MealsPage() {
               ))}
             </div>
           </div>
-        ) : (
+        ) : modalStep === 'meal-hub' ? (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
@@ -165,18 +203,28 @@ export default function MealsPage() {
                 Fatto
               </button>
             </div>
-            <FoodSearch
-              key={foodAddKey}
-              hideHeader
-              mealType={activeMealType}
-              onClose={() => setFoodSearchOpen(false)}
-              onAdd={async (item) => {
-                if (!user) return
-                await addMealItem(activeMealType, { ...item, meal_id: '' }, selectedDate, user.id)
-                setFoodAddKey(k => k + 1)
-              }}
-            />
+            <MealHub onAddItems={handleAddDishItems} />
           </div>
+        ) : (
+          mealToSave && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold">Salva come piatto</h2>
+                <button type="button" onClick={() => setFoodSearchOpen(false)} className="text-gray-400 text-xl" aria-label="Chiudi">✕</button>
+              </div>
+              <DishEditor
+                initialName=""
+                initialItems={mealToSave.items.map(mealItemToDraft)}
+                onSave={async (name, items) => {
+                  if (!user) return
+                  await api.createDish(user.id, name, items)
+                  showToast('Piatto salvato')
+                  setFoodSearchOpen(false)
+                }}
+                onCancel={() => setFoodSearchOpen(false)}
+              />
+            </div>
+          )
         )}
       </Modal>
     </div>

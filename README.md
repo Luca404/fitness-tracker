@@ -6,7 +6,9 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 
 ## Features
 
-- **Meal logging** — log meals by time slot (breakfast, lunch, dinner, snacks); food search with nutritional data; calorie and macro breakdown per meal and per day
+- **Meal logging** — log meals by time slot (breakfast, lunch, dinner, snack, alcoholic snack); calorie and macro breakdown per meal and per day
+- **Dish-centric entry** — opening a meal slot shows one hub: pick a saved dish (scaled by total weight), cook something new (composed from a curated basic-ingredients dataset + Open Food Facts, then saved for reuse), or log a one-off dish/item that isn't saved (restaurant meals, a single drink)
+- **Pantry** — track groceries at home (quantity + unit: g/ml/pieces) added via barcode scan (Open Food Facts lookup) or manual/basic-food entry; pantry items surface first when searching ingredients for a meal
 - **Macros** — visual progress bars for protein, carbs, and fat against daily targets
 - **Calorie ring** — at-a-glance daily calorie budget vs. consumed
 - **Workout tracking** — log activities with MET-based calorie burn calculation; weekly activity grid
@@ -23,6 +25,7 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 - Tailwind CSS (mobile-first, dark mode)
 - Supabase (PostgreSQL + Auth — email/password + RLS)
 - react-i18next (EN, IT, ES)
+- `@zxing/browser` for client-side barcode scanning (pantry)
 
 ## Getting Started
 
@@ -46,8 +49,9 @@ src/
 ├── components/
 │   ├── common/          # Modal, Toast, DaySelector
 │   ├── layout/          # Layout shell with bottom nav
-│   ├── meals/           # CalorieRing, MacroBars, FoodSearch, MealSection, MealItemRow
+│   ├── meals/           # CalorieRing, MacroBars, FoodSearch, MealItemRow, MealHub, DishEditor
 │   ├── onboarding/      # StepPhysical, StepLifestyle, StepObjective, StepConfirm
+│   ├── pantry/          # BarcodeScanner
 │   └── workout/         # WorkoutDrawer, WorkoutRow, ActivityGrid
 ├── contexts/
 │   ├── AuthContext.tsx  # Supabase Auth, session management
@@ -60,11 +64,14 @@ src/
 │   ├── WorkoutPage.tsx
 │   ├── WeightPage.tsx
 │   ├── HistoryPage.tsx
+│   ├── PantryPage.tsx
 │   └── SettingsPage.tsx
 ├── services/
 │   ├── api.ts           # All Supabase CRUD
-│   ├── nutrition.ts     # Food search and nutritional data helpers
+│   ├── nutrition.ts     # Basic-foods search, Open Food Facts search + barcode lookup
 │   └── supabase.ts      # Supabase client
+├── data/
+│   └── basicFoods.ts    # Curated dataset of common ingredients (kcal/macros per 100g)
 ├── utils/
 │   ├── bmr.ts           # BMR / TDEE calculation (Mifflin-St Jeor)
 │   └── met.ts           # MET-based calorie burn for activities
@@ -83,7 +90,10 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 | `meal_items` | Food items within a meal (name, calories, protein, carbs, fat, quantity) |
 | `workouts` | Workout sessions (activity type, duration, MET, calories burned) |
 | `weight_logs` | Daily weight entries |
+| `dishes` | Saved reusable dishes (name, reference weight derived from items) |
+| `dish_items` | Ingredients within a saved dish (same shape as `meal_items`) |
+| `pantry_items` | Groceries at home (quantity + unit, kcal/macros per 100g/100ml, optional barcode) |
 
 ## Deployment
 
-Deployed on **Vercel** — auto-deploys on push to `main`. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as environment variables in Vercel.
+Deployed on **Vercel** — auto-deploys on push to `main`. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` as environment variables in Vercel.

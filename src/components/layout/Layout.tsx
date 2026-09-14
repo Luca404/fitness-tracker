@@ -3,10 +3,11 @@ import { useData } from '../../contexts/DataContext'
 import Toast from '../common/Toast'
 
 const NAV = [
-  { to: '/meals',   label: 'Pasti',   icon: '🍽️' },
-  { to: '/workout', label: 'Workout', icon: '💪' },
-  { to: '/weight',  label: 'Peso',    icon: '⚖️' },
-  { to: '/history', label: 'Storico', icon: '📈' },
+  { to: '/meals',   label: 'Pasti',    icon: '🍽️' },
+  { to: '/pantry',  label: 'Dispensa', icon: '🧺' },
+  { to: '/workout', label: 'Workout',  icon: '💪' },
+  { to: '/weight',  label: 'Peso',     icon: '⚖️' },
+  { to: '/history', label: 'Storico',  icon: '📈' },
 ]
 
 export default function Layout() {

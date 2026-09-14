@@ -1,0 +1,143 @@
+// Alimenti base italiani comuni, valori nutrizionali per 100g.
+// Fonte: valori medi indicativi (uso da tracker personale, non clinico).
+export type FoodCategory =
+  | 'grain' | 'legume' | 'vegetable' | 'fruit' | 'meat' | 'fish'
+  | 'dairy' | 'egg' | 'fat' | 'sweet' | 'alcohol' | 'beverage' | 'other'
+
+export interface BasicFood {
+  id: string
+  name: string
+  category: FoodCategory
+  calories: number
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+}
+
+export const BASIC_FOODS: BasicFood[] = [
+  // Cereali e derivati
+  { id: 'riso-bianco-cotto', name: 'Riso bianco (cotto)', category: 'grain', calories: 130, protein_g: 2.7, carbs_g: 28, fat_g: 0.3 },
+  { id: 'riso-basmati-cotto', name: 'Riso basmati (cotto)', category: 'grain', calories: 121, protein_g: 2.7, carbs_g: 25, fat_g: 0.4 },
+  { id: 'riso-integrale-cotto', name: 'Riso integrale (cotto)', category: 'grain', calories: 123, protein_g: 2.7, carbs_g: 26, fat_g: 1.0 },
+  { id: 'pasta-semola-cotta', name: 'Pasta di semola (cotta)', category: 'grain', calories: 158, protein_g: 5.8, carbs_g: 31, fat_g: 0.9 },
+  { id: 'pasta-integrale-cotta', name: 'Pasta integrale (cotta)', category: 'grain', calories: 124, protein_g: 5.0, carbs_g: 25, fat_g: 0.9 },
+  { id: 'pasta-uovo-cotta', name: 'Pasta all\'uovo (cotta)', category: 'grain', calories: 165, protein_g: 6.0, carbs_g: 30, fat_g: 2.5 },
+  { id: 'pane-bianco', name: 'Pane bianco', category: 'grain', calories: 265, protein_g: 9.0, carbs_g: 49, fat_g: 3.2 },
+  { id: 'pane-integrale', name: 'Pane integrale', category: 'grain', calories: 247, protein_g: 13, carbs_g: 41, fat_g: 3.4 },
+  { id: 'avena-fiocchi', name: 'Avena (fiocchi, crudi)', category: 'grain', calories: 389, protein_g: 17, carbs_g: 66, fat_g: 7.0 },
+  { id: 'quinoa-cotta', name: 'Quinoa (cotta)', category: 'grain', calories: 120, protein_g: 4.4, carbs_g: 21, fat_g: 1.9 },
+  { id: 'farro-cotto', name: 'Farro (cotto)', category: 'grain', calories: 130, protein_g: 5.0, carbs_g: 26, fat_g: 1.0 },
+  { id: 'orzo-perlato-cotto', name: 'Orzo perlato (cotto)', category: 'grain', calories: 123, protein_g: 2.3, carbs_g: 28, fat_g: 0.4 },
+  { id: 'couscous-cotto', name: 'Couscous (cotto)', category: 'grain', calories: 112, protein_g: 3.8, carbs_g: 23, fat_g: 0.2 },
+  { id: 'grissini', name: 'Grissini', category: 'grain', calories: 431, protein_g: 11, carbs_g: 71, fat_g: 11 },
+  { id: 'fette-biscottate', name: 'Fette biscottate', category: 'grain', calories: 408, protein_g: 10, carbs_g: 76, fat_g: 8.0 },
+  { id: 'cracker', name: 'Cracker', category: 'grain', calories: 440, protein_g: 10, carbs_g: 70, fat_g: 13 },
+  { id: 'farina-00', name: 'Farina 00', category: 'grain', calories: 340, protein_g: 10, carbs_g: 76, fat_g: 1.0 },
+  { id: 'patate-fritte', name: 'Patate fritte', category: 'grain', calories: 312, protein_g: 3.4, carbs_g: 41, fat_g: 15 },
+
+  // Legumi
+  { id: 'ceci-cotti', name: 'Ceci (cotti)', category: 'legume', calories: 164, protein_g: 8.9, carbs_g: 27, fat_g: 2.6 },
+  { id: 'fagioli-borlotti-cotti', name: 'Fagioli borlotti (cotti)', category: 'legume', calories: 127, protein_g: 8.7, carbs_g: 22, fat_g: 0.5 },
+  { id: 'fagioli-cannellini-cotti', name: 'Fagioli cannellini (cotti)', category: 'legume', calories: 127, protein_g: 8.7, carbs_g: 22, fat_g: 0.5 },
+  { id: 'lenticchie-cotte', name: 'Lenticchie (cotte)', category: 'legume', calories: 116, protein_g: 9.0, carbs_g: 20, fat_g: 0.4 },
+  { id: 'piselli-cotti', name: 'Piselli (cotti)', category: 'legume', calories: 84, protein_g: 5.4, carbs_g: 14, fat_g: 0.4 },
+  { id: 'fave-cotte', name: 'Fave (cotte)', category: 'legume', calories: 88, protein_g: 7.6, carbs_g: 13, fat_g: 0.7 },
+  { id: 'hummus', name: 'Hummus', category: 'legume', calories: 166, protein_g: 7.9, carbs_g: 14, fat_g: 9.6 },
+  { id: 'tofu', name: 'Tofu', category: 'legume', calories: 76, protein_g: 8.0, carbs_g: 1.9, fat_g: 4.8 },
+  { id: 'seitan', name: 'Seitan', category: 'legume', calories: 370, protein_g: 75, carbs_g: 14, fat_g: 1.9 },
+
+  // Verdure
+  { id: 'zucchine', name: 'Zucchine', category: 'vegetable', calories: 17, protein_g: 1.2, carbs_g: 3.1, fat_g: 0.3 },
+  { id: 'melanzane', name: 'Melanzane', category: 'vegetable', calories: 25, protein_g: 1.0, carbs_g: 6.0, fat_g: 0.2 },
+  { id: 'pomodori', name: 'Pomodori', category: 'vegetable', calories: 18, protein_g: 0.9, carbs_g: 3.9, fat_g: 0.2 },
+  { id: 'insalata-lattuga', name: 'Insalata / lattuga', category: 'vegetable', calories: 15, protein_g: 1.4, carbs_g: 2.9, fat_g: 0.2 },
+  { id: 'spinaci', name: 'Spinaci', category: 'vegetable', calories: 23, protein_g: 2.9, carbs_g: 3.6, fat_g: 0.4 },
+  { id: 'broccoli', name: 'Broccoli', category: 'vegetable', calories: 34, protein_g: 2.8, carbs_g: 7.0, fat_g: 0.4 },
+  { id: 'carote', name: 'Carote', category: 'vegetable', calories: 41, protein_g: 0.9, carbs_g: 10, fat_g: 0.2 },
+  { id: 'patate-lesse', name: 'Patate (lesse)', category: 'vegetable', calories: 87, protein_g: 1.9, carbs_g: 20, fat_g: 0.1 },
+  { id: 'peperoni', name: 'Peperoni', category: 'vegetable', calories: 31, protein_g: 1.0, carbs_g: 6.0, fat_g: 0.3 },
+  { id: 'cipolla', name: 'Cipolla', category: 'vegetable', calories: 40, protein_g: 1.1, carbs_g: 9.3, fat_g: 0.1 },
+  { id: 'funghi-champignon', name: 'Funghi champignon', category: 'vegetable', calories: 22, protein_g: 3.1, carbs_g: 3.3, fat_g: 0.3 },
+  { id: 'zucca', name: 'Zucca', category: 'vegetable', calories: 26, protein_g: 1.0, carbs_g: 6.5, fat_g: 0.1 },
+  { id: 'cavolfiore', name: 'Cavolfiore', category: 'vegetable', calories: 25, protein_g: 1.9, carbs_g: 5.0, fat_g: 0.3 },
+  { id: 'finocchi', name: 'Finocchi', category: 'vegetable', calories: 31, protein_g: 1.2, carbs_g: 7.0, fat_g: 0.2 },
+  { id: 'rucola', name: 'Rucola', category: 'vegetable', calories: 25, protein_g: 2.6, carbs_g: 3.7, fat_g: 0.7 },
+  { id: 'cetrioli', name: 'Cetrioli', category: 'vegetable', calories: 15, protein_g: 0.7, carbs_g: 3.6, fat_g: 0.1 },
+  { id: 'asparagi', name: 'Asparagi', category: 'vegetable', calories: 20, protein_g: 2.2, carbs_g: 3.9, fat_g: 0.1 },
+
+  // Frutta
+  { id: 'mela', name: 'Mela', category: 'fruit', calories: 52, protein_g: 0.3, carbs_g: 14, fat_g: 0.2 },
+  { id: 'banana', name: 'Banana', category: 'fruit', calories: 89, protein_g: 1.1, carbs_g: 23, fat_g: 0.3 },
+  { id: 'arancia', name: 'Arancia', category: 'fruit', calories: 47, protein_g: 0.9, carbs_g: 12, fat_g: 0.1 },
+  { id: 'pera', name: 'Pera', category: 'fruit', calories: 57, protein_g: 0.4, carbs_g: 15, fat_g: 0.1 },
+  { id: 'fragole', name: 'Fragole', category: 'fruit', calories: 32, protein_g: 0.7, carbs_g: 7.7, fat_g: 0.3 },
+  { id: 'uva', name: 'Uva', category: 'fruit', calories: 69, protein_g: 0.7, carbs_g: 18, fat_g: 0.2 },
+  { id: 'kiwi', name: 'Kiwi', category: 'fruit', calories: 61, protein_g: 1.1, carbs_g: 15, fat_g: 0.5 },
+  { id: 'anguria', name: 'Anguria', category: 'fruit', calories: 30, protein_g: 0.6, carbs_g: 8.0, fat_g: 0.2 },
+  { id: 'melone', name: 'Melone', category: 'fruit', calories: 34, protein_g: 0.8, carbs_g: 8.0, fat_g: 0.2 },
+  { id: 'pesca', name: 'Pesca', category: 'fruit', calories: 39, protein_g: 0.9, carbs_g: 10, fat_g: 0.3 },
+  { id: 'ananas', name: 'Ananas', category: 'fruit', calories: 50, protein_g: 0.5, carbs_g: 13, fat_g: 0.1 },
+  { id: 'mandarino', name: 'Mandarino', category: 'fruit', calories: 53, protein_g: 0.8, carbs_g: 13, fat_g: 0.3 },
+  { id: 'avocado', name: 'Avocado', category: 'fruit', calories: 160, protein_g: 2.0, carbs_g: 8.5, fat_g: 15 },
+  { id: 'limone', name: 'Limone', category: 'fruit', calories: 29, protein_g: 1.1, carbs_g: 9.3, fat_g: 0.3 },
+
+  // Carne
+  { id: 'petto-pollo-cotto', name: 'Petto di pollo (cotto)', category: 'meat', calories: 165, protein_g: 31, carbs_g: 0, fat_g: 3.6 },
+  { id: 'petto-tacchino-cotto', name: 'Petto di tacchino (cotto)', category: 'meat', calories: 135, protein_g: 30, carbs_g: 0, fat_g: 1.0 },
+  { id: 'manzo-magro-cotto', name: 'Manzo magro (cotto)', category: 'meat', calories: 217, protein_g: 26, carbs_g: 0, fat_g: 12 },
+  { id: 'vitello-cotto', name: 'Vitello (cotto)', category: 'meat', calories: 172, protein_g: 30, carbs_g: 0, fat_g: 5.0 },
+  { id: 'maiale-lonza-cotta', name: 'Maiale, lonza (cotta)', category: 'meat', calories: 143, protein_g: 26, carbs_g: 0, fat_g: 3.5 },
+  { id: 'prosciutto-crudo', name: 'Prosciutto crudo', category: 'meat', calories: 268, protein_g: 25, carbs_g: 0, fat_g: 18 },
+  { id: 'prosciutto-cotto', name: 'Prosciutto cotto', category: 'meat', calories: 145, protein_g: 18, carbs_g: 1.5, fat_g: 7.0 },
+  { id: 'bresaola', name: 'Bresaola', category: 'meat', calories: 151, protein_g: 32, carbs_g: 0.5, fat_g: 2.6 },
+
+  // Pesce
+  { id: 'salmone-cotto', name: 'Salmone (cotto)', category: 'fish', calories: 208, protein_g: 20, carbs_g: 0, fat_g: 13 },
+  { id: 'tonno-naturale', name: 'Tonno al naturale (sgocciolato)', category: 'fish', calories: 116, protein_g: 26, carbs_g: 0, fat_g: 1.0 },
+  { id: 'merluzzo-cotto', name: 'Merluzzo (cotto)', category: 'fish', calories: 82, protein_g: 18, carbs_g: 0, fat_g: 0.7 },
+  { id: 'orata-cotta', name: 'Orata (cotta)', category: 'fish', calories: 121, protein_g: 20, carbs_g: 0, fat_g: 4.5 },
+  { id: 'gamberi-cotti', name: 'Gamberi (cotti)', category: 'fish', calories: 99, protein_g: 21, carbs_g: 0.2, fat_g: 1.4 },
+  { id: 'salmone-affumicato', name: 'Salmone affumicato', category: 'fish', calories: 117, protein_g: 18, carbs_g: 0, fat_g: 4.3 },
+
+  // Uova e latticini
+  { id: 'uovo-intero', name: 'Uovo intero', category: 'egg', calories: 155, protein_g: 13, carbs_g: 1.1, fat_g: 11 },
+  { id: 'albume-uovo', name: 'Albume d\'uovo', category: 'egg', calories: 52, protein_g: 11, carbs_g: 0.7, fat_g: 0.2 },
+  { id: 'latte-intero', name: 'Latte intero', category: 'dairy', calories: 61, protein_g: 3.2, carbs_g: 4.8, fat_g: 3.3 },
+  { id: 'latte-parz-scremato', name: 'Latte parzialmente scremato', category: 'dairy', calories: 46, protein_g: 3.4, carbs_g: 5.0, fat_g: 1.5 },
+  { id: 'yogurt-bianco-intero', name: 'Yogurt bianco intero', category: 'dairy', calories: 61, protein_g: 3.5, carbs_g: 4.7, fat_g: 3.3 },
+  { id: 'yogurt-greco-0', name: 'Yogurt greco 0%', category: 'dairy', calories: 59, protein_g: 10, carbs_g: 3.6, fat_g: 0.4 },
+  { id: 'yogurt-greco-intero', name: 'Yogurt greco intero', category: 'dairy', calories: 97, protein_g: 9.0, carbs_g: 4.0, fat_g: 5.0 },
+  { id: 'mozzarella', name: 'Mozzarella', category: 'dairy', calories: 253, protein_g: 18, carbs_g: 2.2, fat_g: 19 },
+  { id: 'mozzarella-light', name: 'Mozzarella light', category: 'dairy', calories: 173, protein_g: 22, carbs_g: 2.0, fat_g: 9.0 },
+  { id: 'parmigiano', name: 'Parmigiano Reggiano', category: 'dairy', calories: 392, protein_g: 33, carbs_g: 0, fat_g: 29 },
+  { id: 'grana-padano', name: 'Grana Padano', category: 'dairy', calories: 396, protein_g: 33, carbs_g: 0, fat_g: 28 },
+  { id: 'ricotta', name: 'Ricotta', category: 'dairy', calories: 146, protein_g: 8.8, carbs_g: 3.5, fat_g: 10.9 },
+  { id: 'formaggio-spalmabile', name: 'Formaggio spalmabile', category: 'dairy', calories: 250, protein_g: 6.0, carbs_g: 4.0, fat_g: 24 },
+
+  // Grassi e frutta secca
+  { id: 'olio-evo', name: 'Olio extravergine d\'oliva', category: 'fat', calories: 884, protein_g: 0, carbs_g: 0, fat_g: 100 },
+  { id: 'burro', name: 'Burro', category: 'fat', calories: 717, protein_g: 0.9, carbs_g: 0.1, fat_g: 81 },
+  { id: 'mandorle', name: 'Mandorle', category: 'fat', calories: 579, protein_g: 21, carbs_g: 22, fat_g: 50 },
+  { id: 'noci', name: 'Noci', category: 'fat', calories: 654, protein_g: 15, carbs_g: 14, fat_g: 65 },
+  { id: 'arachidi', name: 'Arachidi', category: 'fat', calories: 567, protein_g: 26, carbs_g: 16, fat_g: 49 },
+  { id: 'semi-chia', name: 'Semi di chia', category: 'fat', calories: 486, protein_g: 17, carbs_g: 42, fat_g: 31 },
+  { id: 'burro-arachidi', name: 'Burro d\'arachidi', category: 'fat', calories: 588, protein_g: 25, carbs_g: 20, fat_g: 50 },
+
+  // Dolci
+  { id: 'cioccolato-fondente-70', name: 'Cioccolato fondente 70%', category: 'sweet', calories: 598, protein_g: 8.0, carbs_g: 45, fat_g: 43 },
+  { id: 'cioccolato-latte', name: 'Cioccolato al latte', category: 'sweet', calories: 535, protein_g: 7.6, carbs_g: 59, fat_g: 30 },
+  { id: 'miele', name: 'Miele', category: 'sweet', calories: 304, protein_g: 0.3, carbs_g: 82, fat_g: 0 },
+  { id: 'zucchero', name: 'Zucchero', category: 'sweet', calories: 400, protein_g: 0, carbs_g: 100, fat_g: 0 },
+  { id: 'marmellata', name: 'Marmellata', category: 'sweet', calories: 250, protein_g: 0.4, carbs_g: 63, fat_g: 0.1 },
+  { id: 'gelato-crema', name: 'Gelato alla crema', category: 'sweet', calories: 207, protein_g: 3.5, carbs_g: 24, fat_g: 11 },
+  { id: 'biscotti-secchi', name: 'Biscotti secchi', category: 'sweet', calories: 430, protein_g: 7.0, carbs_g: 75, fat_g: 12 },
+
+  // Bevande e alcolici
+  { id: 'birra-chiara', name: 'Birra chiara', category: 'alcohol', calories: 43, protein_g: 0.5, carbs_g: 3.6, fat_g: 0 },
+  { id: 'vino-rosso', name: 'Vino rosso', category: 'alcohol', calories: 85, protein_g: 0.1, carbs_g: 2.6, fat_g: 0 },
+  { id: 'vino-bianco', name: 'Vino bianco', category: 'alcohol', calories: 82, protein_g: 0.1, carbs_g: 2.6, fat_g: 0 },
+  { id: 'spritz', name: 'Spritz', category: 'alcohol', calories: 90, protein_g: 0, carbs_g: 6.0, fat_g: 0 },
+  { id: 'coca-cola', name: 'Coca Cola', category: 'beverage', calories: 42, protein_g: 0, carbs_g: 10.6, fat_g: 0 },
+  { id: 'succo-arancia', name: 'Succo d\'arancia', category: 'beverage', calories: 45, protein_g: 0.7, carbs_g: 10, fat_g: 0.2 },
+  { id: 'caffe-nero', name: 'Caffè (nero)', category: 'beverage', calories: 1, protein_g: 0.1, carbs_g: 0, fat_g: 0 },
+]
