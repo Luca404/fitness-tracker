@@ -1,5 +1,6 @@
 // src/utils/bmr.test.ts
 import { describe, it, expect } from 'vitest'
+import { addDays, format } from 'date-fns'
 import {
   calculateBMR,
   calculateTDEE,
@@ -63,7 +64,7 @@ describe('calculateDeficit', () => {
       weight_kg: 85,
       target_weight_kg: 80,
       // 70 days from now
-      target_date: new Date(Date.now() + 70 * 86400000).toISOString().split('T')[0],
+      target_date: format(addDays(new Date(), 70), 'yyyy-MM-dd'),
     }
     // 5kg * 7700 / 70 days = 550 kcal/day deficit
     const deficit = calculateDeficit(profile)
@@ -76,7 +77,7 @@ describe('calculateDeficit', () => {
       objective: 'lose_weight',
       weight_kg: 100,
       target_weight_kg: 70,
-      target_date: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+      target_date: format(addDays(new Date(), 30), 'yyyy-MM-dd'),
     }
     expect(calculateDeficit(profile)).toBe(-1000)
   })

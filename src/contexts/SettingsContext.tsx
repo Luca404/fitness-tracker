@@ -22,6 +22,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- hook co-located with its Provider
 export function useSettings() {
   const ctx = useContext(SettingsContext)
   if (!ctx) throw new Error('useSettings must be inside SettingsProvider')

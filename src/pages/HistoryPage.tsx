@@ -15,12 +15,24 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    let cancelled = false
     const to = format(new Date(), 'yyyy-MM-dd')
     const from = format(subDays(new Date(), range - 1), 'yyyy-MM-dd')
-    setLoading(true)
-    Promise.all([getMealsForRange(from, to), getWorkoutsForRange(from, to)])
-      .then(([m, w]) => { setMeals(m); setWorkouts(w) })
-      .finally(() => setLoading(false))
+
+    async function load() {
+      setLoading(true)
+      try {
+        const [m, w] = await Promise.all([getMealsForRange(from, to), getWorkoutsForRange(from, to)])
+        if (cancelled) return
+        setMeals(m)
+        setWorkouts(w)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    load()
+    return () => { cancelled = true }
   }, [range])
 
   const chartData = useMemo(() => {

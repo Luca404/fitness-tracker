@@ -1,4 +1,5 @@
 // src/utils/bmr.ts
+import { differenceInCalendarDays } from 'date-fns'
 import type { UserHealthProfile, ActivityLevel, SuggestedGoals } from '../types'
 
 const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
@@ -27,12 +28,9 @@ export function calculateDeficit(profile: UserHealthProfile): number {
   // lose_weight
   if (!profile.target_weight_kg || !profile.target_date) return 0
   const deltaKg = profile.weight_kg - profile.target_weight_kg
-  const daysTotal = Math.max(
-    1,
-    Math.round(
-      (new Date(profile.target_date).getTime() - Date.now()) / 86400000
-    )
-  )
+  const [targetYear, targetMonth, targetDay] = profile.target_date.split('-').map(Number)
+  const targetDate = new Date(targetYear, targetMonth - 1, targetDay)
+  const daysTotal = Math.max(1, differenceInCalendarDays(targetDate, new Date()))
   const dailyDeficit = (deltaKg * 7700) / daysTotal
   return -Math.min(dailyDeficit, 1000)
 }

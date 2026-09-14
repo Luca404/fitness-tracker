@@ -61,7 +61,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       ])
       setMeals(m)
       setWorkouts(w)
-    } catch (e) {
+    } catch {
       showToast('Errore caricamento dati')
     } finally {
       setLoading(false)
@@ -144,6 +144,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- hook co-located with its Provider
 export function useData() {
   const ctx = useContext(DataContext)
   if (!ctx) throw new Error('useData must be inside DataProvider')
