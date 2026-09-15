@@ -37,11 +37,13 @@ VITE_SUPABASE_PUBLISHABLE_KEY=...
 ```
 
 ```bash
-npm install
-supabase db push # apply migrations when using the Supabase CLI
+npm ci
 npm run dev     # → http://localhost:5173
 npm run build
 ```
+
+For the shared local Supabase layout, safe database migration procedure, and
+new-computer bootstrap, see [`docs/local-development.md`](docs/local-development.md).
 
 ## Project Structure
 

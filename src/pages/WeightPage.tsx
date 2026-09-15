@@ -40,7 +40,11 @@ export default function WeightPage() {
     }
   }, [range, showToast])
 
-  useEffect(() => { fetchLogs() }, [fetchLogs])
+  useEffect(() => {
+    // Initial remote-data synchronization; fetchLogs also owns loading state for range changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchLogs()
+  }, [fetchLogs])
 
   async function handleSave() {
     if (!user || !weightInput) return

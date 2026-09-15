@@ -59,7 +59,11 @@ export default function KitchenDishes() {
     }
   }, [showToast])
 
-  useEffect(() => { refresh() }, [refresh])
+  useEffect(() => {
+    // Initial remote-data synchronization; refresh also owns the loading state for later reloads.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void refresh()
+  }, [refresh])
 
   const suggestions = useMemo(() => [
     ...dishes.map(dish => ({ dish, kind: 'saved' as const })),

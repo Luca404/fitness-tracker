@@ -102,6 +102,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [showToast, userId])
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- auth changes intentionally invalidate all user-scoped state */
     profileRequest.current += 1
     dateRequest.current += 1
     setProfile(null)
@@ -112,6 +113,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setWorkouts([])
     setProfileStatus(userId ? 'loading' : 'idle')
     if (userId) fetchProfile()
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [userId, fetchProfile])
 
   const refreshCurrentWeight = useCallback(async () => {

@@ -56,7 +56,11 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
     }
   }, [showToast])
 
-  useEffect(() => { refresh() }, [refresh])
+  useEffect(() => {
+    // Initial remote-data synchronization; refresh also owns the loading state for later reloads.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void refresh()
+  }, [refresh])
 
   function resetAddFlow() {
     setMode('list')
