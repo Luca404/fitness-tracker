@@ -39,8 +39,8 @@ function numeric(value: number | undefined): number {
 
 function productName(product: OpenFoodFactsProduct): string {
   const englishName = product.name_en?.split(',')[0]?.trim() || product.product_name_en?.trim()
-  return product.name_it?.trim()
-    || englishName
+  return englishName
+    || product.name_it?.trim()
     || product.product_name_it?.trim()
     || product.product_name?.trim()
     || ''
