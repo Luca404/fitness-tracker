@@ -254,7 +254,7 @@ export default function MealHub({ onAddEntry }: Props) {
         <div className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
           <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quanto ne hai mangiato?</label>
           <div className="mt-2 flex items-center gap-3">
-            <input type="number" min={1} value={targetWeight}
+            <input type="number" min={1} value={targetWeight === 0 ? '' : targetWeight}
               onChange={e => setTargetWeight(parseInt(e.target.value) || 0)}
               className="min-w-0 flex-1 bg-transparent text-3xl font-bold outline-none" />
             <span className="text-lg text-gray-500">grammi</span>
@@ -281,7 +281,7 @@ export default function MealHub({ onAddEntry }: Props) {
                 <input
                   type="number"
                   min={1}
-                  value={beverageVolume}
+                  value={beverageVolume === 0 ? '' : beverageVolume}
                   onChange={event => setBeverageVolume(parseInt(event.target.value) || 0)}
                   onFocus={event => event.currentTarget.select()}
                   className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-right text-xl font-bold outline-none"

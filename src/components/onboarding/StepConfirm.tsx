@@ -56,7 +56,7 @@ export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
           <input
             type="number"
             min={label.startsWith('Calorie') ? 1 : 0}
-            value={val}
+            value={val === 0 ? '' : val}
             onChange={e => set(parseInt(e.target.value) || 0)}
             className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
           />

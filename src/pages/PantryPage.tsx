@@ -78,6 +78,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
   }
 
   function editPantryItem(item: PantryItem) {
+    const category = FOOD_CATEGORY_BY_ID[item.category] ? item.category : 'other'
     setEditingItemId(item.id)
     setPending({
       name: item.name,
@@ -85,7 +86,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
       protein_100g: item.protein_100g,
       carbs_100g: item.carbs_100g,
       fat_100g: item.fat_100g,
-      category: item.category,
+      category,
       food_key: item.food_key,
       source: item.source,
       off_food_id: item.off_food_id,
@@ -264,8 +265,12 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
                             {item.quantity} {UNIT_LABELS[item.unit]} · {Math.round(item.calories_100g)} kcal/100{item.unit === 'ml' ? 'ml' : 'g'}
                           </p>
                         </div>
-                        <button type="button" onClick={event => { event.stopPropagation(); void handleDelete(item.id) }}
-                          className="ml-2 text-lg text-gray-600 hover:text-red-400" aria-label={`Rimuovi ${item.name}`}>✕</button>
+                        <div className="ml-2 flex shrink-0 items-center gap-3">
+                          <button type="button" onClick={event => { event.stopPropagation(); editPantryItem(item) }}
+                            className="text-xs text-primary-400 hover:text-primary-300" aria-label={`Modifica ${item.name}`}>Modifica</button>
+                          <button type="button" onClick={event => { event.stopPropagation(); void handleDelete(item.id) }}
+                            className="text-lg text-gray-600 hover:text-red-400" aria-label={`Rimuovi ${item.name}`}>✕</button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -387,7 +392,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
       {mode === 'quantity' && pending && (
         <div className="space-y-4">
           <div className="rounded-2xl bg-gray-800 p-4">
-            <p className="text-xs text-gray-500">{FOOD_CATEGORY_BY_ID[pending.category].icon} {FOOD_CATEGORY_BY_ID[pending.category].label}</p>
+            <p className="text-xs text-gray-500">{FOOD_CATEGORY_BY_ID[pending.category]?.icon ?? FOOD_CATEGORY_BY_ID.other.icon} {FOOD_CATEGORY_BY_ID[pending.category]?.label ?? FOOD_CATEGORY_BY_ID.other.label}</p>
             <label className="mt-2 block text-sm text-gray-400" htmlFor="pending-food-name">Nome alimento</label>
             <input
               id="pending-food-name"
@@ -395,10 +400,18 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
               onChange={event => setPending({ ...pending, name: event.target.value })}
               className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 outline-none focus:border-primary-500"
             />
+            {pending.off_data && (
+              <details className="mt-3 text-xs text-gray-400">
+                <summary className="cursor-pointer text-primary-400">Mostra tutti i dati Open Food Facts</summary>
+                <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-gray-950/70 p-2 text-[10px] leading-relaxed text-gray-500">
+                  {JSON.stringify(pending.off_data, null, 2)}
+                </pre>
+              </details>
+            )}
           </div>
           <div>
             <label className="text-sm text-gray-400">Quantità</label>
-            <input type="number" min={0} value={quantity}
+            <input type="number" min={0} value={quantity === 0 ? '' : quantity}
               onChange={e => setQuantity(parseFloat(e.target.value) || 0)}
               className="w-full mt-1 px-3 py-2 rounded bg-gray-700 border border-gray-600 outline-none" />
           </div>

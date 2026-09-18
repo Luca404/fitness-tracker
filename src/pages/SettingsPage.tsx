@@ -83,7 +83,7 @@ export default function SettingsPage() {
         ].map(({ label, val, set }) => (
           <div key={label}>
             <label className="text-sm text-gray-400 mb-1 block">{label}</label>
-            <input type="number" min={label.startsWith('Calorie') ? 1 : 0} value={val}
+            <input type="number" min={label.startsWith('Calorie') ? 1 : 0} value={val === 0 ? '' : val}
               onChange={e => set(parseInt(e.target.value) || 0)}
               className="input-field py-3" />
           </div>

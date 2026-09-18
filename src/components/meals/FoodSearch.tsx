@@ -193,11 +193,26 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
                 <span className="font-medium text-sm">{selected.name}</span>
                 <button type="button" onClick={() => setSelected(null)} className="text-gray-400 text-sm">Cambia</button>
               </div>
+              {selected.source === 'openfoodfacts' && (
+                <div className="space-y-2 rounded-xl bg-black/10 p-3 text-xs text-gray-400">
+                  {selected.image_url && (
+                    <img src={selected.image_url} alt="" className="h-24 w-24 rounded-lg object-contain bg-white" />
+                  )}
+                  <p>{selected.brand && `Marca: ${selected.brand}`}{selected.quantity && ` · ${selected.quantity}`}</p>
+                  {selected.serving_size && <p>Porzione: {selected.serving_size}</p>}
+                  <details>
+                    <summary className="cursor-pointer text-primary-400">Mostra tutti i dati Open Food Facts</summary>
+                    <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-gray-950/70 p-2 text-[10px] leading-relaxed text-gray-500">
+                      {JSON.stringify(selected.off_data ?? selected, null, 2)}
+                    </pre>
+                  </details>
+                </div>
+              )}
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quantità</label>
                 <div className="mt-1 flex items-center rounded-xl border border-gray-600 bg-gray-800/70 px-3">
-                  <input type="number" min={1} value={qty}
-                  onChange={e => setQty(parseInt(e.target.value) || 100)}
+                  <input type="number" min={1} value={qty === 0 ? '' : qty}
+                  onChange={e => setQty(parseInt(e.target.value) || 0)}
                   onFocus={e => e.currentTarget.select()}
                   className="min-w-0 flex-1 bg-transparent py-2.5 text-lg font-semibold outline-none" />
                   <span className="text-sm text-gray-500">grammi</span>
@@ -240,8 +255,8 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
                   </>
                 )
               })()}
-              <button type="button" onClick={handleAdd}
-                className="w-full rounded-xl bg-primary-500 py-3 font-semibold hover:bg-primary-400">
+              <button type="button" onClick={handleAdd} disabled={qty <= 0}
+                className="w-full rounded-xl bg-primary-500 py-3 font-semibold hover:bg-primary-400 disabled:opacity-40">
                 + Aggiungi ingrediente
               </button>
             </div>

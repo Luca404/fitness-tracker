@@ -30,8 +30,8 @@ export default function WorkoutDrawer({ activityKey, weightKg, onSave, onClose }
             type="number"
             min={1}
             max={300}
-            value={duration}
-            onChange={e => setDuration(parseInt(e.target.value) || 1)}
+            value={duration === 0 ? '' : duration}
+            onChange={e => setDuration(parseInt(e.target.value) || 0)}
             className="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 outline-none focus:border-primary-500 text-lg"
           />
         </div>
@@ -42,6 +42,7 @@ export default function WorkoutDrawer({ activityKey, weightKg, onSave, onClose }
         <button
           type="button"
           onClick={() => onSave(activityKey, duration, calories)}
+          disabled={duration <= 0}
           className="w-full py-4 bg-primary-600 rounded-xl font-semibold text-lg"
         >
           Salva workout

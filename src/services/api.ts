@@ -26,7 +26,7 @@ function enrichLegacyPantryItem(item: PantryItem): PantryItem {
   const catalogFood = (!item.food_key || item.category === 'other') ? catalogFoodForName(item.name) : undefined
   return {
     ...item,
-    category: item.category !== 'other' ? item.category : (catalogFood?.category ?? 'other'),
+    category: item.category && item.category !== 'other' ? item.category : (catalogFood?.category ?? 'other'),
     food_key: item.food_key ?? (catalogFood ? `basic:${catalogFood.id}` : null),
   }
 }
