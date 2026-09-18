@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserMultiFormatReader } from '@zxing/browser'
+import { BarcodeFormat } from '@zxing/library'
 import type { IScannerControls } from '@zxing/browser'
 
 interface Props {
@@ -9,18 +10,59 @@ interface Props {
 
 export default function BarcodeScanner({ onScan, onCancel }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const onScanRef = useRef(onScan)
+  const hasScannedRef = useRef(false)
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [scanStatus, setScanStatus] = useState<'waiting' | 'success'>('waiting')
+
+  // Keep the scanner alive if the parent re-renders while a lookup is in progress.
+  useEffect(() => {
+    onScanRef.current = onScan
+  }, [onScan])
 
   useEffect(() => {
-    const reader = new BrowserMultiFormatReader()
+    const reader = new BrowserMultiFormatReader(undefined, {
+      // ZXing defaults to 500 ms between attempts. A shorter interval makes the
+      // scanner feel much more responsive without continuously maxing out the CPU.
+      delayBetweenScanAttempts: 120,
+      tryPlayVideoTimeout: 5_000,
+    })
+    reader.possibleFormats = [
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E,
+      BarcodeFormat.CODE_128,
+      BarcodeFormat.ITF,
+    ]
+
     let cancelled = false
     let controlsRef: IScannerControls | null = null
 
-    reader.decodeFromVideoDevice(undefined, videoRef.current ?? undefined, (result, _err, controls) => {
-      if (cancelled || !result) return
-      controls.stop()
-      onScan(result.getText())
-    }).then(controls => {
+    reader.decodeFromConstraints(
+      {
+        audio: false,
+        video: {
+          // Product barcodes are normally scanned with the rear camera.
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      },
+      videoRef.current ?? undefined,
+      (result, _err, controls) => {
+        if (cancelled || hasScannedRef.current || !result) return
+        hasScannedRef.current = true
+        setScanStatus('success')
+        controls.stop()
+        // Leave the green confirmation visible briefly before the parent opens
+        // the product details view.
+        successTimerRef.current = setTimeout(() => {
+          onScanRef.current(result.getText())
+        }, 220)
+      },
+    ).then(controls => {
       if (cancelled) { controls.stop(); return }
       controlsRef = controls
     }).catch(() => {
@@ -30,17 +72,34 @@ export default function BarcodeScanner({ onScan, onCancel }: Props) {
     return () => {
       cancelled = true
       controlsRef?.stop()
+      if (successTimerRef.current) clearTimeout(successTimerRef.current)
     }
-  }, [onScan])
+  }, [])
 
   return (
     <div className="space-y-3">
       {error ? (
         <p className="text-sm text-orange-400 text-center py-6">{error}</p>
       ) : (
-        <video ref={videoRef} className="w-full rounded-lg bg-black aspect-video" muted />
+        <div className="relative overflow-hidden rounded-lg bg-black">
+          <video
+            ref={videoRef}
+            className="w-full aspect-video object-cover"
+            autoPlay
+            muted
+            playsInline
+          />
+          <div
+            className={`pointer-events-none absolute inset-x-[12%] top-1/2 h-20 -translate-y-1/2 rounded-lg border-2 shadow-[0_0_0_9999px_rgba(0,0,0,0.28)] transition-colors duration-150 ${
+              scanStatus === 'success' ? 'border-emerald-400' : 'border-red-400'
+            }`}
+            aria-label={scanStatus === 'success' ? 'Codice riconosciuto' : 'Codice non ancora riconosciuto'}
+          />
+        </div>
       )}
-      <p className="text-xs text-gray-500 text-center">Inquadra il codice a barre del prodotto</p>
+      <p className={`text-xs text-center ${scanStatus === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
+        {scanStatus === 'success' ? 'Codice riconosciuto' : 'Codice non ancora riconosciuto'}
+      </p>
       <button type="button" onClick={onCancel}
         className="w-full py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">
         Annulla

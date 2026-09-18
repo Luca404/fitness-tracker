@@ -120,11 +120,11 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
   }
 
   async function handleAddToPantry() {
-    if (!pending || !user) return
+    if (!pending || !user || !pending.name.trim()) return
     try {
       await api.addPantryItem({
         user_id: user.id,
-        name: pending.name,
+        name: pending.name.trim(),
         quantity,
         unit,
         calories_100g: pending.calories_100g,
@@ -343,7 +343,13 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
         <div className="space-y-4">
           <div className="rounded-2xl bg-gray-800 p-4">
             <p className="text-xs text-gray-500">{FOOD_CATEGORY_BY_ID[pending.category].icon} {FOOD_CATEGORY_BY_ID[pending.category].label}</p>
-            <p className="mt-1 font-semibold">{pending.name}</p>
+            <label className="mt-2 block text-sm text-gray-400" htmlFor="pending-food-name">Nome alimento</label>
+            <input
+              id="pending-food-name"
+              value={pending.name}
+              onChange={event => setPending({ ...pending, name: event.target.value })}
+              className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 outline-none focus:border-primary-500"
+            />
           </div>
           <div>
             <label className="text-sm text-gray-400">Quantità</label>
@@ -374,7 +380,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
               ))}
             </select>
           </div>
-          <button type="button" onClick={handleAddToPantry} disabled={quantity <= 0}
+          <button type="button" onClick={handleAddToPantry} disabled={quantity <= 0 || !pending.name.trim()}
             className="w-full py-3 bg-primary-600 rounded-lg font-semibold disabled:opacity-40">
             Aggiungi alla dispensa
           </button>
