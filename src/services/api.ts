@@ -339,6 +339,14 @@ export async function updatePantryItemQuantity(id: string, quantity: number): Pr
   if (error) throw error
 }
 
+export async function updatePantryItem(
+  id: string,
+  item: Pick<PantryItem, 'name' | 'quantity' | 'unit' | 'category'>
+): Promise<void> {
+  const { error } = await supabase.from('pantry_items').update(item).eq('id', id)
+  if (error) throw error
+}
+
 export async function deletePantryItem(id: string): Promise<void> {
   const { error } = await supabase.from('pantry_items').delete().eq('id', id)
   if (error) throw error

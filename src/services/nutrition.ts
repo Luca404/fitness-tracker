@@ -4,6 +4,87 @@ import { BASIC_FOODS } from '../data/basicFoods'
 const OFF_SEARCH_URL = 'https://world.openfoodfacts.org/api/v2/search'
 const OFF_PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product'
 
+type OpenFoodFactsProduct = {
+  [key: string]: unknown
+  code: string
+  product_name?: string
+  product_name_it?: string
+  product_name_en?: string
+  brands?: string
+  categories_tags?: string[]
+  labels_tags?: string[]
+  quantity?: string
+  serving_size?: string
+  ingredients_text?: string
+  allergens?: string
+  traces?: string
+  image_front_url?: string
+  nutriments?: Record<string, number | undefined>
+}
+
+function numeric(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
+}
+
+function productName(product: OpenFoodFactsProduct): string {
+  return product.product_name_it?.trim()
+    || product.product_name_en?.trim()
+    || product.product_name?.trim()
+    || ''
+}
+
+function productCategory(product: OpenFoodFactsProduct): FoodResult['category'] {
+  const tags = (product.categories_tags ?? []).join(' ').toLowerCase()
+  if (/beverage|bevande|drinks|drink|bibite|juice|succo|water|acqua/.test(tags)) return 'beverage'
+  if (/alcohol|alcol|wine|vino|beer|birra|spirit/.test(tags)) return 'alcohol'
+  if (/dairy|lattic|milk|latte|cheese|formagg|yogurt|burro/.test(tags)) return 'dairy'
+  if (/meat|carne|beef|manzo|pork|maiale|chicken|pollo|turkey|tacchino/.test(tags)) return 'meat'
+  if (/fish|pesce|seafood|frutti-di-mare|salmon|tonno|tuna/.test(tags)) return 'fish'
+  if (/egg|uova/.test(tags)) return 'egg'
+  if (/fruit|frutta|apple|mela|banana/.test(tags)) return 'fruit'
+  if (/vegetable|verdura|ortaggi|legum|beans|fagiol|lentic/.test(tags)) return 'vegetable'
+  if (/grain|cereal|cereali|rice|riso|pasta|bread|pane|flour|farina/.test(tags)) return 'grain'
+  if (/sauce|salsa|condiment|dressing/.test(tags)) return 'sauce'
+  if (/spice|seasoning|spezie|aromat/.test(tags)) return 'seasoning'
+  if (/sweet|dessert|dolci|chocolate|cioccolat|biscuit/.test(tags)) return 'sweet'
+  if (/oil|olio|fat|grassi/.test(tags)) return 'fat'
+  return 'other'
+}
+
+function toFoodResult(product: OpenFoodFactsProduct): FoodResult | null {
+  const name = productName(product)
+  const nutriments = product.nutriments ?? {}
+  const energyKcal = numeric(nutriments['energy-kcal_100g'])
+    || Math.round(numeric(nutriments.energy_100g) / 4.184)
+  if (!name || energyKcal <= 0) return null
+
+  return {
+    id: product.code,
+    name,
+    brand: product.brands || null,
+    source: 'openfoodfacts',
+    category: productCategory(product),
+    food_key: `off:${product.code}`,
+    calories_100g: energyKcal,
+    protein_100g: numeric(nutriments.proteins_100g),
+    carbs_100g: numeric(nutriments.carbohydrates_100g),
+    fat_100g: numeric(nutriments.fat_100g),
+    fiber_100g: numeric(nutriments.fiber_100g),
+    sugars_100g: numeric(nutriments.sugars_100g),
+    saturated_fat_100g: numeric(nutriments['saturated-fat_100g']),
+    salt_100g: numeric(nutriments.salt_100g),
+    quantity: product.quantity || null,
+    serving_size: product.serving_size || null,
+    ingredients: product.ingredients_text || null,
+    allergens: product.allergens || null,
+    traces: product.traces || null,
+    labels: product.labels_tags ?? [],
+    categories: product.categories_tags ?? [],
+    image_url: product.image_front_url || null,
+    off_data: product,
+  }
+}
+
 export function searchBasicFoods(query: string): FoodResult[] {
   const q = query.trim().toLowerCase()
   if (!q) return []
@@ -26,9 +107,8 @@ export function searchBasicFoods(query: string): FoodResult[] {
 export async function searchFood(query: string): Promise<FoodResult[]> {
   const params = new URLSearchParams({
     search_terms: query,
-    countries_tags_en: 'italy',
     sort_by: 'popularity_key',
-    fields: 'code,product_name,brands,nutriments',
+    fields: 'code,product_name,product_name_it,product_name_en,brands,categories_tags,nutriments,quantity,serving_size,ingredients_text,allergens,traces,labels_tags,image_front_url',
     page_size: '20',
   })
 
@@ -36,58 +116,20 @@ export async function searchFood(query: string): Promise<FoodResult[]> {
   if (!res.ok) throw new Error('OFF unreachable')
 
   const json = await res.json()
-  const products: Array<{
-    code: string
-    product_name?: string
-    brands?: string
-    nutriments?: Record<string, number>
-  }> = json.products ?? []
-
-  return products
-    .filter(p => p.product_name && (p.nutriments?.['energy-kcal_100g'] ?? 0) > 0)
-    .map(p => ({
-      id: p.code,
-      name: p.product_name!,
-      brand: p.brands || null,
-      source: 'openfoodfacts' as const,
-      category: 'other' as const,
-      food_key: `off:${p.code}`,
-      calories_100g: p.nutriments!['energy-kcal_100g'],
-      protein_100g: p.nutriments!.proteins_100g ?? 0,
-      carbs_100g: p.nutriments!.carbohydrates_100g ?? 0,
-      fat_100g: p.nutriments!.fat_100g ?? 0,
-    }))
+  return (json.products ?? [])
+    .map((product: OpenFoodFactsProduct) => toFoodResult(product))
+    .filter((product: FoodResult | null): product is FoodResult => product !== null)
 }
 
 export async function lookupBarcode(barcode: string): Promise<FoodResult | null> {
-  const params = new URLSearchParams({ fields: 'code,product_name,brands,nutriments' })
-  const res = await fetch(`${OFF_PRODUCT_URL}/${encodeURIComponent(barcode)}.json?${params}`)
+  // Omitting `fields` intentionally keeps the complete OFF product payload
+  // available to the normalizer, including localized names and product data.
+  const res = await fetch(`${OFF_PRODUCT_URL}/${encodeURIComponent(barcode)}.json`)
   if (!res.ok) throw new Error('OFF unreachable')
 
   const json = await res.json()
   if (json.status !== 1 || !json.product) return null
-
-  const p: {
-    code: string
-    product_name?: string
-    brands?: string
-    nutriments?: Record<string, number>
-  } = json.product
-
-  if (!p.product_name || (p.nutriments?.['energy-kcal_100g'] ?? 0) <= 0) return null
-
-  return {
-    id: p.code,
-    name: p.product_name,
-    brand: p.brands || null,
-    source: 'openfoodfacts',
-    category: 'other',
-    food_key: `off:${p.code}`,
-    calories_100g: p.nutriments!['energy-kcal_100g'],
-    protein_100g: p.nutriments!.proteins_100g ?? 0,
-    carbs_100g: p.nutriments!.carbohydrates_100g ?? 0,
-    fat_100g: p.nutriments!.fat_100g ?? 0,
-  }
+  return toFoodResult(json.product as OpenFoodFactsProduct)
 }
 
 export function calcNutrition(

@@ -218,12 +218,26 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
               {(() => {
                 const n = calcNutrition(selected, qty)
                 return (
-                  <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
-                    <span className="rounded-lg bg-black/10 py-2 text-primary-400"><b>{n.calories}</b><small className="block text-[9px] text-gray-500">kcal</small></span>
-                    <span className="rounded-lg bg-black/10 py-2"><b>{n.protein_g}g</b><small className="block text-[9px] text-gray-500">proteine</small></span>
-                    <span className="rounded-lg bg-black/10 py-2"><b>{n.carbs_g}g</b><small className="block text-[9px] text-gray-500">carbo</small></span>
-                    <span className="rounded-lg bg-black/10 py-2"><b>{n.fat_g}g</b><small className="block text-[9px] text-gray-500">grassi</small></span>
-                  </div>
+                  <>
+                    <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
+                      <span className="rounded-lg bg-black/10 py-2 text-primary-400"><b>{n.calories}</b><small className="block text-[9px] text-gray-500">kcal</small></span>
+                      <span className="rounded-lg bg-black/10 py-2"><b>{n.protein_g}g</b><small className="block text-[9px] text-gray-500">proteine</small></span>
+                      <span className="rounded-lg bg-black/10 py-2"><b>{n.carbs_g}g</b><small className="block text-[9px] text-gray-500">carbo</small></span>
+                      <span className="rounded-lg bg-black/10 py-2"><b>{n.fat_g}g</b><small className="block text-[9px] text-gray-500">grassi</small></span>
+                    </div>
+                    {(selected.fiber_100g || selected.sugars_100g || selected.salt_100g) ? (
+                      <p className="text-[11px] text-gray-500">
+                        Per 100 g: fibre {selected.fiber_100g ?? 0} g · zuccheri {selected.sugars_100g ?? 0} g · sale {selected.salt_100g ?? 0} g
+                      </p>
+                    ) : null}
+                    {(selected.ingredients || selected.allergens) && (
+                      <details className="text-xs text-gray-500">
+                        <summary className="cursor-pointer text-gray-400">Dettagli prodotto</summary>
+                        {selected.ingredients && <p className="mt-1"><span className="text-gray-400">Ingredienti:</span> {selected.ingredients}</p>}
+                        {selected.allergens && <p className="mt-1"><span className="text-gray-400">Allergeni:</span> {selected.allergens}</p>}
+                      </details>
+                    )}
+                  </>
                 )
               })()}
               <button type="button" onClick={handleAdd}

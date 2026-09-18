@@ -89,12 +89,6 @@ export default function BarcodeScanner({ onScan, onCancel }: Props) {
             muted
             playsInline
           />
-          <div
-            className={`pointer-events-none absolute inset-x-[12%] top-1/2 h-20 -translate-y-1/2 rounded-lg border-2 shadow-[0_0_0_9999px_rgba(0,0,0,0.28)] transition-colors duration-150 ${
-              scanStatus === 'success' ? 'border-emerald-400' : 'border-red-400'
-            }`}
-            aria-label={scanStatus === 'success' ? 'Codice riconosciuto' : 'Codice non ancora riconosciuto'}
-          />
         </div>
       )}
       <p className={`text-xs text-center ${scanStatus === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>

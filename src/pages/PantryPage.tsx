@@ -17,6 +17,7 @@ interface PendingFood {
   food_key: string | null
   source: FoodSource
   off_food_id: string | null
+  off_data?: Record<string, unknown> | null
 }
 
 type Mode = 'list' | 'choose' | 'scan' | 'search' | 'manual' | 'quantity'
@@ -30,6 +31,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
   const [loading, setLoading] = useState(true)
   const [mode, setMode] = useState<Mode>('list')
   const [pending, setPending] = useState<PendingFood | null>(null)
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [unit, setUnit] = useState<PantryUnit>('pz')
   const [scanError, setScanError] = useState<string | null>(null)
@@ -61,15 +63,36 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
   function resetAddFlow() {
     setMode('list')
     setPending(null)
+    setEditingItemId(null)
     setQuery('')
     setScanError(null)
     setManualName(''); setManualCal(0); setManualProt(0); setManualCarbs(0); setManualFat(0); setManualCategory('other')
   }
 
   function goToQuantity(food: PendingFood, defaultUnit: PantryUnit) {
+    setEditingItemId(null)
     setPending(food)
     setUnit(defaultUnit)
     setQuantity(defaultUnit === 'pz' ? 1 : 100)
+    setMode('quantity')
+  }
+
+  function editPantryItem(item: PantryItem) {
+    setEditingItemId(item.id)
+    setPending({
+      name: item.name,
+      calories_100g: item.calories_100g,
+      protein_100g: item.protein_100g,
+      carbs_100g: item.carbs_100g,
+      fat_100g: item.fat_100g,
+      category: item.category,
+      food_key: item.food_key,
+      source: item.source,
+      off_food_id: item.off_food_id,
+      off_data: item.off_data,
+    })
+    setQuantity(item.quantity)
+    setUnit(item.unit)
     setMode('quantity')
   }
 
@@ -92,6 +115,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
         food_key: result.food_key,
         source: 'barcode',
         off_food_id: result.id,
+        off_data: result.off_data ?? null,
       }, 'g')
     } catch {
       setScanError('Errore nel recupero dati prodotto.')
@@ -116,27 +140,36 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
       food_key: null,
       source: 'manual',
       off_food_id: null,
+      off_data: null,
     }, 'g')
   }
 
   async function handleAddToPantry() {
     if (!pending || !user || !pending.name.trim()) return
     try {
-      await api.addPantryItem({
-        user_id: user.id,
-        name: pending.name.trim(),
-        quantity,
-        unit,
-        calories_100g: pending.calories_100g,
-        protein_100g: pending.protein_100g,
-        carbs_100g: pending.carbs_100g,
-        fat_100g: pending.fat_100g,
-        category: pending.category,
-        food_key: pending.food_key,
-        source: pending.source,
-        off_food_id: pending.off_food_id,
-      })
-      showToast('Aggiunto alla dispensa')
+      if (editingItemId) {
+        await api.updatePantryItem(editingItemId, {
+          name: pending.name.trim(), quantity, unit, category: pending.category,
+        })
+        showToast('Ingrediente aggiornato')
+      } else {
+        await api.addPantryItem({
+          user_id: user.id,
+          name: pending.name.trim(),
+          quantity,
+          unit,
+          calories_100g: pending.calories_100g,
+          protein_100g: pending.protein_100g,
+          carbs_100g: pending.carbs_100g,
+          fat_100g: pending.fat_100g,
+          category: pending.category,
+          food_key: pending.food_key,
+          source: pending.source,
+          off_food_id: pending.off_food_id,
+          off_data: pending.off_data ?? null,
+        })
+        showToast('Aggiunto alla dispensa')
+      }
       resetAddFlow()
       await refresh()
     } catch {
@@ -212,14 +245,26 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
                   </div>
                   <div className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-800/55 divide-y divide-gray-700/60">
                     {group.items.map(item => (
-                      <div key={item.id} className="flex items-center justify-between px-4 py-3">
+                      <div
+                        key={item.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => editPantryItem(item)}
+                        onKeyDown={event => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            editPantryItem(item)
+                          }
+                        }}
+                        className="flex cursor-pointer items-center justify-between px-4 py-3 hover:bg-gray-700/50"
+                      >
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium">{item.name}</p>
                           <p className="text-xs text-gray-500">
                             {item.quantity} {UNIT_LABELS[item.unit]} · {Math.round(item.calories_100g)} kcal/100{item.unit === 'ml' ? 'ml' : 'g'}
                           </p>
                         </div>
-                        <button type="button" onClick={() => handleDelete(item.id)}
+                        <button type="button" onClick={event => { event.stopPropagation(); void handleDelete(item.id) }}
                           className="ml-2 text-lg text-gray-600 hover:text-red-400" aria-label={`Rimuovi ${item.name}`}>✕</button>
                       </div>
                     ))}
@@ -382,7 +427,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
           </div>
           <button type="button" onClick={handleAddToPantry} disabled={quantity <= 0 || !pending.name.trim()}
             className="w-full py-3 bg-primary-600 rounded-lg font-semibold disabled:opacity-40">
-            Aggiungi alla dispensa
+            {editingItemId ? 'Salva modifiche' : 'Aggiungi alla dispensa'}
           </button>
           <button type="button" onClick={resetAddFlow} className="text-sm text-gray-500 text-center w-full">
             Annulla

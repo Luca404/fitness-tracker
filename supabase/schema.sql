@@ -180,6 +180,7 @@ create table public.pantry_items (
   food_key      text,
   source        text not null default 'manual',
   off_food_id   text,
+  off_data      jsonb,
   created_at    timestamptz default now()
 );
 alter table public.pantry_items enable row level security;

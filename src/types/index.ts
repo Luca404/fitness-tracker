@@ -125,6 +125,19 @@ export interface FoodResult {
   protein_100g: number
   carbs_100g: number
   fat_100g: number
+  fiber_100g?: number
+  sugars_100g?: number
+  saturated_fat_100g?: number
+  salt_100g?: number
+  quantity?: string | null
+  serving_size?: string | null
+  ingredients?: string | null
+  allergens?: string | null
+  traces?: string | null
+  labels?: string[]
+  categories?: string[]
+  image_url?: string | null
+  off_data?: Record<string, unknown> | null
 }
 
 export interface PantryItem {
@@ -141,6 +154,7 @@ export interface PantryItem {
   food_key: string | null
   source: FoodSource
   off_food_id: string | null
+  off_data?: Record<string, unknown> | null
   created_at: string
 }
 
