@@ -4,6 +4,7 @@ import * as api from '../../services/api'
 import { useData } from '../../contexts/DataContext'
 import { FOOD_CATEGORIES } from '../../data/foodCategories'
 import type { FoodResult, FoodSource, PantryItem, FoodCategory } from '../../types'
+import OpenFoodFactsDetails from '../common/OpenFoodFactsDetails'
 
 function pantryItemToFoodResult(p: PantryItem): FoodResult {
   return {
@@ -194,19 +195,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
                 <button type="button" onClick={() => setSelected(null)} className="text-gray-400 text-sm">Cambia</button>
               </div>
               {selected.source === 'openfoodfacts' && (
-                <div className="space-y-2 rounded-xl bg-black/10 p-3 text-xs text-gray-400">
-                  {selected.image_url && (
-                    <img src={selected.image_url} alt="" className="h-24 w-24 rounded-lg object-contain bg-white" />
-                  )}
-                  <p>{selected.brand && `Marca: ${selected.brand}`}{selected.quantity && ` · ${selected.quantity}`}</p>
-                  {selected.serving_size && <p>Porzione: {selected.serving_size}</p>}
-                  <details>
-                    <summary className="cursor-pointer text-primary-400">Mostra tutti i dati Open Food Facts</summary>
-                    <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-gray-950/70 p-2 text-[10px] leading-relaxed text-gray-500">
-                      {JSON.stringify(selected.off_data ?? selected, null, 2)}
-                    </pre>
-                  </details>
-                </div>
+                <OpenFoodFactsDetails food={selected} />
               )}
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quantità</label>
@@ -240,11 +229,19 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
                       <span className="rounded-lg bg-black/10 py-2"><b>{n.carbs_g}g</b><small className="block text-[9px] text-gray-500">carbo</small></span>
                       <span className="rounded-lg bg-black/10 py-2"><b>{n.fat_g}g</b><small className="block text-[9px] text-gray-500">grassi</small></span>
                     </div>
-                    {(selected.fiber_100g || selected.sugars_100g || selected.salt_100g) ? (
+                    {(selected.fiber_100g || selected.sugars_100g || selected.salt_100g || selected.saturated_fat_100g || selected.unsaturated_fat_100g) ? (
                       <p className="text-[11px] text-gray-500">
-                        Per 100 g: fibre {selected.fiber_100g ?? 0} g · zuccheri {selected.sugars_100g ?? 0} g · sale {selected.salt_100g ?? 0} g
+                        Per 100 g: fibre {selected.fiber_100g ?? 0} g · zuccheri {selected.sugars_100g ?? 0} g · saturi {selected.saturated_fat_100g ?? 0} g · insaturi {selected.unsaturated_fat_100g ?? 0} g · sale {selected.salt_100g ?? 0} g
                       </p>
                     ) : null}
+                    {(selected.nutrition_grade || (selected.nutrition_score !== null && selected.nutrition_score !== undefined) || selected.nova_group || selected.ecoscore_grade) && (
+                      <p className="text-[11px] text-gray-500">
+                        {selected.nutrition_grade && `Nutri-Score ${selected.nutrition_grade.toUpperCase()}`}
+                        {selected.nutrition_score !== null && selected.nutrition_score !== undefined && ` · punteggio ${selected.nutrition_score}`}
+                        {selected.nova_group && ` · NOVA ${selected.nova_group}`}
+                        {selected.ecoscore_grade && ` · Eco-Score ${selected.ecoscore_grade.toUpperCase()}`}
+                      </p>
+                    )}
                     {(selected.ingredients || selected.allergens) && (
                       <details className="text-xs text-gray-500">
                         <summary className="cursor-pointer text-gray-400">Dettagli prodotto</summary>

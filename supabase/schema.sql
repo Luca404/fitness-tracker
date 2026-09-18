@@ -181,6 +181,15 @@ create table public.pantry_items (
   source        text not null default 'manual',
   off_food_id   text,
   off_data      jsonb,
+  fiber_100g    float,
+  sugars_100g   float,
+  saturated_fat_100g   float,
+  unsaturated_fat_100g float,
+  salt_100g     float,
+  nutrition_score float,
+  nutrition_grade text,
+  nova_group    int,
+  ecoscore_grade text,
   created_at    timestamptz default now()
 );
 alter table public.pantry_items enable row level security;

@@ -19,6 +19,11 @@ type OpenFoodFactsProduct = {
   allergens?: string
   traces?: string
   image_front_url?: string
+  nutriscore_score?: number
+  nutriscore_grade?: string
+  nutrition_grade_fr?: string
+  nova_group?: number
+  ecoscore_grade?: string
   nutriments?: Record<string, number | undefined>
 }
 
@@ -35,6 +40,10 @@ function productName(product: OpenFoodFactsProduct): string {
 
 function productCategory(product: OpenFoodFactsProduct): FoodResult['category'] {
   const tags = (product.categories_tags ?? []).join(' ').toLowerCase()
+  const names = `${product.product_name_it ?? ''} ${product.product_name_en ?? ''} ${product.product_name ?? ''}`.toLowerCase()
+  // Some products are tagged only as "condiments" or "oils". Name-based
+  // overrides keep common sauces such as soy sauce in the right category.
+  if (/soy sauce|salsa di soia|sauce soja|sojasaus/.test(names)) return 'sauce'
   if (/beverage|bevande|drinks|drink|bibite|juice|succo|water|acqua/.test(tags)) return 'beverage'
   if (/alcohol|alcol|wine|vino|beer|birra|spirit/.test(tags)) return 'alcohol'
   if (/dairy|lattic|milk|latte|cheese|formagg|yogurt|burro/.test(tags)) return 'dairy'
@@ -56,6 +65,10 @@ function toFoodResult(product: OpenFoodFactsProduct): FoodResult | null {
   const nutriments = product.nutriments ?? {}
   const energyKcal = numeric(nutriments['energy-kcal_100g'])
     || Math.round(numeric(nutriments.energy_100g) / 4.184)
+  const saturatedFat = numeric(nutriments['saturated-fat_100g'])
+  const totalFat = numeric(nutriments.fat_100g)
+  const unsaturatedFat = numeric(nutriments['unsaturated-fat_100g'])
+    || Math.max(0, totalFat - saturatedFat)
   if (!name || energyKcal <= 0) return null
 
   return {
@@ -71,8 +84,13 @@ function toFoodResult(product: OpenFoodFactsProduct): FoodResult | null {
     fat_100g: numeric(nutriments.fat_100g),
     fiber_100g: numeric(nutriments.fiber_100g),
     sugars_100g: numeric(nutriments.sugars_100g),
-    saturated_fat_100g: numeric(nutriments['saturated-fat_100g']),
+    saturated_fat_100g: saturatedFat,
+    unsaturated_fat_100g: unsaturatedFat,
     salt_100g: numeric(nutriments.salt_100g),
+    nutrition_score: product.nutriscore_score ?? null,
+    nutrition_grade: product.nutriscore_grade || product.nutrition_grade_fr || null,
+    nova_group: product.nova_group ?? null,
+    ecoscore_grade: product.ecoscore_grade || null,
     quantity: product.quantity || null,
     serving_size: product.serving_size || null,
     ingredients: product.ingredients_text || null,
@@ -108,7 +126,7 @@ export async function searchFood(query: string): Promise<FoodResult[]> {
   const params = new URLSearchParams({
     search_terms: query,
     sort_by: 'popularity_key',
-    fields: 'code,product_name,product_name_it,product_name_en,brands,categories_tags,nutriments,quantity,serving_size,ingredients_text,allergens,traces,labels_tags,image_front_url',
+    fields: 'code,product_name,product_name_it,product_name_en,brands,categories_tags,nutriments,quantity,serving_size,ingredients_text,allergens,traces,labels_tags,image_front_url,nutriscore_score,nutriscore_grade,nutrition_grade_fr,nova_group,ecoscore_grade',
     page_size: '20',
   })
 

@@ -125,10 +125,15 @@ export interface FoodResult {
   protein_100g: number
   carbs_100g: number
   fat_100g: number
-  fiber_100g?: number
-  sugars_100g?: number
-  saturated_fat_100g?: number
-  salt_100g?: number
+  fiber_100g?: number | null
+  sugars_100g?: number | null
+  saturated_fat_100g?: number | null
+  unsaturated_fat_100g?: number | null
+  salt_100g?: number | null
+  nutrition_score?: number | null
+  nutrition_grade?: string | null
+  nova_group?: number | null
+  ecoscore_grade?: string | null
   quantity?: string | null
   serving_size?: string | null
   ingredients?: string | null
@@ -155,6 +160,15 @@ export interface PantryItem {
   source: FoodSource
   off_food_id: string | null
   off_data?: Record<string, unknown> | null
+  fiber_100g?: number | null
+  sugars_100g?: number | null
+  saturated_fat_100g?: number | null
+  unsaturated_fat_100g?: number | null
+  salt_100g?: number | null
+  nutrition_score?: number | null
+  nutrition_grade?: string | null
+  nova_group?: number | null
+  ecoscore_grade?: string | null
   created_at: string
 }
 

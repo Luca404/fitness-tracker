@@ -4,11 +4,21 @@ import { useData } from '../contexts/DataContext'
 import * as api from '../services/api'
 import { searchBasicFoods, lookupBarcode } from '../services/nutrition'
 import BarcodeScanner from '../components/pantry/BarcodeScanner'
+import OpenFoodFactsDetails from '../components/common/OpenFoodFactsDetails'
 import { FOOD_CATEGORIES, FOOD_CATEGORY_BY_ID } from '../data/foodCategories'
 import type { PantryItem, PantryUnit, FoodSource, FoodCategory } from '../types'
 
 interface PendingFood {
   name: string
+  brand?: string | null
+  quantity?: string | null
+  serving_size?: string | null
+  image_url?: string | null
+  ingredients?: string | null
+  allergens?: string | null
+  traces?: string | null
+  labels?: string[]
+  categories?: string[]
   calories_100g: number
   protein_100g: number
   carbs_100g: number
@@ -18,6 +28,15 @@ interface PendingFood {
   source: FoodSource
   off_food_id: string | null
   off_data?: Record<string, unknown> | null
+  fiber_100g?: number | null
+  sugars_100g?: number | null
+  saturated_fat_100g?: number | null
+  unsaturated_fat_100g?: number | null
+  salt_100g?: number | null
+  nutrition_score?: number | null
+  nutrition_grade?: string | null
+  nova_group?: number | null
+  ecoscore_grade?: string | null
 }
 
 type Mode = 'list' | 'choose' | 'scan' | 'search' | 'manual' | 'quantity'
@@ -91,6 +110,15 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
       source: item.source,
       off_food_id: item.off_food_id,
       off_data: item.off_data,
+      fiber_100g: item.fiber_100g,
+      sugars_100g: item.sugars_100g,
+      saturated_fat_100g: item.saturated_fat_100g,
+      unsaturated_fat_100g: item.unsaturated_fat_100g,
+      salt_100g: item.salt_100g,
+      nutrition_score: item.nutrition_score,
+      nutrition_grade: item.nutrition_grade,
+      nova_group: item.nova_group,
+      ecoscore_grade: item.ecoscore_grade,
     })
     setQuantity(item.quantity)
     setUnit(item.unit)
@@ -117,6 +145,24 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
         source: 'barcode',
         off_food_id: result.id,
         off_data: result.off_data ?? null,
+        brand: result.brand,
+        quantity: result.quantity,
+        serving_size: result.serving_size,
+        image_url: result.image_url,
+        ingredients: result.ingredients,
+        allergens: result.allergens,
+        traces: result.traces,
+        labels: result.labels,
+        categories: result.categories,
+        fiber_100g: result.fiber_100g ?? null,
+        sugars_100g: result.sugars_100g ?? null,
+        saturated_fat_100g: result.saturated_fat_100g ?? null,
+        unsaturated_fat_100g: result.unsaturated_fat_100g ?? null,
+        salt_100g: result.salt_100g ?? null,
+        nutrition_score: result.nutrition_score ?? null,
+        nutrition_grade: result.nutrition_grade ?? null,
+        nova_group: result.nova_group ?? null,
+        ecoscore_grade: result.ecoscore_grade ?? null,
       }, 'g')
     } catch {
       setScanError('Errore nel recupero dati prodotto.')
@@ -142,6 +188,15 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
       source: 'manual',
       off_food_id: null,
       off_data: null,
+      fiber_100g: null,
+      sugars_100g: null,
+      saturated_fat_100g: null,
+      unsaturated_fat_100g: null,
+      salt_100g: null,
+      nutrition_score: null,
+      nutrition_grade: null,
+      nova_group: null,
+      ecoscore_grade: null,
     }, 'g')
   }
 
@@ -168,6 +223,15 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
           source: pending.source,
           off_food_id: pending.off_food_id,
           off_data: pending.off_data ?? null,
+          fiber_100g: pending.fiber_100g ?? null,
+          sugars_100g: pending.sugars_100g ?? null,
+          saturated_fat_100g: pending.saturated_fat_100g ?? null,
+          unsaturated_fat_100g: pending.unsaturated_fat_100g ?? null,
+          salt_100g: pending.salt_100g ?? null,
+          nutrition_score: pending.nutrition_score ?? null,
+          nutrition_grade: pending.nutrition_grade ?? null,
+          nova_group: pending.nova_group ?? null,
+          ecoscore_grade: pending.ecoscore_grade ?? null,
         })
         showToast('Aggiunto alla dispensa')
       }
@@ -400,14 +464,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
               onChange={event => setPending({ ...pending, name: event.target.value })}
               className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 outline-none focus:border-primary-500"
             />
-            {pending.off_data && (
-              <details className="mt-3 text-xs text-gray-400">
-                <summary className="cursor-pointer text-primary-400">Mostra tutti i dati Open Food Facts</summary>
-                <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-gray-950/70 p-2 text-[10px] leading-relaxed text-gray-500">
-                  {JSON.stringify(pending.off_data, null, 2)}
-                </pre>
-              </details>
-            )}
+            {pending.off_data && <div className="mt-3"><OpenFoodFactsDetails food={pending} /></div>}
           </div>
           <div>
             <label className="text-sm text-gray-400">Quantità</label>
