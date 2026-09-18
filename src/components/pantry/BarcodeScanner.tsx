@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserMultiFormatReader } from '@zxing/browser'
-import { BarcodeFormat } from '@zxing/library'
+import { BarcodeFormat, DecodeHintType } from '@zxing/library'
 import type { IScannerControls } from '@zxing/browser'
 
 interface Props {
@@ -22,7 +22,12 @@ export default function BarcodeScanner({ onScan, onCancel }: Props) {
   }, [onScan])
 
   useEffect(() => {
-    const reader = new BrowserMultiFormatReader(undefined, {
+    const hints = new Map<DecodeHintType, unknown>([
+      // ZXing's 1D reader retries rotated frames when TRY_HARDER is enabled,
+      // which allows barcodes held vertically to be decoded as well.
+      [DecodeHintType.TRY_HARDER, true],
+    ])
+    const reader = new BrowserMultiFormatReader(hints, {
       // ZXing defaults to 500 ms between attempts. A shorter interval makes the
       // scanner feel much more responsive without continuously maxing out the CPU.
       delayBetweenScanAttempts: 120,

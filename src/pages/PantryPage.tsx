@@ -12,6 +12,8 @@ interface PendingFood {
   name: string
   brand?: string | null
   quantity?: string | null
+  quantity_value?: number | null
+  quantity_unit?: PantryUnit | null
   serving_size?: string | null
   image_url?: string | null
   ingredients?: string | null
@@ -88,11 +90,11 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
     setManualName(''); setManualCal(0); setManualProt(0); setManualCarbs(0); setManualFat(0); setManualCategory('other')
   }
 
-  function goToQuantity(food: PendingFood, defaultUnit: PantryUnit) {
+  function goToQuantity(food: PendingFood, defaultUnit: PantryUnit, defaultQuantity?: number) {
     setEditingItemId(null)
     setPending(food)
     setUnit(defaultUnit)
-    setQuantity(defaultUnit === 'pz' ? 1 : 100)
+    setQuantity(defaultQuantity ?? (defaultUnit === 'pz' ? 1 : 100))
     setMode('quantity')
   }
 
@@ -147,6 +149,8 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
         off_data: result.off_data ?? null,
         brand: result.brand,
         quantity: result.quantity,
+        quantity_value: result.quantity_value,
+        quantity_unit: result.quantity_unit,
         serving_size: result.serving_size,
         image_url: result.image_url,
         ingredients: result.ingredients,
@@ -163,7 +167,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
         nutrition_grade: result.nutrition_grade ?? null,
         nova_group: result.nova_group ?? null,
         ecoscore_grade: result.ecoscore_grade ?? null,
-      }, 'g')
+      }, result.quantity_unit ?? 'g', result.quantity_value ?? undefined)
     } catch {
       setScanError('Errore nel recupero dati prodotto.')
     } finally {

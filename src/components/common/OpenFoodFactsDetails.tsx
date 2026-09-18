@@ -2,7 +2,7 @@ import type { FoodResult } from '../../types'
 
 interface Props {
   food: Partial<Pick<FoodResult,
-    'brand' | 'quantity' | 'serving_size' | 'image_url' |
+    'brand' | 'quantity' | 'serving_size' | 'image_url' | 'calories_100g' | 'protein_100g' | 'carbs_100g' | 'fat_100g' |
     'fiber_100g' | 'sugars_100g' | 'saturated_fat_100g' | 'unsaturated_fat_100g' | 'salt_100g' |
     'nutrition_score' | 'nutrition_grade' | 'nova_group' | 'ecoscore_grade' |
     'ingredients' | 'allergens' | 'traces' | 'labels' | 'categories'
@@ -31,6 +31,14 @@ export default function OpenFoodFactsDetails({ food }: Props) {
           {food.quantity && ` · ${food.quantity}`}
           {food.serving_size && ` · Porzione: ${food.serving_size}`}
         </p>
+      )}
+      {(food.calories_100g !== undefined || food.protein_100g !== undefined || food.carbs_100g !== undefined || food.fat_100g !== undefined) && (
+        <div className="flex flex-wrap gap-1.5">
+          {food.calories_100g !== undefined && <span className="rounded-lg bg-black/10 px-2 py-1"><b>{food.calories_100g} kcal</b></span>}
+          {food.protein_100g !== undefined && <Nutrient label="Proteine" value={food.protein_100g} />}
+          {food.carbs_100g !== undefined && <Nutrient label="Carboidrati" value={food.carbs_100g} />}
+          {food.fat_100g !== undefined && <Nutrient label="Grassi" value={food.fat_100g} />}
+        </div>
       )}
       {hasNutrition && (
         <div className="flex flex-wrap gap-1.5">

@@ -135,6 +135,8 @@ export interface FoodResult {
   nova_group?: number | null
   ecoscore_grade?: string | null
   quantity?: string | null
+  quantity_value?: number | null
+  quantity_unit?: PantryUnit | null
   serving_size?: string | null
   ingredients?: string | null
   allergens?: string | null
