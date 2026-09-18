@@ -10,6 +10,8 @@ type OpenFoodFactsProduct = {
   product_name?: string
   product_name_it?: string
   product_name_en?: string
+  name_it?: string
+  name_en?: string
   brands?: string
   categories_tags?: string[]
   labels_tags?: string[]
@@ -36,8 +38,10 @@ function numeric(value: number | undefined): number {
 }
 
 function productName(product: OpenFoodFactsProduct): string {
-  return product.product_name_it?.trim()
-    || product.product_name_en?.trim()
+  const englishName = product.name_en?.split(',')[0]?.trim() || product.product_name_en?.trim()
+  return product.name_it?.trim()
+    || englishName
+    || product.product_name_it?.trim()
     || product.product_name?.trim()
     || ''
 }
@@ -83,7 +87,8 @@ function productCategory(product: OpenFoodFactsProduct): FoodResult['category'] 
   const names = `${product.product_name_it ?? ''} ${product.product_name_en ?? ''} ${product.product_name ?? ''}`.toLowerCase()
   // Some products are tagged only as "condiments" or "oils". Name-based
   // overrides keep common sauces such as soy sauce in the right category.
-  if (/soy sauce|salsa di soia|sauce soja|sojasaus/.test(names)) return 'sauce'
+  if (/tomato sauce|pasta sauce|passata|sugo|rag[uù]|tomatensauce/.test(names) || /tomato-sauces|pasta-sauces|passata/.test(tags)) return 'sauce'
+  if (/soy sauce|salsa di soia|sauce soja|sojasaus|ketchup|mustard|senape|mayonnaise|maionese|condiment/.test(names)) return 'condiment'
   if (/beverage|bevande|drinks|drink|bibite|juice|succo|water|acqua/.test(tags)) return 'beverage'
   if (/alcohol|alcol|wine|vino|beer|birra|spirit/.test(tags)) return 'alcohol'
   if (/dairy|lattic|milk|latte|cheese|formagg|yogurt|burro/.test(tags)) return 'dairy'
@@ -93,7 +98,7 @@ function productCategory(product: OpenFoodFactsProduct): FoodResult['category'] 
   if (/fruit|frutta|apple|mela|banana/.test(tags)) return 'fruit'
   if (/vegetable|verdura|ortaggi|legum|beans|fagiol|lentic/.test(tags)) return 'vegetable'
   if (/grain|cereal|cereali|rice|riso|pasta|bread|pane|flour|farina/.test(tags)) return 'grain'
-  if (/sauce|salsa|condiment|dressing/.test(tags)) return 'sauce'
+  if (/sauce|salsa|condiment|dressing/.test(tags)) return 'condiment'
   if (/spice|seasoning|spezie|aromat/.test(tags)) return 'seasoning'
   if (/sweet|dessert|dolci|chocolate|cioccolat|biscuit/.test(tags)) return 'sweet'
   if (/oil|olio|fat|grassi/.test(tags)) return 'fat'
@@ -170,7 +175,7 @@ export async function searchFood(query: string): Promise<FoodResult[]> {
   const params = new URLSearchParams({
     search_terms: query,
     sort_by: 'popularity_key',
-    fields: 'code,product_name,product_name_it,product_name_en,brands,categories_tags,nutriments,quantity,serving_size,ingredients_text,ingredients_text_it,ingredients_text_en,ingredients_text_with_allergens_it,ingredients_text_with_allergens_en,allergens,traces,labels_tags,image_front_url,nutriscore_score,nutriscore_grade,nutrition_grade_fr,nova_group,ecoscore_grade',
+    fields: 'code,name_it,name_en,product_name,product_name_it,product_name_en,brands,categories_tags,nutriments,quantity,serving_size,ingredients_text,ingredients_text_it,ingredients_text_en,ingredients_text_with_allergens_it,ingredients_text_with_allergens_en,allergens,traces,labels_tags,image_front_url,nutriscore_score,nutriscore_grade,nutrition_grade_fr,nova_group,ecoscore_grade',
     page_size: '20',
   })
 

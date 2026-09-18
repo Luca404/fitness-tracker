@@ -37,7 +37,6 @@ export default function OpenFoodFactsDetails({ food }: Props) {
           {food.calories_100g !== undefined && <span className="rounded-lg bg-black/10 px-2 py-1"><b>{food.calories_100g} kcal</b></span>}
           {food.protein_100g !== undefined && <Nutrient label="Proteine" value={food.protein_100g} />}
           {food.carbs_100g !== undefined && <Nutrient label="Carboidrati" value={food.carbs_100g} />}
-          {food.fat_100g !== undefined && <Nutrient label="Grassi" value={food.fat_100g} />}
         </div>
       )}
       {hasNutrition && (
