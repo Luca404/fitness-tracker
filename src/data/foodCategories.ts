@@ -12,6 +12,7 @@ export const FOOD_CATEGORIES: Array<{
   { id: 'meat', label: 'Carne', icon: '🥩' },
   { id: 'fish', label: 'Pesce', icon: '🐟' },
   { id: 'egg', label: 'Uova', icon: '🥚' },
+  { id: 'plant_protein', label: 'Proteine vegetali', icon: '🌱' },
   { id: 'dairy', label: 'Latte e formaggi', icon: '🧀' },
   { id: 'sauce', label: 'Sughi', icon: '🍅' },
   { id: 'condiment', label: 'Oli, salse e condimenti', icon: '🥫' },

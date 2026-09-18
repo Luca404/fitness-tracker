@@ -15,21 +15,23 @@
 
 ## Schema
 
-- [x] Tabella `pantry_items` (append a `supabase/schema.sql`, applicata anche al DB locale): `id, user_id, name, quantity, unit ('g'|'ml'|'pz'), calories_100g, protein_100g, carbs_100g, fat_100g, category, source, off_food_id, created_at`. RLS come le altre tabelle utente.
+- [x] Tabella `pantry_items` (append a `supabase/schema.sql`, applicata anche al DB locale): `id, user_id, name, quantity, unit ('g'|'ml'|'pz'), calories_100g, protein_100g, carbs_100g, fat_100g, category, source, off_food_id, off_data, structured OFF nutrition fields, created_at`. RLS come le altre tabelle utente.
 - [x] `types/index.ts`: `PantryUnit`, `PantryItem`; `FoodSource` esteso con `'pantry'`; `FoodResult.source` esteso con `'pantry'`.
 
 ## Barcode scanning
 
 - [x] Dipendenza `@zxing/browser` (v0.1.x, non 0.2.x — quella richiede `@zxing/library` con `engines.node >= 24`, incompatibile con l'ambiente di sviluppo attuale su Node 20).
 - [x] `src/components/pantry/BarcodeScanner.tsx`: apre la fotocamera (`BrowserMultiFormatReader.decodeFromVideoDevice`), decodifica in continuo, richiama `onScan(code)` al primo risultato e ferma lo stream.
-- [x] `nutrition.ts`: `lookupBarcode(barcode)` → `GET /api/v2/product/{barcode}.json` su Open Food Facts, ritorna un `FoodResult | null`.
+- [x] `nutrition.ts`: `lookupBarcode(barcode)` → lookup barcode su Open Food Facts, conserva il payload completo e normalizza nome, quantità, ingredienti, macro, fibre, zuccheri, grassi saturi/insaturi, sale, Nutri-Score, NOVA ed Eco-Score.
+- [x] Categoria `plant_protein` / “Proteine vegetali” per tofu, tempeh, seitan, veggie balls e sostituti della carne.
+- [x] Classificazione OFF migliorata con nomi generici/localizzati, `categories_tags`, `categories_hierarchy`, `main_category`, `food_groups_tags` e `pnns_groups`.
 
 ## Pagina Dispensa
 
 - [x] `api.ts`: `getPantryItems()`, `addPantryItem()`, `updatePantryItemQuantity()`, `deletePantryItem()`.
 - [x] `src/pages/PantryPage.tsx`, tab Dispensa dentro `/kitchen` (con redirect legacy da `/pantry`).
 - [x] Flusso di aggiunta: scegli tra 📷 scansiona barcode / 🔍 cerca alimento base / ✏️ inserisci a mano → poi specifichi quantità + unità → salvi in `pantry_items`.
-- [x] Elenco dispensa con eliminazione articolo (nessuna modifica quantità dalla UI per ora, solo aggiunta/rimozione).
+- [x] Elenco dispensa con modifica di nome, quantità, unità e categoria, oltre a eliminazione articolo.
 
 ## Integrazione con la ricerca ingredienti
 
@@ -39,6 +41,5 @@
 
 - Decremento automatico delle quantità in dispensa quando un ingrediente viene usato in un pasto.
 - ~~Ricette suggerite in base agli ingredienti disponibili.~~ Implementate nel tab Piatti con ricette curate e verifica disponibilità.
-- Modifica/editing di un articolo dispensa già salvato (per ora solo aggiungi/elimina).
-- Foto + AI stima calorie.
+- Foto + AI stima calorie: **prossima attività**, tramite Supabase Edge Function e OpenAI API.
 - "Buone abitudini" OMS.

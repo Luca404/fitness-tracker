@@ -9,7 +9,7 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 - **Meal logging** — log meals by time slot (breakfast, lunch, dinner, snack, alcoholic snack); calorie and macro breakdown per meal and per day
 - **Dish-centric entry** — opening a meal slot shows one hub: pick a saved dish (scaled by total weight and optionally paired with a drink measured in ml), cook something new (composed from a curated basic-ingredients dataset + Open Food Facts, then saved for reuse), or log a one-off dish/item that isn't saved
 - **Kitchen** — one area with saved dishes and pantry tabs; create, inspect and edit recipes, then get cookable suggestions ranked from the ingredients currently available
-- **Pantry** — track groceries at home by culinary category (quantity + unit: g/ml/pieces), added via barcode scan or manual/basic-food entry; pantry items surface first when searching ingredients
+- **Pantry** — track groceries at home by culinary category (quantity + unit: g/ml/pieces), added via barcode scan or manual/basic-food entry; pantry items surface first when searching ingredients; existing entries can be edited
 - **Macros** — visual progress bars for protein, carbs, and fat against daily targets
 - **Calorie ring** — at-a-glance daily calorie budget vs. consumed
 - **Workout tracking** — choose from 20 activities and log sessions with MET-based calorie burn calculation
@@ -25,7 +25,7 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 - Tailwind CSS (mobile-first, dark mode)
 - Supabase (PostgreSQL + Auth — email/password + RLS)
 - Italian interface
-- `@zxing/browser` for client-side barcode scanning (pantry)
+- `@zxing/browser` for client-side barcode scanning (pantry), including rotated/vertical 1D barcodes
 
 ## Getting Started
 
@@ -106,7 +106,13 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 | `weight_logs` | Daily weight entries |
 | `dishes` | Saved reusable dishes (name, reference weight derived from items) |
 | `dish_items` | Ingredients within a saved dish (same shape as `meal_items`) |
-| `pantry_items` | Groceries at home (quantity + unit, kcal/macros per 100g/100ml, optional barcode) |
+| `pantry_items` | Groceries at home (quantity + unit, kcal/macros per 100g/100ml, Open Food Facts payload and nutrition scores when available) |
+
+Food categories include `Proteine vegetali` for tofu, tempeh, seitan, veggie
+balls, plant-based burgers and other meat alternatives. Open Food Facts
+classification uses the product name/generic name together with normalized
+category, food-group and PNNS fields; tags are treated as supporting signals
+rather than the sole source of truth.
 
 The local catalog also includes `nutritionGuidelines.ts`, a source-documented reference
 dataset for salt, sugars, alcohol, ultra-processed foods, meat, vegetables, fruit,
@@ -131,9 +137,18 @@ never a `service_role`/secret key. Configure the production Vercel domain as
 the Supabase Auth Site URL and add the required preview URL patterns.
 `vercel.json` provides the history fallback required by React Router.
 
+## Roadmap
+
+- **Next session:** add an OpenAI-powered photo workflow through a Supabase Edge
+  Function. A photo of a nutrition label will be parsed into structured
+  ingredients, quantity and macro fields, with user confirmation before saving.
+- Add a local OCR/parser fallback later if it provides a measurable latency or
+  cost benefit.
+- Add automatic pantry quantity decrementing when an ingredient is used.
+
 ## Known limitations
 
 - Barcode scanning can take several seconds on some mobile browsers: camera
   detection and the Open Food Facts lookup both happen client-side.
-- A product name returned by the barcode flow is currently read-only; edit the
-  nutrition values or add the item manually when a custom name is needed.
+- Open Food Facts coverage is incomplete, especially for regional products;
+  missing products still require manual entry.
