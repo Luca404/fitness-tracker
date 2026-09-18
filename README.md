@@ -38,10 +38,17 @@ VITE_SUPABASE_PUBLISHABLE_KEY=...
 
 ```bash
 npm install
+supabase link --project-ref <project-ref>
 supabase db push # apply migrations when using the Supabase CLI
 npm run dev     # → http://localhost:5173
 npm run build
 ```
+
+The hosted database is shared with the other Trackrs applications. Never use
+`supabase db reset --linked` against it. Review `supabase db push --dry-run`
+first and apply only the migrations in this repository. The initial
+fitTrackr schema migration creates only the health/nutrition tables; it does
+not modify Trackr's finance tables or functions.
 
 ## Project Structure
 
@@ -108,4 +115,25 @@ abitudini” indicators can be added without changing the logging model.
 
 ## Deployment
 
-Deployed on **Vercel** — auto-deploys on push to `main`. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` as environment variables in Vercel. `vercel.json` provides the history fallback required by React Router.
+Deployed on **Vercel** — auto-deploys on push to `main`. The production
+project uses the Vite defaults: root directory `./`, build command
+`npm run build`, and output directory `dist`.
+
+Set these environment variables in Vercel for Preview and Production:
+
+```env
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```
+
+Use a Supabase publishable key (or the legacy `anon` key while migrating),
+never a `service_role`/secret key. Configure the production Vercel domain as
+the Supabase Auth Site URL and add the required preview URL patterns.
+`vercel.json` provides the history fallback required by React Router.
+
+## Known limitations
+
+- Barcode scanning can take several seconds on some mobile browsers: camera
+  detection and the Open Food Facts lookup both happen client-side.
+- A product name returned by the barcode flow is currently read-only; edit the
+  nutrition values or add the item manually when a custom name is needed.
