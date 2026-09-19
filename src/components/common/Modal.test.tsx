@@ -16,4 +16,14 @@ describe('Modal', () => {
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(onClose).toHaveBeenCalledTimes(1)
   })
+
+  it('can cover the full mobile viewport', () => {
+    render(
+      <Modal open onClose={() => {}} fullScreenOnMobile>
+        Contenuto
+      </Modal>
+    )
+
+    expect(screen.getByRole('dialog', { name: 'Finestra di dialogo' }).className).toContain('h-[100dvh]')
+  })
 })

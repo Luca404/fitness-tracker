@@ -6,9 +6,10 @@ interface Props {
   onClose: () => void
   children: ReactNode
   title?: string
+  fullScreenOnMobile?: boolean
 }
 
-export default function Modal({ open, onClose, children, title }: Props) {
+export default function Modal({ open, onClose, children, title, fullScreenOnMobile = false }: Props) {
   const panelRef = useRef<HTMLDivElement>(null)
   const onCloseRef = useRef(onClose)
 
@@ -63,7 +64,7 @@ export default function Modal({ open, onClose, children, title }: Props) {
 
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
+    <div className={`fixed inset-0 z-50 flex justify-center sm:items-center sm:p-4 ${fullScreenOnMobile ? 'items-stretch' : 'items-end'}`}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       <div
         ref={panelRef}
@@ -71,9 +72,9 @@ export default function Modal({ open, onClose, children, title }: Props) {
         aria-modal="true"
         aria-label={title ?? 'Finestra di dialogo'}
         tabIndex={-1}
-        className="relative z-10 max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-[2rem] border border-gray-700/80 bg-gray-800/95 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl shadow-black/50 sm:rounded-[2rem] sm:p-6"
+        className={`relative z-10 w-full max-w-md overflow-y-auto px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl shadow-black/50 sm:max-h-[92dvh] sm:rounded-[2rem] sm:border sm:border-gray-700/80 sm:bg-gray-800/95 sm:p-6 ${fullScreenOnMobile ? 'h-[100dvh] max-h-[100dvh] rounded-none border-0 bg-gray-800 pt-[max(0.75rem,env(safe-area-inset-top))] sm:h-auto' : 'max-h-[92dvh] rounded-t-[2rem] border border-gray-700/80 bg-gray-800/95 pt-3'}`}
       >
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-gray-600 sm:hidden" aria-hidden="true" />
+        {!fullScreenOnMobile && <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-gray-600 sm:hidden" aria-hidden="true" />}
         {title && (
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">{title}</h2>

@@ -5,6 +5,7 @@ import { useData } from '../../contexts/DataContext'
 import { FOOD_CATEGORIES } from '../../data/foodCategories'
 import type { FoodResult, FoodSource, PantryItem, FoodCategory } from '../../types'
 import OpenFoodFactsDetails from '../common/OpenFoodFactsDetails'
+import IngredientQuantityInput from './IngredientQuantityInput'
 
 function pantryItemToFoodResult(p: PantryItem): FoodResult {
   return {
@@ -199,13 +200,13 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
               )}
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quantità</label>
-                <div className="mt-1 flex items-center rounded-xl border border-gray-600 bg-gray-800/70 px-3">
-                  <input type="number" min={1} value={qty === 0 ? '' : qty}
-                  onChange={e => setQty(parseInt(e.target.value) || 0)}
-                  onFocus={e => e.currentTarget.select()}
-                  className="min-w-0 flex-1 bg-transparent py-2.5 text-lg font-semibold outline-none" />
-                  <span className="text-sm text-gray-500">grammi</span>
-                </div>
+                <IngredientQuantityInput
+                  key={`${selected.source}:${selected.id}`}
+                  foodName={selected.name}
+                  category={selected.category}
+                  grams={qty}
+                  onChange={setQty}
+                />
               </div>
               <label className="block">
                 <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Categoria</span>
@@ -288,15 +289,23 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
               ))}
             </select>
           </label>
+          <div>
+            <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">Quantità</span>
+            <IngredientQuantityInput
+              foodName={manualName}
+              category={manualCategory}
+              grams={qty}
+              onChange={setQty}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: 'Quantità', unit: 'g', val: qty, set: (v: number) => setQty(v), min: 1 },
               { label: 'Calorie', unit: 'kcal', val: manualCal, set: (v: number) => setManualCal(v), min: 0 },
               { label: 'Proteine', unit: 'g', val: manualProt, set: (v: number) => setManualProt(v), min: 0 },
               { label: 'Carboidrati', unit: 'g', val: manualCarbs, set: (v: number) => setManualCarbs(v), min: 0 },
               { label: 'Grassi', unit: 'g', val: manualFat, set: (v: number) => setManualFat(v), min: 0 },
-            ].map(({ label, unit, val, set, min }, index) => (
-              <label key={label} className={`rounded-xl border border-gray-700 bg-gray-800/80 p-3 focus-within:border-primary-500 ${index === 0 ? 'col-span-2' : ''}`}>
+            ].map(({ label, unit, val, set, min }) => (
+              <label key={label} className="rounded-xl border border-gray-700 bg-gray-800/80 p-3 focus-within:border-primary-500">
                 <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">{label}</span>
                 <span className="mt-1 flex items-center gap-2">
                   <input type="number" min={min} value={val || ''}

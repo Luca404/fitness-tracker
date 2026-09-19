@@ -214,7 +214,11 @@ export default function KitchenDishes() {
         )}
       </section>
 
-      <Modal open={mode !== 'closed'} onClose={() => { setMode('closed'); setSelectedDish(null) }}>
+      <Modal
+        open={mode !== 'closed'}
+        onClose={() => { setMode('closed'); setSelectedDish(null) }}
+        fullScreenOnMobile={mode === 'create' || mode === 'edit'}
+      >
         {mode === 'create' ? (
           <div className="space-y-5">
             <div><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Nuova ricetta</p><h2 className="text-xl font-bold">Crea il tuo piatto</h2></div>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import FoodSearch from './FoodSearch'
 import type { DishItem, MealItemUnit } from '../../types'
 import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
+import IngredientQuantityInput from './IngredientQuantityInput'
 
 export type DishItemDraft = Omit<DishItem, 'id' | 'dish_id' | 'created_at'> & {
   unit?: MealItemUnit
@@ -111,20 +112,25 @@ export default function DishEditor({
           </div>
         )}
         {items.map((item, i) => (
-          <div key={`${item.food_name}-${i}`} className="flex items-center justify-between rounded-2xl bg-gray-900/35 p-3 ring-1 ring-gray-700/60">
-            <div className="mr-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-700/70 text-sm">{FOOD_CATEGORY_BY_ID[item.category].icon}</div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{item.food_name}</p>
-              <span className="text-xs text-primary-400">{Math.round(item.calories)} kcal</span>
+          <div key={`${item.food_name}-${i}`} className="rounded-2xl bg-gray-900/35 p-3 ring-1 ring-gray-700/60">
+            <div className="flex items-center">
+              <div className="mr-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-700/70 text-sm">{FOOD_CATEGORY_BY_ID[item.category].icon}</div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{item.food_name}</p>
+                <span className="text-xs text-primary-400">{Math.round(item.calories)} kcal</span>
+              </div>
+              <button type="button" onClick={() => removeItem(i)} className="ml-2 text-lg text-gray-600 hover:text-red-400" aria-label={`Rimuovi ${item.food_name}`}>✕</button>
             </div>
-            <input
-              type="number" min={1} value={item.quantity_g}
-              onChange={e => updateQuantity(i, parseFloat(e.target.value))}
-              onFocus={e => e.currentTarget.select()}
-              className="mx-2 w-16 rounded-lg border border-gray-600 bg-gray-700 px-2 py-1.5 text-right text-sm outline-none focus:border-primary-500"
-            />
-            <span className="text-xs text-gray-500 mr-2">{item.unit ?? 'g'}</span>
-            <button type="button" onClick={() => removeItem(i)} className="text-gray-600 hover:text-red-400 text-lg">✕</button>
+            <div className="mt-2 pl-12">
+              <IngredientQuantityInput
+                foodName={item.food_name}
+                category={item.category}
+                grams={item.quantity_g}
+                onChange={value => updateQuantity(i, value)}
+                unit={item.unit}
+                compact
+              />
+            </div>
           </div>
         ))}
       </section>
