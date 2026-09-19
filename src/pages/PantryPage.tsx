@@ -471,10 +471,13 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
             {pending.off_data && <div className="mt-3"><OpenFoodFactsDetails food={pending} /></div>}
           </div>
           <div>
-            <label className="text-sm text-gray-400">Quantità</label>
+            <label className="text-sm text-gray-400">Quantità totale in dispensa</label>
             <input type="number" min={0} value={quantity === 0 ? '' : quantity}
               onChange={e => setQuantity(parseFloat(e.target.value) || 0)}
               className="w-full mt-1 px-3 py-2 rounded bg-gray-700 border border-gray-600 outline-none" />
+            {pending.quantity && !editingItemId && (
+              <p className="mt-1 text-xs text-gray-500">Precompilata dalla confezione rilevata: {pending.quantity}</p>
+            )}
           </div>
           <div>
             <label className="text-sm text-gray-400">Unità</label>

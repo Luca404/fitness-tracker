@@ -108,8 +108,10 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 | `dish_items` | Ingredients within a saved dish (same shape as `meal_items`) |
 | `pantry_items` | Groceries at home (quantity + unit, kcal/macros per 100g/100ml, Open Food Facts payload and nutrition scores when available) |
 
-Food categories include `Proteine vegetali` for tofu, tempeh, seitan, veggie
-balls, plant-based burgers and other meat alternatives. Open Food Facts
+Food categories include dedicated groups for baked goods, nuts and seeds,
+spreads and preserves, savoury snacks, ready meals, supplements, and
+`Proteine vegetali` for tofu, tempeh, seitan, veggie balls, plant-based burgers
+and other meat alternatives. Open Food Facts
 classification uses the product name/generic name together with normalized
 category, food-group and PNNS fields; tags are treated as supporting signals
 rather than the sole source of truth.

@@ -26,10 +26,10 @@ export default function OpenFoodFactsDetails({ food }: Props) {
     <div className="space-y-2 rounded-xl bg-black/10 p-3 text-xs text-gray-400">
       {food.image_url && <img src={food.image_url} alt="" className="h-24 w-24 rounded-lg object-contain bg-white" />}
       {(food.brand || food.quantity || food.serving_size) && (
-        <p>
-          {food.brand && `Marca: ${food.brand}`}
-          {food.quantity && ` · ${food.quantity}`}
-          {food.serving_size && ` · Porzione: ${food.serving_size}`}
+        <p className="flex flex-wrap gap-x-3 gap-y-1">
+          {food.brand && <span>Marca: {food.brand}</span>}
+          {food.quantity && <span>Confezione: {food.quantity}</span>}
+          {food.serving_size && <span>Porzione indicativa: {food.serving_size}</span>}
         </p>
       )}
       {(food.calories_100g !== undefined || food.protein_100g !== undefined || food.carbs_100g !== undefined || food.fat_100g !== undefined) && (

@@ -20,16 +20,16 @@ export const BASIC_FOODS: BasicFood[] = [
   { id: 'pasta-semola-cotta', name: 'Pasta di semola (cotta)', category: 'grain', calories: 158, protein_g: 5.8, carbs_g: 31, fat_g: 0.9 },
   { id: 'pasta-integrale-cotta', name: 'Pasta integrale (cotta)', category: 'grain', calories: 124, protein_g: 5.0, carbs_g: 25, fat_g: 0.9 },
   { id: 'pasta-uovo-cotta', name: 'Pasta all\'uovo (cotta)', category: 'grain', calories: 165, protein_g: 6.0, carbs_g: 30, fat_g: 2.5 },
-  { id: 'pane-bianco', name: 'Pane bianco', category: 'grain', calories: 265, protein_g: 9.0, carbs_g: 49, fat_g: 3.2 },
-  { id: 'pane-integrale', name: 'Pane integrale', category: 'grain', calories: 247, protein_g: 13, carbs_g: 41, fat_g: 3.4 },
+  { id: 'pane-bianco', name: 'Pane bianco', category: 'bakery', calories: 265, protein_g: 9.0, carbs_g: 49, fat_g: 3.2 },
+  { id: 'pane-integrale', name: 'Pane integrale', category: 'bakery', calories: 247, protein_g: 13, carbs_g: 41, fat_g: 3.4 },
   { id: 'avena-fiocchi', name: 'Avena (fiocchi, crudi)', category: 'grain', calories: 389, protein_g: 17, carbs_g: 66, fat_g: 7.0 },
   { id: 'quinoa-cotta', name: 'Quinoa (cotta)', category: 'grain', calories: 120, protein_g: 4.4, carbs_g: 21, fat_g: 1.9 },
   { id: 'farro-cotto', name: 'Farro (cotto)', category: 'grain', calories: 130, protein_g: 5.0, carbs_g: 26, fat_g: 1.0 },
   { id: 'orzo-perlato-cotto', name: 'Orzo perlato (cotto)', category: 'grain', calories: 123, protein_g: 2.3, carbs_g: 28, fat_g: 0.4 },
   { id: 'couscous-cotto', name: 'Couscous (cotto)', category: 'grain', calories: 112, protein_g: 3.8, carbs_g: 23, fat_g: 0.2 },
-  { id: 'grissini', name: 'Grissini', category: 'grain', calories: 431, protein_g: 11, carbs_g: 71, fat_g: 11 },
-  { id: 'fette-biscottate', name: 'Fette biscottate', category: 'grain', calories: 408, protein_g: 10, carbs_g: 76, fat_g: 8.0 },
-  { id: 'cracker', name: 'Cracker', category: 'grain', calories: 440, protein_g: 10, carbs_g: 70, fat_g: 13 },
+  { id: 'grissini', name: 'Grissini', category: 'bakery', calories: 431, protein_g: 11, carbs_g: 71, fat_g: 11 },
+  { id: 'fette-biscottate', name: 'Fette biscottate', category: 'bakery', calories: 408, protein_g: 10, carbs_g: 76, fat_g: 8.0 },
+  { id: 'cracker', name: 'Cracker', category: 'bakery', calories: 440, protein_g: 10, carbs_g: 70, fat_g: 13 },
   { id: 'farina-00', name: 'Farina 00', category: 'grain', calories: 340, protein_g: 10, carbs_g: 76, fat_g: 1.0 },
   { id: 'patate-fritte', name: 'Patate fritte', category: 'grain', calories: 312, protein_g: 3.4, carbs_g: 41, fat_g: 15 },
 
@@ -112,14 +112,16 @@ export const BASIC_FOODS: BasicFood[] = [
   { id: 'ricotta', name: 'Ricotta', category: 'dairy', calories: 146, protein_g: 8.8, carbs_g: 3.5, fat_g: 10.9 },
   { id: 'formaggio-spalmabile', name: 'Formaggio spalmabile', category: 'dairy', calories: 250, protein_g: 6.0, carbs_g: 4.0, fat_g: 24 },
 
-  // Grassi e frutta secca
+  // Oli e grassi
   { id: 'olio-evo', name: 'Olio extravergine d\'oliva', category: 'fat', calories: 884, protein_g: 0, carbs_g: 0, fat_g: 100 },
   { id: 'burro', name: 'Burro', category: 'fat', calories: 717, protein_g: 0.9, carbs_g: 0.1, fat_g: 81 },
-  { id: 'mandorle', name: 'Mandorle', category: 'fat', calories: 579, protein_g: 21, carbs_g: 22, fat_g: 50 },
-  { id: 'noci', name: 'Noci', category: 'fat', calories: 654, protein_g: 15, carbs_g: 14, fat_g: 65 },
-  { id: 'arachidi', name: 'Arachidi', category: 'fat', calories: 567, protein_g: 26, carbs_g: 16, fat_g: 49 },
-  { id: 'semi-chia', name: 'Semi di chia', category: 'fat', calories: 486, protein_g: 17, carbs_g: 42, fat_g: 31 },
-  { id: 'burro-arachidi', name: 'Burro d\'arachidi', category: 'fat', calories: 588, protein_g: 25, carbs_g: 20, fat_g: 50 },
+
+  // Frutta secca, semi e creme spalmabili
+  { id: 'mandorle', name: 'Mandorle', category: 'nuts_seeds', calories: 579, protein_g: 21, carbs_g: 22, fat_g: 50 },
+  { id: 'noci', name: 'Noci', category: 'nuts_seeds', calories: 654, protein_g: 15, carbs_g: 14, fat_g: 65 },
+  { id: 'arachidi', name: 'Arachidi', category: 'nuts_seeds', calories: 567, protein_g: 26, carbs_g: 16, fat_g: 49 },
+  { id: 'semi-chia', name: 'Semi di chia', category: 'nuts_seeds', calories: 486, protein_g: 17, carbs_g: 42, fat_g: 31 },
+  { id: 'burro-arachidi', name: 'Burro d\'arachidi', category: 'spread', calories: 588, protein_g: 25, carbs_g: 20, fat_g: 50 },
 
   // Salse e sughi
   { id: 'passata-pomodoro', name: 'Passata di pomodoro', category: 'sauce', calories: 29, protein_g: 1.4, carbs_g: 4.8, fat_g: 0.2 },
@@ -148,9 +150,9 @@ export const BASIC_FOODS: BasicFood[] = [
   // Dolci
   { id: 'cioccolato-fondente-70', name: 'Cioccolato fondente 70%', category: 'sweet', calories: 598, protein_g: 8.0, carbs_g: 45, fat_g: 43 },
   { id: 'cioccolato-latte', name: 'Cioccolato al latte', category: 'sweet', calories: 535, protein_g: 7.6, carbs_g: 59, fat_g: 30 },
-  { id: 'miele', name: 'Miele', category: 'sweet', calories: 304, protein_g: 0.3, carbs_g: 82, fat_g: 0 },
+  { id: 'miele', name: 'Miele', category: 'spread', calories: 304, protein_g: 0.3, carbs_g: 82, fat_g: 0 },
   { id: 'zucchero', name: 'Zucchero', category: 'sweet', calories: 400, protein_g: 0, carbs_g: 100, fat_g: 0 },
-  { id: 'marmellata', name: 'Marmellata', category: 'sweet', calories: 250, protein_g: 0.4, carbs_g: 63, fat_g: 0.1 },
+  { id: 'marmellata', name: 'Marmellata', category: 'spread', calories: 250, protein_g: 0.4, carbs_g: 63, fat_g: 0.1 },
   { id: 'gelato-crema', name: 'Gelato alla crema', category: 'sweet', calories: 207, protein_g: 3.5, carbs_g: 24, fat_g: 11 },
   { id: 'biscotti-secchi', name: 'Biscotti secchi', category: 'sweet', calories: 430, protein_g: 7.0, carbs_g: 75, fat_g: 12 },
 

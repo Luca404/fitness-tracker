@@ -9,7 +9,8 @@ export type PantryUnit = 'g' | 'ml' | 'pz'
 export type MealItemUnit = 'g' | 'ml'
 export type FoodCategory =
   | 'grain' | 'legume' | 'vegetable' | 'fruit' | 'meat' | 'fish'
-  | 'dairy' | 'egg' | 'plant_protein' | 'fat' | 'sauce' | 'condiment' | 'seasoning' | 'sweet'
+  | 'dairy' | 'egg' | 'plant_protein' | 'bakery' | 'nuts_seeds' | 'spread'
+  | 'fat' | 'sauce' | 'condiment' | 'seasoning' | 'sweet' | 'snack' | 'prepared' | 'supplement'
   | 'alcohol' | 'beverage' | 'other'
 
 export interface UserHealthProfile {
