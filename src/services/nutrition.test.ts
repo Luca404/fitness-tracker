@@ -28,6 +28,14 @@ describe('Open Food Facts category classification', () => {
   it('keeps dairy butter among oils and fats', () => {
     expect(productCategory(product('Burro', ['en:dairies']))).toBe('fat')
   })
+
+  it('prefers explicit bread categories over a conflicting beverage group', () => {
+    expect(productCategory(product('Pane in cassetta', [
+      'en:breads',
+      'en:toasts',
+      'en:beverages',
+    ]))).toBe('bakery')
+  })
 })
 
 describe('Open Food Facts serving size normalization', () => {

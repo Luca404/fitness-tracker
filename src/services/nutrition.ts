@@ -186,6 +186,10 @@ export function productCategory(product: OpenFoodFactsProduct): FoodResult['cate
   if (/peanut butter|burro (?:di |d['’])?arachidi|nut butter|marmellat|confettur|\bjam\b|fruit spread|miele|\bhoney\b|crema spalmabile|chocolate spread|hazelnut spread|nutella/.test(searchable)) return 'spread'
   if (/tomato sauce|pasta sauce|passata|sugo|rag[uù]|tomatensauce/.test(names) || /tomato-sauces|pasta-sauces|passata/.test(tags)) return 'sauce'
   if (/soy sauce|salsa di soia|sauce soja|sojasaus|ketchup|mustard|senape|mayonnaise|maionese|condiment/.test(names)) return 'condiment'
+  // Explicit bread names/categories are stronger evidence than broad or
+  // incorrect PNNS beverage groups occasionally found in OFF records.
+  if (/bread|pane|bakery|baked goods|prodotti da forno|grissin|fette biscottate|cracker|croissant|cornett[io]|focacci|toasts?/.test(names)
+    || /breads?|bakery-products?|baked-goods|toasts?/.test(tags)) return 'bakery'
   if (/alcohol|alcol|wine|vino|beer|birra|spirit/.test(searchable)) return 'alcohol'
   if (/beverage|bevande|drinks|drink|bibite|juice|succo|water|acqua|plant milks?|bevande vegetali|oat drink|almond drink/.test(searchable)) return 'beverage'
   if (/protein powder|whey protein|proteine? whey|protein[ae].{0,30}in polvere|integrator[ei]|food supplement|dietary supplement|creatine|creatina/.test(searchable)) return 'supplement'
@@ -193,7 +197,6 @@ export function productCategory(product: OpenFoodFactsProduct): FoodResult['cate
   if (/tofu|tempeh|seitan|veggie balls?|vegetarian balls?|vegan balls?|veggie burger|vegetarian burger|vegan burger|meat[- ]substitutes?|meat[- ]alternatives?|plant[- ]based protein|plant[- ]proteins?|soy protein|soya protein|pea protein|textured vegetable protein|textured soy|tvp|proteine vegetali|sostitut[io] della carne/.test(searchable)) return 'plant_protein'
   if (/ready meals?|prepared meals?|piatti pronti|instant meals?|frozen meals?|pizza|lasagn|cannelloni/.test(searchable)) return 'prepared'
   if (/potato chips|crisps|patatine|popcorn|salatini|pretzel|snack salat/.test(searchable)) return 'snack'
-  if (/bread|pane|bakery|baked goods|prodotti da forno|grissin|fette biscottate|cracker|croissant|cornett[io]|focacci/.test(searchable)) return 'bakery'
   if (/\bnuts?\b|frutta secca|mandorl|almonds?|noci|walnuts?|nocciol|hazelnuts?|pistacch|cashews?|anacard|peanuts?|arachidi|\bseeds?\b|semi di|chia/.test(searchable)) return 'nuts_seeds'
   if (/\bbutter\b|\bburro\b|\boils?\b|\bolio\b/.test(searchable)) return 'fat'
   if (/dairy|lattic|milk|latte|cheese|formagg|yogurt|burro/.test(searchable)) return 'dairy'
