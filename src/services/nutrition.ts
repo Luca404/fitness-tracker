@@ -26,6 +26,8 @@ type OpenFoodFactsProduct = {
   ingredients_analysis_tags?: string[]
   labels_tags?: string[]
   quantity?: string
+  product_quantity?: string | number
+  product_quantity_unit?: string
   serving_size?: string
   ingredients_text?: string
   ingredients_text_it?: string
@@ -112,6 +114,58 @@ export function normalizeServingSize(
   return serving
 }
 
+type ResolvedProductQuantity = {
+  label: string
+  value: number
+  unit: PantryUnit
+  inferredFromServing: boolean
+}
+
+export function resolveProductQuantity(
+  product: Pick<OpenFoodFactsProduct, 'quantity' | 'product_quantity' | 'product_quantity_unit' | 'serving_size'>,
+  category: FoodResult['category'],
+): ResolvedProductQuantity | null {
+  const parsedTextQuantity = parseProductQuantity(product.quantity)
+  if (parsedTextQuantity) {
+    return {
+      label: product.quantity!.trim(),
+      ...parsedTextQuantity,
+      inferredFromServing: false,
+    }
+  }
+
+  const normalizedValue = typeof product.product_quantity === 'number'
+    ? product.product_quantity
+    : Number(String(product.product_quantity ?? '').replace(',', '.'))
+  const normalizedUnit = product.product_quantity_unit?.toLowerCase()
+  if (
+    Number.isFinite(normalizedValue)
+    && normalizedValue > 0
+    && (normalizedUnit === 'g' || normalizedUnit === 'ml')
+  ) {
+    return {
+      label: `${normalizedValue} ${normalizedUnit}`,
+      value: normalizedValue,
+      unit: normalizedUnit,
+      inferredFromServing: false,
+    }
+  }
+
+  // Some OFF records put the jar weight in serving_size and leave the package
+  // quantity empty. Large servings are not credible for spreadable products,
+  // so use that value as the package total instead of falling back to 100 g.
+  const parsedServing = parseProductQuantity(product.serving_size)
+  if (category === 'spread' && parsedServing && parsedServing.value >= 100 && parsedServing.unit !== 'pz') {
+    return {
+      label: product.serving_size!.trim(),
+      ...parsedServing,
+      inferredFromServing: true,
+    }
+  }
+
+  return null
+}
+
 export function productCategory(product: OpenFoodFactsProduct): FoodResult['category'] {
   const tags = [
     ...(product.categories_tags ?? []),
@@ -166,7 +220,8 @@ function toFoodResult(product: OpenFoodFactsProduct): FoodResult | null {
   const totalFat = numeric(nutriments.fat_100g)
   const unsaturatedFat = numeric(nutriments['unsaturated-fat_100g'])
     || Math.max(0, totalFat - saturatedFat)
-  const parsedQuantity = parseProductQuantity(product.quantity)
+  const category = productCategory(product)
+  const resolvedQuantity = resolveProductQuantity(product, category)
   if (!name || energyKcal <= 0) return null
 
   return {
@@ -174,7 +229,7 @@ function toFoodResult(product: OpenFoodFactsProduct): FoodResult | null {
     name,
     brand: product.brands || null,
     source: 'openfoodfacts',
-    category: productCategory(product),
+    category,
     food_key: `off:${product.code}`,
     calories_100g: energyKcal,
     protein_100g: numeric(nutriments.proteins_100g),
@@ -189,10 +244,12 @@ function toFoodResult(product: OpenFoodFactsProduct): FoodResult | null {
     nutrition_grade: product.nutriscore_grade || product.nutrition_grade_fr || null,
     nova_group: product.nova_group ?? null,
     ecoscore_grade: product.ecoscore_grade || null,
-    quantity: product.quantity || null,
-    quantity_value: parsedQuantity?.value ?? null,
-    quantity_unit: parsedQuantity?.unit ?? null,
-    serving_size: normalizeServingSize(product.serving_size, product.quantity),
+    quantity: resolvedQuantity?.label ?? product.quantity ?? null,
+    quantity_value: resolvedQuantity?.value ?? null,
+    quantity_unit: resolvedQuantity?.unit ?? null,
+    serving_size: resolvedQuantity?.inferredFromServing
+      ? null
+      : normalizeServingSize(product.serving_size, resolvedQuantity?.label ?? product.quantity),
     ingredients: localizedText(product, 'ingredients_text_it', 'ingredients_text_en', 'ingredients_text_with_allergens_it')
       || product.ingredients_text_with_allergens_en || product.ingredients_text || null,
     allergens: product.allergens || null,
@@ -227,7 +284,7 @@ export async function searchFood(query: string): Promise<FoodResult[]> {
   const params = new URLSearchParams({
     search_terms: query,
     sort_by: 'popularity_key',
-    fields: 'code,name_it,name_en,product_name,product_name_it,product_name_en,generic_name_it,generic_name_en,main_category,main_category_en,main_category_it,brands,categories_tags,categories_hierarchy,food_groups_tags,pnns_groups_1,pnns_groups_2,ingredients_analysis_tags,nutriments,quantity,serving_size,ingredients_text,ingredients_text_it,ingredients_text_en,ingredients_text_with_allergens_it,ingredients_text_with_allergens_en,allergens,traces,labels_tags,image_front_url,nutriscore_score,nutriscore_grade,nutrition_grade_fr,nova_group,ecoscore_grade',
+    fields: 'code,name_it,name_en,product_name,product_name_it,product_name_en,generic_name_it,generic_name_en,main_category,main_category_en,main_category_it,brands,categories_tags,categories_hierarchy,food_groups_tags,pnns_groups_1,pnns_groups_2,ingredients_analysis_tags,nutriments,quantity,product_quantity,product_quantity_unit,serving_size,ingredients_text,ingredients_text_it,ingredients_text_en,ingredients_text_with_allergens_it,ingredients_text_with_allergens_en,allergens,traces,labels_tags,image_front_url,nutriscore_score,nutriscore_grade,nutrition_grade_fr,nova_group,ecoscore_grade',
     page_size: '20',
   })
 

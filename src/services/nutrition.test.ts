@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeServingSize, productCategory } from './nutrition'
+import { normalizeServingSize, productCategory, resolveProductQuantity } from './nutrition'
 
 function product(name: string, categories: string[] = []) {
   return {
@@ -41,5 +41,32 @@ describe('Open Food Facts serving size normalization', () => {
 
   it('compares normalized units', () => {
     expect(normalizeServingSize('500 ml', '0,5 L')).toBeNull()
+  })
+})
+
+describe('Open Food Facts package quantity resolution', () => {
+  it('uses the normalized total package fields when textual quantity is missing', () => {
+    expect(resolveProductQuantity({
+      product_quantity: '470',
+      product_quantity_unit: 'g',
+    }, 'spread')).toEqual({
+      label: '470 g',
+      value: 470,
+      unit: 'g',
+      inferredFromServing: false,
+    })
+  })
+
+  it('recovers an implausibly large spread serving as the package total', () => {
+    expect(resolveProductQuantity({ serving_size: '470g' }, 'spread')).toEqual({
+      label: '470g',
+      value: 470,
+      unit: 'g',
+      inferredFromServing: true,
+    })
+  })
+
+  it('does not mistake a normal spread serving for the package total', () => {
+    expect(resolveProductQuantity({ serving_size: '30 g' }, 'spread')).toBeNull()
   })
 })
