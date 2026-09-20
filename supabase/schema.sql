@@ -170,7 +170,7 @@ create table public.pantry_items (
   id            uuid primary key default gen_random_uuid(),
   user_id       uuid not null references auth.users on delete cascade,
   name          text not null,
-  quantity      float not null check (quantity > 0),
+  quantity      float not null check (quantity >= 0),
   unit          text not null check (unit in ('g', 'ml', 'pz')),
   calories_100g float not null check (calories_100g >= 0),
   protein_100g  float not null check (protein_100g >= 0),
@@ -196,6 +196,14 @@ alter table public.pantry_items enable row level security;
 create policy "own pantry_items" on public.pantry_items
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create index on public.pantry_items (user_id);
+
+alter table public.meal_items
+  add column pantry_item_id uuid references public.pantry_items(id) on delete set null,
+  add column pantry_quantity_used float not null default 0 check (pantry_quantity_used >= 0);
+alter table public.dish_items
+  add column pantry_item_id uuid references public.pantry_items(id) on delete set null;
+create index on public.meal_items (pantry_item_id) where pantry_item_id is not null;
+create index on public.dish_items (pantry_item_id) where pantry_item_id is not null;
 
 -- Atomic application operations. SECURITY INVOKER keeps RLS active, while the
 -- explicit auth checks make ownership requirements clear at the function edge.
@@ -267,6 +275,9 @@ as $$
 declare
   v_meal public.meals%rowtype;
   v_entry public.meal_entries%rowtype;
+  v_item public.meal_items%rowtype;
+  v_pantry public.pantry_items%rowtype;
+  v_used float;
   v_items jsonb;
 begin
   if auth.uid() is null or auth.uid() <> p_user_id then
@@ -288,20 +299,54 @@ begin
   values (v_meal.id, trim(p_name))
   returning * into v_entry;
 
-  with inserted as (
-    insert into public.meal_items (
-      meal_id, entry_id, food_name, quantity_g, unit, category, food_key, calories, protein_g, carbs_g, fat_g, source, off_food_id
-    )
-    select
-      v_meal.id, v_entry.id, x.food_name, x.quantity_g, coalesce(x.unit, 'g'), coalesce(x.category, 'other'), x.food_key, x.calories, x.protein_g,
-      x.carbs_g, x.fat_g, coalesce(x.source, 'manual'), x.off_food_id
-    from jsonb_to_recordset(p_items) as x(
-      food_name text, quantity_g float, unit text, category text, food_key text, calories float, protein_g float,
-      carbs_g float, fat_g float, source text, off_food_id text
-    )
-    returning *
+  insert into public.meal_items (
+    meal_id, entry_id, food_name, quantity_g, unit, category, food_key,
+    pantry_item_id, calories, protein_g, carbs_g, fat_g, source, off_food_id
   )
-  select coalesce(jsonb_agg(to_jsonb(inserted)), '[]'::jsonb) into v_items from inserted;
+  select
+    v_meal.id, v_entry.id, x.food_name, x.quantity_g, coalesce(x.unit, 'g'),
+    coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories,
+    x.protein_g, x.carbs_g, x.fat_g, coalesce(x.source, 'manual'), x.off_food_id
+  from jsonb_to_recordset(p_items) as x(
+    food_name text, quantity_g float, unit text, category text, food_key text,
+    pantry_item_id uuid, calories float, protein_g float, carbs_g float,
+    fat_g float, source text, off_food_id text
+  );
+
+  for v_item in
+    select * from public.meal_items where entry_id = v_entry.id order by created_at, id
+  loop
+    select p.* into v_pantry
+    from public.pantry_items p
+    where p.user_id = p_user_id and p.quantity > 0 and p.unit = v_item.unit
+      and (
+        (v_item.pantry_item_id is not null and p.id = v_item.pantry_item_id)
+        or (v_item.pantry_item_id is null and (
+          (v_item.food_key is not null and p.food_key is not null and p.food_key = v_item.food_key)
+          or ((v_item.food_key is null or p.food_key is null) and (
+            (v_item.off_food_id is not null and p.off_food_id = v_item.off_food_id)
+            or lower(regexp_replace(trim(p.name), '[^[:alnum:]]+', ' ', 'g')) =
+               lower(regexp_replace(trim(v_item.food_name), '[^[:alnum:]]+', ' ', 'g'))
+          ))
+        ))
+      )
+    order by case when p.id = v_item.pantry_item_id then 0
+                  when p.food_key = v_item.food_key then 1
+                  when p.off_food_id = v_item.off_food_id then 2 else 3 end,
+             p.created_at, p.id
+    limit 1 for update;
+
+    if found then
+      v_used := least(v_item.quantity_g, v_pantry.quantity);
+      update public.pantry_items set quantity = quantity - v_used where id = v_pantry.id;
+      update public.meal_items
+      set pantry_item_id = v_pantry.id, pantry_quantity_used = v_used
+      where id = v_item.id;
+    end if;
+  end loop;
+
+  select coalesce(jsonb_agg(to_jsonb(mi) order by mi.created_at, mi.id), '[]'::jsonb)
+  into v_items from public.meal_items mi where mi.entry_id = v_entry.id;
 
   return jsonb_build_object(
     'meal', to_jsonb(v_meal),
@@ -318,6 +363,10 @@ set search_path = public
 as $$
 declare
   v_entry public.meal_entries%rowtype;
+  v_user_id uuid;
+  v_item public.meal_items%rowtype;
+  v_pantry public.pantry_items%rowtype;
+  v_used float;
   v_items jsonb;
 begin
   if p_name is null or length(trim(p_name)) = 0 then
@@ -336,21 +385,68 @@ begin
     raise exception 'meal entry not found' using errcode = 'P0002';
   end if;
 
+  select user_id into v_user_id from public.meals where id = v_entry.meal_id;
+
+  update public.pantry_items p
+  set quantity = p.quantity + restored.quantity
+  from (
+    select pantry_item_id, sum(pantry_quantity_used) as quantity
+    from public.meal_items
+    where entry_id = p_entry_id and pantry_item_id is not null
+    group by pantry_item_id
+  ) restored
+  where p.id = restored.pantry_item_id and p.user_id = v_user_id;
+
   delete from public.meal_items where entry_id = p_entry_id;
-  with inserted as (
-    insert into public.meal_items (
-      meal_id, entry_id, food_name, quantity_g, unit, category, food_key, calories, protein_g, carbs_g, fat_g, source, off_food_id
-    )
-    select
-      v_entry.meal_id, v_entry.id, x.food_name, x.quantity_g, coalesce(x.unit, 'g'), coalesce(x.category, 'other'), x.food_key, x.calories, x.protein_g,
-      x.carbs_g, x.fat_g, coalesce(x.source, 'manual'), x.off_food_id
-    from jsonb_to_recordset(p_items) as x(
-      food_name text, quantity_g float, unit text, category text, food_key text, calories float, protein_g float,
-      carbs_g float, fat_g float, source text, off_food_id text
-    )
-    returning *
+
+  insert into public.meal_items (
+    meal_id, entry_id, food_name, quantity_g, unit, category, food_key,
+    pantry_item_id, calories, protein_g, carbs_g, fat_g, source, off_food_id
   )
-  select coalesce(jsonb_agg(to_jsonb(inserted)), '[]'::jsonb) into v_items from inserted;
+  select
+    v_entry.meal_id, v_entry.id, x.food_name, x.quantity_g, coalesce(x.unit, 'g'),
+    coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories,
+    x.protein_g, x.carbs_g, x.fat_g, coalesce(x.source, 'manual'), x.off_food_id
+  from jsonb_to_recordset(p_items) as x(
+    food_name text, quantity_g float, unit text, category text, food_key text,
+    pantry_item_id uuid, calories float, protein_g float, carbs_g float,
+    fat_g float, source text, off_food_id text
+  );
+
+  for v_item in
+    select * from public.meal_items where entry_id = v_entry.id order by created_at, id
+  loop
+    select p.* into v_pantry
+    from public.pantry_items p
+    where p.user_id = v_user_id and p.quantity > 0 and p.unit = v_item.unit
+      and (
+        (v_item.pantry_item_id is not null and p.id = v_item.pantry_item_id)
+        or (v_item.pantry_item_id is null and (
+          (v_item.food_key is not null and p.food_key is not null and p.food_key = v_item.food_key)
+          or ((v_item.food_key is null or p.food_key is null) and (
+            (v_item.off_food_id is not null and p.off_food_id = v_item.off_food_id)
+            or lower(regexp_replace(trim(p.name), '[^[:alnum:]]+', ' ', 'g')) =
+               lower(regexp_replace(trim(v_item.food_name), '[^[:alnum:]]+', ' ', 'g'))
+          ))
+        ))
+      )
+    order by case when p.id = v_item.pantry_item_id then 0
+                  when p.food_key = v_item.food_key then 1
+                  when p.off_food_id = v_item.off_food_id then 2 else 3 end,
+             p.created_at, p.id
+    limit 1 for update;
+
+    if found then
+      v_used := least(v_item.quantity_g, v_pantry.quantity);
+      update public.pantry_items set quantity = quantity - v_used where id = v_pantry.id;
+      update public.meal_items
+      set pantry_item_id = v_pantry.id, pantry_quantity_used = v_used
+      where id = v_item.id;
+    end if;
+  end loop;
+
+  select coalesce(jsonb_agg(to_jsonb(mi) order by mi.created_at, mi.id), '[]'::jsonb)
+  into v_items from public.meal_items mi where mi.entry_id = v_entry.id;
 
   return to_jsonb(v_entry) || jsonb_build_object('items', v_items);
 end;
@@ -364,18 +460,31 @@ set search_path = public
 as $$
 declare
   v_meal_id uuid;
+  v_user_id uuid;
 begin
-  delete from public.meal_entries e
-  using public.meals m
-  where e.id = p_entry_id and m.id = e.meal_id and m.user_id = auth.uid()
-  returning e.meal_id into v_meal_id;
+  select e.meal_id, m.user_id into v_meal_id, v_user_id
+  from public.meal_entries e
+  join public.meals m on m.id = e.meal_id
+  where e.id = p_entry_id and m.user_id = auth.uid();
   if not found then
     raise exception 'meal entry not found' using errcode = 'P0002';
   end if;
 
+  update public.pantry_items p
+  set quantity = p.quantity + restored.quantity
+  from (
+    select pantry_item_id, sum(pantry_quantity_used) as quantity
+    from public.meal_items
+    where entry_id = p_entry_id and pantry_item_id is not null
+    group by pantry_item_id
+  ) restored
+  where p.id = restored.pantry_item_id and p.user_id = v_user_id;
+
+  delete from public.meal_entries where id = p_entry_id;
+
   delete from public.meals m
   where m.id = v_meal_id
-    and m.user_id = auth.uid()
+    and m.user_id = v_user_id
     and not exists (select 1 from public.meal_entries e where e.meal_id = m.id);
 end;
 $$;
@@ -401,13 +510,14 @@ begin
 
   with inserted as (
     insert into public.dish_items (
-      dish_id, food_name, quantity_g, category, food_key, calories, protein_g, carbs_g, fat_g, source, off_food_id
+      dish_id, food_name, quantity_g, category, food_key, pantry_item_id,
+      calories, protein_g, carbs_g, fat_g, source, off_food_id
     )
     select
-      v_dish.id, x.food_name, x.quantity_g, coalesce(x.category, 'other'), x.food_key, x.calories, x.protein_g,
+      v_dish.id, x.food_name, x.quantity_g, coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories, x.protein_g,
       x.carbs_g, x.fat_g, coalesce(x.source, 'manual'), x.off_food_id
     from jsonb_to_recordset(p_items) as x(
-      food_name text, quantity_g float, category text, food_key text, calories float, protein_g float,
+      food_name text, quantity_g float, category text, food_key text, pantry_item_id uuid, calories float, protein_g float,
       carbs_g float, fat_g float, source text, off_food_id text
     )
     returning *
@@ -443,13 +553,14 @@ begin
   delete from public.dish_items where dish_id = p_dish_id;
   with inserted as (
     insert into public.dish_items (
-      dish_id, food_name, quantity_g, category, food_key, calories, protein_g, carbs_g, fat_g, source, off_food_id
+      dish_id, food_name, quantity_g, category, food_key, pantry_item_id,
+      calories, protein_g, carbs_g, fat_g, source, off_food_id
     )
     select
-      p_dish_id, x.food_name, x.quantity_g, coalesce(x.category, 'other'), x.food_key, x.calories, x.protein_g,
+      p_dish_id, x.food_name, x.quantity_g, coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories, x.protein_g,
       x.carbs_g, x.fat_g, coalesce(x.source, 'manual'), x.off_food_id
     from jsonb_to_recordset(p_items) as x(
-      food_name text, quantity_g float, category text, food_key text, calories float, protein_g float,
+      food_name text, quantity_g float, category text, food_key text, pantry_item_id uuid, calories float, protein_g float,
       carbs_g float, fat_g float, source text, off_food_id text
     )
     returning *

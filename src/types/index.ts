@@ -66,6 +66,8 @@ export interface MealItem {
   unit: MealItemUnit
   category: FoodCategory
   food_key: string | null
+  pantry_item_id?: string | null
+  pantry_quantity_used?: number
   calories: number
   protein_g: number
   carbs_g: number
@@ -191,6 +193,7 @@ export interface DishItem {
   quantity_g: number
   category: FoodCategory
   food_key: string | null
+  pantry_item_id?: string | null
   calories: number
   protein_g: number
   carbs_g: number

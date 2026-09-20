@@ -27,7 +27,7 @@ interface Props {
     food_name: string; quantity_g: number; calories: number
     protein_g: number; carbs_g: number; fat_g: number
     source: FoodSource; off_food_id: string | null
-    category: FoodResult['category']; food_key: string | null
+    category: FoodResult['category']; food_key: string | null; pantry_item_id: string | null
   }) => void
   onClose: () => void
   hideHeader?: boolean
@@ -62,7 +62,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
   const pantryResults = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return []
-    return pantryItems.filter(p => p.name.toLowerCase().includes(q)).map(pantryItemToFoodResult)
+    return pantryItems.filter(p => p.quantity > 0 && p.name.toLowerCase().includes(q)).map(pantryItemToFoodResult)
   }, [query, pantryItems])
 
   async function handleOffSearch() {
@@ -88,6 +88,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
         calories: manualCal, protein_g: manualProt,
         carbs_g: manualCarbs, fat_g: manualFat,
         source: 'manual', off_food_id: null, category: manualCategory, food_key: null,
+        pantry_item_id: null,
       })
       return
     }
@@ -101,6 +102,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
       off_food_id: selected.source === 'openfoodfacts' ? selected.id : null,
       category: selected.category,
       food_key: selected.food_key,
+      pantry_item_id: selected.source === 'pantry' ? selected.id : null,
     })
   }
 

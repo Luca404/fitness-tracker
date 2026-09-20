@@ -30,6 +30,7 @@ function toDraftItem(i: DishItem): DishItemDraft {
     off_food_id: i.off_food_id,
     category: i.category,
     food_key: i.food_key,
+    pantry_item_id: i.pantry_item_id ?? null,
   }
 }
 
@@ -69,6 +70,7 @@ function beverageToDraft(beverage: BasicFood, volumeMl: number): DishItemDraft {
     off_food_id: null,
     category: beverage.category,
     food_key: `basic:${beverage.id}`,
+    pantry_item_id: null,
   }
 }
 
@@ -142,6 +144,7 @@ export default function MealHub({ onAddEntry }: Props) {
       off_food_id: i.off_food_id,
       category: i.category,
       food_key: i.food_key,
+      pantry_item_id: i.pantry_item_id ?? null,
     }))
     const beverageItem = selectedBeverage && beverageVolume > 0
       ? beverageToDraft(selectedBeverage, beverageVolume)

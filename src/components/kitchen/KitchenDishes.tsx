@@ -31,6 +31,7 @@ function toDraft(item: Dish['items'][number]): DishItemDraft {
     off_food_id: item.off_food_id,
     category: item.category,
     food_key: item.food_key,
+    pantry_item_id: item.pantry_item_id ?? null,
   }
 }
 
