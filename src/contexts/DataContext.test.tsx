@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   updateMealEntry: vi.fn(),
   deleteMealEntry: vi.fn(),
   completeOnboarding: vi.fn(),
+  updateResistanceTraining: vi.fn(),
 }))
 
 vi.mock('./AuthContext', () => ({
@@ -28,6 +29,7 @@ const profile: UserHealthProfile = {
   height_cm: 180,
   weight_kg: 80,
   activity_level: 'moderate',
+  does_resistance_training: true,
   objective: 'maintain',
   target_weight_kg: null,
   target_date: null,
@@ -48,6 +50,7 @@ describe('DataProvider', () => {
     mocks.getUserGoals.mockResolvedValue(null)
     mocks.getLatestWeightLog.mockResolvedValue(null)
     mocks.completeOnboarding.mockResolvedValue(undefined)
+    mocks.updateResistanceTraining.mockResolvedValue(undefined)
   })
 
   it('adds, edits and removes one eaten dish as a single diary entry', async () => {
@@ -140,12 +143,25 @@ describe('DataProvider', () => {
       await result.current.completeOnboarding({
         user_id: 'user-1', age: 30, sex: 'male', height_cm: 180, weight_kg: 80,
         activity_level: 'moderate', objective: 'maintain', target_weight_kg: null,
-        target_date: null, body_fat_pct: null, bmr_override: null,
+        target_date: null, body_fat_pct: null, bmr_override: null, does_resistance_training: true,
       }, { calorie_target: 2400, protein_g: 180, carbs_g: 240, fat_g: 80 })
     })
 
     expect(mocks.completeOnboarding).toHaveBeenCalledTimes(1)
     expect(result.current.profileStatus).toBe('ready')
     expect(result.current.profileUserId).toBe('user-1')
+  })
+
+  it('persists resistance training separately from general activity', async () => {
+    const { result } = renderHook(() => useData(), { wrapper: Wrapper })
+    await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
+
+    await act(async () => {
+      await result.current.saveResistanceTraining(false)
+    })
+
+    expect(mocks.updateResistanceTraining).toHaveBeenCalledWith('user-1', false)
+    expect(result.current.profile?.activity_level).toBe('moderate')
+    expect(result.current.profile?.does_resistance_training).toBe(false)
   })
 })

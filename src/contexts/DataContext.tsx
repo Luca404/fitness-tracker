@@ -29,6 +29,7 @@ interface DataContextType {
     g: SuggestedGoals
   ) => Promise<void>
   saveGoals: (g: Omit<UserGoals, 'updated_at'>) => Promise<void>
+  saveResistanceTraining: (value: boolean) => Promise<void>
   addMealEntry: (
     mealType: MealType,
     name: string,
@@ -146,6 +147,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setGoals({ ...g, updated_at: new Date().toISOString() })
   }, [])
 
+  const saveResistanceTraining = useCallback(async (value: boolean) => {
+    if (!userId) return
+    await api.updateResistanceTraining(userId, value)
+    setProfile(previous => previous
+      ? { ...previous, does_resistance_training: value, updated_at: new Date().toISOString() }
+      : previous)
+  }, [userId])
+
   const completeOnboarding = useCallback(async (
     p: Omit<UserHealthProfile, 'created_at' | 'updated_at'>,
     g: SuggestedGoals
@@ -235,7 +244,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   return (
     <DataContext.Provider value={{
       profile, profileStatus, profileUserId, goals, currentWeightKg, meals, workouts, loading, toast,
-      fetchForDate, fetchProfile, refreshCurrentWeight, completeOnboarding, saveGoals,
+      fetchForDate, fetchProfile, refreshCurrentWeight, completeOnboarding, saveGoals, saveResistanceTraining,
       addMealEntry, updateMealEntry, removeMealEntry, addWorkout, removeWorkout,
       daySummary, showToast,
     }}>

@@ -39,7 +39,19 @@ export async function getHealthProfile(): Promise<UserHealthProfile | null> {
     .select('*')
     .maybeSingle()
   if (error) throw error
-  return data
+  if (!data) return null
+  return {
+    ...data,
+    does_resistance_training: data.does_resistance_training ?? false,
+  } as UserHealthProfile
+}
+
+export async function updateResistanceTraining(userId: string, value: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('user_health_profiles')
+    .update({ does_resistance_training: value, updated_at: new Date().toISOString() })
+    .eq('user_id', userId)
+  if (error) throw error
 }
 
 // --- Goals ---

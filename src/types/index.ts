@@ -20,6 +20,7 @@ export interface UserHealthProfile {
   height_cm: number
   weight_kg: number
   activity_level: ActivityLevel
+  does_resistance_training: boolean
   objective: Objective
   target_weight_kg: number | null
   target_date: string | null   // ISO date string YYYY-MM-DD

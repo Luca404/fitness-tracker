@@ -4,10 +4,11 @@ import { useData } from '../contexts/DataContext'
 import StepPhysical from '../components/onboarding/StepPhysical'
 import StepObjective from '../components/onboarding/StepObjective'
 import StepLifestyle from '../components/onboarding/StepLifestyle'
+import StepTraining from '../components/onboarding/StepTraining'
 import StepConfirm from '../components/onboarding/StepConfirm'
 import type { Sex, ActivityLevel, Objective, SuggestedGoals } from '../types'
 
-const TOTAL_STEPS = 4
+const TOTAL_STEPS = 5
 
 export default function OnboardingPage() {
   const { user } = useAuth()
@@ -23,6 +24,7 @@ export default function OnboardingPage() {
     target_date: null as string | null,
   })
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('moderate')
+  const [doesResistanceTraining, setDoesResistanceTraining] = useState<boolean | null>(null)
 
   async function handleConfirm(goals: SuggestedGoals) {
     if (!user) return
@@ -31,6 +33,7 @@ export default function OnboardingPage() {
         user_id: user.id,
         ...physical,
         activity_level: activityLevel,
+        does_resistance_training: doesResistanceTraining ?? false,
         ...objective,
         bmr_override: null,
       }, goals)
@@ -42,6 +45,7 @@ export default function OnboardingPage() {
   const profileForConfirm = {
     ...physical,
     activity_level: activityLevel,
+    does_resistance_training: doesResistanceTraining ?? false,
     ...objective,
     bmr_override: null,
   }
@@ -86,10 +90,18 @@ export default function OnboardingPage() {
           />
         )}
         {step === 4 && (
+          <StepTraining
+            value={doesResistanceTraining}
+            onChange={setDoesResistanceTraining}
+            onNext={() => setStep(5)}
+            onBack={() => setStep(3)}
+          />
+        )}
+        {step === 5 && (
           <StepConfirm
             profile={profileForConfirm}
             onConfirm={handleConfirm}
-            onBack={() => setStep(3)}
+            onBack={() => setStep(4)}
           />
         )}
       </div>

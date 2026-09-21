@@ -7,6 +7,7 @@ create table public.user_health_profiles (
   weight_kg        float not null check (weight_kg between 20 and 400),
   activity_level   text not null check (activity_level in (
                      'sedentary', 'light', 'moderate', 'active', 'very_active')),
+  does_resistance_training boolean not null default false,
   objective        text not null check (objective in (
                      'lose_weight', 'gain_muscle', 'maintain')),
   target_weight_kg float check (target_weight_kg between 20 and 400),
@@ -272,12 +273,13 @@ begin
   end if;
 
   insert into public.user_health_profiles (
-    user_id, age, sex, height_cm, weight_kg, activity_level, objective,
+    user_id, age, sex, height_cm, weight_kg, activity_level, does_resistance_training, objective,
     target_weight_kg, target_date, body_fat_pct, bmr_override, updated_at
   ) values (
     v_user_id, (p_profile->>'age')::int, p_profile->>'sex',
     (p_profile->>'height_cm')::float, (p_profile->>'weight_kg')::float,
-    p_profile->>'activity_level', p_profile->>'objective',
+    p_profile->>'activity_level', coalesce((p_profile->>'does_resistance_training')::boolean, false),
+    p_profile->>'objective',
     nullif(p_profile->>'target_weight_kg', '')::float,
     nullif(p_profile->>'target_date', '')::date,
     nullif(p_profile->>'body_fat_pct', '')::float,
@@ -289,6 +291,7 @@ begin
     height_cm = excluded.height_cm,
     weight_kg = excluded.weight_kg,
     activity_level = excluded.activity_level,
+    does_resistance_training = excluded.does_resistance_training,
     objective = excluded.objective,
     target_weight_kg = excluded.target_weight_kg,
     target_date = excluded.target_date,

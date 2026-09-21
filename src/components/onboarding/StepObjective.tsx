@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { Objective } from '../../types'
 import { differenceInDays, format, addMonths } from 'date-fns'
+import { NUTRITION_GOAL_CONFIG } from '../../config/nutritionGoals'
 
 interface ObjectiveData {
   objective: Objective
@@ -36,7 +37,11 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
     return (deltaKg / weeks).toFixed(2)
   }, [data, currentWeightKg])
 
-  const isAggressive = rateKgPerWeek !== null && parseFloat(rateKgPerWeek) > 1
+  const weeklyRatePercent = rateKgPerWeek === null
+    ? null
+    : (parseFloat(rateKgPerWeek) / currentWeightKg) * 100
+  const isAggressive = weeklyRatePercent !== null
+    && weeklyRatePercent > NUTRITION_GOAL_CONFIG.loss.maxWeeklyRate * 100
   const invalidLossTarget = data.objective === 'lose_weight' &&
     data.target_weight_kg !== null && data.target_weight_kg >= currentWeightKg
 
@@ -105,7 +110,8 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
           {rateKgPerWeek && (
             <p className={`text-sm mt-2 ${isAggressive ? 'text-orange-400' : 'text-primary-400'}`}>
               {isAggressive && '⚠️ '}Ritmo stimato: {rateKgPerWeek} kg/settimana
-              {isAggressive && ' — considera un obiettivo più graduale'}
+              {weeklyRatePercent !== null && ` (${weeklyRatePercent.toFixed(2)}% del peso)`}
+              {isAggressive && ' — la data è troppo aggressiva e verrà applicato un limite prudenziale'}
             </p>
           )}
         </div>

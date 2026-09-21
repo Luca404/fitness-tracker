@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { UserHealthProfile, SuggestedGoals } from '../../types'
-import { calculateBMR, calculateTDEE, calculateDeficit, suggestGoals } from '../../utils/bmr'
+import { calculateNutritionGoals } from '../../utils/bmr'
 
 interface Props {
   profile: Omit<UserHealthProfile, 'user_id' | 'created_at' | 'updated_at'>
@@ -9,17 +9,19 @@ interface Props {
 }
 
 export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
-  const bmr = calculateBMR({ ...profile, user_id: '', created_at: '', updated_at: '' })
-  const tdee = calculateTDEE(bmr, profile.activity_level)
-  const deficit = calculateDeficit({ ...profile, user_id: '', created_at: '', updated_at: '' })
-  const suggested = suggestGoals(tdee, deficit)
+  const recommendation = calculateNutritionGoals({
+    ...profile,
+    user_id: '',
+    created_at: '',
+    updated_at: '',
+  })
+  const suggested = recommendation.goals
 
   const [calories, setCalories] = useState(suggested.calorie_target)
   const [protein, setProtein] = useState(suggested.protein_g)
   const [carbs, setCarbs] = useState(suggested.carbs_g)
   const [fat, setFat] = useState(suggested.fat_g)
 
-  const isAggressive = deficit < -900
   const goalsValid = calories > 0 && protein >= 0 && carbs >= 0 && fat >= 0
 
   return (
@@ -27,23 +29,35 @@ export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
       <h2 className="text-xl font-bold">Riepilogo</h2>
 
       <div className="bg-gray-800 rounded-xl p-4 space-y-2 text-sm">
-        <div className="flex justify-between"><span className="text-gray-400">BMR</span><span>{Math.round(bmr)} kcal</span></div>
-        <div className="flex justify-between"><span className="text-gray-400">TDEE</span><span>{Math.round(tdee)} kcal</span></div>
+        <div className="flex justify-between"><span className="text-gray-400">BMR</span><span>{Math.round(recommendation.bmr)} kcal</span></div>
+        <div className="flex justify-between"><span className="text-gray-400">TDEE stimato</span><span>{Math.round(recommendation.tdee)} kcal</span></div>
         <div className="flex justify-between">
           <span className="text-gray-400">Aggiustamento</span>
-          <span className={deficit < 0 ? 'text-orange-400' : 'text-primary-400'}>
-            {deficit > 0 ? '+' : ''}{Math.round(deficit)} kcal
+          <span className={recommendation.calorieAdjustment < 0 ? 'text-orange-400' : 'text-primary-400'}>
+            {recommendation.calorieAdjustment > 0 ? '+' : ''}{Math.round(recommendation.calorieAdjustment)} kcal
           </span>
         </div>
+        {recommendation.appliedWeeklyLossRate !== null && (
+          <div className="flex justify-between">
+            <span className="text-gray-400">Ritmo usato</span>
+            <span>{(recommendation.appliedWeeklyLossRate * 100).toFixed(2)}%/settimana</span>
+          </div>
+        )}
       </div>
 
-      {isAggressive && (
-        <p className="text-orange-400 text-sm bg-orange-400/10 rounded-lg p-3">
-          Attenzione: Il ritmo è aggressivo (&gt;1000 kcal/giorno di deficit). Il target è stato limitato a -1000 kcal/giorno.
+      {recommendation.warnings.map(warning => (
+        <p key={warning.code} className="rounded-lg bg-orange-400/10 p-3 text-sm text-orange-300">
+          ⚠️ {warning.message}
         </p>
-      )}
+      ))}
 
-      <h3 className="font-semibold">Goal calorici (modificabili)</h3>
+      <div>
+        <h3 className="font-semibold">Goal giornalieri modificabili</h3>
+        <p className="mt-1 text-xs text-gray-400">
+          Proteine {recommendation.proteinPerKg.toFixed(1)} g/kg · Grassi {recommendation.fatPerKg.toFixed(1)} g/kg · carboidrati dalle calorie rimanenti
+          {recommendation.usesAdjustedWeight && ` · peso di riferimento ${Math.round(recommendation.referenceWeightKg)} kg`}
+        </p>
+      </div>
 
       {[
         { label: 'Calorie (kcal)', val: calories, set: setCalories },
