@@ -109,7 +109,7 @@ Regole obbligatorie:
 3. Se esiste una colonna per 100 g/ml, compilala sempre: non normalizzare la porzione e non aggiungere avvisi di normalizzazione.
 4. Non convertire kJ in kcal: trascrivi entrambi nei rispettivi campi. Il server farà conversioni e controlli.
 5. Se sono dichiarati pezzi e peso della porzione, mantienili separati. Non moltiplicare mai il numero dei pezzi per il peso di una porzione.
-6. package_piece_count contiene solo il numero di pezzi stampato. package_net_quantity contiene solo peso/volume netto esplicitamente stampato: non stimarlo.
+6. package_piece_count contiene solo il numero di pezzi stampato. package_net_quantity contiene solo peso/volume netto esplicitamente stampato: non stimarlo. Usa sempre g o ml come unità standard: per esempio 1 L corrisponde a package_net_quantity_value=1000 e package_net_quantity_unit="ml"; 1 kg corrisponde a 1000 e "g".
 7. Non dedurre ingredienti, allergeni, marca o quantità non visibili. Usa null quando un dato non è leggibile.
 8. Prima di rispondere verifica visivamente intestazioni, separatori decimali e allineamento di ogni riga.
 

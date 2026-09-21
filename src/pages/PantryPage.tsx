@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import * as api from '../services/api'
@@ -160,6 +160,8 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
   const [scanLoading, setScanLoading] = useState(false)
   const [scannedBarcode, setScannedBarcode] = useState<string | null>(null)
   const [analysisReviewAcknowledged, setAnalysisReviewAcknowledged] = useState(false)
+  const [savingItem, setSavingItem] = useState(false)
+  const addInProgressRef = useRef(false)
 
   const [query, setQuery] = useState('')
   const [manualName, setManualName] = useState('')
@@ -343,88 +345,95 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
   }
 
   async function handleAddToPantry() {
-    if (!pending || !user || !pending.name.trim()) return
-    const pantryValues: Omit<PantryItem, 'id' | 'user_id' | 'created_at'> = {
-      name: pending.name.trim(),
-      quantity,
-      unit,
-      calories_100g: pending.calories_100g,
-      protein_100g: pending.protein_100g,
-      carbs_100g: pending.carbs_100g,
-      fat_100g: pending.fat_100g,
-      category: pending.category,
-      food_key: pending.food_key,
-      source: pending.source,
-      off_food_id: pending.off_food_id,
-      barcode: normalizeBarcode(pending.barcode),
-      off_data: pending.source === 'ai_photo' ? aiPhotoMetadata(pending) : pending.off_data ?? null,
-      fiber_100g: pending.fiber_100g ?? null,
-      sugars_100g: pending.sugars_100g ?? null,
-      saturated_fat_100g: pending.saturated_fat_100g ?? null,
-      unsaturated_fat_100g: pending.unsaturated_fat_100g ?? null,
-      salt_100g: pending.salt_100g ?? null,
-      nutrition_score: pending.nutrition_score ?? null,
-      nutrition_grade: pending.nutrition_grade ?? null,
-      nova_group: pending.nova_group ?? null,
-      ecoscore_grade: pending.ecoscore_grade ?? null,
-    }
+    if (!pending || !user || !pending.name.trim() || addInProgressRef.current) return
+    addInProgressRef.current = true
+    setSavingItem(true)
     try {
-      if (editingItemId) {
-        await api.updatePantryItem(editingItemId, pantryValues)
-      } else {
-        await api.addPantryItem({
-          user_id: user.id,
-          ...pantryValues,
-        })
+      const pantryValues: Omit<PantryItem, 'id' | 'user_id' | 'created_at'> = {
+        name: pending.name.trim(),
+        quantity,
+        unit,
+        calories_100g: pending.calories_100g,
+        protein_100g: pending.protein_100g,
+        carbs_100g: pending.carbs_100g,
+        fat_100g: pending.fat_100g,
+        category: pending.category,
+        food_key: pending.food_key,
+        source: pending.source,
+        off_food_id: pending.off_food_id,
+        barcode: normalizeBarcode(pending.barcode),
+        off_data: pending.source === 'ai_photo' ? aiPhotoMetadata(pending) : pending.off_data ?? null,
+        fiber_100g: pending.fiber_100g ?? null,
+        sugars_100g: pending.sugars_100g ?? null,
+        saturated_fat_100g: pending.saturated_fat_100g ?? null,
+        unsaturated_fat_100g: pending.unsaturated_fat_100g ?? null,
+        salt_100g: pending.salt_100g ?? null,
+        nutrition_score: pending.nutrition_score ?? null,
+        nutrition_grade: pending.nutrition_grade ?? null,
+        nova_group: pending.nova_group ?? null,
+        ecoscore_grade: pending.ecoscore_grade ?? null,
       }
-    } catch {
-      showToast('Errore aggiunta articolo')
-      return
-    }
-
-    let catalogSaveFailed = false
-    if (
-      pending.source === 'ai_photo'
-      && pantryValues.barcode
-      && pending.analysis_confirmation_token
-    ) {
       try {
-        await confirmBarcodeProduct({
-          confirmation_token: pending.analysis_confirmation_token,
-          barcode: pantryValues.barcode,
-          name: pantryValues.name,
-          brand: pending.brand?.trim() || null,
-          package_quantity: pending.quantity?.trim() || null,
-          package_piece_count: pending.package_piece_count ?? null,
-          package_net_quantity_value: pending.package_net_quantity_value ?? null,
-          package_net_quantity_unit: pending.package_net_quantity_unit ?? null,
-          serving_size: pending.serving_size?.trim() || null,
-          ingredients: pending.ingredients?.trim() || null,
-          allergens: pending.allergens?.trim() || null,
-          calories_100g: pantryValues.calories_100g,
-          protein_100g: pantryValues.protein_100g,
-          carbs_100g: pantryValues.carbs_100g,
-          fat_100g: pantryValues.fat_100g,
-          fiber_100g: pantryValues.fiber_100g ?? null,
-          sugars_100g: pantryValues.sugars_100g ?? null,
-          saturated_fat_100g: pantryValues.saturated_fat_100g ?? null,
-          unsaturated_fat_100g: pantryValues.unsaturated_fat_100g ?? null,
-          salt_100g: pantryValues.salt_100g ?? null,
-          category: pantryValues.category,
-          nutrition_basis: pending.nutrition_basis ?? 'unavailable',
-          confidence: pending.analysis_confidence ?? 'low',
-          warnings: pending.analysis_warnings ?? [],
-          raw_extraction: pending.analysis_raw_extraction ?? null,
-        })
+        if (editingItemId) {
+          await api.updatePantryItem(editingItemId, pantryValues)
+        } else {
+          await api.addPantryItem({
+            user_id: user.id,
+            ...pantryValues,
+          })
+        }
       } catch {
-        catalogSaveFailed = true
+        showToast('Errore aggiunta articolo')
+        return
       }
+
+      let catalogSaveFailed = false
+      if (
+        pending.source === 'ai_photo'
+        && pantryValues.barcode
+        && pending.analysis_confirmation_token
+      ) {
+        try {
+          await confirmBarcodeProduct({
+            confirmation_token: pending.analysis_confirmation_token,
+            barcode: pantryValues.barcode,
+            name: pantryValues.name,
+            brand: pending.brand?.trim() || null,
+            package_quantity: pending.quantity?.trim() || null,
+            package_piece_count: pending.package_piece_count ?? null,
+            package_net_quantity_value: pending.package_net_quantity_value ?? null,
+            package_net_quantity_unit: pending.package_net_quantity_unit ?? null,
+            serving_size: pending.serving_size?.trim() || null,
+            ingredients: pending.ingredients?.trim() || null,
+            allergens: pending.allergens?.trim() || null,
+            calories_100g: pantryValues.calories_100g,
+            protein_100g: pantryValues.protein_100g,
+            carbs_100g: pantryValues.carbs_100g,
+            fat_100g: pantryValues.fat_100g,
+            fiber_100g: pantryValues.fiber_100g ?? null,
+            sugars_100g: pantryValues.sugars_100g ?? null,
+            saturated_fat_100g: pantryValues.saturated_fat_100g ?? null,
+            unsaturated_fat_100g: pantryValues.unsaturated_fat_100g ?? null,
+            salt_100g: pantryValues.salt_100g ?? null,
+            category: pantryValues.category,
+            nutrition_basis: pending.nutrition_basis ?? 'unavailable',
+            confidence: pending.analysis_confidence ?? 'low',
+            warnings: pending.analysis_warnings ?? [],
+            raw_extraction: pending.analysis_raw_extraction ?? null,
+          })
+        } catch {
+          catalogSaveFailed = true
+        }
+      }
+      showToast(catalogSaveFailed
+        ? 'Salvato in dispensa, ma il catalogo condiviso non è stato aggiornato'
+        : editingItemId ? 'Ingrediente aggiornato' : 'Aggiunto alla dispensa')
+      resetAddFlow()
+      await refresh()
+    } finally {
+      addInProgressRef.current = false
+      setSavingItem(false)
     }
-    showToast(catalogSaveFailed
-      ? 'Salvato in dispensa, ma il catalogo condiviso non è stato aggiornato'
-      : editingItemId ? 'Ingrediente aggiornato' : 'Aggiunto alla dispensa')
-    resetAddFlow()
-    await refresh()
   }
 
   async function handleDelete(id: string) {
@@ -837,14 +846,16 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
             </select>
           </div>
           <button type="button" onClick={handleAddToPantry}
-            disabled={quantity <= 0
+            disabled={savingItem
+              || quantity <= 0
               || !pending.name.trim()
               || Boolean(pending.barcode && !normalizeBarcode(pending.barcode))
               || Boolean(pending.analysis_requires_review && !analysisReviewAcknowledged)}
             className="w-full py-3 bg-primary-600 rounded-lg font-semibold disabled:opacity-40">
-            {editingItemId ? 'Salva modifiche' : 'Aggiungi alla dispensa'}
+            {savingItem ? 'Salvataggio…' : editingItemId ? 'Salva modifiche' : 'Aggiungi alla dispensa'}
           </button>
-          <button type="button" onClick={resetAddFlow} className="text-sm text-gray-500 text-center w-full">
+          <button type="button" onClick={resetAddFlow} disabled={savingItem}
+            className="text-sm text-gray-500 text-center w-full disabled:opacity-40">
             Annulla
           </button>
         </div>

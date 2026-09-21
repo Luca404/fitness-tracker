@@ -94,4 +94,20 @@ describe('normalizeNutritionExtraction', () => {
     })
     expect(result.warnings).toContain('Valori normalizzati matematicamente dalla porzione di 58 g.')
   })
+
+  it('normalizes a one-litre package to 1000 ml even if the AI returns 1 ml', () => {
+    const result = normalizeNutritionExtraction(eggExtraction({
+      package_quantity_label: '1 L',
+      package_piece_count: null,
+      package_net_quantity_value: 1,
+      package_net_quantity_unit: 'ml',
+    }))
+
+    expect(result).toMatchObject({
+      package_net_quantity_value: 1000,
+      package_net_quantity_unit: 'ml',
+      package_quantity_value: 1000,
+      package_quantity_unit: 'ml',
+    })
+  })
 })

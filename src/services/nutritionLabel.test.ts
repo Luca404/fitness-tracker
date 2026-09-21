@@ -77,6 +77,24 @@ describe('analysisToPantryDraft', () => {
     expect(draft.quantityUnit).toBe('pz')
   })
 
+  it('uses the printed litre quantity as 1000 ml instead of trusting an AI value of 1 ml', () => {
+    const draft = analysisToPantryDraft({
+      ...analysis,
+      category: 'beverage',
+      package_quantity_label: '1 L',
+      package_quantity_value: 1,
+      package_quantity_unit: 'ml',
+      package_piece_count: null,
+      package_net_quantity_value: 1,
+      package_net_quantity_unit: 'ml',
+    })
+
+    expect(draft.quantityValue).toBe(1000)
+    expect(draft.quantityUnit).toBe('ml')
+    expect(draft.packageNetQuantityValue).toBe(1000)
+    expect(draft.packageNetQuantityUnit).toBe('ml')
+  })
+
   it('rebuilds a cached barcode product without requiring another AI response', () => {
     const cached: BarcodeProduct = {
       barcode: '8000500310427',

@@ -18,9 +18,27 @@ export const NUTRIENT_KEYS = [
 type Confidence = 'high' | 'medium' | 'low'
 type NutritionBasis = 'per_100g' | 'per_100ml' | 'normalized_from_serving' | 'unavailable'
 type JsonRecord = Record<string, unknown>
+type MetricPackageQuantity = { value: number; unit: 'g' | 'ml' }
 
 function round(value: number): number {
   return Math.round(value * 100) / 100
+}
+
+function parseMetricPackageQuantity(label: unknown): MetricPackageQuantity | null {
+  if (typeof label !== 'string' || !label.trim()) return null
+  const normalized = label.toLowerCase().replace(',', '.').replace(/[×ℓ]/g, character => character === '×' ? 'x' : 'l')
+  const match = normalized.match(/(\d+(?:\.\d+)?)\s*(?:x\s*(\d+(?:\.\d+)?)\s*)?(kg|g|mg|l|ml|cl|dl)\b/)
+  if (!match) return null
+
+  const count = match[2] ? Number(match[1]) : 1
+  const amount = Number(match[2] ?? match[1]) * count
+  const rawUnit = match[3]
+  if (!Number.isFinite(amount) || amount <= 0) return null
+  if (rawUnit === 'kg') return { value: round(amount * 1000), unit: 'g' }
+  if (rawUnit === 'mg') return { value: round(amount / 1000), unit: 'g' }
+  if (rawUnit === 'g') return { value: round(amount), unit: 'g' }
+  const multiplier = rawUnit === 'l' ? 1000 : rawUnit === 'cl' ? 10 : rawUnit === 'dl' ? 100 : 1
+  return { value: round(amount * multiplier), unit: 'ml' }
 }
 
 function hasNutrition(value: RawNutrients | null): value is RawNutrients {
@@ -94,6 +112,14 @@ export function normalizeNutritionExtraction(extraction: JsonRecord): JsonRecord
   const servingUnit = extraction.serving_quantity_unit as 'g' | 'ml' | null
   const warnings = [...extraction.warnings as string[]]
   const issues: string[] = []
+  const packagePieceCount = extraction.package_piece_count as number | null
+  const parsedPackageQuantity = packagePieceCount === null
+    ? parseMetricPackageQuantity(extraction.package_quantity_label)
+    : null
+  const packageNetQuantityValue = parsedPackageQuantity?.value
+    ?? (extraction.package_net_quantity_value as number | null)
+  const packageNetQuantityUnit = parsedPackageQuantity?.unit
+    ?? (extraction.package_net_quantity_unit as 'g' | 'ml' | null)
   let values: RawNutrients | null = null
   let basis: NutritionBasis = 'unavailable'
 
@@ -132,8 +158,10 @@ export function normalizeNutritionExtraction(extraction: JsonRecord): JsonRecord
 
   return {
     ...extraction,
-    package_quantity_value: extraction.package_piece_count ?? extraction.package_net_quantity_value,
-    package_quantity_unit: extraction.package_piece_count !== null ? 'pz' : extraction.package_net_quantity_unit,
+    package_net_quantity_value: packageNetQuantityValue,
+    package_net_quantity_unit: packageNetQuantityUnit,
+    package_quantity_value: packagePieceCount ?? packageNetQuantityValue,
+    package_quantity_unit: packagePieceCount !== null ? 'pz' : packageNetQuantityUnit,
     nutrition_basis: basis,
     calories_100: calories,
     protein_100g: values?.protein_g ?? null,

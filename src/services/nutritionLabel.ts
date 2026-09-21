@@ -94,8 +94,19 @@ function positiveOrNull(value: number | null): number | null {
 
 export function analysisToPantryDraft(analysis: NutritionLabelAnalysis): NutritionLabelDraft {
   const packagePieceCount = positiveOrNull(analysis.package_piece_count ?? null)
-  const packageNetQuantityValue = positiveOrNull(analysis.package_net_quantity_value ?? null)
-  const packageNetQuantityUnit = analysis.package_net_quantity_unit ?? null
+  const parsedPackageQuantity = packagePieceCount === null
+    ? parseProductQuantity(analysis.package_quantity_label)
+    : null
+  const parsedMetricQuantity: { value: number; unit: 'g' | 'ml' } | null = (
+    parsedPackageQuantity?.unit === 'g' || parsedPackageQuantity?.unit === 'ml'
+  )
+    ? { value: parsedPackageQuantity.value, unit: parsedPackageQuantity.unit }
+    : null
+  const packageNetQuantityValue = parsedMetricQuantity?.value
+    ?? positiveOrNull(analysis.package_net_quantity_value ?? null)
+  const packageNetQuantityUnit = parsedMetricQuantity?.unit
+    ?? analysis.package_net_quantity_unit
+    ?? null
   return {
     barcode: normalizeBarcode(analysis.barcode),
     name: analysis.product_name?.trim() || 'Prodotto da etichetta',
