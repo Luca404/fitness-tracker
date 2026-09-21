@@ -28,15 +28,20 @@ export default function IngredientQuantityInput({ foodName, category, grams, onC
   const activeEstimate = estimates.find(estimate => estimate.id === mode)
   const effectiveMode: QuantityMode = activeEstimate ? mode : 'grams'
   const displayedQuantity = activeEstimate ? roundQuantity(grams / activeEstimate.grams) : roundQuantity(grams)
+  const [draftValue, setDraftValue] = useState<string | null>(null)
 
   function changeMode(nextMode: QuantityMode) {
     setSelection({ key: selectionKey, mode: nextMode })
+    setDraftValue(null)
     if (nextMode === 'grams') return
     const estimate = estimates.find(option => option.id === nextMode)
     if (estimate) onChange(estimate.grams)
   }
 
-  function changeQuantity(value: number) {
+  function changeQuantity(rawValue: string) {
+    setDraftValue(rawValue)
+    if (rawValue === '') return
+    const value = Number(rawValue)
     if (!Number.isFinite(value) || value <= 0) return
     onChange(roundQuantity(activeEstimate ? value * activeEstimate.grams : value))
   }
@@ -48,8 +53,9 @@ export default function IngredientQuantityInput({ foodName, category, grams, onC
           type="number"
           min={activeEstimate ? 0.5 : 1}
           step={activeEstimate ? 0.5 : 1}
-          value={displayedQuantity}
-          onChange={event => changeQuantity(parseFloat(event.target.value))}
+          value={draftValue ?? (displayedQuantity > 0 ? displayedQuantity : '')}
+          onChange={event => changeQuantity(event.target.value)}
+          onBlur={() => { if (draftValue === '') setDraftValue(null) }}
           onFocus={event => event.currentTarget.select()}
           aria-label={`Quantità di ${foodName}`}
           className={`min-w-0 flex-1 bg-transparent font-semibold outline-none ${compact ? 'px-2 py-2 text-sm' : 'px-3 py-2.5 text-lg'}`}

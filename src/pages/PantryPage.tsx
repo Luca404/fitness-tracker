@@ -779,7 +779,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
                   {PHOTO_NUTRIENT_FIELDS.map(field => (
                     <label key={field.key} className="text-xs text-gray-400">
                       {field.label} ({field.unit})
-                      <input type="number" min={0} step="any" value={pending[field.key] ?? ''}
+                      <input type="number" min={0} step="any" value={pending[field.key] || ''}
                         onChange={event => setPending({
                           ...pending,
                           [field.key]: Math.max(0, Number(event.target.value) || 0),

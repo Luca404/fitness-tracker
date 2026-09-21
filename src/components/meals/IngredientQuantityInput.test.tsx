@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import IngredientQuantityInput from './IngredientQuantityInput'
 
 function BreadQuantityHarness() {
@@ -19,6 +19,8 @@ function BreadQuantityHarness() {
 }
 
 describe('IngredientQuantityInput', () => {
+  afterEach(cleanup)
+
   it('converts slices to grams while keeping grams as source of truth', () => {
     render(<BreadQuantityHarness />)
 
@@ -32,5 +34,16 @@ describe('IngredientQuantityInput', () => {
     })
     expect(screen.getByLabelText('Grammi calcolati').textContent).toBe('60')
     expect(screen.getByText('≈ 60 g · 1 fetta ≈ 30 g')).toBeTruthy()
+  })
+
+  it('allows the quantity field to be emptied before entering a new value', () => {
+    render(<BreadQuantityHarness />)
+    const input = screen.getByLabelText('Quantità di Pane in cassetta')
+
+    fireEvent.change(input, { target: { value: '' } })
+    expect((input as HTMLInputElement).value).toBe('')
+
+    fireEvent.change(input, { target: { value: '150' } })
+    expect(screen.getByLabelText('Grammi calcolati').textContent).toBe('150')
   })
 })
