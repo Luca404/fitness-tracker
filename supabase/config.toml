@@ -365,6 +365,19 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+[functions.analyze-nutrition-label]
+enabled = true
+# Authentication is enforced in the handler through Supabase Auth. Keeping the
+# legacy gateway check off supports both publishable keys and rotated JWT keys.
+verify_jwt = false
+entrypoint = "./functions/analyze-nutrition-label/index.ts"
+
+[functions.resolve-barcode-product]
+enabled = true
+# Authentication is enforced in the handler, matching the photo analyzer.
+verify_jwt = false
+entrypoint = "./functions/resolve-barcode-product/index.ts"
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

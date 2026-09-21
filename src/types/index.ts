@@ -164,6 +164,7 @@ export interface PantryItem {
   food_key: string | null
   source: FoodSource
   off_food_id: string | null
+  barcode?: string | null
   off_data?: Record<string, unknown> | null
   fiber_100g?: number | null
   sugars_100g?: number | null
@@ -175,6 +176,35 @@ export interface PantryItem {
   nova_group?: number | null
   ecoscore_grade?: string | null
   created_at: string
+}
+
+export interface BarcodeProduct {
+  barcode: string
+  name: string
+  brand: string | null
+  package_quantity: string | null
+  quantity_value: number | null
+  quantity_unit: PantryUnit | null
+  serving_size: string | null
+  ingredients: string | null
+  allergens: string | null
+  calories_100g: number
+  protein_100g: number
+  carbs_100g: number
+  fat_100g: number
+  fiber_100g: number | null
+  sugars_100g: number | null
+  saturated_fat_100g: number | null
+  unsaturated_fat_100g: number | null
+  salt_100g: number | null
+  category: FoodCategory
+  source: 'openfoodfacts' | 'ai_photo'
+  off_food_id: string | null
+  confidence: 'high' | 'medium' | 'low' | null
+  metadata: Record<string, unknown> | null
+  created_at: string
+  updated_at: string
+  cache_hit?: boolean
 }
 
 export interface Dish {

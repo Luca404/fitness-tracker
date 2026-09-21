@@ -9,7 +9,8 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 - **Meal logging** — log meals by time slot (breakfast, lunch, dinner, snack, alcoholic snack); calorie and macro breakdown per meal and per day
 - **Dish-centric entry** — opening a meal slot shows one hub: pick a saved dish (scaled by total weight and optionally paired with a drink measured in ml), cook something new (composed from a curated basic-ingredients dataset + Open Food Facts, then saved for reuse), or log a one-off dish/item that isn't saved
 - **Kitchen** — one area with saved dishes and pantry tabs; create, inspect and edit recipes, then get cookable suggestions ranked from the ingredients currently available
-- **Pantry** — track groceries at home by culinary category (quantity + unit: g/ml/pieces), added via barcode scan or manual/basic-food entry; pantry items surface first when searching ingredients; existing entries can be edited
+- **Pantry** — track groceries at home by culinary category (quantity + unit: g/ml/pieces), added via barcode scan, nutrition-label photo, or manual/basic-food entry; barcode and nutrition data are reused through a shared read-only product catalog, while pantry stock remains private; pantry items surface first when searching ingredients and matching stock is consumed automatically when a dish is logged
+- **Nutrition-label photo import** — take or choose a package photo, extract product and per-100 nutrition data through an authenticated OpenAI-backed Edge Function, review every field, then save it to the pantry
 - **Macros** — visual progress bars for protein, carbs, and fat against daily targets
 - **Calorie ring** — at-a-glance daily calorie budget vs. consumed
 - **Workout tracking** — choose from 20 activities and log sessions with MET-based calorie burn calculation
@@ -44,6 +45,20 @@ npm run dev     # → http://localhost:5173
 npm run build
 ```
 
+After linking the project, configure the photo-import Edge Function with a
+server-side OpenAI secret. Never add this key to a `VITE_` variable or to
+frontend code:
+
+```bash
+supabase secrets set OPENAI_API_KEY=sk-...
+supabase functions deploy analyze-nutrition-label
+supabase functions deploy resolve-barcode-product
+```
+
+The optional `OPENAI_VISION_MODEL` secret overrides the default `gpt-4o-mini`.
+For local function development, put these server secrets in an ignored `.env.local`
+file and pass it to `supabase functions serve`.
+
 The hosted database is shared with the other Trackrs applications. Never use
 `supabase db reset --linked` against it. Review `supabase db push --dry-run`
 first and apply only the migrations in this repository. The initial
@@ -60,7 +75,7 @@ src/
 │   ├── kitchen/         # Saved dishes, details and pantry-driven recommendations
 │   ├── meals/           # Meal cards/details, calorie/macros, ingredient search and dish composer
 │   ├── onboarding/      # StepPhysical, StepLifestyle, StepObjective, StepConfirm
-│   ├── pantry/          # BarcodeScanner
+│   ├── pantry/          # BarcodeScanner, NutritionLabelPhoto
 │   └── workout/         # WorkoutDrawer, WorkoutRow, ActivityGrid
 ├── contexts/
 │   ├── AuthContext.tsx  # Supabase Auth, session management
@@ -79,6 +94,8 @@ src/
 ├── services/
 │   ├── api.ts           # All Supabase CRUD
 │   ├── nutrition.ts     # Basic-foods search, Open Food Facts search + barcode lookup
+│   ├── barcodeProducts.ts # Shared barcode catalog client and photo barcode detection
+│   ├── nutritionLabel.ts # Photo preparation + nutrition-label Edge Function client
 │   └── supabase.ts      # Supabase client
 ├── data/
 │   ├── basicFoods.ts    # Curated ingredients (kcal/macros per 100g + culinary category)
@@ -101,12 +118,22 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 | `user_goals` | TDEE, calorie target, macro targets, activity level, objective |
 | `meals` | Meal records scoped by user and date |
 | `meal_entries` | Named dishes actually eaten within a meal slot |
-| `meal_items` | Ingredients and drinks belonging to an eaten dish, with `g`/`ml` units and nutrition values |
+| `meal_items` | Ingredients and drinks belonging to an eaten dish, with `g`/`ml` units, nutrition values and the pantry quantity actually consumed |
 | `workouts` | Workout sessions (activity type, duration, MET, calories burned) |
 | `weight_logs` | Daily weight entries |
 | `dishes` | Saved reusable dishes (name, reference weight derived from items) |
-| `dish_items` | Ingredients within a saved dish (same shape as `meal_items`) |
+| `dish_items` | Ingredients within a saved dish, including the selected pantry-item reference when available |
 | `pantry_items` | Groceries at home (quantity + unit, kcal/macros per 100g/100ml, Open Food Facts payload and nutrition scores when available) |
+| `barcode_products` | Shared product catalog keyed by barcode; authenticated clients can read it and trusted Edge Functions populate it from Open Food Facts or a complete, sufficiently confident label analysis |
+
+Pantry synchronization is performed inside the same PostgreSQL transaction that
+creates or updates a diary entry. Ingredients are matched to the exact selected
+pantry row first, then by stable catalog/Open Food Facts identifiers and finally
+by normalized name. Only compatible units are consumed (`g` from `g`, `ml` from
+`ml`); recipe quantities cannot automatically convert pantry items stored as
+pieces. Stock stops at zero, depleted items are hidden from ingredient search,
+editing a diary entry recalculates its consumption, and deleting it restores the
+quantity that entry had actually used.
 
 Food categories include dedicated groups for baked goods, nuts and seeds,
 spreads and preserves, savoury snacks, ready meals, supplements, and
@@ -141,16 +168,27 @@ the Supabase Auth Site URL and add the required preview URL patterns.
 
 ## Roadmap
 
-- **Next session:** add an OpenAI-powered photo workflow through a Supabase Edge
-  Function. A photo of a nutrition label will be parsed into structured
-  ingredients, quantity and macro fields, with user confirmation before saving.
+- The first nutrition-label photo milestone is implemented: client-side
+  preview/compression → server-side MIME/size/auth checks → OpenAI Responses API
+  with image input and a strict schema → editable confirmation → pantry save.
+  The OpenAI key remains an Edge Function secret and the image is not persisted.
+- Barcode products are checked against the shared catalog before Open Food Facts
+  or OpenAI. Catalog writes run only in trusted Edge Functions; Open Food Facts
+  data takes precedence over an AI transcription.
+- Improve photo import with optional multi-photo capture for packages whose front,
+  ingredients and nutrition table do not fit in one readable frame.
+- Treat calorie estimation from a photo of a plated meal as a separate, later
+  feature: unlike label transcription, it requires uncertain ingredient and
+  portion estimates plus explicit confidence/assumption handling.
 - Add a local OCR/parser fallback later if it provides a measurable latency or
   cost benefit.
-- Add automatic pantry quantity decrementing when an ingredient is used.
+- Design the “Buone abitudini” dashboard using the existing
+  `nutritionGuidelines.ts` reference data after the photo workflow is stable.
 
 ## Known limitations
 
 - Barcode scanning can take several seconds on some mobile browsers: camera
-  detection and the Open Food Facts lookup both happen client-side.
+  detection happens client-side, while catalog/Open Food Facts resolution runs
+  in an authenticated Edge Function.
 - Open Food Facts coverage is incomplete, especially for regional products;
   missing products still require manual entry.

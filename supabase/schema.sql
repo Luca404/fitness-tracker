@@ -180,6 +180,7 @@ create table public.pantry_items (
   food_key      text,
   source        text not null default 'manual',
   off_food_id   text,
+  barcode       text check (barcode is null or (barcode ~ '^[0-9]+$' and length(barcode) in (8, 12, 13, 14))),
   off_data      jsonb,
   fiber_100g    float,
   sugars_100g   float,
@@ -196,6 +197,46 @@ alter table public.pantry_items enable row level security;
 create policy "own pantry_items" on public.pantry_items
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create index on public.pantry_items (user_id);
+create index on public.pantry_items (user_id, barcode) where barcode is not null;
+
+-- barcode_products (shared catalog, independent from personal pantry stock)
+create table public.barcode_products (
+  barcode               text primary key check (barcode ~ '^[0-9]+$' and length(barcode) in (8, 12, 13, 14)),
+  name                  text not null check (length(trim(name)) > 0),
+  brand                 text,
+  package_quantity      text,
+  quantity_value        double precision check (quantity_value is null or quantity_value > 0),
+  quantity_unit         text check (quantity_unit is null or quantity_unit in ('g', 'ml', 'pz')),
+  serving_size          text,
+  ingredients           text,
+  allergens             text,
+  calories_100g         double precision not null check (calories_100g >= 0),
+  protein_100g          double precision not null check (protein_100g >= 0),
+  carbs_100g            double precision not null check (carbs_100g >= 0),
+  fat_100g              double precision not null check (fat_100g >= 0),
+  fiber_100g            double precision check (fiber_100g is null or fiber_100g >= 0),
+  sugars_100g           double precision check (sugars_100g is null or sugars_100g >= 0),
+  saturated_fat_100g    double precision check (saturated_fat_100g is null or saturated_fat_100g >= 0),
+  unsaturated_fat_100g  double precision check (unsaturated_fat_100g is null or unsaturated_fat_100g >= 0),
+  salt_100g             double precision check (salt_100g is null or salt_100g >= 0),
+  category              text not null default 'other' check (category in (
+                          'grain','bakery','legume','vegetable','fruit','nuts_seeds',
+                          'meat','fish','dairy','egg','plant_protein','spread','fat',
+                          'sauce','condiment','seasoning','sweet','snack','prepared',
+                          'supplement','alcohol','beverage','other')),
+  source                text not null check (source in ('openfoodfacts', 'ai_photo')),
+  off_food_id           text,
+  confidence            text check (confidence is null or confidence in ('high', 'medium', 'low')),
+  metadata              jsonb,
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz not null default now()
+);
+alter table public.barcode_products enable row level security;
+create policy "authenticated users read barcode_products" on public.barcode_products
+  for select using (auth.uid() is not null);
+
+comment on table public.barcode_products is
+  'Shared read-only product cache populated by trusted Edge Functions from Open Food Facts or OpenAI';
 
 alter table public.meal_items
   add column pantry_item_id uuid references public.pantry_items(id) on delete set null,
