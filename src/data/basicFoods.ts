@@ -11,6 +11,9 @@ export interface BasicFood {
   protein_g: number
   carbs_g: number
   fat_g: number
+  fiber_g?: number
+  sugars_g?: number
+  salt_g?: number
 }
 
 export const BASIC_FOODS: BasicFood[] = [

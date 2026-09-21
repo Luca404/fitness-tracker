@@ -49,6 +49,10 @@ function numeric(value: number | undefined): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
 
+function optionalNumeric(value: number | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
 function productName(product: OpenFoodFactsProduct): string {
   const englishName = (typeof product.name_en === 'string' ? product.name_en.split(',')[0]?.trim() : '')
     || (typeof product.product_name_en === 'string' ? product.product_name_en.trim() : '')
@@ -238,11 +242,11 @@ function toFoodResult(product: OpenFoodFactsProduct): FoodResult | null {
     protein_100g: numeric(nutriments.proteins_100g),
     carbs_100g: numeric(nutriments.carbohydrates_100g),
     fat_100g: numeric(nutriments.fat_100g),
-    fiber_100g: numeric(nutriments.fiber_100g),
-    sugars_100g: numeric(nutriments.sugars_100g),
+    fiber_100g: optionalNumeric(nutriments.fiber_100g),
+    sugars_100g: optionalNumeric(nutriments.sugars_100g),
     saturated_fat_100g: saturatedFat,
     unsaturated_fat_100g: unsaturatedFat,
-    salt_100g: numeric(nutriments.salt_100g),
+    salt_100g: optionalNumeric(nutriments.salt_100g),
     nutrition_score: product.nutriscore_score ?? null,
     nutrition_grade: product.nutriscore_grade || product.nutrition_grade_fr || null,
     nova_group: product.nova_group ?? null,
@@ -295,6 +299,9 @@ export function searchBasicFoods(query: string): FoodResult[] {
       protein_100g: f.protein_g,
       carbs_100g: f.carbs_g,
       fat_100g: f.fat_g,
+      fiber_100g: f.fiber_g ?? null,
+      sugars_100g: f.sugars_g ?? null,
+      salt_100g: f.salt_g ?? null,
     }))
 }
 
@@ -329,12 +336,26 @@ export async function lookupBarcode(barcode: string): Promise<FoodResult | null>
 export function calcNutrition(
   food: FoodResult,
   quantityG: number
-): { calories: number; protein_g: number; carbs_g: number; fat_g: number } {
+): {
+  calories: number
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+  fiber_g: number | null
+  sugars_g: number | null
+  salt_g: number | null
+} {
   const factor = quantityG / 100
+  const scaledOptional = (value: number | null | undefined) => value == null
+    ? null
+    : Math.round(value * factor * 100) / 100
   return {
     calories: Math.round(food.calories_100g * factor),
     protein_g: Math.round(food.protein_100g * factor * 10) / 10,
     carbs_g: Math.round(food.carbs_100g * factor * 10) / 10,
     fat_g: Math.round(food.fat_100g * factor * 10) / 10,
+    fiber_g: scaledOptional(food.fiber_100g),
+    sugars_g: scaledOptional(food.sugars_100g),
+    salt_g: scaledOptional(food.salt_100g),
   }
 }

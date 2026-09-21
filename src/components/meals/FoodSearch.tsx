@@ -19,6 +19,9 @@ function pantryItemToFoodResult(p: PantryItem): FoodResult {
     protein_100g: p.protein_100g,
     carbs_100g: p.carbs_100g,
     fat_100g: p.fat_100g,
+    fiber_100g: p.fiber_100g ?? null,
+    sugars_100g: p.sugars_100g ?? null,
+    salt_100g: p.salt_100g ?? null,
   }
 }
 
@@ -26,6 +29,7 @@ interface Props {
   onAdd: (item: {
     food_name: string; quantity_g: number; calories: number
     protein_g: number; carbs_g: number; fat_g: number
+    fiber_g: number | null; sugars_g: number | null; salt_g: number | null
     source: FoodSource; off_food_id: string | null
     category: FoodResult['category']; food_key: string | null; pantry_item_id: string | null
   }) => void
@@ -48,6 +52,9 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
   const [manualProt, setManualProt] = useState(0)
   const [manualCarbs, setManualCarbs] = useState(0)
   const [manualFat, setManualFat] = useState(0)
+  const [manualFiber, setManualFiber] = useState<number | null>(null)
+  const [manualSugars, setManualSugars] = useState<number | null>(null)
+  const [manualSalt, setManualSalt] = useState<number | null>(null)
   const [manualCategory, setManualCategory] = useState<FoodCategory>('other')
   const [pantryItems, setPantryItems] = useState<PantryItem[]>([])
 
@@ -83,10 +90,12 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
   function handleAdd() {
     if (manualMode) {
       if (!manualName.trim() || qty <= 0 || [manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0)) return
+      if ([manualFiber, manualSugars, manualSalt].some(v => v !== null && v < 0)) return
       onAdd({
         food_name: manualName.trim(), quantity_g: qty,
         calories: manualCal, protein_g: manualProt,
         carbs_g: manualCarbs, fat_g: manualFat,
+        fiber_g: manualFiber, sugars_g: manualSugars, salt_g: manualSalt,
         source: 'manual', off_food_id: null, category: manualCategory, food_key: null,
         pantry_item_id: null,
       })
@@ -232,9 +241,13 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
                       <span className="rounded-lg bg-black/10 py-2"><b>{n.carbs_g}g</b><small className="block text-[9px] text-gray-500">carbo</small></span>
                       <span className="rounded-lg bg-black/10 py-2"><b>{n.fat_g}g</b><small className="block text-[9px] text-gray-500">grassi</small></span>
                     </div>
-                    {(selected.fiber_100g || selected.sugars_100g || selected.salt_100g || selected.saturated_fat_100g || selected.unsaturated_fat_100g) ? (
+                    {([selected.fiber_100g, selected.sugars_100g, selected.salt_100g, selected.saturated_fat_100g, selected.unsaturated_fat_100g]
+                      .some(value => value !== null && value !== undefined)) ? (
                       <p className="text-[11px] text-gray-500">
-                        Per 100 g: fibre {selected.fiber_100g ?? 0} g · zuccheri {selected.sugars_100g ?? 0} g · saturi {selected.saturated_fat_100g ?? 0} g · insaturi {selected.unsaturated_fat_100g ?? 0} g · sale {selected.salt_100g ?? 0} g
+                        Per 100 g:
+                        {selected.fiber_100g != null && ` fibre ${selected.fiber_100g} g`}
+                        {selected.sugars_100g != null && ` · zuccheri ${selected.sugars_100g} g`}
+                        {selected.salt_100g != null && ` · sale ${selected.salt_100g} g`}
                       </p>
                     ) : null}
                     {(selected.nutrition_grade || (selected.nutrition_score !== null && selected.nutrition_score !== undefined) || selected.nova_group || selected.ecoscore_grade) && (
@@ -318,8 +331,33 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
               </label>
             ))}
           </div>
+          <div>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Valori aggiuntivi della porzione (facoltativi)</p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: 'Fibre', val: manualFiber, set: setManualFiber },
+                { label: 'Zuccheri', val: manualSugars, set: setManualSugars },
+                { label: 'Sale', val: manualSalt, set: setManualSalt },
+              ].map(({ label, val, set }) => (
+                <label key={label} className="rounded-xl border border-gray-700 bg-gray-800/80 p-2.5 focus-within:border-primary-500">
+                  <span className="block text-[9px] font-semibold uppercase tracking-wider text-gray-500">{label}</span>
+                  <span className="mt-1 flex items-center gap-1">
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={val ?? ''}
+                      onChange={event => set(event.target.value === '' ? null : Number(event.target.value))}
+                      className="min-w-0 flex-1 bg-transparent text-base font-semibold outline-none"
+                    />
+                    <span className="text-[10px] text-gray-600">g</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
           <button type="button" onClick={handleAdd}
-            disabled={!manualName.trim() || qty <= 0 || [manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0)}
+            disabled={!manualName.trim() || qty <= 0 || [manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0) || [manualFiber, manualSugars, manualSalt].some(v => v !== null && v < 0)}
             className="w-full rounded-xl bg-primary-500 py-3 font-semibold hover:bg-primary-400 disabled:opacity-40">
             + Aggiungi ingrediente
           </button>

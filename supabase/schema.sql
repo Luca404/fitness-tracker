@@ -79,6 +79,9 @@ create table public.meal_items (
   protein_g   float not null check (protein_g >= 0),
   carbs_g     float not null check (carbs_g >= 0),
   fat_g       float not null check (fat_g >= 0),
+  fiber_g     float check (fiber_g is null or fiber_g >= 0),
+  sugars_g    float check (sugars_g is null or sugars_g >= 0),
+  salt_g      float check (salt_g is null or salt_g >= 0),
   source      text not null default 'manual',
   off_food_id text,
   created_at  timestamptz default now()
@@ -151,6 +154,9 @@ create table public.dish_items (
   protein_g   float not null check (protein_g >= 0),
   carbs_g     float not null check (carbs_g >= 0),
   fat_g       float not null check (fat_g >= 0),
+  fiber_g     float check (fiber_g is null or fiber_g >= 0),
+  sugars_g    float check (sugars_g is null or sugars_g >= 0),
+  salt_g      float check (salt_g is null or salt_g >= 0),
   source      text not null default 'manual',
   off_food_id text,
   created_at  timestamptz default now()
@@ -345,16 +351,19 @@ begin
 
   insert into public.meal_items (
     meal_id, entry_id, food_name, quantity_g, unit, category, food_key,
-    pantry_item_id, calories, protein_g, carbs_g, fat_g, source, off_food_id
+    pantry_item_id, calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g,
+    salt_g, source, off_food_id
   )
   select
     v_meal.id, v_entry.id, x.food_name, x.quantity_g, coalesce(x.unit, 'g'),
     coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories,
-    x.protein_g, x.carbs_g, x.fat_g, coalesce(x.source, 'manual'), x.off_food_id
+    x.protein_g, x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
+    coalesce(x.source, 'manual'), x.off_food_id
   from jsonb_to_recordset(p_items) as x(
     food_name text, quantity_g float, unit text, category text, food_key text,
     pantry_item_id uuid, calories float, protein_g float, carbs_g float,
-    fat_g float, source text, off_food_id text
+    fat_g float, fiber_g float, sugars_g float, salt_g float, source text,
+    off_food_id text
   );
 
   for v_item in
@@ -445,16 +454,19 @@ begin
 
   insert into public.meal_items (
     meal_id, entry_id, food_name, quantity_g, unit, category, food_key,
-    pantry_item_id, calories, protein_g, carbs_g, fat_g, source, off_food_id
+    pantry_item_id, calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g,
+    salt_g, source, off_food_id
   )
   select
     v_entry.meal_id, v_entry.id, x.food_name, x.quantity_g, coalesce(x.unit, 'g'),
     coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories,
-    x.protein_g, x.carbs_g, x.fat_g, coalesce(x.source, 'manual'), x.off_food_id
+    x.protein_g, x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
+    coalesce(x.source, 'manual'), x.off_food_id
   from jsonb_to_recordset(p_items) as x(
     food_name text, quantity_g float, unit text, category text, food_key text,
     pantry_item_id uuid, calories float, protein_g float, carbs_g float,
-    fat_g float, source text, off_food_id text
+    fat_g float, fiber_g float, sugars_g float, salt_g float, source text,
+    off_food_id text
   );
 
   for v_item in
@@ -555,14 +567,17 @@ begin
   with inserted as (
     insert into public.dish_items (
       dish_id, food_name, quantity_g, category, food_key, pantry_item_id,
-      calories, protein_g, carbs_g, fat_g, source, off_food_id
+      calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g, salt_g, source,
+      off_food_id
     )
     select
       v_dish.id, x.food_name, x.quantity_g, coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories, x.protein_g,
-      x.carbs_g, x.fat_g, coalesce(x.source, 'manual'), x.off_food_id
+      x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
+      coalesce(x.source, 'manual'), x.off_food_id
     from jsonb_to_recordset(p_items) as x(
       food_name text, quantity_g float, category text, food_key text, pantry_item_id uuid, calories float, protein_g float,
-      carbs_g float, fat_g float, source text, off_food_id text
+      carbs_g float, fat_g float, fiber_g float, sugars_g float, salt_g float,
+      source text, off_food_id text
     )
     returning *
   )
@@ -598,14 +613,17 @@ begin
   with inserted as (
     insert into public.dish_items (
       dish_id, food_name, quantity_g, category, food_key, pantry_item_id,
-      calories, protein_g, carbs_g, fat_g, source, off_food_id
+      calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g, salt_g, source,
+      off_food_id
     )
     select
       p_dish_id, x.food_name, x.quantity_g, coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories, x.protein_g,
-      x.carbs_g, x.fat_g, coalesce(x.source, 'manual'), x.off_food_id
+      x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
+      coalesce(x.source, 'manual'), x.off_food_id
     from jsonb_to_recordset(p_items) as x(
       food_name text, quantity_g float, category text, food_key text, pantry_item_id uuid, calories float, protein_g float,
-      carbs_g float, fat_g float, source text, off_food_id text
+      carbs_g float, fat_g float, fiber_g float, sugars_g float, salt_g float,
+      source text, off_food_id text
     )
     returning *
   )

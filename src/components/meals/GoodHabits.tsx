@@ -3,48 +3,16 @@ import { endOfWeek, format, startOfWeek } from 'date-fns'
 import { useData } from '../../contexts/DataContext'
 import { getGuideline } from '../../data/nutritionGuidelines'
 import { getMealsForRange } from '../../services/api'
-import type { FoodCategory, Meal } from '../../types'
+import { calculateHabitRows } from '../../utils/goodHabits'
+import type { Meal } from '../../types'
 
 interface Props {
   selectedDate: string
   currentMeals: Meal[]
 }
 
-interface HabitRow {
-  label: string
-  icon: string
-  value: number
-  target: number
-  period: 'oggi' | 'settimana'
-}
-
-function gramsForCategories(meals: Meal[], categories: FoodCategory[]) {
-  return meals
-    .flatMap(meal => meal.items)
-    .filter(item => item.unit === 'g' && categories.includes(item.category))
-    .reduce((sum, item) => sum + item.quantity_g, 0)
-}
-
-function calculateHabitRows(
-  selectedDate: string,
-  currentMeals: Meal[],
-  weeklyMeals: Meal[],
-  targets: { vegetables: number; fruit: number; legumes: number; fish: number },
-): HabitRow[] {
-  const mergedWeek = [
-    ...weeklyMeals.filter(meal => meal.date !== selectedDate),
-    ...currentMeals,
-  ]
-  return [
-    { label: 'Verdura', icon: '🥬', value: gramsForCategories(currentMeals, ['vegetable']), target: targets.vegetables, period: 'oggi' },
-    { label: 'Frutta', icon: '🍎', value: gramsForCategories(currentMeals, ['fruit']), target: targets.fruit, period: 'oggi' },
-    { label: 'Legumi', icon: '🫘', value: gramsForCategories(mergedWeek, ['legume']), target: targets.legumes, period: 'settimana' },
-    { label: 'Pesce', icon: '🐟', value: gramsForCategories(mergedWeek, ['fish']), target: targets.fish, period: 'settimana' },
-  ]
-}
-
 export default function GoodHabits({ selectedDate, currentMeals }: Props) {
-  const { profile } = useData()
+  const { profile, goals } = useData()
   const [weeklyMeals, setWeeklyMeals] = useState<Meal[]>([])
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
   const refreshKey = currentMeals.reduce((count, meal) => count + meal.items.length, 0)
@@ -75,13 +43,17 @@ export default function GoodHabits({ selectedDate, currentMeals }: Props) {
   const rows = useMemo(() => {
     const sex = profile?.sex ?? 'female'
     const age = profile?.age ?? 18
+    const sugarsPercent = getGuideline('free_sugars', sex, age)?.limitValue ?? 15
     return calculateHabitRows(selectedDate, currentMeals, weeklyMeals, {
       vegetables: getGuideline('vegetables', sex, age)?.limitValue ?? 400,
       fruit: getGuideline('fruit', sex, age)?.limitValue ?? 360,
       legumes: getGuideline('legumes', sex, age)?.limitValue ?? 450,
       fish: getGuideline('fish', sex, age)?.limitValue ?? 300,
+      fiber: getGuideline('fiber', sex, age)?.limitValue ?? 25,
+      sugars: Math.round(((goals?.calorie_target ?? 2000) * sugarsPercent / 100 / 4) * 10) / 10,
+      salt: getGuideline('salt', sex, age)?.limitValue ?? 5,
     })
-  }, [currentMeals, profile, selectedDate, weeklyMeals])
+  }, [currentMeals, goals?.calorie_target, profile, selectedDate, weeklyMeals])
 
   return (
     <section>
@@ -94,7 +66,11 @@ export default function GoodHabits({ selectedDate, currentMeals }: Props) {
       </div>
       <div className="grid grid-cols-2 gap-2">
         {rows.map(row => {
-          const progress = Math.min(100, Math.round((row.value / row.target) * 100))
+          const progress = row.value == null ? 0 : Math.min(100, Math.round((row.value / row.target) * 100))
+          const overMaximum = row.direction === 'max' && row.value != null && row.value > row.target
+          const displayValue = row.value == null
+            ? null
+            : row.label === 'Sale' ? Math.round(row.value * 100) / 100 : Math.round(row.value * 10) / 10
           return (
             <div key={row.label} className="rounded-2xl border border-gray-800 bg-gray-800/55 p-3">
               <div className="flex items-center gap-2">
@@ -102,10 +78,18 @@ export default function GoodHabits({ selectedDate, currentMeals }: Props) {
                 <span className="text-sm font-semibold">{row.label}</span>
               </div>
               <p className="mt-2 text-xs text-gray-500">
-                <span className="font-semibold text-gray-300">{Math.round(row.value)} g</span> / {row.target} g · {row.period}
+                {displayValue == null ? (
+                  <span className="text-gray-600">Dato non disponibile · {row.period}</span>
+                ) : (
+                  <>
+                    <span className={`font-semibold ${overMaximum ? 'text-orange-400' : 'text-gray-300'}`}>{row.partial ? '≈ ' : ''}{displayValue} g</span>
+                    {' '}{row.direction === 'max' ? '≤' : '≥'} {row.target} g · {row.period}
+                    {row.partial && <span className="text-amber-500/80"> · parziale</span>}
+                  </>
+                )}
               </p>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-700">
-                <div className="h-full rounded-full bg-primary-500 transition-all" style={{ width: `${progress}%` }} />
+                <div className={`h-full rounded-full transition-all ${overMaximum ? 'bg-orange-500' : 'bg-primary-500'}`} style={{ width: `${progress}%` }} />
               </div>
             </div>
           )

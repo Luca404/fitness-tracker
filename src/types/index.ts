@@ -72,6 +72,9 @@ export interface MealItem {
   protein_g: number
   carbs_g: number
   fat_g: number
+  fiber_g?: number | null
+  sugars_g?: number | null
+  salt_g?: number | null
   source: FoodSource
   off_food_id: string | null
   created_at: string
@@ -231,6 +234,9 @@ export interface DishItem {
   protein_g: number
   carbs_g: number
   fat_g: number
+  fiber_g?: number | null
+  sugars_g?: number | null
+  salt_g?: number | null
   source: FoodSource
   off_food_id: string | null
   created_at: string

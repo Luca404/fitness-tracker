@@ -146,9 +146,10 @@ rather than the sole source of truth.
 
 The local catalog also includes `nutritionGuidelines.ts`, a source-documented reference
 dataset for salt, sugars, alcohol, ultra-processed foods, meat, vegetables, fruit,
-legumes, fish and fibre. The Pasti page uses the reliably measurable categories for
-the “Buone abitudini” daily and weekly indicators; nutrients not persisted on diary
-items are intentionally not estimated.
+legumes, fish and fibre. The Pasti page uses these references for the “Buone
+abitudini” indicators. Fibre, sugars and salt are persisted as nullable values from
+the pantry, Open Food Facts or manual entry; incomplete days are marked as partial
+instead of treating missing nutrition data as zero.
 
 ## Deployment
 
@@ -184,7 +185,8 @@ the Supabase Auth Site URL and add the required preview URL patterns.
   portion estimates plus explicit confidence/assumption handling.
 - Add a local OCR/parser fallback later if it provides a measurable latency or
   cost benefit.
-- Extend “Buone abitudini” when diary items persist fibre, salt and sugar data.
+- Gradually enrich the local basic-food catalog with sourced fibre, salt and sugar
+  values; until then those foods correctly remain unknown for these indicators.
 
 ## Known limitations
 

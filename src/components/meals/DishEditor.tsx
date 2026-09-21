@@ -46,6 +46,9 @@ export default function DishEditor({
         protein_g: Math.round(it.protein_g * factor * 10) / 10,
         carbs_g: Math.round(it.carbs_g * factor * 10) / 10,
         fat_g: Math.round(it.fat_g * factor * 10) / 10,
+        fiber_g: it.fiber_g == null ? null : Math.round(it.fiber_g * factor * 100) / 100,
+        sugars_g: it.sugars_g == null ? null : Math.round(it.sugars_g * factor * 100) / 100,
+        salt_g: it.salt_g == null ? null : Math.round(it.salt_g * factor * 100) / 100,
       }
     }))
   }
@@ -56,7 +59,8 @@ export default function DishEditor({
 
   const nameValid = !requireName || name.trim().length > 0
   const itemsValid = items.every(i => i.quantity_g > 0 &&
-    i.calories >= 0 && i.protein_g >= 0 && i.carbs_g >= 0 && i.fat_g >= 0)
+    i.calories >= 0 && i.protein_g >= 0 && i.carbs_g >= 0 && i.fat_g >= 0 &&
+    [i.fiber_g, i.sugars_g, i.salt_g].every(value => value == null || value >= 0))
   const canSave = nameValid && items.length > 0 && itemsValid && !saving
 
   async function handleSave() {

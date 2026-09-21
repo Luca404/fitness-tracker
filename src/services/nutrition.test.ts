@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BASIC_FOODS } from '../data/basicFoods'
-import { normalizeServingSize, productCategory, resolveProductQuantity, searchBasicFoods } from './nutrition'
+import { calcNutrition, normalizeServingSize, productCategory, resolveProductQuantity, searchBasicFoods } from './nutrition'
 
 function product(name: string, categories: string[] = []) {
   return {
@@ -33,6 +33,29 @@ describe('local basic-food catalog', () => {
     ['caffe', 'caffe-nero'],
   ])('finds %s locally, including aliases and unaccented queries', (query, expectedId) => {
     expect(searchBasicFoods(query).some(food => food.id === expectedId)).toBe(true)
+  })
+})
+
+describe('extended nutrition calculation', () => {
+  it('scales fibre, sugars and salt with the selected quantity', () => {
+    expect(calcNutrition({
+      id: 'food-1', name: 'Test', brand: null, source: 'openfoodfacts', category: 'other', food_key: null,
+      calories_100g: 200, protein_100g: 10, carbs_100g: 20, fat_100g: 5,
+      fiber_100g: 4, sugars_100g: 8, salt_100g: 1.2,
+    }, 50)).toEqual({
+      calories: 100, protein_g: 5, carbs_g: 10, fat_g: 2.5,
+      fiber_g: 2, sugars_g: 4, salt_g: 0.6,
+    })
+  })
+
+  it('keeps missing extended nutrients distinct from measured zero', () => {
+    const food = searchBasicFoods('riso basmati')[0]
+    expect(food).toBeTruthy()
+    expect(calcNutrition(food, 100)).toMatchObject({
+      fiber_g: null,
+      sugars_g: null,
+      salt_g: null,
+    })
   })
 })
 
