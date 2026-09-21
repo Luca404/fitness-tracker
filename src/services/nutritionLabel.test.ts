@@ -10,6 +10,9 @@ const analysis: NutritionLabelAnalysis = {
   package_quantity_label: '2 x 125 g',
   package_quantity_value: 250,
   package_quantity_unit: 'g',
+  package_piece_count: null,
+  package_net_quantity_value: 250,
+  package_net_quantity_unit: 'g',
   serving_size: '125 g',
   ingredients: 'Latte, fermenti',
   allergens: 'Latte',
@@ -56,6 +59,24 @@ describe('analysisToPantryDraft', () => {
     expect(draft.protein100g).toBe(0)
   })
 
+  it('keeps package pieces separate from net weight and uses pieces for pantry stock', () => {
+    const draft = analysisToPantryDraft({
+      ...analysis,
+      package_quantity_label: '10 uova, porzione 58 g',
+      package_quantity_value: 10,
+      package_quantity_unit: 'pz',
+      package_piece_count: 10,
+      package_net_quantity_value: null,
+      package_net_quantity_unit: null,
+      serving_size: '58 g',
+    })
+
+    expect(draft.packagePieceCount).toBe(10)
+    expect(draft.packageNetQuantityValue).toBeNull()
+    expect(draft.quantityValue).toBe(10)
+    expect(draft.quantityUnit).toBe('pz')
+  })
+
   it('rebuilds a cached barcode product without requiring another AI response', () => {
     const cached: BarcodeProduct = {
       barcode: '8000500310427',
@@ -64,6 +85,9 @@ describe('analysisToPantryDraft', () => {
       package_quantity: '2 x 125 g',
       quantity_value: null,
       quantity_unit: null,
+      package_piece_count: null,
+      package_net_quantity_value: 250,
+      package_net_quantity_unit: 'g',
       serving_size: '125 g',
       ingredients: 'Latte, fermenti',
       allergens: 'Latte',

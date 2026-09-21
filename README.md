@@ -53,9 +53,10 @@ frontend code:
 supabase secrets set OPENAI_API_KEY=sk-...
 supabase functions deploy analyze-nutrition-label
 supabase functions deploy resolve-barcode-product
+supabase functions deploy confirm-barcode-product
 ```
 
-The optional `OPENAI_VISION_MODEL` secret overrides the default `gpt-4o-mini`.
+The optional `OPENAI_VISION_MODEL` secret overrides the default `gpt-4.1-mini`.
 For local function development, put these server secrets in an ignored `.env.local`
 file and pass it to `supabase functions serve`.
 
@@ -124,7 +125,7 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 | `dishes` | Saved reusable dishes (name, reference weight derived from items) |
 | `dish_items` | Ingredients within a saved dish, including the selected pantry-item reference when available |
 | `pantry_items` | Groceries at home (quantity + unit, kcal/macros per 100g/100ml, Open Food Facts payload and nutrition scores when available) |
-| `barcode_products` | Shared product catalog keyed by barcode; authenticated clients can read it and trusted Edge Functions populate it from Open Food Facts or a complete, sufficiently confident label analysis |
+| `barcode_products` | Shared product catalog keyed by barcode; authenticated clients can read it and trusted Edge Functions populate it from Open Food Facts or from label values reviewed and explicitly confirmed by a user |
 
 Pantry synchronization is performed inside the same PostgreSQL transaction that
 creates or updates a diary entry. Ingredients are matched to the exact selected

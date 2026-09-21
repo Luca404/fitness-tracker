@@ -18,6 +18,9 @@ export interface NutritionLabelAnalysis {
   package_quantity_label: string | null
   package_quantity_value: number | null
   package_quantity_unit: PantryUnit | null
+  package_piece_count?: number | null
+  package_net_quantity_value?: number | null
+  package_net_quantity_unit?: 'g' | 'ml' | null
   serving_size: string | null
   ingredients: string | null
   allergens: string | null
@@ -34,6 +37,10 @@ export interface NutritionLabelAnalysis {
   salt_100g: number | null
   confidence: AnalysisConfidence
   warnings: string[]
+  validation_errors?: string[]
+  requires_review?: boolean
+  confirmation_token?: string
+  raw_extraction?: Record<string, unknown>
   cache_hit?: boolean
   source?: FoodSource
   off_food_id?: string | null
@@ -47,6 +54,9 @@ export interface NutritionLabelDraft {
   quantityLabel: string | null
   quantityValue: number | null
   quantityUnit: PantryUnit | null
+  packagePieceCount: number | null
+  packageNetQuantityValue: number | null
+  packageNetQuantityUnit: 'g' | 'ml' | null
   servingSize: string | null
   ingredients: string | null
   allergens: string | null
@@ -63,6 +73,10 @@ export interface NutritionLabelDraft {
   nutritionBasis: NutritionBasis
   confidence: AnalysisConfidence
   warnings: string[]
+  validationErrors: string[]
+  requiresReview: boolean
+  confirmationToken: string | null
+  rawExtraction: Record<string, unknown> | null
   cacheHit: boolean
   source: FoodSource
   offFoodId: string | null
@@ -79,13 +93,21 @@ function positiveOrNull(value: number | null): number | null {
 }
 
 export function analysisToPantryDraft(analysis: NutritionLabelAnalysis): NutritionLabelDraft {
+  const packagePieceCount = positiveOrNull(analysis.package_piece_count ?? null)
+  const packageNetQuantityValue = positiveOrNull(analysis.package_net_quantity_value ?? null)
+  const packageNetQuantityUnit = analysis.package_net_quantity_unit ?? null
   return {
     barcode: normalizeBarcode(analysis.barcode),
     name: analysis.product_name?.trim() || 'Prodotto da etichetta',
     brand: analysis.brand?.trim() || null,
     quantityLabel: analysis.package_quantity_label?.trim() || null,
-    quantityValue: positiveOrNull(analysis.package_quantity_value),
-    quantityUnit: analysis.package_quantity_unit,
+    quantityValue: packagePieceCount ?? packageNetQuantityValue ?? positiveOrNull(analysis.package_quantity_value),
+    quantityUnit: packagePieceCount !== null
+      ? 'pz'
+      : packageNetQuantityUnit ?? analysis.package_quantity_unit,
+    packagePieceCount,
+    packageNetQuantityValue,
+    packageNetQuantityUnit,
     servingSize: analysis.serving_size?.trim() || null,
     ingredients: analysis.ingredients?.trim() || null,
     allergens: analysis.allergens?.trim() || null,
@@ -102,6 +124,10 @@ export function analysisToPantryDraft(analysis: NutritionLabelAnalysis): Nutriti
     nutritionBasis: analysis.nutrition_basis,
     confidence: analysis.confidence,
     warnings: analysis.warnings,
+    validationErrors: analysis.validation_errors ?? [],
+    requiresReview: analysis.requires_review === true,
+    confirmationToken: analysis.confirmation_token ?? null,
+    rawExtraction: analysis.raw_extraction ?? null,
     cacheHit: analysis.cache_hit === true,
     source: analysis.source ?? 'ai_photo',
     offFoodId: analysis.off_food_id ?? null,
@@ -121,6 +147,9 @@ export function barcodeProductToAnalysis(product: BarcodeProduct): NutritionLabe
     package_quantity_label: product.package_quantity,
     package_quantity_value: product.quantity_value ?? parsedQuantity?.value ?? null,
     package_quantity_unit: product.quantity_unit ?? parsedQuantity?.unit ?? null,
+    package_piece_count: product.package_piece_count,
+    package_net_quantity_value: product.package_net_quantity_value,
+    package_net_quantity_unit: product.package_net_quantity_unit,
     serving_size: product.serving_size,
     ingredients: product.ingredients,
     allergens: product.allergens,
@@ -143,6 +172,8 @@ export function barcodeProductToAnalysis(product: BarcodeProduct): NutritionLabe
     warnings: Array.isArray(warnings)
       ? warnings.filter((warning): warning is string => typeof warning === 'string')
       : [],
+    validation_errors: [],
+    requires_review: false,
     cache_hit: product.cache_hit !== false,
     source: product.source,
     off_food_id: product.off_food_id,
@@ -216,7 +247,7 @@ async function prepareImage(file: File): Promise<PreparedImage> {
   return { base64: await blobToBase64(blob), mimeType: 'image/jpeg' }
 }
 
-async function functionErrorMessage(error: unknown): Promise<string> {
+async function functionErrorMessage(error: unknown, fallback = 'Analisi non riuscita. Riprova tra poco.'): Promise<string> {
   const context = (error as { context?: unknown } | null)?.context
   if (context instanceof Response) {
     try {
@@ -226,7 +257,42 @@ async function functionErrorMessage(error: unknown): Promise<string> {
       // The function may have returned a non-JSON gateway error.
     }
   }
-  return 'Analisi non riuscita. Riprova tra poco.'
+  return fallback
+}
+
+export type ConfirmedBarcodeProduct = {
+  confirmation_token: string
+  barcode: string
+  name: string
+  brand: string | null
+  package_quantity: string | null
+  package_piece_count: number | null
+  package_net_quantity_value: number | null
+  package_net_quantity_unit: 'g' | 'ml' | null
+  serving_size: string | null
+  ingredients: string | null
+  allergens: string | null
+  calories_100g: number
+  protein_100g: number
+  carbs_100g: number
+  fat_100g: number
+  fiber_100g: number | null
+  sugars_100g: number | null
+  saturated_fat_100g: number | null
+  unsaturated_fat_100g: number | null
+  salt_100g: number | null
+  category: FoodCategory
+  nutrition_basis: NutritionBasis
+  confidence: AnalysisConfidence
+  warnings: string[]
+  raw_extraction: Record<string, unknown> | null
+}
+
+export async function confirmBarcodeProduct(product: ConfirmedBarcodeProduct): Promise<void> {
+  const { error } = await supabase.functions.invoke('confirm-barcode-product', { body: product })
+  if (error) {
+    throw new Error(await functionErrorMessage(error, 'Prodotto salvato in dispensa, ma non nel catalogo condiviso.'))
+  }
 }
 
 export async function analyzeNutritionLabel(file: File, knownBarcode?: string | null): Promise<NutritionLabelAnalysis> {

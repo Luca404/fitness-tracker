@@ -44,7 +44,9 @@ export default function NutritionLabelPhoto({ onAnalysis, onCancel, knownBarcode
       <div className="rounded-2xl border border-gray-700 bg-gray-800/70 p-4">
         <h2 className="font-semibold">Foto della confezione</h2>
         <p className="mt-1 text-sm text-gray-400">
-          Inquadra bene nome del prodotto e tabella nutrizionale. I dati estratti saranno modificabili prima del salvataggio.
+          {knownBarcode
+            ? 'Il codice è già associato: fotografa da vicino la tabella nutrizionale, ben a fuoco e il più dritta possibile.'
+            : 'Fotografa da vicino la tabella nutrizionale, ben a fuoco. Nome e barcode potranno essere completati dopo.'}
         </p>
         {knownBarcode && <p className="mt-2 text-xs text-primary-300">Codice già scansionato: {knownBarcode}</p>}
       </div>

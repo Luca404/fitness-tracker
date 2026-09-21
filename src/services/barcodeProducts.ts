@@ -42,7 +42,9 @@ export async function getBarcodeProduct(barcode: string): Promise<BarcodeProduct
     .eq('barcode', normalized)
     .maybeSingle()
   if (error) throw error
-  return data as BarcodeProduct | null
+  const product = data as BarcodeProduct | null
+  if (product?.source === 'ai_photo' && product.metadata?.confirmed_by_user !== true) return null
+  return product
 }
 
 async function functionErrorMessage(error: unknown): Promise<string> {

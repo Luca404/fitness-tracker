@@ -3,6 +3,7 @@ import {
   upsertCatalogProduct,
   type CatalogProductInput,
 } from '../_shared/barcodeCatalog.ts'
+import { getAuthenticatedUser } from '../_shared/auth.ts'
 
 const OFF_PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product'
 const BARCODE_PATTERN = /^(?:[0-9]{8}|[0-9]{12,14})$/
@@ -24,18 +25,6 @@ function json(body: JsonRecord, status = 200): Response {
 
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-async function hasValidUser(authorization: string, supabaseUrl: string, apiKey: string): Promise<boolean> {
-  try {
-    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: { Authorization: authorization, apikey: apiKey },
-    })
-    return response.ok
-  } catch (error) {
-    console.error('Supabase Auth validation failed', error)
-    return false
-  }
 }
 
 function text(product: JsonRecord, ...keys: string[]): string | null {
@@ -146,6 +135,11 @@ function normalizeOffProduct(barcode: string, product: JsonRecord): CatalogProdu
     package_quantity: quantityLabel,
     quantity_value: parsedQuantity?.value ?? null,
     quantity_unit: parsedQuantity?.unit ?? null,
+    package_piece_count: parsedQuantity?.unit === 'pz' ? parsedQuantity.value : null,
+    package_net_quantity_value: parsedQuantity && parsedQuantity.unit !== 'pz' ? parsedQuantity.value : null,
+    package_net_quantity_unit: parsedQuantity?.unit === 'g' || parsedQuantity?.unit === 'ml'
+      ? parsedQuantity.unit
+      : null,
     serving_size: text(product, 'serving_size'),
     ingredients: text(
       product,
@@ -185,13 +179,7 @@ Deno.serve(async request => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (request.method !== 'POST') return json({ error: 'Metodo non consentito.' }, 405)
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const authorization = request.headers.get('Authorization')
-  const apiKey = request.headers.get('apikey')
-  if (!supabaseUrl) return json({ error: 'Servizio non configurato.' }, 503)
-  if (!authorization || !apiKey || !await hasValidUser(authorization, supabaseUrl, apiKey)) {
-    return json({ error: 'Sessione non valida.' }, 401)
-  }
+  if (!await getAuthenticatedUser(request)) return json({ error: 'Sessione non valida.' }, 401)
 
   let body: unknown
   try {
@@ -204,7 +192,11 @@ Deno.serve(async request => {
   }
 
   try {
-    const existing = await getCatalogProduct(body.barcode)
+    const stored = await getCatalogProduct(body.barcode)
+    const existing = stored && (
+      stored.source !== 'ai_photo'
+      || isRecord(stored.metadata) && stored.metadata.confirmed_by_user === true
+    ) ? stored : null
     if (existing?.source === 'openfoodfacts') return json({ product: existing, cache_hit: true })
 
     let openFoodFactsProduct: CatalogProductInput | null

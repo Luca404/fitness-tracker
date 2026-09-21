@@ -10,6 +10,9 @@ export type CatalogProductInput = {
   package_quantity: string | null
   quantity_value: number | null
   quantity_unit: 'g' | 'ml' | 'pz' | null
+  package_piece_count: number | null
+  package_net_quantity_value: number | null
+  package_net_quantity_unit: 'g' | 'ml' | null
   serving_size: string | null
   ingredients: string | null
   allergens: string | null

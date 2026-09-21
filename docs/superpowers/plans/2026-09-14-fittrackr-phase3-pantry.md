@@ -67,7 +67,8 @@
   MIME, Base64 e dimensione prima di chiamare OpenAI.
 - [x] OpenAI Responses API con input immagine, `store: false` e schema JSON
   rigoroso per prodotto, confezione, ingredienti, allergeni, categoria e nutrienti
-  normalizzati per 100 g/ml. Modello predefinito `gpt-4o-mini`, configurabile con
+  trascritti per colonna e normalizzati server-side per 100 g/ml. Modello
+  predefinito `gpt-4.1-mini`, configurabile con
   `OPENAI_VISION_MODEL`.
 - [x] Revisione editabile dei campi estratti e degli avvisi di confidenza prima
   del salvataggio con sorgente `ai_photo`; la foto non viene persistita.
@@ -83,10 +84,10 @@
   mantenendo il barcode appena letto.
 - [x] Le foto selezionate vengono analizzate localmente anche da ZXing: quando il
   barcode è leggibile e già in cache, OpenAI non viene chiamata.
-- [x] Un'analisi fotografica completa con confidenza media/alta viene salvata
-  server-side; i dati Open Food Facts hanno priorità e non vengono sovrascritti
-  dall'AI. Una scansione successiva ricostruisce il prodotto dal DB senza
-  richiamare OpenAI.
+- [x] L'analisi non scrive direttamente nel catalogo: emette un token breve e i
+  valori AI entrano nel catalogo solo dopo revisione e conferma dell'utente via
+  `confirm-barcode-product`. Controlli server confrontano kJ/kcal, colonne per
+  100/porzione e plausibilità dei macro. I dati Open Food Facts hanno priorità.
 
 ## Non in scope ora (rimandato)
 

@@ -378,6 +378,13 @@ enabled = true
 verify_jwt = false
 entrypoint = "./functions/resolve-barcode-product/index.ts"
 
+[functions.confirm-barcode-product]
+enabled = true
+# The handler validates both the Supabase session and a short-lived token issued
+# by analyze-nutrition-label before writing reviewed AI data to the catalog.
+verify_jwt = false
+entrypoint = "./functions/confirm-barcode-product/index.ts"
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
