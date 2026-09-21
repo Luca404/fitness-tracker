@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import { endOfWeek, format, startOfWeek } from 'date-fns'
+import { Link } from 'react-router-dom'
 import { useData } from '../../contexts/DataContext'
 import { getGuideline } from '../../data/nutritionGuidelines'
 import { getMealsForRange } from '../../services/api'
-import { calculateHabitRows } from '../../utils/goodHabits'
+import { calculateHabitRows, summarizeHabitRows } from '../../utils/goodHabits'
 import type { Meal } from '../../types'
 
 interface Props {
   selectedDate: string
   currentMeals: Meal[]
+  compact?: boolean
 }
 
-export default function GoodHabits({ selectedDate, currentMeals }: Props) {
+export default function GoodHabits({ selectedDate, currentMeals, compact = false }: Props) {
   const { profile, goals } = useData()
   const [weeklyMeals, setWeeklyMeals] = useState<Meal[]>([])
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
@@ -55,6 +57,62 @@ export default function GoodHabits({ selectedDate, currentMeals }: Props) {
     })
   }, [currentMeals, goals?.calorie_target, profile, selectedDate, weeklyMeals])
 
+  if (compact) {
+    const summary = summarizeHabitRows(rows)
+    return (
+      <Link
+        to="/wellbeing"
+        className="group flex items-center gap-3 rounded-2xl border border-gray-700/70 bg-gray-800/55 px-4 py-3 transition hover:border-primary-700 hover:bg-gray-800"
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-xl">🌿</span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-gray-200">Buone abitudini</span>
+          <span className="mt-0.5 block truncate text-xs text-gray-500">
+            {loading
+              ? 'Aggiorno il riepilogo…'
+              : `${summary.ok} in linea · ${summary.needsAttention} da migliorare${summary.incomplete > 0 ? ` · ${summary.incomplete} da completare` : ''}`}
+          </span>
+        </span>
+        <span className="text-gray-600 transition group-hover:translate-x-0.5 group-hover:text-primary-400">→</span>
+      </Link>
+    )
+  }
+
+  const dailyRows = rows.filter(row => row.period === 'oggi')
+  const weeklyRows = rows.filter(row => row.period === 'settimana')
+
+  function renderRows(habitRows: typeof rows) {
+    return habitRows.map(row => {
+      const progress = row.value == null ? 0 : Math.min(100, Math.round((row.value / row.target) * 100))
+      const overMaximum = row.direction === 'max' && row.value != null && row.value > row.target
+      const displayValue = row.value == null
+        ? null
+        : row.label === 'Sale' ? Math.round(row.value * 100) / 100 : Math.round(row.value * 10) / 10
+      return (
+        <div key={row.label} className="rounded-2xl border border-gray-800 bg-gray-800/55 p-3">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{row.icon}</span>
+            <span className="text-sm font-semibold">{row.label}</span>
+          </div>
+          <p className="mt-2 text-xs text-gray-500">
+            {displayValue == null ? (
+              <span className="text-gray-600">Dato non disponibile</span>
+            ) : (
+              <>
+                <span className={`font-semibold ${overMaximum ? 'text-orange-400' : 'text-gray-300'}`}>{row.partial ? '≈ ' : ''}{displayValue} g</span>
+                {' '}{row.direction === 'max' ? '≤' : '≥'} {row.target} g
+                {row.partial && <span className="text-amber-500/80"> · parziale</span>}
+              </>
+            )}
+          </p>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-700">
+            <div className={`h-full rounded-full transition-all ${overMaximum ? 'bg-orange-500' : 'bg-primary-500'}`} style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      )
+    })
+  }
+
   return (
     <section>
       <div className="mb-3 flex items-end justify-between px-1">
@@ -64,36 +122,15 @@ export default function GoodHabits({ selectedDate, currentMeals }: Props) {
         </div>
         {loading && <span className="text-xs text-gray-600">Aggiorno…</span>}
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        {rows.map(row => {
-          const progress = row.value == null ? 0 : Math.min(100, Math.round((row.value / row.target) * 100))
-          const overMaximum = row.direction === 'max' && row.value != null && row.value > row.target
-          const displayValue = row.value == null
-            ? null
-            : row.label === 'Sale' ? Math.round(row.value * 100) / 100 : Math.round(row.value * 10) / 10
-          return (
-            <div key={row.label} className="rounded-2xl border border-gray-800 bg-gray-800/55 p-3">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{row.icon}</span>
-                <span className="text-sm font-semibold">{row.label}</span>
-              </div>
-              <p className="mt-2 text-xs text-gray-500">
-                {displayValue == null ? (
-                  <span className="text-gray-600">Dato non disponibile · {row.period}</span>
-                ) : (
-                  <>
-                    <span className={`font-semibold ${overMaximum ? 'text-orange-400' : 'text-gray-300'}`}>{row.partial ? '≈ ' : ''}{displayValue} g</span>
-                    {' '}{row.direction === 'max' ? '≤' : '≥'} {row.target} g · {row.period}
-                    {row.partial && <span className="text-amber-500/80"> · parziale</span>}
-                  </>
-                )}
-              </p>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-700">
-                <div className={`h-full rounded-full transition-all ${overMaximum ? 'bg-orange-500' : 'bg-primary-500'}`} style={{ width: `${progress}%` }} />
-              </div>
-            </div>
-          )
-        })}
+      <div className="space-y-5">
+        <div>
+          <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Oggi</p>
+          <div className="grid grid-cols-2 gap-2">{renderRows(dailyRows)}</div>
+        </div>
+        <div>
+          <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Questa settimana</p>
+          <div className="grid grid-cols-2 gap-2">{renderRows(weeklyRows)}</div>
+        </div>
       </div>
     </section>
   )

@@ -6,15 +6,16 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 
 ## Features
 
-- **Meal logging** — log meals by time slot (breakfast, lunch, dinner, snack, alcoholic snack); calorie and macro breakdown per meal and per day
-- **Dish-centric entry** — opening a meal slot shows one hub: pick a saved dish (scaled by total weight and optionally paired with a drink measured in ml), cook something new (composed from a curated basic-ingredients dataset + Open Food Facts, then saved for reuse), or log a one-off dish/item that isn't saved
-- **Kitchen** — one area with saved dishes and pantry tabs; create, inspect and edit recipes, then get cookable suggestions ranked from the ingredients currently available
+- **Meal logging** — log meals by time slot (breakfast, lunch, dinner, snack, drinks); calorie and macro breakdown per meal and per day
+- **Dish-centric entry** — opening a meal slot shows one hub: pick and personalize a saved dish, cook something new (composed from a curated basic-ingredients dataset + Open Food Facts, then saved for reuse), or log a one-off dish/item that isn't saved; drinks stay in their own flow
+- **Kitchen** — one area with saved dishes and pantry tabs for creating, inspecting and editing recipes and stock
 - **Pantry** — track groceries at home by culinary category (quantity + unit: g/ml/pieces), added via barcode scan, nutrition-label photo, or manual/basic-food entry; barcode and nutrition data are reused through a shared read-only product catalog, while pantry stock remains private; pantry items surface first when searching ingredients and matching stock is consumed automatically when a dish is logged
 - **Nutrition-label photo import** — take or choose a package photo, extract product and per-100 nutrition data through an authenticated OpenAI-backed Edge Function, review every field, then save it to the pantry
 - **Macros** — visual progress bars for protein, carbs, and fat against daily targets
 - **Calorie ring** — at-a-glance daily calorie budget vs. consumed
 - **Workout tracking** — choose from 20 activities and log sessions with MET-based calorie burn calculation
 - **Weight log** — record body weight over time with history view
+- **Wellbeing** — dedicated daily/weekly healthy-habits dashboard, with a compact status summary on the Meals page
 - **BMR / TDEE** — computed from onboarding data (age, height, weight, sex, activity level, goal)
 - **Onboarding** — 4-step wizard (physical stats → lifestyle → objective → confirm) to set up goals
 - **History** — 7/30-day calorie and workout trends
@@ -86,6 +87,8 @@ src/
 │   ├── LoginPage.tsx
 │   ├── OnboardingPage.tsx
 │   ├── MealsPage.tsx
+│   ├── FitnessPage.tsx # Allenamenti + Peso tabs
+│   ├── WellbeingPage.tsx
 │   ├── WorkoutPage.tsx
 │   ├── WeightPage.tsx
 │   ├── HistoryPage.tsx
@@ -101,8 +104,8 @@ src/
 ├── data/
 │   ├── basicFoods.ts    # Curated ingredients (kcal/macros per 100g + culinary category)
 │   ├── foodCategories.ts # Shared category labels and metadata
-│   ├── suggestedDishes.ts # Recipe templates used for pantry suggestions
-│   └── nutritionGuidelines.ts # Reference targets for the future habits dashboard
+│   ├── suggestedDishes.ts # Reserved recipe templates
+│   └── nutritionGuidelines.ts # Reference targets for healthy-habits indicators
 ├── utils/
 │   ├── bmr.ts           # BMR / TDEE calculation (Mifflin-St Jeor)
 │   └── met.ts           # MET-based calorie burn for activities

@@ -8,7 +8,7 @@ Calorie and nutrition tracker PWA. React 18 + TypeScript + Vite + Supabase direc
 
 React 19 TS, Vite + vite-plugin-pwa, Tailwind CSS, Supabase (`@supabase/supabase-js`). Italian UI.
 
-The mobile navigation contains Pasti, Cucina, Workout, Peso and Storico. Cucina groups the saved-dishes and pantry tabs.
+The mobile navigation contains Pasti, Cucina, Fitness, Benessere and Storico. Cucina groups the saved-dishes and pantry tabs; Fitness groups workout and weight tabs; Benessere contains the detailed healthy-habits dashboard.
 
 ## Commands
 

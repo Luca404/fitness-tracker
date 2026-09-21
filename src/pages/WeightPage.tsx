@@ -13,7 +13,7 @@ function toLocalISODate(d: Date) {
   return d.toLocaleDateString('sv-SE') // YYYY-MM-DD in local timezone
 }
 
-export default function WeightPage() {
+export default function WeightPage({ embedded = false }: { embedded?: boolean }) {
   const { user } = useAuth()
   const { profile, refreshCurrentWeight, showToast } = useData()
 
@@ -88,8 +88,8 @@ export default function WeightPage() {
   const yMax = allWeights.length ? Math.ceil(Math.max(...allWeights, target ?? -Infinity) + 1) : 'auto'
 
   return (
-    <div className="p-4 pb-24 space-y-4">
-      <h1 className="text-xl font-bold text-white">Peso corporeo</h1>
+    <div className={embedded ? 'space-y-4' : 'space-y-4 p-4 pb-24'}>
+      {!embedded && <h1 className="text-xl font-bold text-white">Peso corporeo</h1>}
 
       {/* Summary card */}
       {latest && (

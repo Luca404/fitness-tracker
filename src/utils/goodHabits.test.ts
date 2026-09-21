@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Meal, MealItem } from '../types'
-import { calculateHabitRows } from './goodHabits'
+import { calculateHabitRows, summarizeHabitRows } from './goodHabits'
 
 function meal(date: string, items: Array<Partial<MealItem> & Pick<MealItem, 'category' | 'quantity_g'>>): Meal {
   return {
@@ -57,5 +57,17 @@ describe('good habits calculations', () => {
     expect(rows.find(row => row.label === 'Fibre')).toMatchObject({ value: 3, partial: true })
     expect(rows.find(row => row.label === 'Zuccheri')).toMatchObject({ value: null, partial: false })
     expect(rows.find(row => row.label === 'Sale')).toMatchObject({ value: null, partial: false })
+  })
+
+  it('summarizes only measurable habits as either in line or needing attention', () => {
+    const rows = calculateHabitRows('2026-09-21', [meal('2026-09-21', [
+      { category: 'vegetable', quantity_g: 450, salt_g: 6 },
+    ])], [], targets)
+
+    expect(summarizeHabitRows(rows)).toEqual({
+      ok: 1,
+      needsAttention: 4,
+      incomplete: 2,
+    })
   })
 })

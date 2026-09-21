@@ -148,6 +148,8 @@ export default function MealsPage() {
         </div>
       </div>
 
+      <GoodHabits selectedDate={selectedDate} currentMeals={meals} compact />
+
       {/* Macro bars */}
       {goals && (
         <div className="card">
@@ -159,8 +161,6 @@ export default function MealsPage() {
           />
         </div>
       )}
-
-      <GoodHabits selectedDate={selectedDate} currentMeals={meals} />
 
       {/* Add meal button */}
       <button

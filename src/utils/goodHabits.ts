@@ -20,6 +20,22 @@ export interface HabitTargets {
   salt: number
 }
 
+export function summarizeHabitRows(rows: HabitRow[]) {
+  return rows.reduce((summary, row) => {
+    if (row.value == null) summary.incomplete += 1
+    else if (row.partial && !(
+      (row.direction === 'min' && row.value >= row.target)
+      || (row.direction === 'max' && row.value > row.target)
+    )) summary.incomplete += 1
+    else if (
+      (row.direction === 'min' && row.value >= row.target)
+      || (row.direction === 'max' && row.value <= row.target)
+    ) summary.ok += 1
+    else summary.needsAttention += 1
+    return summary
+  }, { ok: 0, needsAttention: 0, incomplete: 0 })
+}
+
 function gramsForCategories(meals: Meal[], categories: FoodCategory[]) {
   return meals
     .flatMap(meal => meal.items)

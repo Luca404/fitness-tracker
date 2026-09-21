@@ -3,8 +3,8 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 const NAV = [
   { to: '/meals',   label: 'Pasti',    icon: '🍽️' },
   { to: '/kitchen', label: 'Cucina',   icon: '🍳' },
-  { to: '/workout', label: 'Workout',  icon: '💪' },
-  { to: '/weight',  label: 'Peso',     icon: '⚖️' },
+  { to: '/fitness', label: 'Fitness',   icon: '💪' },
+  { to: '/wellbeing', label: 'Benessere', icon: '🌿' },
   { to: '/history', label: 'Storico',  icon: '📈' },
 ]
 

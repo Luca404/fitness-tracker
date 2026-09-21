@@ -7,7 +7,7 @@ import WorkoutDrawer from '../components/workout/WorkoutDrawer'
 import WorkoutRow from '../components/workout/WorkoutRow'
 import DaySelector from '../components/common/DaySelector'
 
-export default function WorkoutPage() {
+export default function WorkoutPage({ embedded = false }: { embedded?: boolean }) {
   const { user } = useAuth()
   const { workouts, currentWeightKg, loading, fetchForDate, addWorkout, removeWorkout, showToast } = useData()
   const { selectedDate, setSelectedDate } = useSettings()
@@ -49,7 +49,7 @@ export default function WorkoutPage() {
   }
 
   return (
-    <div className="p-4 pb-24 space-y-6">
+    <div className={embedded ? 'space-y-6' : 'space-y-6 p-4 pb-24'}>
       <DaySelector date={selectedDate} onChange={setSelectedDate} />
 
       <h2 className="font-semibold text-gray-300">Seleziona attività</h2>

@@ -8,11 +8,11 @@ import OnboardingPage from './pages/OnboardingPage'
 import Toast from './components/common/Toast'
 
 const MealsPage = lazy(() => import('./pages/MealsPage'))
-const WorkoutPage = lazy(() => import('./pages/WorkoutPage'))
 const HistoryPage = lazy(() => import('./pages/HistoryPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
-const WeightPage = lazy(() => import('./pages/WeightPage'))
 const KitchenPage = lazy(() => import('./pages/KitchenPage'))
+const FitnessPage = lazy(() => import('./pages/FitnessPage'))
+const WellbeingPage = lazy(() => import('./pages/WellbeingPage'))
 
 function LoadingScreen() {
   return (
@@ -52,9 +52,11 @@ function AppRoutes() {
       <Route element={<Layout />}>
         <Route index element={<Navigate to="/meals" replace />} />
         <Route path="/meals" element={<MealsPage />} />
-        <Route path="/workout" element={<WorkoutPage />} />
+        <Route path="/fitness" element={<FitnessPage />} />
+        <Route path="/wellbeing" element={<WellbeingPage />} />
         <Route path="/history" element={<HistoryPage />} />
-        <Route path="/weight" element={<WeightPage />} />
+        <Route path="/workout" element={<Navigate to="/fitness" replace />} />
+        <Route path="/weight" element={<Navigate to="/fitness?tab=weight" replace />} />
         <Route path="/kitchen" element={<KitchenPage />} />
         <Route path="/pantry" element={<Navigate to="/kitchen?tab=pantry" replace />} />
         <Route path="/settings" element={<SettingsPage />} />
