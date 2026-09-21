@@ -265,10 +265,25 @@ function toFoodResult(product: OpenFoodFactsProduct): FoodResult | null {
 }
 
 export function searchBasicFoods(query: string): FoodResult[] {
-  const q = query.trim().toLowerCase()
+  const normalizeSearchText = (value: string) => value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[’']/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+  const q = normalizeSearchText(query)
   if (!q) return []
   return BASIC_FOODS
-    .filter(f => f.name.toLowerCase().includes(q))
+    .filter(food => [food.name, ...(food.aliases ?? [])]
+      .some(label => normalizeSearchText(label).includes(q)))
+    .sort((left, right) => {
+      const leftName = normalizeSearchText(left.name)
+      const rightName = normalizeSearchText(right.name)
+      const leftScore = leftName === q ? 0 : leftName.startsWith(q) ? 1 : 2
+      const rightScore = rightName === q ? 0 : rightName.startsWith(q) ? 1 : 2
+      return leftScore - rightScore || left.name.localeCompare(right.name, 'it')
+    })
     .map(f => ({
       id: f.id,
       name: f.name,

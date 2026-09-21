@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeServingSize, productCategory, resolveProductQuantity } from './nutrition'
+import { BASIC_FOODS } from '../data/basicFoods'
+import { normalizeServingSize, productCategory, resolveProductQuantity, searchBasicFoods } from './nutrition'
 
 function product(name: string, categories: string[] = []) {
   return {
@@ -8,6 +9,32 @@ function product(name: string, categories: string[] = []) {
     categories_tags: categories,
   }
 }
+
+describe('local basic-food catalog', () => {
+  it('offers broad fruit and vegetable coverage without external APIs', () => {
+    expect(BASIC_FOODS.filter(food => food.category === 'vegetable').length).toBeGreaterThanOrEqual(50)
+    expect(BASIC_FOODS.filter(food => food.category === 'fruit').length).toBeGreaterThanOrEqual(40)
+  })
+
+  it('has unique ids and valid non-negative nutrition values', () => {
+    expect(new Set(BASIC_FOODS.map(food => food.id)).size).toBe(BASIC_FOODS.length)
+    for (const food of BASIC_FOODS) {
+      expect([food.calories, food.protein_g, food.carbs_g, food.fat_g]
+        .every(value => Number.isFinite(value) && value >= 0)).toBe(true)
+    }
+  })
+
+  it.each([
+    ['cavolo cappuccio', 'cavolo-cappuccio'],
+    ['cappuccio', 'cavolo-cappuccio'],
+    ['coste', 'bietole'],
+    ['friarielli', 'cime-rapa'],
+    ['prugna fresca', 'susine'],
+    ['caffe', 'caffe-nero'],
+  ])('finds %s locally, including aliases and unaccented queries', (query, expectedId) => {
+    expect(searchBasicFoods(query).some(food => food.id === expectedId)).toBe(true)
+  })
+})
 
 describe('Open Food Facts category classification', () => {
   it.each([
