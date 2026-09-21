@@ -8,7 +8,9 @@ import IngredientQuantityInput from './IngredientQuantityInput'
 import { BASIC_FOODS, type BasicFood } from '../../data/basicFoods'
 import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import { getFoodIcon } from '../../utils/foodIcons'
+import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
 import type { Dish, DishItem } from '../../types'
+import ExtendedNutrition from './ExtendedNutrition'
 
 interface Props {
   onAddEntry: (name: string, items: DishItemDraft[]) => Promise<void>
@@ -321,6 +323,14 @@ export default function MealHub({ onAddEntry, beveragesOnly = false }: Props) {
     const protein = pickingDish.items.reduce((sum, item) => sum + item.protein_g, 0) * factor + extraItems.reduce((sum, item) => sum + item.protein_g, 0)
     const carbs = pickingDish.items.reduce((sum, item) => sum + item.carbs_g, 0) * factor + extraItems.reduce((sum, item) => sum + item.carbs_g, 0)
     const fat = pickingDish.items.reduce((sum, item) => sum + item.fat_g, 0) * factor + extraItems.reduce((sum, item) => sum + item.fat_g, 0)
+    const extendedTotals = getExtendedNutritionTotals([
+      ...pickingDish.items.map(item => ({
+        fiber_g: item.fiber_g == null ? null : item.fiber_g * factor,
+        sugars_g: item.sugars_g == null ? null : item.sugars_g * factor,
+        salt_g: item.salt_g == null ? null : item.salt_g * factor,
+      })),
+      ...extraItems,
+    ])
     return (
       <div className="space-y-5">
         <div className="flex items-center justify-between">
@@ -341,6 +351,7 @@ export default function MealHub({ onAddEntry, beveragesOnly = false }: Props) {
             <MacroPill label="Carbo" value={carbs} />
             <MacroPill label="Grassi" value={fat} />
           </div>
+          <ExtendedNutrition totals={extendedTotals} />
         </div>
         <div className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
           <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quanto ne hai mangiato?</label>

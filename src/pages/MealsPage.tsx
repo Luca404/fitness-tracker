@@ -9,11 +9,13 @@ import MealHub from '../components/meals/MealHub'
 import DishEditor, { type DishItemDraft } from '../components/meals/DishEditor'
 import MealEntryCard from '../components/meals/MealEntryCard'
 import GoodHabits from '../components/meals/GoodHabits'
+import ExtendedNutrition from '../components/meals/ExtendedNutrition'
 import Modal from '../components/common/Modal'
 import DaySelector from '../components/common/DaySelector'
 import type { MealEntry, MealType } from '../types'
 import { getMealEntryTotals } from '../utils/mealEntries'
 import { getFoodIcon } from '../utils/foodIcons'
+import { getExtendedNutritionTotals } from '../utils/extendedNutrition'
 
 const MEAL_TYPES: { type: MealType; label: string }[] = [
   { type: 'breakfast', label: '☀️ Colazione' },
@@ -257,6 +259,7 @@ export default function MealsPage() {
         ) : modalStep === 'view-entry' ? (
           selectedEntry && (() => {
             const totals = getMealEntryTotals(selectedEntry)
+            const extendedTotals = getExtendedNutritionTotals(selectedEntry.items)
             return (
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
@@ -279,6 +282,7 @@ export default function MealsPage() {
                     <div className="rounded-xl bg-black/15 p-2 text-center"><p className="text-xs text-gray-500">Carbo</p><p className="font-semibold">{Math.round(totals.carbs)}g</p></div>
                     <div className="rounded-xl bg-black/15 p-2 text-center"><p className="text-xs text-gray-500">Grassi</p><p className="font-semibold">{Math.round(totals.fat)}g</p></div>
                   </div>
+                  <ExtendedNutrition totals={extendedTotals} />
                 </div>
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Ingredienti</p>

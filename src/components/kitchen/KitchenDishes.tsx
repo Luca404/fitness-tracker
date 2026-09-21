@@ -6,7 +6,9 @@ import Modal from '../common/Modal'
 import DishEditor, { type DishItemDraft } from '../meals/DishEditor'
 import { getDishAvailability } from '../../utils/ingredientMatching'
 import { getFoodIcon } from '../../utils/foodIcons'
+import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
 import type { Dish, PantryItem } from '../../types'
+import ExtendedNutrition from '../meals/ExtendedNutrition'
 
 function dishTotals(dish: Dish) {
   return dish.items.reduce((total, item) => ({
@@ -201,6 +203,7 @@ function DishDetail({ dish, pantry, onEdit, onDelete, onSave }: {
   onSave?: () => void
 }) {
   const totals = dishTotals(dish)
+  const extendedTotals = getExtendedNutritionTotals(dish.items)
   const availability = getDishAvailability(dish, pantry)
   return (
     <div className="space-y-5">
@@ -213,6 +216,7 @@ function DishDetail({ dish, pantry, onEdit, onDelete, onSave }: {
           <span className="rounded-xl bg-black/15 py-2">C <b>{Math.round(totals.carbs)}g</b></span>
           <span className="rounded-xl bg-black/15 py-2">G <b>{Math.round(totals.fat)}g</b></span>
         </div>
+        <ExtendedNutrition totals={extendedTotals} />
       </div>
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Ingredienti</p>
