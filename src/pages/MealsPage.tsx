@@ -8,17 +8,19 @@ import MealItemRow from '../components/meals/MealItemRow'
 import MealHub from '../components/meals/MealHub'
 import DishEditor, { type DishItemDraft } from '../components/meals/DishEditor'
 import MealEntryCard from '../components/meals/MealEntryCard'
+import GoodHabits from '../components/meals/GoodHabits'
 import Modal from '../components/common/Modal'
 import DaySelector from '../components/common/DaySelector'
 import type { MealEntry, MealType } from '../types'
 import { getMealEntryTotals } from '../utils/mealEntries'
+import { getFoodIcon } from '../utils/foodIcons'
 
 const MEAL_TYPES: { type: MealType; label: string }[] = [
   { type: 'breakfast', label: '☀️ Colazione' },
   { type: 'lunch',     label: '🍽️ Pranzo' },
   { type: 'dinner',   label: '🌙 Cena' },
   { type: 'snack',    label: '🍎 Spuntino' },
-  { type: 'drinks',   label: '🍸 Spuntino alcolico' },
+  { type: 'drinks',   label: '🥤 Bevande' },
 ]
 
 function mealItemToDraft(item: MealEntry['items'][number]): DishItemDraft {
@@ -78,7 +80,7 @@ export default function MealsPage() {
     if (!user) return
     try {
       await addMealEntry(activeMealType, name, items, selectedDate, user.id)
-      showToast('Piatto aggiunto al pasto')
+      showToast(activeMealType === 'drinks' ? 'Bevanda registrata' : 'Piatto aggiunto al pasto')
     } catch {
       showToast('Errore aggiunta piatto')
       throw new Error('create failed')
@@ -155,6 +157,8 @@ export default function MealsPage() {
         </div>
       )}
 
+      <GoodHabits selectedDate={selectedDate} currentMeals={meals} />
+
       {/* Add meal button */}
       <button
         type="button"
@@ -163,8 +167,8 @@ export default function MealsPage() {
       >
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-500 text-2xl font-light text-white shadow-lg shadow-primary-900/30">+</div>
         <div className="flex-1">
-          <p className="font-semibold">Registra un piatto</p>
-          <p className="text-xs text-gray-400">Salvato, nuovo oppure occasionale</p>
+          <p className="font-semibold">Registra ciò che hai consumato</p>
+          <p className="text-xs text-gray-400">Piatto salvato, nuovo oppure bevanda</p>
         </div>
         <span className="text-gray-600 transition group-hover:translate-x-0.5 group-hover:text-primary-400">→</span>
       </button>
@@ -245,7 +249,7 @@ export default function MealsPage() {
                 Fatto
               </button>
             </div>
-            <MealHub onAddEntry={handleAddDishEntry} />
+            <MealHub onAddEntry={handleAddDishEntry} beveragesOnly={activeMealType === 'drinks'} />
           </div>
         ) : modalStep === 'view-entry' ? (
           selectedEntry && (() => {
@@ -258,7 +262,7 @@ export default function MealsPage() {
                 </div>
                 <div className="rounded-3xl bg-gradient-to-br from-primary-600/25 via-gray-800 to-gray-800 p-5 ring-1 ring-primary-500/20">
                   <div className="mb-4 flex items-start gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/15 text-3xl">🍲</div>
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/15 text-3xl">{getFoodIcon(selectedEntry.items)}</div>
                     <div className="min-w-0 flex-1">
                       <h2 className="text-xl font-bold text-white">{selectedEntry.name}</h2>
                       <p className="mt-1 text-sm text-gray-400">

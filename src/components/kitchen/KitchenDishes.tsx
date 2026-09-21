@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
 import * as api from '../../services/api'
 import Modal from '../common/Modal'
 import DishEditor, { type DishItemDraft } from '../meals/DishEditor'
-import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
-import { SUGGESTED_DISHES } from '../../data/suggestedDishes'
 import { getDishAvailability } from '../../utils/ingredientMatching'
+import { getFoodIcon } from '../../utils/foodIcons'
 import type { Dish, PantryItem } from '../../types'
 
 function dishTotals(dish: Dish) {
@@ -61,17 +60,6 @@ export default function KitchenDishes() {
   }, [showToast])
 
   useEffect(() => { refresh() }, [refresh])
-
-  const suggestions = useMemo(() => [
-    ...dishes.map(dish => ({ dish, kind: 'saved' as const })),
-    ...SUGGESTED_DISHES
-      .filter(suggestion => !dishes.some(dish => dish.name.toLowerCase() === suggestion.name.toLowerCase()))
-      .map(dish => ({ dish, kind: 'idea' as const })),
-  ]
-    .map(result => ({ ...result, availability: getDishAvailability(result.dish, pantry) }))
-    .filter(result => result.availability.ratio >= 0.5)
-    .sort((a, b) => b.availability.ratio - a.availability.ratio)
-    .slice(0, 3), [dishes, pantry])
 
   const visibleDishes = dishes.filter(dish => dish.name.toLowerCase().includes(query.trim().toLowerCase()))
 
@@ -142,47 +130,6 @@ export default function KitchenDishes() {
       </button>
 
       <section>
-        <div className="mb-3 px-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary-400">Dalla tua dispensa</p>
-          <h2 className="mt-1 text-lg font-bold">Puoi preparare</h2>
-        </div>
-        {loading ? (
-          <div className="h-32 animate-pulse rounded-2xl bg-gray-800" />
-        ) : pantry.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-700 p-5 text-center">
-            <p className="text-sm font-medium text-gray-300">La dispensa è vuota</p>
-            <p className="mt-1 text-xs text-gray-500">Aggiungi ingredienti per ricevere consigli sui tuoi piatti.</p>
-          </div>
-        ) : suggestions.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-700 p-5 text-center text-sm text-gray-500">
-            Aggiungi qualche altro ingrediente per sbloccare nuove idee.
-          </div>
-        ) : (
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {suggestions.map(({ dish, availability, kind }) => {
-              const totals = dishTotals(dish)
-              const ready = availability.missing.length === 0
-              return (
-                <button key={dish.id} type="button" onClick={() => openDetail(dish)}
-                  className="w-64 shrink-0 rounded-3xl border border-gray-700 bg-gradient-to-br from-primary-600/15 to-gray-800 p-4 text-left">
-                  <div className="flex items-start justify-between">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-500/10 text-2xl">🍲</span>
-                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${ready ? 'bg-primary-500/15 text-primary-300' : 'bg-amber-400/10 text-amber-300'}`}>
-                      {ready ? 'Hai tutto' : `${availability.available.length}/${dish.items.length} ingredienti`}
-                    </span>
-                  </div>
-                  <h3 className="mt-4 truncate font-bold">{dish.name}</h3>
-                  <p className="mt-1 text-xs text-gray-500">{Math.round(totals.calories)} kcal · {Math.round(totals.weight)} g</p>
-                  {!ready && <p className="mt-3 truncate text-xs text-amber-300/80">Manca: {availability.missing.map(item => item.food_name).join(', ')}</p>}
-                  {kind === 'idea' && <p className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-primary-400">Idea per te</p>}
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </section>
-
-      <section>
         <div className="mb-3 flex items-end justify-between px-1">
           <div><p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Ricettario</p><h2 className="mt-1 text-lg font-bold">I tuoi piatti</h2></div>
           <span className="rounded-full bg-gray-800 px-2.5 py-1 text-xs text-gray-500">{dishes.length}</span>
@@ -200,11 +147,10 @@ export default function KitchenDishes() {
           <div className="space-y-2">
             {visibleDishes.map(dish => {
               const totals = dishTotals(dish)
-              const mainCategory = dish.items[0]?.category ?? 'other'
               return (
                 <button key={dish.id} type="button" onClick={() => openDetail(dish)}
                   className="flex w-full items-center gap-3 rounded-2xl border border-gray-800 bg-gray-800/55 p-3 text-left hover:border-gray-700">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-700/60 text-xl">{FOOD_CATEGORY_BY_ID[mainCategory].icon}</span>
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-700/60 text-xl">{getFoodIcon(dish.items)}</span>
                   <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{dish.name}</span><span className="text-xs text-gray-500">{dish.items.length} ingredienti · {Math.round(totals.weight)} g</span></span>
                   <span className="text-sm font-semibold text-primary-400">{Math.round(totals.calories)}<small className="ml-1 text-[9px]">kcal</small></span>
                   <span className="text-gray-600">›</span>
@@ -256,7 +202,7 @@ function DishDetail({ dish, pantry, onEdit, onDelete, onSave }: {
   return (
     <div className="space-y-5">
       <div className="rounded-3xl bg-gradient-to-br from-primary-600/25 to-gray-800 p-5 ring-1 ring-primary-500/20">
-        <span className="text-3xl">🍲</span>
+        <span className="text-3xl">{getFoodIcon(dish.items)}</span>
         <h2 className="mt-3 text-2xl font-bold">{dish.name}</h2>
         <p className="mt-1 text-sm text-gray-400">{Math.round(totals.weight)} g · {Math.round(totals.calories)} kcal</p>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">

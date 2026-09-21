@@ -1,5 +1,6 @@
 import type { MealEntry } from '../../types'
 import { getMealEntryTotals } from '../../utils/mealEntries'
+import { getFoodIcon } from '../../utils/foodIcons'
 
 interface Props {
   entry: MealEntry
@@ -17,7 +18,7 @@ export default function MealEntryCard({ entry, onOpen }: Props) {
     >
       <div className="flex items-center gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary-500/10 text-xl ring-1 ring-primary-500/20">
-          🍲
+          {getFoodIcon(entry.items)}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3">

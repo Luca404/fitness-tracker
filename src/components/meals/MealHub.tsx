@@ -3,11 +3,16 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
 import * as api from '../../services/api'
 import DishEditor, { type DishItemDraft } from './DishEditor'
+import FoodSearch from './FoodSearch'
+import IngredientQuantityInput from './IngredientQuantityInput'
 import { BASIC_FOODS, type BasicFood } from '../../data/basicFoods'
+import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
+import { getFoodIcon } from '../../utils/foodIcons'
 import type { Dish, DishItem } from '../../types'
 
 interface Props {
   onAddEntry: (name: string, items: DishItemDraft[]) => Promise<void>
+  beveragesOnly?: boolean
 }
 
 function referenceWeight(dish: Dish): number {
@@ -76,7 +81,7 @@ function beverageToDraft(beverage: BasicFood, volumeMl: number): DishItemDraft {
 
 type Mode = 'list' | 'new' | 'oneoff' | 'edit' | 'pick'
 
-export default function MealHub({ onAddEntry }: Props) {
+export default function MealHub({ onAddEntry, beveragesOnly = false }: Props) {
   const { user } = useAuth()
   const { showToast } = useData()
   const [dishes, setDishes] = useState<Dish[]>([])
@@ -87,6 +92,9 @@ export default function MealHub({ onAddEntry }: Props) {
   const [targetWeight, setTargetWeight] = useState(0)
   const [selectedBeverage, setSelectedBeverage] = useState<BasicFood | null>(null)
   const [beverageVolume, setBeverageVolume] = useState(330)
+  const [extraItems, setExtraItems] = useState<DishItemDraft[]>([])
+  const [extraSearchKey, setExtraSearchKey] = useState(0)
+  const [addingExtra, setAddingExtra] = useState(false)
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -104,7 +112,8 @@ export default function MealHub({ onAddEntry }: Props) {
   function startPick(dish: Dish) {
     setPickingDish(dish)
     setTargetWeight(Math.round(referenceWeight(dish)))
-    setSelectedBeverage(null)
+    setExtraItems([])
+    setAddingExtra(false)
     setMode('pick')
   }
 
@@ -146,12 +155,32 @@ export default function MealHub({ onAddEntry }: Props) {
       food_key: i.food_key,
       pantry_item_id: i.pantry_item_id ?? null,
     }))
-    const beverageItem = selectedBeverage && beverageVolume > 0
-      ? beverageToDraft(selectedBeverage, beverageVolume)
-      : null
-    await onAddEntry(pickingDish.name, beverageItem ? [...dishItems, beverageItem] : dishItems)
+    await onAddEntry(pickingDish.name, [...dishItems, ...extraItems])
     setPickingDish(null)
+    setExtraItems([])
     setMode('list')
+  }
+
+  async function confirmBeverage() {
+    if (!selectedBeverage || beverageVolume <= 0) return
+    await onAddEntry(selectedBeverage.name, [beverageToDraft(selectedBeverage, beverageVolume)])
+    setSelectedBeverage(null)
+  }
+
+  function updateExtraQuantity(index: number, quantity: number) {
+    if (!Number.isFinite(quantity) || quantity <= 0) return
+    setExtraItems(items => items.map((item, itemIndex) => {
+      if (itemIndex !== index) return item
+      const factor = item.quantity_g > 0 ? quantity / item.quantity_g : 0
+      return {
+        ...item,
+        quantity_g: quantity,
+        calories: Math.round(item.calories * factor),
+        protein_g: Math.round(item.protein_g * factor * 10) / 10,
+        carbs_g: Math.round(item.carbs_g * factor * 10) / 10,
+        fat_g: Math.round(item.fat_g * factor * 10) / 10,
+      }
+    }))
   }
 
   async function handleSaveNewDish(name: string, items: DishItemDraft[]) {
@@ -175,10 +204,60 @@ export default function MealHub({ onAddEntry }: Props) {
     setMode('list')
   }
 
+  if (beveragesOnly) {
+    const beverageItem = selectedBeverage && beverageVolume > 0
+      ? beverageToDraft(selectedBeverage, beverageVolume)
+      : null
+    return (
+      <div className="space-y-5">
+        <div className="flex items-center justify-between px-1">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Bevande</p>
+            <h3 className="mt-0.5 text-lg font-bold">Cosa hai bevuto?</h3>
+          </div>
+          <span className="text-2xl">🥤</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {QUICK_BEVERAGES.map(beverage => (
+            <button
+              key={beverage.id}
+              type="button"
+              onClick={() => chooseBeverage(beverage)}
+              className={`flex items-center gap-2 rounded-xl border px-3 py-3 text-left text-xs transition ${selectedBeverage?.id === beverage.id ? 'border-primary-500 bg-primary-950/30 text-white' : 'border-gray-700/80 bg-gray-800/60 hover:border-primary-600'}`}
+            >
+              <span className="text-lg">{beverageEmoji(beverage)}</span>
+              <span className="truncate">{beverage.name}</span>
+            </button>
+          ))}
+        </div>
+        {selectedBeverage && (
+          <div className="space-y-3 rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
+            <label className="flex items-center rounded-xl border border-gray-700 bg-gray-800/70 px-3 focus-within:border-primary-500">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quantità</span>
+              <input
+                type="number"
+                min={1}
+                value={beverageVolume === 0 ? '' : beverageVolume}
+                onChange={event => setBeverageVolume(parseInt(event.target.value) || 0)}
+                onFocus={event => event.currentTarget.select()}
+                className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-right text-xl font-bold outline-none"
+              />
+              <span className="text-sm text-gray-500">ml</span>
+            </label>
+            <button type="button" onClick={confirmBeverage} disabled={!beverageItem}
+              className="w-full rounded-xl bg-primary-500 py-3 font-semibold hover:bg-primary-400 disabled:opacity-40">
+              Registra {beverageItem?.calories ?? 0} kcal
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   if (mode === 'new') {
     return (
       <div className="space-y-5">
-        <ComposerHeader icon="🍳" eyebrow="Nuova ricetta" title="Componi il tuo piatto" description="Lo salveremo tra i preferiti e nel diario di oggi." />
+        <ComposerHeader icon="🍳" eyebrow="Nuova ricetta" title="Componi il tuo piatto" />
         <DishEditor
           initialName=""
           initialItems={[]}
@@ -194,7 +273,7 @@ export default function MealHub({ onAddEntry }: Props) {
   if (mode === 'edit' && editingDish) {
     return (
       <div className="space-y-5">
-        <ComposerHeader icon="⚙️" eyebrow="Piatto salvato" title="Modifica la ricetta" description="Le modifiche varranno per i prossimi inserimenti." />
+        <ComposerHeader icon="⚙️" eyebrow="Piatto salvato" title="Modifica la ricetta" />
         <DishEditor
           initialName={editingDish.name}
           initialItems={editingDish.items.map(toDraftItem)}
@@ -210,7 +289,7 @@ export default function MealHub({ onAddEntry }: Props) {
   if (mode === 'oneoff') {
     return (
       <div className="space-y-5">
-        <ComposerHeader icon="✨" eyebrow="Inserimento veloce" title="Piatto occasionale" description="Perfetto per ristorante, aperitivo o qualcosa che non vuoi salvare." />
+        <ComposerHeader icon="✨" eyebrow="Inserimento veloce" title="Piatto occasionale" />
         <DishEditor
           initialName=""
           initialItems={[]}
@@ -226,13 +305,10 @@ export default function MealHub({ onAddEntry }: Props) {
   if (mode === 'pick' && pickingDish) {
     const ref = referenceWeight(pickingDish)
     const factor = ref > 0 ? targetWeight / ref : 1
-    const beverageItem = selectedBeverage && beverageVolume > 0
-      ? beverageToDraft(selectedBeverage, beverageVolume)
-      : null
-    const scaledKcal = Math.round(totalKcal(pickingDish) * factor) + (beverageItem?.calories ?? 0)
-    const protein = pickingDish.items.reduce((sum, item) => sum + item.protein_g, 0) * factor + (beverageItem?.protein_g ?? 0)
-    const carbs = pickingDish.items.reduce((sum, item) => sum + item.carbs_g, 0) * factor + (beverageItem?.carbs_g ?? 0)
-    const fat = pickingDish.items.reduce((sum, item) => sum + item.fat_g, 0) * factor + (beverageItem?.fat_g ?? 0)
+    const scaledKcal = Math.round(totalKcal(pickingDish) * factor) + Math.round(extraItems.reduce((sum, item) => sum + item.calories, 0))
+    const protein = pickingDish.items.reduce((sum, item) => sum + item.protein_g, 0) * factor + extraItems.reduce((sum, item) => sum + item.protein_g, 0)
+    const carbs = pickingDish.items.reduce((sum, item) => sum + item.carbs_g, 0) * factor + extraItems.reduce((sum, item) => sum + item.carbs_g, 0)
+    const fat = pickingDish.items.reduce((sum, item) => sum + item.fat_g, 0) * factor + extraItems.reduce((sum, item) => sum + item.fat_g, 0)
     return (
       <div className="space-y-5">
         <div className="flex items-center justify-between">
@@ -241,7 +317,7 @@ export default function MealHub({ onAddEntry }: Props) {
         </div>
         <div className="rounded-3xl bg-gradient-to-br from-primary-600/25 via-gray-800 to-gray-800 p-5 ring-1 ring-primary-500/20">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/15 text-3xl">🍲</div>
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/15 text-3xl">{getFoodIcon(pickingDish.items)}</div>
             <div className="min-w-0 flex-1">
               <h3 className="truncate text-xl font-bold">{pickingDish.name}</h3>
               <p className="text-sm text-gray-400">Ricetta base: {Math.round(ref)} g</p>
@@ -264,48 +340,24 @@ export default function MealHub({ onAddEntry }: Props) {
           </div>
         </div>
         <section className="rounded-2xl border border-gray-700 bg-gray-900/25 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Bevanda</p>
-              <p className="mt-0.5 text-sm text-gray-400">Opzionale</p>
-            </div>
-            <span className="text-2xl">🥤</span>
-          </div>
-
-          {selectedBeverage ? (
-            <div className="mt-3 space-y-3">
-              <div className="flex items-center gap-3 rounded-xl bg-gray-800 p-3">
-                <span className="text-xl">{beverageEmoji(selectedBeverage)}</span>
-                <span className="min-w-0 flex-1 truncate text-sm font-semibold">{selectedBeverage.name}</span>
-                <button type="button" onClick={() => setSelectedBeverage(null)} className="text-xs text-gray-500 hover:text-white">Cambia</button>
-              </div>
-              <label className="flex items-center rounded-xl border border-gray-700 bg-gray-800/70 px-3 focus-within:border-primary-500">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quantità</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={beverageVolume === 0 ? '' : beverageVolume}
-                  onChange={event => setBeverageVolume(parseInt(event.target.value) || 0)}
-                  onFocus={event => event.currentTarget.select()}
-                  className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-right text-xl font-bold outline-none"
-                />
-                <span className="text-sm text-gray-500">ml</span>
-              </label>
-              <p className="text-right text-xs text-primary-400">{beverageItem?.calories ?? 0} kcal</p>
-            </div>
-          ) : (
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {QUICK_BEVERAGES.map(beverage => (
-                <button
-                  key={beverage.id}
-                  type="button"
-                  onClick={() => chooseBeverage(beverage)}
-                  className="flex items-center gap-2 rounded-xl border border-gray-700/80 bg-gray-800/60 px-3 py-2.5 text-left text-xs transition hover:border-primary-600 hover:bg-primary-950/20"
-                >
-                  <span className="text-base">{beverageEmoji(beverage)}</span>
-                  <span className="truncate">{beverage.name}</span>
-                </button>
-              ))}
+          <button type="button" onClick={() => setAddingExtra(open => !open)} className="flex w-full items-center justify-between text-left">
+            <span>
+              <span className="block text-xs font-semibold uppercase tracking-wider text-gray-500">Personalizza</span>
+              <span className="mt-0.5 block text-sm font-medium text-gray-300">Aggiungi un ingrediente</span>
+            </span>
+            <span className="text-xl text-primary-400">{addingExtra ? '−' : '+'}</span>
+          </button>
+          {addingExtra && (
+            <div className="mt-4 border-t border-gray-700 pt-4">
+              <FoodSearch
+                key={extraSearchKey}
+                hideHeader
+                onClose={() => {}}
+                onAdd={item => {
+                  setExtraItems(items => [...items, item])
+                  setExtraSearchKey(key => key + 1)
+                }}
+              />
             </div>
           )}
         </section>
@@ -317,12 +369,26 @@ export default function MealHub({ onAddEntry }: Props) {
               <span className="text-gray-500">{Math.round(item.quantity_g * factor)} g</span>
             </div>
           ))}
-          {beverageItem && (
-            <div className="flex justify-between rounded-xl bg-primary-950/20 px-3 py-2 text-sm ring-1 ring-primary-500/15">
-              <span className="text-gray-300">{beverageEmoji(selectedBeverage!)} {beverageItem.food_name}</span>
-              <span className="text-gray-500">{beverageVolume} ml</span>
+          {extraItems.map((item, index) => (
+            <div key={`${item.food_name}-${index}`} className="rounded-xl bg-primary-950/20 p-3 text-sm ring-1 ring-primary-500/15">
+              <div className="flex items-center gap-2">
+                <span>{FOOD_CATEGORY_BY_ID[item.category]?.icon ?? '📦'}</span>
+                <span className="min-w-0 flex-1 truncate text-gray-300">{item.food_name}</span>
+                <button type="button" onClick={() => setExtraItems(items => items.filter((_, itemIndex) => itemIndex !== index))}
+                  className="text-gray-600 hover:text-red-400" aria-label={`Rimuovi ${item.food_name}`}>✕</button>
+              </div>
+              <div className="mt-2 pl-7">
+                <IngredientQuantityInput
+                  foodName={item.food_name}
+                  category={item.category}
+                  grams={item.quantity_g}
+                  unit={item.unit}
+                  compact
+                  onChange={quantity => updateExtraQuantity(index, quantity)}
+                />
+              </div>
             </div>
-          )}
+          ))}
         </div>
         <button type="button" onClick={confirmPick} disabled={targetWeight <= 0}
           className="w-full rounded-2xl bg-primary-500 py-4 font-semibold shadow-lg shadow-primary-900/30 transition hover:bg-primary-400 disabled:opacity-40">
@@ -334,12 +400,6 @@ export default function MealHub({ onAddEntry }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl bg-gradient-to-br from-primary-500/20 via-gray-800 to-gray-800 p-5 ring-1 ring-primary-500/20">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary-400">Composer</p>
-        <h3 className="mt-1 text-xl font-bold">Cosa hai mangiato?</h3>
-        <p className="mt-1 text-sm leading-relaxed text-gray-400">Scegli un piatto già pronto oppure costruiscilo ingrediente per ingrediente.</p>
-      </div>
-
       <div className="grid grid-cols-2 gap-3">
         <button type="button" onClick={() => setMode('new')}
           className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4 text-left transition hover:border-primary-600 hover:bg-primary-950/20">
@@ -373,7 +433,7 @@ export default function MealHub({ onAddEntry }: Props) {
               <div key={dish.id} className="group flex items-center gap-2 rounded-2xl border border-gray-700/70 bg-gray-900/30 p-2 transition hover:border-gray-600">
                 <button type="button" onClick={() => startPick(dish)}
                   className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-2 text-left">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10">🍲</span>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10">{getFoodIcon(dish.items)}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{dish.name}</span>
                     <span className="text-xs text-gray-500">{Math.round(totalKcal(dish))} kcal · {Math.round(referenceWeight(dish))} g</span>
@@ -392,19 +452,17 @@ export default function MealHub({ onAddEntry }: Props) {
   )
 }
 
-function ComposerHeader({ icon, eyebrow, title, description }: {
+function ComposerHeader({ icon, eyebrow, title }: {
   icon: string
   eyebrow: string
   title: string
-  description: string
 }) {
   return (
-    <div className="flex items-start gap-4 rounded-2xl bg-gray-900/35 p-4">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-500/10 text-2xl">{icon}</span>
+    <div className="flex items-center gap-3 px-1">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-xl">{icon}</span>
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-primary-400">{eyebrow}</p>
         <h3 className="text-lg font-bold">{title}</h3>
-        <p className="mt-1 text-xs leading-relaxed text-gray-500">{description}</p>
       </div>
     </div>
   )

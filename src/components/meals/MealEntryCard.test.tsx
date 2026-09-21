@@ -32,6 +32,7 @@ describe('MealEntryCard', () => {
     const card = screen.getByRole('button', { name: /Bowl pollo e riso/i })
     expect(screen.queryByText('Riso basmati')).toBeNull()
     expect(screen.queryByText('Acqua naturale')).toBeNull()
+    expect(screen.getByText('🍚')).toBeTruthy()
     expect(screen.getByText('130 kcal')).toBeTruthy()
     expect(screen.getByText(/100 g \+ 500 ml/)).toBeTruthy()
     fireEvent.click(card)

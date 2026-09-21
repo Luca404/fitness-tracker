@@ -146,8 +146,9 @@ rather than the sole source of truth.
 
 The local catalog also includes `nutritionGuidelines.ts`, a source-documented reference
 dataset for salt, sugars, alcohol, ultra-processed foods, meat, vegetables, fruit,
-legumes, fish and fibre. It is kept separate from meal calculations so future “Buone
-abitudini” indicators can be added without changing the logging model.
+legumes, fish and fibre. The Pasti page uses the reliably measurable categories for
+the “Buone abitudini” daily and weekly indicators; nutrients not persisted on diary
+items are intentionally not estimated.
 
 ## Deployment
 
@@ -183,8 +184,7 @@ the Supabase Auth Site URL and add the required preview URL patterns.
   portion estimates plus explicit confidence/assumption handling.
 - Add a local OCR/parser fallback later if it provides a measurable latency or
   cost benefit.
-- Design the “Buone abitudini” dashboard using the existing
-  `nutritionGuidelines.ts` reference data after the photo workflow is stable.
+- Extend “Buone abitudini” when diary items persist fibre, salt and sugar data.
 
 ## Known limitations
 
