@@ -16,6 +16,22 @@ describe('local basic-food catalog', () => {
     expect(BASIC_FOODS.filter(food => food.category === 'fruit').length).toBeGreaterThanOrEqual(40)
   })
 
+  it('offers broad nuts, meat and fish coverage', () => {
+    expect(BASIC_FOODS.filter(food => food.category === 'nuts_seeds').length).toBeGreaterThanOrEqual(15)
+    expect(BASIC_FOODS.filter(food => food.category === 'meat').length).toBeGreaterThanOrEqual(15)
+    expect(BASIC_FOODS.filter(food => food.category === 'fish').length).toBeGreaterThanOrEqual(15)
+  })
+
+  it('uses uncooked values for ingredients that need cooking', () => {
+    expect(BASIC_FOODS.some(food => /\((?:cotto|cotta|cotti|cotte|lesso|lessa|lessi|lesse)\)/i.test(food.name))).toBe(false)
+    expect(BASIC_FOODS.find(food => food.id === 'petto-pollo')).toMatchObject({
+      name: 'Petto di pollo', calories: 120, protein_g: 22.5,
+    })
+    expect(BASIC_FOODS.find(food => food.id === 'riso-basmati')).toMatchObject({
+      name: 'Riso basmati', calories: 356,
+    })
+  })
+
   it('has unique ids and valid non-negative nutrition values', () => {
     expect(new Set(BASIC_FOODS.map(food => food.id)).size).toBe(BASIC_FOODS.length)
     for (const food of BASIC_FOODS) {
