@@ -8,6 +8,9 @@ import type {
 } from '../types'
 import * as api from '../services/api'
 import { useAuth } from './AuthContext'
+import { calculateNutritionGoals } from '../utils/bmr'
+import { shouldAutoRecalculateGoals, summarizeRollingWeight } from '../utils/goalRecalculation'
+import { NUTRITION_GOAL_CONFIG } from '../config/nutritionGoals'
 
 type ProfileStatus = 'idle' | 'loading' | 'missing' | 'ready' | 'error'
 
@@ -17,6 +20,8 @@ interface DataContextType {
   profileUserId: string | null
   goals: UserGoals | null
   currentWeightKg: number | null
+  rollingWeightKg: number | null
+  rollingWeightSampleCount: number
   meals: Meal[]           // for selectedDate
   workouts: Workout[]     // for selectedDate
   loading: boolean
@@ -29,7 +34,7 @@ interface DataContextType {
     g: SuggestedGoals
   ) => Promise<void>
   saveGoals: (g: Omit<UserGoals, 'updated_at'>) => Promise<void>
-  saveResistanceTraining: (value: boolean) => Promise<void>
+  saveProfileAndRecalculate: (p: UserHealthProfile) => Promise<UserGoals>
   addMealEntry: (
     mealType: MealType,
     name: string,
@@ -51,6 +56,21 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | null>(null)
 
+function localISODateWithOffset(dayOffset: number) {
+  const date = new Date()
+  date.setDate(date.getDate() + dayOffset)
+  return date.toLocaleDateString('sv-SE')
+}
+
+function calculatedGoals(profile: UserHealthProfile, calculationWeightKg: number): Omit<UserGoals, 'updated_at'> {
+  const recommendation = calculateNutritionGoals({ ...profile, weight_kg: calculationWeightKg })
+  return {
+    user_id: profile.user_id,
+    ...recommendation.goals,
+    calculation_weight_kg: calculationWeightKg,
+  }
+}
+
 export function DataProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const userId = user?.id
@@ -59,6 +79,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [profileUserId, setProfileUserId] = useState<string | null>(null)
   const [goals, setGoals] = useState<UserGoals | null>(null)
   const [currentWeightKg, setCurrentWeightKg] = useState<number | null>(null)
+  const [rollingWeightKg, setRollingWeightKg] = useState<number | null>(null)
+  const [rollingWeightSampleCount, setRollingWeightSampleCount] = useState(0)
   const [meals, setMeals] = useState<Meal[]>([])
   const [workouts, setWorkouts] = useState<Workout[]>([])
   const [loading, setLoading] = useState(false)
@@ -82,16 +104,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const requestId = ++profileRequest.current
     setProfileStatus('loading')
     try {
-      const today = new Date().toLocaleDateString('sv-SE')
-      const [p, g, latestWeight] = await Promise.all([
+      const today = localISODateWithOffset(0)
+      const from = localISODateWithOffset(-(NUTRITION_GOAL_CONFIG.weightRecalculation.windowDays - 1))
+      const [p, g, latestWeight, recentWeights] = await Promise.all([
         api.getHealthProfile(),
         api.getUserGoals(),
         api.getLatestWeightLog(today),
+        api.getWeightLogs(from, today),
       ])
       if (requestId !== profileRequest.current) return
+      const rollingSummary = summarizeRollingWeight(recentWeights)
+      let resolvedGoals = g
+      if (p && g && shouldAutoRecalculateGoals(
+        rollingSummary,
+        g.calculation_weight_kg ?? p.weight_kg,
+      )) {
+        const recalculated = calculatedGoals(p, rollingSummary.averageKg as number)
+        try {
+          await api.upsertUserGoals(recalculated)
+          resolvedGoals = { ...recalculated, updated_at: new Date().toISOString() }
+          showToast(`Target aggiornati sul peso medio di ${rollingSummary.averageKg} kg`)
+        } catch {
+          showToast('Ricalcolo automatico dei target non riuscito')
+        }
+      }
+      if (requestId !== profileRequest.current) return
       setProfile(p)
-      setGoals(g)
+      setGoals(resolvedGoals)
       setCurrentWeightKg(latestWeight?.weight_kg ?? p?.weight_kg ?? null)
+      setRollingWeightKg(rollingSummary.averageKg)
+      setRollingWeightSampleCount(rollingSummary.sampleCount)
       setProfileUserId(userId)
       setProfileStatus(p ? 'ready' : 'missing')
     } catch {
@@ -109,6 +151,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setProfileUserId(null)
     setGoals(null)
     setCurrentWeightKg(null)
+    setRollingWeightKg(null)
+    setRollingWeightSampleCount(0)
     setMeals([])
     setWorkouts([])
     setProfileStatus(userId ? 'loading' : 'idle')
@@ -117,11 +161,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const refreshCurrentWeight = useCallback(async () => {
     const requestId = profileRequest.current
-    const today = new Date().toLocaleDateString('sv-SE')
-    const latest = await api.getLatestWeightLog(today)
+    const today = localISODateWithOffset(0)
+    const from = localISODateWithOffset(-(NUTRITION_GOAL_CONFIG.weightRecalculation.windowDays - 1))
+    const [latest, recentWeights] = await Promise.all([
+      api.getLatestWeightLog(today),
+      api.getWeightLogs(from, today),
+    ])
     if (requestId !== profileRequest.current) return
+    const rollingSummary = summarizeRollingWeight(recentWeights)
     setCurrentWeightKg(latest?.weight_kg ?? profile?.weight_kg ?? null)
-  }, [profile?.weight_kg])
+    setRollingWeightKg(rollingSummary.averageKg)
+    setRollingWeightSampleCount(rollingSummary.sampleCount)
+
+    if (profile && goals && shouldAutoRecalculateGoals(
+      rollingSummary,
+      goals.calculation_weight_kg ?? profile.weight_kg,
+    )) {
+      const recalculated = calculatedGoals(profile, rollingSummary.averageKg as number)
+      try {
+        await api.upsertUserGoals(recalculated)
+        if (requestId !== profileRequest.current) return
+        setGoals({ ...recalculated, updated_at: new Date().toISOString() })
+        showToast(`Target aggiornati sul peso medio di ${rollingSummary.averageKg} kg`)
+      } catch {
+        showToast('Peso salvato, ma il ricalcolo automatico dei target non è riuscito')
+      }
+    }
+  }, [goals, profile, showToast])
 
   const fetchForDate = useCallback(async (date: string) => {
     const requestId = ++dateRequest.current
@@ -147,19 +213,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setGoals({ ...g, updated_at: new Date().toISOString() })
   }, [])
 
-  const saveResistanceTraining = useCallback(async (value: boolean) => {
-    if (!userId) return
-    await api.updateResistanceTraining(userId, value)
-    setProfile(previous => previous
-      ? { ...previous, does_resistance_training: value, updated_at: new Date().toISOString() }
-      : previous)
-  }, [userId])
+  const saveProfileAndRecalculate = useCallback(async (nextProfile: UserHealthProfile) => {
+    const canUseRollingWeight = rollingWeightKg !== null
+      && rollingWeightSampleCount >= NUTRITION_GOAL_CONFIG.weightRecalculation.minimumSamples
+    const calculationWeightKg = canUseRollingWeight
+      ? rollingWeightKg
+      : (currentWeightKg ?? nextProfile.weight_kg)
+    const profileToSave = { ...nextProfile, weight_kg: currentWeightKg ?? nextProfile.weight_kg }
+    const nextGoals = calculatedGoals(profileToSave, calculationWeightKg)
+
+    await api.completeOnboarding(profileToSave, nextGoals)
+    const now = new Date().toISOString()
+    const storedGoals = { ...nextGoals, updated_at: now }
+    setProfile({ ...profileToSave, updated_at: now })
+    setGoals(storedGoals)
+    return storedGoals
+  }, [currentWeightKg, rollingWeightKg, rollingWeightSampleCount])
 
   const completeOnboarding = useCallback(async (
     p: Omit<UserHealthProfile, 'created_at' | 'updated_at'>,
     g: SuggestedGoals
   ) => {
-    const goalsWithUser = { user_id: p.user_id, ...g }
+    const goalsWithUser = { user_id: p.user_id, ...g, calculation_weight_kg: p.weight_kg }
     await api.completeOnboarding(p, goalsWithUser)
     setProfile({ ...p, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     setGoals({ ...goalsWithUser, updated_at: new Date().toISOString() })
@@ -243,8 +318,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   return (
     <DataContext.Provider value={{
-      profile, profileStatus, profileUserId, goals, currentWeightKg, meals, workouts, loading, toast,
-      fetchForDate, fetchProfile, refreshCurrentWeight, completeOnboarding, saveGoals, saveResistanceTraining,
+      profile, profileStatus, profileUserId, goals, currentWeightKg, rollingWeightKg,
+      rollingWeightSampleCount, meals, workouts, loading, toast,
+      fetchForDate, fetchProfile, refreshCurrentWeight, completeOnboarding, saveGoals,
+      saveProfileAndRecalculate,
       addMealEntry, updateMealEntry, removeMealEntry, addWorkout, removeWorkout,
       daySummary, showToast,
     }}>

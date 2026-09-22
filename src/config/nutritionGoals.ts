@@ -10,6 +10,11 @@ export const NUTRITION_GOAL_CONFIG = {
   } satisfies Record<ActivityLevel, number>,
   caloriesPerKg: 7700,
   gainSurplusKcal: 250,
+  weightRecalculation: {
+    windowDays: 7,
+    minimumSamples: 2,
+    thresholdFraction: 0.02,
+  },
   loss: {
     defaultWeeklyRate: 0.005,
     indicativeMinWeeklyRate: 0.0025,
@@ -50,4 +55,3 @@ export const NUTRITION_GOAL_CONFIG = {
     } satisfies Record<ActivityLevel, number>,
   },
 } as const
-

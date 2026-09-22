@@ -28,6 +28,7 @@ create table public.user_goals (
   protein_g      float not null check (protein_g >= 0),
   carbs_g        float not null check (carbs_g >= 0),
   fat_g          float not null check (fat_g >= 0),
+  calculation_weight_kg float check (calculation_weight_kg between 20 and 400),
   updated_at     timestamptz default now()
 );
 alter table public.user_goals enable row level security;
@@ -299,16 +300,20 @@ begin
     bmr_override = excluded.bmr_override,
     updated_at = now();
 
-  insert into public.user_goals (user_id, calorie_target, protein_g, carbs_g, fat_g, updated_at)
+  insert into public.user_goals (
+    user_id, calorie_target, protein_g, carbs_g, fat_g, calculation_weight_kg, updated_at
+  )
   values (
     v_user_id, (p_goals->>'calorie_target')::int, (p_goals->>'protein_g')::float,
-    (p_goals->>'carbs_g')::float, (p_goals->>'fat_g')::float, now()
+    (p_goals->>'carbs_g')::float, (p_goals->>'fat_g')::float,
+    coalesce((p_goals->>'calculation_weight_kg')::float, (p_profile->>'weight_kg')::float), now()
   )
   on conflict (user_id) do update set
     calorie_target = excluded.calorie_target,
     protein_g = excluded.protein_g,
     carbs_g = excluded.carbs_g,
     fat_g = excluded.fat_g,
+    calculation_weight_kg = excluded.calculation_weight_kg,
     updated_at = now();
 end;
 $$;

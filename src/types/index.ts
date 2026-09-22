@@ -36,6 +36,7 @@ export interface UserGoals {
   protein_g: number
   carbs_g: number
   fat_g: number
+  calculation_weight_kg: number | null
   updated_at: string
 }
 

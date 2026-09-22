@@ -46,14 +46,6 @@ export async function getHealthProfile(): Promise<UserHealthProfile | null> {
   } as UserHealthProfile
 }
 
-export async function updateResistanceTraining(userId: string, value: boolean): Promise<void> {
-  const { error } = await supabase
-    .from('user_health_profiles')
-    .update({ does_resistance_training: value, updated_at: new Date().toISOString() })
-    .eq('user_id', userId)
-  if (error) throw error
-}
-
 // --- Goals ---
 
 export async function getUserGoals(): Promise<UserGoals | null> {

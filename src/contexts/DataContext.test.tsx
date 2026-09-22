@@ -7,11 +7,12 @@ const mocks = vi.hoisted(() => ({
   getHealthProfile: vi.fn(),
   getUserGoals: vi.fn(),
   getLatestWeightLog: vi.fn(),
+  getWeightLogs: vi.fn(),
+  upsertUserGoals: vi.fn(),
   addMealEntry: vi.fn(),
   updateMealEntry: vi.fn(),
   deleteMealEntry: vi.fn(),
   completeOnboarding: vi.fn(),
-  updateResistanceTraining: vi.fn(),
 }))
 
 vi.mock('./AuthContext', () => ({
@@ -49,8 +50,9 @@ describe('DataProvider', () => {
     mocks.getHealthProfile.mockResolvedValue(profile)
     mocks.getUserGoals.mockResolvedValue(null)
     mocks.getLatestWeightLog.mockResolvedValue(null)
+    mocks.getWeightLogs.mockResolvedValue([])
+    mocks.upsertUserGoals.mockResolvedValue(undefined)
     mocks.completeOnboarding.mockResolvedValue(undefined)
-    mocks.updateResistanceTraining.mockResolvedValue(undefined)
   })
 
   it('adds, edits and removes one eaten dish as a single diary entry', async () => {
@@ -152,16 +154,54 @@ describe('DataProvider', () => {
     expect(result.current.profileUserId).toBe('user-1')
   })
 
-  it('persists resistance training separately from general activity', async () => {
+  it('saves profile changes and recalculates the complete goal pipeline', async () => {
     const { result } = renderHook(() => useData(), { wrapper: Wrapper })
     await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
 
     await act(async () => {
-      await result.current.saveResistanceTraining(false)
+      await result.current.saveProfileAndRecalculate({
+        ...profile,
+        height_cm: 185,
+        does_resistance_training: false,
+      })
     })
 
-    expect(mocks.updateResistanceTraining).toHaveBeenCalledWith('user-1', false)
+    expect(mocks.completeOnboarding).toHaveBeenCalledWith(
+      expect.objectContaining({ height_cm: 185, does_resistance_training: false }),
+      expect.objectContaining({
+        calculation_weight_kg: 80,
+        calorie_target: expect.any(Number),
+        protein_g: 72,
+        fat_g: 64,
+        carbs_g: expect.any(Number),
+      }),
+    )
     expect(result.current.profile?.activity_level).toBe('moderate')
     expect(result.current.profile?.does_resistance_training).toBe(false)
+    expect(result.current.profile?.height_cm).toBe(185)
+  })
+
+  it('recalculates all goals when the seven-day average differs by two percent', async () => {
+    mocks.getUserGoals.mockResolvedValue({
+      user_id: 'user-1', calorie_target: 2500, protein_g: 128, carbs_g: 350, fat_g: 64,
+      calculation_weight_kg: 80, updated_at: '',
+    })
+    mocks.getLatestWeightLog.mockResolvedValue({ weight_kg: 78.3 })
+    mocks.getWeightLogs.mockResolvedValue([
+      { weight_kg: 78.5 }, { weight_kg: 78.3 }, { weight_kg: 78.4 },
+    ])
+
+    const { result } = renderHook(() => useData(), { wrapper: Wrapper })
+    await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
+
+    expect(mocks.upsertUserGoals).toHaveBeenCalledWith(expect.objectContaining({
+      calculation_weight_kg: 78.4,
+      calorie_target: expect.any(Number),
+      protein_g: expect.any(Number),
+      fat_g: expect.any(Number),
+      carbs_g: expect.any(Number),
+    }))
+    expect(result.current.goals?.calculation_weight_kg).toBe(78.4)
+    expect(result.current.rollingWeightKg).toBe(78.4)
   })
 })

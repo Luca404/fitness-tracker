@@ -2,17 +2,25 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { calculateNutritionGoals, type NutritionGoalRecommendation } from '../utils/bmr'
+import { NUTRITION_GOAL_CONFIG } from '../config/nutritionGoals'
+import Modal from '../components/common/Modal'
+import ProfileGoalEditor from '../components/settings/ProfileGoalEditor'
+import type { UserHealthProfile } from '../types'
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth()
-  const { profile, currentWeightKg, goals, saveGoals, saveResistanceTraining, showToast } = useData()
+  const {
+    profile, currentWeightKg, rollingWeightKg, rollingWeightSampleCount, goals,
+    saveGoals, saveProfileAndRecalculate, showToast,
+  } = useData()
 
   const [calories, setCalories] = useState(goals?.calorie_target ?? 2000)
   const [protein, setProtein] = useState(goals?.protein_g ?? 150)
   const [carbs, setCarbs] = useState(goals?.carbs_g ?? 200)
   const [fat, setFat] = useState(goals?.fat_g ?? 67)
-  const [doesResistanceTraining, setDoesResistanceTraining] = useState(profile?.does_resistance_training ?? false)
+  const [calculationWeightKg, setCalculationWeightKg] = useState(goals?.calculation_weight_kg ?? null)
   const [recommendation, setRecommendation] = useState<NutritionGoalRecommendation | null>(null)
+  const [editingProfile, setEditingProfile] = useState(false)
 
   async function handleSaveGoals() {
     if (!user) return
@@ -21,16 +29,14 @@ export default function SettingsPage() {
       return
     }
     try {
-      await Promise.all([
-        saveGoals({
-          user_id: user.id,
-          calorie_target: calories,
-          protein_g: protein,
-          carbs_g: carbs,
-          fat_g: fat,
-        }),
-        saveResistanceTraining(doesResistanceTraining),
-      ])
+      await saveGoals({
+        user_id: user.id,
+        calorie_target: calories,
+        protein_g: protein,
+        carbs_g: carbs,
+        fat_g: fat,
+        calculation_weight_kg: calculationWeightKg ?? currentWeightKg ?? profile?.weight_kg ?? null,
+      })
       showToast('Goal salvati')
     } catch {
       showToast('Errore salvataggio')
@@ -39,10 +45,14 @@ export default function SettingsPage() {
 
   function handleRecalculate() {
     if (!profile) return
+    const canUseRollingWeight = rollingWeightKg !== null
+      && rollingWeightSampleCount >= NUTRITION_GOAL_CONFIG.weightRecalculation.minimumSamples
+    const referenceWeightKg = canUseRollingWeight
+      ? rollingWeightKg
+      : (currentWeightKg ?? profile.weight_kg)
     const effectiveProfile = {
       ...profile,
-      weight_kg: currentWeightKg ?? profile.weight_kg,
-      does_resistance_training: doesResistanceTraining,
+      weight_kg: referenceWeightKg,
     }
     const nextRecommendation = calculateNutritionGoals(effectiveProfile)
     const suggested = nextRecommendation.goals
@@ -50,7 +60,24 @@ export default function SettingsPage() {
     setProtein(suggested.protein_g)
     setCarbs(suggested.carbs_g)
     setFat(suggested.fat_g)
+    setCalculationWeightKg(referenceWeightKg)
     setRecommendation(nextRecommendation)
+  }
+
+  async function handleSaveProfile(nextProfile: UserHealthProfile) {
+    try {
+      const nextGoals = await saveProfileAndRecalculate(nextProfile)
+      setCalories(nextGoals.calorie_target)
+      setProtein(nextGoals.protein_g)
+      setCarbs(nextGoals.carbs_g)
+      setFat(nextGoals.fat_g)
+      setCalculationWeightKg(nextGoals.calculation_weight_kg)
+      setRecommendation(null)
+      showToast('Profilo e target aggiornati')
+    } catch {
+      showToast('Errore aggiornamento profilo')
+      throw new Error('Profile update failed')
+    }
   }
 
   async function handleSignOut() {
@@ -66,11 +93,17 @@ export default function SettingsPage() {
       <h1 className="text-xl font-bold">Impostazioni</h1>
 
       {profile && (
-        <div className="card space-y-1 text-sm">
-          <h2 className="font-semibold mb-2">Profilo</h2>
-          <p className="text-gray-400">Peso: <span className="text-white">{currentWeightKg ?? profile.weight_kg} kg</span></p>
+        <div className="card space-y-2 text-sm">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="font-semibold">Profilo</h2>
+            <button type="button" onClick={() => setEditingProfile(true)} className="text-xs text-primary-400">
+              Modifica dati
+            </button>
+          </div>
+          <p className="text-gray-400">Peso attuale: <span className="text-white">{currentWeightKg ?? profile.weight_kg} kg</span></p>
           <p className="text-gray-400">Altezza: <span className="text-white">{profile.height_cm} cm</span></p>
           <p className="text-gray-400">Obiettivo: <span className="text-white capitalize">{profile.objective.replace('_', ' ')}</span></p>
+          <p className="text-gray-400">Forza/pesi: <span className="text-white">{profile.does_resistance_training ? 'Sì' : 'No'}</span></p>
         </div>
       )}
 
@@ -83,27 +116,10 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        <div className="card space-y-3">
-          <div>
-            <p className="font-medium">Allenamento di forza/pesi</p>
-            <p className="mt-1 text-xs text-gray-400">Separato dall’attività generale; serve soprattutto per stimare le proteine.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {[{ value: true, label: 'Sì' }, { value: false, label: 'No' }].map(option => (
-              <button
-                key={option.label}
-                type="button"
-                onClick={() => setDoesResistanceTraining(option.value)}
-                className={`rounded-xl border px-3 py-2 text-sm ${
-                  doesResistanceTraining === option.value
-                    ? 'border-primary-500 bg-primary-600/10 text-primary-300'
-                    : 'border-gray-700 text-gray-400'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+        <div className="rounded-xl bg-gray-800/70 p-3 text-xs text-gray-400">
+          {rollingWeightKg !== null && rollingWeightSampleCount >= NUTRITION_GOAL_CONFIG.weightRecalculation.minimumSamples
+            ? <>Media peso 7 giorni: <span className="text-white">{rollingWeightKg} kg</span> su {rollingWeightSampleCount} misurazioni. Ricalcolo automatico al ±2% rispetto a {goals?.calculation_weight_kg ?? profile?.weight_kg} kg.</>
+            : <>Servono almeno {NUTRITION_GOAL_CONFIG.weightRecalculation.minimumSamples} pesate negli ultimi 7 giorni per il ricalcolo automatico.</>}
         </div>
 
         {recommendation && (
@@ -142,6 +158,17 @@ export default function SettingsPage() {
         className="w-full py-3 border border-red-500 text-red-400 rounded-xl font-semibold mt-8">
         Logout
       </button>
+
+      {profile && (
+        <Modal open={editingProfile} onClose={() => setEditingProfile(false)} title="Modifica dati profilo" fullScreenOnMobile>
+          <ProfileGoalEditor
+            profile={profile}
+            currentWeightKg={currentWeightKg ?? profile.weight_kg}
+            onSave={handleSaveProfile}
+            onClose={() => setEditingProfile(false)}
+          />
+        </Modal>
+      )}
     </div>
   )
 }
