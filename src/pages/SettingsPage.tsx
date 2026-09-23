@@ -163,7 +163,7 @@ export default function SettingsPage() {
       </button>
 
       {profile && (
-        <Modal open={editingProfile} onClose={() => setEditingProfile(false)} title="Modifica dati profilo">
+        <Modal open={editingProfile} onClose={() => setEditingProfile(false)} title="Modifica dati profilo" fullScreenOnMobile>
           <ProfileGoalEditor
             profile={profile}
             currentWeightKg={currentWeightKg ?? profile.weight_kg}

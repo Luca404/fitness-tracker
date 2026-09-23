@@ -7,10 +7,10 @@ interface Props {
   onClose: () => void
   children: ReactNode
   title?: string
-  showMobileClose?: boolean
+  fullScreenOnMobile?: boolean
 }
 
-export default function Modal({ open, onClose, children, title, showMobileClose = true }: Props) {
+export default function Modal({ open, onClose, children, title, fullScreenOnMobile = false }: Props) {
   const panelRef = useRef<HTMLDivElement>(null)
   const onCloseRef = useRef(onClose)
 
@@ -65,26 +65,25 @@ export default function Modal({ open, onClose, children, title, showMobileClose 
 
   if (!open) return null
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex h-[100dvh] items-stretch justify-center bg-gray-800 lg:items-center lg:bg-transparent lg:p-4">
-      <div className="absolute inset-0 hidden bg-black/70 backdrop-blur-sm lg:block" onClick={onClose} aria-hidden="true" />
+    <div className={`fixed inset-0 z-[100] flex h-[100dvh] justify-center lg:items-center lg:p-4 ${fullScreenOnMobile ? 'items-stretch bg-gray-800 lg:bg-transparent' : 'items-end'}`}>
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={title ?? 'Finestra di dialogo'}
         tabIndex={-1}
-        className="relative z-10 h-full min-h-0 w-full overflow-y-auto overscroll-contain bg-gray-800 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))] shadow-2xl shadow-black/50 lg:h-auto lg:max-h-[92dvh] lg:max-w-md lg:rounded-[2rem] lg:border lg:border-gray-700/80 lg:bg-gray-800/95 lg:p-6"
+        className={`relative z-10 w-full overflow-y-auto overscroll-contain px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl shadow-black/50 lg:max-h-[92dvh] lg:max-w-md lg:rounded-[2rem] lg:border lg:border-gray-700/80 lg:bg-gray-800/95 lg:p-6 ${fullScreenOnMobile ? 'h-[100dvh] bg-gray-800 pt-[max(2rem,env(safe-area-inset-top))] lg:h-auto' : 'max-h-[92dvh] max-w-md rounded-t-[2rem] border border-gray-700/80 bg-gray-800/95 pt-3'}`}
       >
+        {!fullScreenOnMobile && <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-gray-600 lg:hidden" aria-hidden="true" />}
         {title && (
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">{title}</h2>
             <button type="button" onClick={onClose} aria-label="Chiudi" className="text-gray-400 text-xl">✕</button>
           </div>
         )}
-        {!title && showMobileClose && (
-          <div className="mb-4 flex justify-end lg:hidden">
-            <button type="button" onClick={onClose} aria-label="Chiudi" className="flex h-10 w-10 items-center justify-center text-xl text-gray-400">✕</button>
-          </div>
+        {!title && fullScreenOnMobile && (
+          <button type="button" onClick={onClose} aria-label="Chiudi" className="absolute right-5 top-[max(1.5rem,env(safe-area-inset-top))] flex h-10 w-10 items-center justify-center text-xl text-gray-400 lg:hidden">✕</button>
         )}
         {children}
       </div>

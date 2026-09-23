@@ -169,15 +169,16 @@ export default function KitchenDishes() {
       <Modal
         open={mode !== 'closed'}
         onClose={() => { setMode('closed'); setSelectedDish(null) }}
+        fullScreenOnMobile={mode === 'create' || mode === 'edit'}
       >
         {mode === 'create' ? (
           <div className="space-y-5">
-            <div><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Nuova ricetta</p><h2 className="text-xl font-bold">Crea il tuo piatto</h2></div>
+            <div className="pr-12 lg:pr-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Nuova ricetta</p><h2 className="text-xl font-bold">Crea il tuo piatto</h2></div>
             <DishEditor initialName="" initialItems={[]} onSave={createDish} onCancel={() => setMode('closed')} saveLabel="Salva piatto" />
           </div>
         ) : mode === 'edit' && selectedDish ? (
           <div className="space-y-5">
-            <div><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Modifica ricetta</p><h2 className="text-xl font-bold">{selectedDish.name}</h2></div>
+            <div className="pr-12 lg:pr-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Modifica ricetta</p><h2 className="text-xl font-bold">{selectedDish.name}</h2></div>
             <DishEditor initialName={selectedDish.name} initialItems={selectedDish.items.map(toDraft)} onSave={updateDish} onCancel={() => setMode('detail')} saveLabel="Salva modifiche" />
           </div>
         ) : selectedDish ? (
