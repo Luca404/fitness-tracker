@@ -8,16 +8,16 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 
 - **Meal logging** — log meals by time slot (breakfast, lunch, dinner, snack, drinks); calorie and macro breakdown per meal and per day
 - **Dish-centric entry** — opening a meal slot shows one hub: pick and personalize a saved dish, cook something new (composed from a curated basic-ingredients dataset + Open Food Facts, then saved for reuse), or log a one-off dish/item that isn't saved; drinks stay in their own flow
-- **Kitchen** — one area with saved dishes and pantry tabs for creating, inspecting and editing recipes and stock
-- **Pantry** — track groceries at home by culinary category (quantity + unit: g/ml/pieces), added via barcode scan, nutrition-label photo, or manual/basic-food entry; barcode and nutrition data are reused through a shared read-only product catalog, while pantry stock remains private; pantry items surface first when searching ingredients and matching stock is consumed automatically when a dish is logged
+- **Kitchen** — one area with saved dishes and pantry tabs for creating, inspecting and editing recipes and stock; saved ingredients retain their insertion order and each dish can have a custom icon
+- **Pantry** — track groceries at home by culinary category (quantity + unit: g/ml/pieces), added via barcode scan, nutrition-label photo, or manual/basic-food entry; manual products can include saturated fat, sugars, salt and fibre per 100 g; barcode and nutrition data are reused through a shared read-only product catalog, while pantry stock remains private; pantry items surface first when searching ingredients and matching stock is consumed automatically when a dish is logged
 - **Nutrition-label photo import** — take or choose a package photo, extract product and per-100 nutrition data through an authenticated OpenAI-backed Edge Function, review every field, then save it to the pantry
-- **Macros** — visual progress bars for protein, carbs, and fat against daily targets
+- **Macros** — visual progress bars for protein, total carbohydrates, and total fat against daily targets; sugars and saturated fat are subsets of their respective totals, not extra grams to add
 - **Calorie ring** — at-a-glance daily calorie budget vs. consumed
 - **Workout tracking** — choose from 20 activities and log sessions with MET-based calorie burn calculation
-- **Weight log** — record body weight over time with history view
+- **Weight log** — record body weight over time with history view; calorie and macro targets use a 7-day rolling average and are recalculated only after a significant (at least 2%) change from the last calculation weight
 - **Wellbeing** — dedicated daily/weekly healthy-habits dashboard, with a compact status summary on the Meals page
-- **BMR / TDEE** — computed from onboarding data (age, height, weight, sex, activity level, goal)
-- **Onboarding** — 4-step wizard (physical stats → lifestyle → objective → confirm) to set up goals
+- **BMR / TDEE** — personalized pipeline from BMR and activity-adjusted TDEE through calorie target, weight-based protein/fat targets, and residual carbohydrates; supports maintenance, muscle gain, weight loss and body recomposition, with prudent loss-rate and calorie limits
+- **Onboarding** — 5-step wizard (physical stats → objective → lifestyle → resistance training → confirm) to set up goals; the same calculation inputs can later be edited from Settings
 - **History** — 7/30-day calorie and workout trends
 - **Installable PWA** — installable shell for Android, iOS, and desktop; data operations require connectivity
 
@@ -76,8 +76,9 @@ src/
 │   ├── layout/          # Layout shell with bottom nav
 │   ├── kitchen/         # Saved dishes, details and pantry-driven recommendations
 │   ├── meals/           # Meal cards/details, calorie/macros, ingredient search and dish composer
-│   ├── onboarding/      # StepPhysical, StepLifestyle, StepObjective, StepConfirm
+│   ├── onboarding/      # Physical, objective, lifestyle, resistance-training and confirmation steps
 │   ├── pantry/          # BarcodeScanner, NutritionLabelPhoto
+│   ├── settings/        # Profile inputs that affect calorie/macro calculations
 │   └── workout/         # WorkoutDrawer, WorkoutRow, ActivityGrid
 ├── contexts/
 │   ├── AuthContext.tsx  # Supabase Auth, session management
@@ -102,12 +103,14 @@ src/
 │   ├── nutritionLabel.ts # Photo preparation + nutrition-label Edge Function client
 │   └── supabase.ts      # Supabase client
 ├── data/
-│   ├── basicFoods.ts    # Curated ingredients (kcal/macros per 100g + culinary category)
+│   ├── basicFoods.ts    # Curated ingredients (raw/dry weight unless named otherwise)
+│   ├── basicFoodExtendedNutrition.ts # Indicative fibre, sugars and salt per 100 g/ml
 │   ├── foodCategories.ts # Shared category labels and metadata
 │   ├── suggestedDishes.ts # Reserved recipe templates
 │   └── nutritionGuidelines.ts # Reference targets for healthy-habits indicators
 ├── utils/
-│   ├── bmr.ts           # BMR / TDEE calculation (Mifflin-St Jeor)
+│   ├── bmr.ts           # Full BMR → TDEE → calorie/macro target pipeline
+│   ├── goalRecalculation.ts # 7-day average and 2% automatic-recalculation trigger
 │   └── met.ts           # MET-based calorie burn for activities
 └── types/index.ts
 ```
@@ -118,16 +121,16 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 
 | Table | Description |
 |---|---|
-| `user_health_profiles` | Physical stats (height, weight, age, sex) |
-| `user_goals` | TDEE, calorie target, macro targets, activity level, objective |
+| `user_health_profiles` | Physical stats, activity level, resistance training, objective, target weight and date |
+| `user_goals` | Calorie and macro targets plus the body weight used by the latest calculation |
 | `meals` | Meal records scoped by user and date |
 | `meal_entries` | Named dishes actually eaten within a meal slot |
 | `meal_items` | Ingredients and drinks belonging to an eaten dish, with `g`/`ml` units, nutrition values and the pantry quantity actually consumed |
 | `workouts` | Workout sessions (activity type, duration, MET, calories burned) |
 | `weight_logs` | Daily weight entries |
-| `dishes` | Saved reusable dishes (name, reference weight derived from items) |
-| `dish_items` | Ingredients within a saved dish, including the selected pantry-item reference when available |
-| `pantry_items` | Groceries at home (quantity + unit, kcal/macros per 100g/100ml, Open Food Facts payload and nutrition scores when available) |
+| `dishes` | Saved reusable dishes (name, optional custom icon, reference weight derived from items) |
+| `dish_items` | Ingredients within a saved dish, including insertion position and the selected pantry-item reference when available |
+| `pantry_items` | Groceries at home (quantity + unit, kcal/macros and optional fibre, sugars, saturated fat and salt per 100g/100ml, Open Food Facts payload and nutrition scores when available) |
 | `barcode_products` | Shared product catalog keyed by barcode; authenticated clients can read it and trusted Edge Functions populate it from Open Food Facts or from label values reviewed and explicitly confirmed by a user |
 
 Pantry synchronization is performed inside the same PostgreSQL transaction that
@@ -152,7 +155,39 @@ dataset for salt, sugars, alcohol, ultra-processed foods, meat, vegetables, frui
 legumes, fish and fibre. The Pasti page uses these references for the “Buone
 abitudini” indicators. Fibre, sugars and salt are persisted as nullable values from
 the pantry, Open Food Facts or manual entry; incomplete days are marked as partial
-instead of treating missing nutrition data as zero.
+instead of treating missing nutrition data as zero. The local basic-food catalog
+also provides indicative fibre, sugars and salt values for every ingredient.
+Manual pantry entry keeps omitted optional values as unknown, distinct from an
+explicit zero. Across the UI, total carbohydrates already include sugars and
+total fat already includes saturated fat (and unsaturated fat when shown).
+
+### Adaptive calorie and macro targets
+
+The initial recommendation uses Mifflin-St Jeor BMR and the selected activity
+multiplier. Maintenance uses the resulting TDEE, muscle gain adds 250 kcal/day,
+and weight loss derives its deficit from the target weight and date while
+limiting both the weekly loss rate and the fraction of TDEE removed. Body
+recomposition uses a modest 10% TDEE deficit and does not require a target
+weight or date; resistance training is strongly recommended and, when selected,
+the protein target is 1.9 g/kg of reference weight. Protein and fat are assigned
+from body weight and training context; carbohydrates receive the remaining
+calories.
+
+After onboarding, fitTrackr averages all available weight measurements from the
+latest 7 calendar days. At least two measurements are required, so one isolated
+weigh-in cannot change the targets. When that average differs by at least 2%
+from `user_goals.calculation_weight_kg`, the complete calculation pipeline runs
+again and persists the new targets and reference weight. The same check runs
+when weight data is refreshed and when the profile is loaded. The manual
+“Ricalcola da TDEE” action remains available and uses the rolling average when
+there are enough samples.
+
+Settings exposes the calculation inputs separately from the numeric target
+overrides: age, sex, height, activity, resistance training, objective, target
+weight/date and optional body-fat percentage can be edited together. Saving
+those inputs immediately recalculates all targets. Logged workout calories stay
+informational and are not added back to the daily budget, because the activity
+multiplier is already part of TDEE.
 
 ## Deployment
 
@@ -188,8 +223,9 @@ the Supabase Auth Site URL and add the required preview URL patterns.
   portion estimates plus explicit confidence/assumption handling.
 - Add a local OCR/parser fallback later if it provides a measurable latency or
   cost benefit.
-- Gradually enrich the local basic-food catalog with sourced fibre, salt and sugar
-  values; until then those foods correctly remain unknown for these indicators.
+- Review and refine the indicative fibre, salt and sugar values in the local
+  basic-food catalog against primary food-composition sources as they become
+  available.
 
 ## Known limitations
 
