@@ -162,6 +162,17 @@ export default function SettingsPage() {
         Logout
       </button>
 
+      <p className="text-xs text-gray-500">
+        Valori indicativi degli alimenti base: {' '}
+        <a href="https://naehrwertdaten.ch/it/downloads/" target="_blank" rel="noopener noreferrer" className="underline">
+          Banca dati svizzera dei valori nutritivi
+        </a>
+        {' '}e {' '}
+        <a href="https://fdc.nal.usda.gov/download-datasets/" target="_blank" rel="noopener noreferrer" className="underline">
+          USDA FoodData Central
+        </a>.
+      </p>
+
       {profile && (
         <Modal open={editingProfile} onClose={() => setEditingProfile(false)} title="Modifica dati profilo" fullScreenOnMobile>
           <ProfileGoalEditor

@@ -1,8 +1,10 @@
-// Alimenti base italiani comuni, valori nutrizionali per 100 g.
+// Alimenti base italiani comuni, valori nutrizionali per 100 g
+// (100 ml per le bevande).
 // Per gli ingredienti da cuocere, peso e valori si riferiscono all'alimento crudo
 // (o secco, nel caso di cereali e legumi), salvo diversa indicazione nel nome.
 // Fonte: valori medi indicativi (uso da tracker personale, non clinico).
 import type { FoodCategory } from '../types'
+import { BASIC_FOOD_EXTENDED_NUTRITION } from './basicFoodExtendedNutrition'
 
 export interface BasicFood {
   id: string
@@ -13,12 +15,12 @@ export interface BasicFood {
   protein_g: number
   carbs_g: number
   fat_g: number
-  fiber_g?: number
-  sugars_g?: number
-  salt_g?: number
+  fiber_g: number
+  sugars_g: number
+  salt_g: number
 }
 
-export const BASIC_FOODS: BasicFood[] = [
+const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   // Cereali e derivati
   { id: 'riso-bianco', name: 'Riso bianco', aliases: ['riso bianco crudo'], category: 'grain', calories: 360, protein_g: 6.7, carbs_g: 80, fat_g: 0.6 },
   { id: 'riso-basmati', name: 'Riso basmati', aliases: ['riso basmati crudo'], category: 'grain', calories: 356, protein_g: 8.9, carbs_g: 77.8, fat_g: 0.9 },
@@ -288,3 +290,10 @@ export const BASIC_FOODS: BasicFood[] = [
   { id: 'te-freddo', name: 'Tè freddo', category: 'beverage', calories: 28, protein_g: 0, carbs_g: 7, fat_g: 0 },
   { id: 'caffe-nero', name: 'Caffè (nero)', category: 'beverage', calories: 1, protein_g: 0.1, carbs_g: 0, fat_g: 0 },
 ]
+
+export const BASIC_FOODS: BasicFood[] = BASIC_FOODS_BASE.map((food) => {
+  const nutrients = BASIC_FOOD_EXTENDED_NUTRITION[food.id]
+  if (!nutrients) throw new Error(`Valori nutrizionali estesi mancanti per ${food.id}`)
+  const [fiber_g, sugars_g, salt_g] = nutrients
+  return { ...food, fiber_g, sugars_g, salt_g }
+})

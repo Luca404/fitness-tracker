@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BASIC_FOODS } from '../data/basicFoods'
+import { BASIC_FOOD_EXTENDED_NUTRITION } from '../data/basicFoodExtendedNutrition'
 import { calcNutrition, normalizeServingSize, productCategory, resolveProductQuantity, searchBasicFoods } from './nutrition'
 
 function product(name: string, categories: string[] = []) {
@@ -34,9 +35,13 @@ describe('local basic-food catalog', () => {
 
   it('has unique ids and valid non-negative nutrition values', () => {
     expect(new Set(BASIC_FOODS.map(food => food.id)).size).toBe(BASIC_FOODS.length)
+    expect(Object.keys(BASIC_FOOD_EXTENDED_NUTRITION).sort())
+      .toEqual(BASIC_FOODS.map(food => food.id).sort())
     for (const food of BASIC_FOODS) {
-      expect([food.calories, food.protein_g, food.carbs_g, food.fat_g]
+      expect([food.calories, food.protein_g, food.carbs_g, food.fat_g,
+        food.fiber_g, food.sugars_g, food.salt_g]
         .every(value => Number.isFinite(value) && value >= 0)).toBe(true)
+      expect(food.sugars_g).toBeLessThanOrEqual(food.carbs_g)
     }
   })
 
@@ -64,10 +69,29 @@ describe('extended nutrition calculation', () => {
     })
   })
 
-  it('keeps missing extended nutrients distinct from measured zero', () => {
+  it('provides extended nutrients for every basic ingredient', () => {
     const food = searchBasicFoods('riso basmati')[0]
     expect(food).toBeTruthy()
-    expect(calcNutrition(food, 100)).toMatchObject({
+    expect(calcNutrition(food, 200)).toMatchObject({
+      fiber_g: 2.6,
+      sugars_g: 0.2,
+      salt_g: 0.02,
+    })
+    expect(BASIC_FOODS.find(food => food.id === 'sale')).toMatchObject({
+      fiber_g: 0, sugars_g: 0, salt_g: 100,
+    })
+    expect(BASIC_FOODS.find(food => food.id === 'pane-bianco')).toMatchObject({
+      fiber_g: 2.5, sugars_g: 0.2, salt_g: 1.7,
+    })
+  })
+
+  it('keeps genuinely missing extended nutrients distinct from measured zero', () => {
+    expect(calcNutrition({
+      id: 'unknown', name: 'Alimento esterno', brand: null, source: 'openfoodfacts',
+      category: 'other', food_key: null,
+      calories_100g: 100, protein_100g: 1, carbs_100g: 20, fat_100g: 1,
+      fiber_100g: null, sugars_100g: null, salt_100g: null,
+    }, 100)).toMatchObject({
       fiber_g: null,
       sugars_g: null,
       salt_g: null,
