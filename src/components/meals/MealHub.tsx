@@ -17,6 +17,8 @@ import ExtendedNutrition from './ExtendedNutrition'
 interface Props {
   onAddEntry: (name: string, items: DishItemDraft[]) => Promise<void>
   beveragesOnly?: boolean
+  mode: MealHubMode
+  setMode: (mode: MealHubMode) => void
 }
 
 function referenceWeight(dish: Dish): number {
@@ -89,14 +91,13 @@ function beverageToDraft(beverage: BasicFood, volumeMl: number): DishItemDraft {
   }
 }
 
-type Mode = 'list' | 'new' | 'oneoff' | 'edit' | 'pick'
+export type MealHubMode = 'list' | 'new' | 'oneoff' | 'edit' | 'pick'
 
-export default function MealHub({ onAddEntry, beveragesOnly = false }: Props) {
+export default function MealHub({ onAddEntry, beveragesOnly = false, mode, setMode }: Props) {
   const { user } = useAuth()
   const { showToast } = useData()
   const [dishes, setDishes] = useState<Dish[]>([])
   const [loading, setLoading] = useState(true)
-  const [mode, setMode] = useState<Mode>('list')
   const [editingDish, setEditingDish] = useState<Dish | null>(null)
   const [pickingDish, setPickingDish] = useState<Dish | null>(null)
   const [iconDish, setIconDish] = useState<Dish | null>(null)
@@ -362,10 +363,6 @@ export default function MealHub({ onAddEntry, beveragesOnly = false }: Props) {
     ])
     return (
       <div className="space-y-5">
-        <div className="flex items-center justify-between">
-          <button type="button" onClick={() => setMode('list')} className="text-sm text-gray-400 hover:text-white">← Cambia piatto</button>
-          <span className="rounded-full bg-primary-500/10 px-3 py-1 text-xs font-medium text-primary-400">Piatto salvato</span>
-        </div>
         <div className="rounded-3xl bg-gradient-to-br from-primary-600/25 via-gray-800 to-gray-800 p-5 ring-1 ring-primary-500/20">
           <div className="flex items-center gap-4">
             <button type="button" onClick={() => setIconDish(pickingDish)}
@@ -374,6 +371,7 @@ export default function MealHub({ onAddEntry, beveragesOnly = false }: Props) {
               {getDishIcon(pickingDish)}<span aria-hidden="true" className="absolute -bottom-1 -right-1 rounded-full bg-gray-700 px-1 text-[10px]">✎</span>
             </button>
             <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-400">Piatto salvato</p>
               <h3 className="truncate text-xl font-bold">{pickingDish.name}</h3>
               <p className="text-sm text-gray-400">Ricetta base: {Math.round(ref)} g</p>
             </div>

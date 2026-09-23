@@ -5,7 +5,7 @@ import { useSettings } from '../contexts/SettingsContext'
 import CalorieRing from '../components/meals/CalorieRing'
 import MacroBars from '../components/meals/MacroBars'
 import MealItemRow from '../components/meals/MealItemRow'
-import MealHub from '../components/meals/MealHub'
+import MealHub, { type MealHubMode } from '../components/meals/MealHub'
 import DishEditor, { type DishItemDraft } from '../components/meals/DishEditor'
 import MealEntryCard from '../components/meals/MealEntryCard'
 import GoodHabits from '../components/meals/GoodHabits'
@@ -56,6 +56,7 @@ export default function MealsPage() {
   const [foodSearchOpen, setFoodSearchOpen] = useState(false)
   const [activeMealType, setActiveMealType] = useState<MealType>('lunch')
   const [modalStep, setModalStep] = useState<'meal-type' | 'meal-hub' | 'view-entry' | 'edit-entry'>('meal-type')
+  const [hubMode, setHubMode] = useState<MealHubMode>('list')
   const [selectedEntry, setSelectedEntry] = useState<MealEntry | null>(null)
 
   useEffect(() => {
@@ -71,6 +72,7 @@ export default function MealsPage() {
 
   function openNewMeal() {
     setModalStep('meal-type')
+    setHubMode('list')
     setFoodSearchOpen(true)
   }
 
@@ -231,7 +233,7 @@ export default function MealsPage() {
                 <button
                   key={type}
                   type="button"
-                  onClick={() => { setActiveMealType(type); setModalStep('meal-hub') }}
+                  onClick={() => { setActiveMealType(type); setHubMode('list'); setModalStep('meal-hub') }}
                   className={`rounded-2xl border border-gray-700 bg-gray-900/35 px-3 py-5 text-center font-medium transition hover:border-primary-600 hover:bg-primary-950/20 ${index === MEAL_TYPES.length - 1 ? 'col-span-2' : ''}`}
                 >
                   {label}
@@ -243,7 +245,10 @@ export default function MealsPage() {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setModalStep('meal-type')} className="text-gray-400 text-lg leading-none">←</button>
+                <button type="button" onClick={() => {
+                  if (hubMode === 'list') setModalStep('meal-type')
+                  else setHubMode('list')
+                }} className="text-gray-400 text-lg leading-none" aria-label="Indietro">←</button>
                 <span className="text-sm font-medium text-gray-300">{activeMealLabel}</span>
               </div>
               <button
@@ -254,7 +259,7 @@ export default function MealsPage() {
                 Fatto
               </button>
             </div>
-            <MealHub onAddEntry={handleAddDishEntry} beveragesOnly={activeMealType === 'drinks'} />
+            <MealHub onAddEntry={handleAddDishEntry} beveragesOnly={activeMealType === 'drinks'} mode={hubMode} setMode={setHubMode} />
           </div>
         ) : modalStep === 'view-entry' ? (
           selectedEntry && (() => {
