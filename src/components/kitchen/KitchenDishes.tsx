@@ -169,7 +169,6 @@ export default function KitchenDishes() {
       <Modal
         open={mode !== 'closed'}
         onClose={() => { setMode('closed'); setSelectedDish(null) }}
-        fullScreenOnMobile={mode === 'create' || mode === 'edit'}
       >
         {mode === 'create' ? (
           <div className="space-y-5">

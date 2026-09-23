@@ -1,8 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import Modal from './Modal'
 
 describe('Modal', () => {
+  afterEach(cleanup)
+
   it('exposes dialog semantics and closes with Escape', () => {
     const onClose = vi.fn()
     render(
@@ -17,13 +19,21 @@ describe('Modal', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  it('can cover the full mobile viewport', () => {
+  it('mounts outside the page scroller and fills the mobile viewport', () => {
+    const onClose = vi.fn()
     render(
-      <Modal open onClose={() => {}} fullScreenOnMobile>
-        Contenuto
-      </Modal>
+      <main className="overflow-y-auto">
+        <Modal open onClose={onClose}>Contenuto</Modal>
+      </main>
     )
 
-    expect(screen.getByRole('dialog', { name: 'Finestra di dialogo' }).className).toContain('h-[100dvh]')
+    const dialog = screen.getByRole('dialog', { name: 'Finestra di dialogo' })
+    const overlay = dialog.parentElement
+    expect(overlay?.parentElement).toBe(document.body)
+    expect(overlay?.className).toContain('h-[100dvh]')
+    expect(overlay?.className).toContain('bg-gray-800')
+    expect(dialog.className).toContain('h-full')
+    fireEvent.click(screen.getByRole('button', { name: 'Chiudi' }))
+    expect(onClose).toHaveBeenCalledOnce()
   })
 })

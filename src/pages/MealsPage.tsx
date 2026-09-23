@@ -215,7 +215,7 @@ export default function MealsPage() {
       )}
 
       {/* Meal modal */}
-      <Modal open={foodSearchOpen} onClose={() => setFoodSearchOpen(false)}>
+      <Modal open={foodSearchOpen} onClose={() => setFoodSearchOpen(false)} showMobileClose={false}>
         {modalStep === 'meal-type' ? (
           <div className="space-y-5">
             <div className="flex items-start justify-between">
