@@ -6,7 +6,7 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 
 ## Features
 
-- **Meal logging** — log meals by time slot (breakfast, lunch, dinner, snack, drinks); calorie and macro breakdown per meal and per day
+- **Meal logging** — log meals by time slot (breakfast, lunch, dinner, snack, drinks); calorie and macro breakdown per meal and per day. Snacks appear where they were registered relative to other entries, while the usual breakfast → lunch → dinner order stays fixed ([ordering details](docs/meal-diary-order.md))
 - **Dish-centric entry** — opening a meal slot shows one hub: pick and personalize a saved dish, cook something new (composed from a curated basic-ingredients dataset + Open Food Facts, then saved for reuse), or log a one-off dish/item that isn't saved; drinks stay in their own flow
 - **Kitchen** — one area with saved dishes and pantry tabs for creating, inspecting and editing recipes and stock; saved ingredients retain their insertion order and each dish can have a custom icon
 - **Pantry** — track groceries at home by culinary category (quantity + unit: g/ml/pieces), added via barcode scan, nutrition-label photo, or manual/basic-food entry; manual products can include saturated fat, sugars, salt and fibre per 100 g; barcode and nutrition data are reused through a shared read-only product catalog, while pantry stock remains private; pantry items surface first when searching ingredients and matching stock is consumed automatically when a dish is logged
@@ -111,6 +111,7 @@ src/
 ├── utils/
 │   ├── bmr.ts           # Full BMR → TDEE → calorie/macro target pipeline
 │   ├── goalRecalculation.ts # 7-day average and 2% automatic-recalculation trigger
+│   ├── mealTimeline.ts  # Position snack entries by registration time in the daily diary
 │   └── met.ts           # MET-based calorie burn for activities
 └── types/index.ts
 ```
@@ -124,7 +125,7 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 | `user_health_profiles` | Physical stats, activity level, resistance training, objective, target weight and date |
 | `user_goals` | Calorie and macro targets plus the body weight used by the latest calculation |
 | `meals` | Meal records scoped by user and date |
-| `meal_entries` | Named dishes actually eaten within a meal slot |
+| `meal_entries` | Named dishes actually eaten within a meal slot; `created_at` records when each entry was registered |
 | `meal_items` | Ingredients and drinks belonging to an eaten dish, with `g`/`ml` units, nutrition values and the pantry quantity actually consumed |
 | `workouts` | Workout sessions (activity type, duration, MET, calories burned) |
 | `weight_logs` | Daily weight entries |

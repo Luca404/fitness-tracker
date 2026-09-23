@@ -14,6 +14,7 @@ import Modal from '../components/common/Modal'
 import DaySelector from '../components/common/DaySelector'
 import type { MealEntry, MealType } from '../types'
 import { getMealEntryTotals } from '../utils/mealEntries'
+import { buildMealTimeline } from '../utils/mealTimeline'
 import { getFoodIcon } from '../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../utils/extendedNutrition'
 
@@ -120,6 +121,7 @@ export default function MealsPage() {
   }
 
   const activeMealLabel = MEAL_TYPES.find(m => m.type === activeMealType)?.label ?? activeMealType
+  const mealTimeline = buildMealTimeline(meals)
 
   return (
     <div className="p-4 pb-24 space-y-4">
@@ -185,7 +187,7 @@ export default function MealsPage() {
         <div className="h-32 bg-gray-800 rounded-xl animate-pulse" />
       ) : (
         <div className="card">
-          {MEAL_TYPES.every(({ type }) => !(meals.find(m => m.meal_type === type)?.entries.length)) ? (
+          {mealTimeline.length === 0 ? (
             <div className="py-7 text-center">
               <span className="text-3xl">🍽️</span>
               <p className="mt-2 text-sm font-medium text-gray-400">Nessun piatto registrato</p>
@@ -193,18 +195,18 @@ export default function MealsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {MEAL_TYPES.filter(({ type }) => (meals.find(m => m.meal_type === type)?.entries ?? []).length > 0).map(({ type, label }) => {
-                const meal = meals.find(m => m.meal_type === type)
-                const items = meal?.items ?? []
-                const total = items.reduce((s, i) => s + i.calories, 0)
+              {mealTimeline.map(({ type, entries }) => {
+                const label = MEAL_TYPES.find(mealType => mealType.type === type)?.label ?? type
+                const total = entries.reduce((sum, entry) =>
+                  sum + entry.items.reduce((itemSum, item) => itemSum + item.calories, 0), 0)
                 return (
-                  <div key={type}>
+                  <div key={entries[0].id}>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-semibold text-gray-400">{label}</span>
                       <span className="text-xs text-gray-600">{Math.round(total)} kcal</span>
                     </div>
                     <div className="space-y-2">
-                      {meal?.entries.map(entry => (
+                      {entries.map(entry => (
                         <MealEntryCard key={entry.id} entry={entry} onOpen={() => openEntry(entry, type)} />
                       ))}
                     </div>
