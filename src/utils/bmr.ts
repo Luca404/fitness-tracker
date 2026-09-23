@@ -1,13 +1,14 @@
 // src/utils/bmr.ts
 import { differenceInCalendarDays } from 'date-fns'
 import type { UserHealthProfile, ActivityLevel, SuggestedGoals } from '../types'
-import { NUTRITION_GOAL_CONFIG as CONFIG } from '../config/nutritionGoals'
+import { NUTRITION_GOAL_CONFIG as CONFIG, RECOMPOSITION_TRAINING_ADVICE } from '../config/nutritionGoals'
 
 export type NutritionGoalWarningCode =
   | 'aggressive_target_date'
   | 'deficit_limited'
   | 'calorie_floor'
   | 'low_carbs'
+  | 'recomposition_without_strength_training'
 
 export interface NutritionGoalWarning {
   code: NutritionGoalWarningCode
@@ -96,6 +97,14 @@ export function calculateNutritionGoals(
 
   if (profile.objective === 'gain_muscle') {
     calorieAdjustment = CONFIG.gainSurplusKcal
+  } else if (profile.objective === 'recomposition') {
+    calorieAdjustment = -tdee * CONFIG.recompositionDeficitFraction
+    if (!profile.does_resistance_training) {
+      warnings.push({
+        code: 'recomposition_without_strength_training',
+        message: RECOMPOSITION_TRAINING_ADVICE,
+      })
+    }
   } else if (profile.objective === 'lose_weight') {
     requestedWeeklyLossRate = getRequestedWeeklyLossRate(profile, referenceDate)
     const requestedOrDefault = requestedWeeklyLossRate ?? CONFIG.loss.defaultWeeklyRate
@@ -124,7 +133,7 @@ export function calculateNutritionGoals(
   const relativeFloor = tdee * (1 - CONFIG.loss.maxTdeeDeficitFraction)
   const prudentFloor = Math.min(tdee, Math.max(absoluteFloor, relativeFloor))
   let calorieTarget = Math.round(tdee + calorieAdjustment)
-  if (profile.objective === 'lose_weight' && calorieTarget < prudentFloor) {
+  if ((profile.objective === 'lose_weight' || profile.objective === 'recomposition') && calorieTarget < prudentFloor) {
     calorieTarget = Math.round(prudentFloor)
     calorieAdjustment = calorieTarget - tdee
     warnings.push({

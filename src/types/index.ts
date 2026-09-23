@@ -2,7 +2,7 @@
 
 export type Sex = 'male' | 'female'
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
-export type Objective = 'lose_weight' | 'gain_muscle' | 'maintain'
+export type Objective = 'lose_weight' | 'gain_muscle' | 'maintain' | 'recomposition'
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'drinks'
 export type FoodSource = 'manual' | 'basic' | 'openfoodfacts' | 'ai_photo' | 'barcode' | 'pantry'
 export type PantryUnit = 'g' | 'ml' | 'pz'

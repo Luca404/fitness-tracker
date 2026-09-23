@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { ActivityLevel, Objective, Sex, UserHealthProfile } from '../../types'
+import { RECOMPOSITION_TRAINING_ADVICE } from '../../config/nutritionGoals'
 
 const ACTIVITY_LEVELS: Array<{ value: ActivityLevel; label: string }> = [
   { value: 'sedentary', label: 'Sedentario' },
@@ -13,6 +14,7 @@ const OBJECTIVES: Array<{ value: Objective; label: string }> = [
   { value: 'lose_weight', label: 'Perdere peso' },
   { value: 'maintain', label: 'Mantenere il peso' },
   { value: 'gain_muscle', label: 'Aumentare massa' },
+  { value: 'recomposition', label: 'Ricomposizione corporea – ridurre grasso e aumentare massa muscolare' },
 ]
 
 interface Props {
@@ -34,7 +36,7 @@ export default function ProfileGoalEditor({ profile, currentWeightKg, onSave, on
     setDraft(previous => ({
       ...previous,
       objective,
-      target_weight_kg: objective === 'maintain' ? null : previous.target_weight_kg,
+      target_weight_kg: objective === 'maintain' || objective === 'recomposition' ? null : previous.target_weight_kg,
       target_date: objective === 'lose_weight' ? previous.target_date : null,
     }))
   }
@@ -123,7 +125,11 @@ export default function ProfileGoalEditor({ profile, currentWeightKg, onSave, on
         </select>
       </label>
 
-      {draft.objective !== 'maintain' && (
+      {draft.objective === 'recomposition' && !draft.does_resistance_training && (
+        <p className="rounded-xl bg-orange-400/10 p-3 text-sm text-orange-300">⚠️ {RECOMPOSITION_TRAINING_ADVICE}</p>
+      )}
+
+      {draft.objective !== 'maintain' && draft.objective !== 'recomposition' && (
         <label className="block">
           <span className="mb-1 block text-xs text-gray-400">
             Peso obiettivo (kg){draft.objective === 'gain_muscle' ? ' — facoltativo' : ''}

@@ -54,6 +54,41 @@ describe('nutrition goal recommendation', () => {
     expect(untrained.goals.protein_g).toBeLessThan(trained.goals.protein_g)
   })
 
+  it('uses a small TDEE deficit and high protein for recomposition without requiring a target weight or date', () => {
+    const result = calculateNutritionGoals({ ...baseProfile, objective: 'recomposition' })
+
+    expect(result.goals.calorie_target).toBe(Math.round(result.tdee * 0.9))
+    expect(result.proteinPerKg).toBe(1.9)
+    expect(result.goals.protein_g).toBe(152)
+    expect(result.goals.fat_g).toBe(64)
+    expect(result.goals.carbs_g).toBe(Math.round((result.goals.calorie_target - 152 * 4 - 64 * 9) / 4))
+    expect(result.requestedWeeklyLossRate).toBeNull()
+    expect(result.appliedWeeklyLossRate).toBeNull()
+    expect(result.warnings.map(warning => warning.code)).not.toContain('recomposition_without_strength_training')
+  })
+
+  it('advises resistance training for recomposition and keeps the calorie floor', () => {
+    const result = calculateNutritionGoals({
+      ...baseProfile,
+      objective: 'recomposition',
+      does_resistance_training: false,
+      sex: 'female',
+      age: 70,
+      height_cm: 160,
+      weight_kg: 45,
+      activity_level: 'sedentary',
+      target_weight_kg: 40,
+      target_date: '2026-01-01',
+    })
+
+    expect(result.goals.calorie_target).toBe(Math.round(result.tdee))
+    expect(result.proteinPerKg).toBe(1.4)
+    expect(result.goals.fat_g).toBeGreaterThanOrEqual(Math.round(result.referenceWeightKg * NUTRITION_GOAL_CONFIG.fat.minimumPerKg))
+    expect(result.warnings.map(warning => warning.code)).toContain('recomposition_without_strength_training')
+    expect(result.warnings.map(warning => warning.code)).toContain('calorie_floor')
+    expect(result.requestedWeeklyLossRate).toBeNull()
+  })
+
   it('derives a moderate cut from target weight and date', () => {
     const today = new Date(2026, 0, 1)
     const profile: UserHealthProfile = {

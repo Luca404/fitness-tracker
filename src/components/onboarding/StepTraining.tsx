@@ -1,11 +1,15 @@
+import type { Objective } from '../../types'
+import { RECOMPOSITION_TRAINING_ADVICE } from '../../config/nutritionGoals'
+
 interface Props {
+  objective: Objective
   value: boolean | null
   onChange: (value: boolean) => void
   onNext: () => void
   onBack: () => void
 }
 
-export default function StepTraining({ value, onChange, onNext, onBack }: Props) {
+export default function StepTraining({ objective, value, onChange, onNext, onBack }: Props) {
   return (
     <div className="space-y-5">
       <div>
@@ -39,6 +43,9 @@ export default function StepTraining({ value, onChange, onNext, onBack }: Props)
       <p className="rounded-xl bg-gray-800 p-3 text-xs text-gray-400">
         Questa risposta è separata dal livello di attività e serve soprattutto a stimare il fabbisogno proteico.
       </p>
+      {objective === 'recomposition' && value === false && (
+        <p className="rounded-xl bg-orange-400/10 p-3 text-sm text-orange-300">⚠️ {RECOMPOSITION_TRAINING_ADVICE}</p>
+      )}
 
       <div className="flex gap-3">
         <button onClick={onBack} className="flex-1 rounded-xl border border-gray-600 py-4 text-gray-400">
@@ -55,4 +62,3 @@ export default function StepTraining({ value, onChange, onNext, onBack }: Props)
     </div>
   )
 }
-

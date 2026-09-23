@@ -9,7 +9,7 @@ create table public.user_health_profiles (
                      'sedentary', 'light', 'moderate', 'active', 'very_active')),
   does_resistance_training boolean not null default false,
   objective        text not null check (objective in (
-                     'lose_weight', 'gain_muscle', 'maintain')),
+                     'lose_weight', 'gain_muscle', 'maintain', 'recomposition')),
   target_weight_kg float check (target_weight_kg between 20 and 400),
   target_date      date,
   body_fat_pct     float check (body_fat_pct between 1 and 75),

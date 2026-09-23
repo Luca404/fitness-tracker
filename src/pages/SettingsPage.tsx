@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { calculateNutritionGoals, type NutritionGoalRecommendation } from '../utils/bmr'
-import { NUTRITION_GOAL_CONFIG } from '../config/nutritionGoals'
+import { NUTRITION_GOAL_CONFIG, RECOMPOSITION_TRAINING_ADVICE } from '../config/nutritionGoals'
 import Modal from '../components/common/Modal'
 import ProfileGoalEditor from '../components/settings/ProfileGoalEditor'
 import type { UserHealthProfile } from '../types'
@@ -102,8 +102,11 @@ export default function SettingsPage() {
           </div>
           <p className="text-gray-400">Peso attuale: <span className="text-white">{currentWeightKg ?? profile.weight_kg} kg</span></p>
           <p className="text-gray-400">Altezza: <span className="text-white">{profile.height_cm} cm</span></p>
-          <p className="text-gray-400">Obiettivo: <span className="text-white capitalize">{profile.objective.replace('_', ' ')}</span></p>
+          <p className="text-gray-400">Obiettivo: <span className="text-white">{profile.objective === 'recomposition' ? 'Ricomposizione corporea' : profile.objective.replace('_', ' ')}</span></p>
           <p className="text-gray-400">Forza/pesi: <span className="text-white">{profile.does_resistance_training ? 'Sì' : 'No'}</span></p>
+          {profile.objective === 'recomposition' && !profile.does_resistance_training && (
+            <p className="text-orange-300">⚠️ {RECOMPOSITION_TRAINING_ADVICE}</p>
+          )}
         </div>
       )}
 

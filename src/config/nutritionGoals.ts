@@ -1,5 +1,7 @@
 import type { ActivityLevel, Objective, Sex } from '../types'
 
+export const RECOMPOSITION_TRAINING_ADVICE = 'L’allenamento di forza regolare è fortemente consigliato per la ricomposizione corporea.'
+
 export const NUTRITION_GOAL_CONFIG = {
   activityMultipliers: {
     sedentary: 1.2,
@@ -10,6 +12,7 @@ export const NUTRITION_GOAL_CONFIG = {
   } satisfies Record<ActivityLevel, number>,
   caloriesPerKg: 7700,
   gainSurplusKcal: 250,
+  recompositionDeficitFraction: 0.10,
   weightRecalculation: {
     windowDays: 7,
     minimumSamples: 2,
@@ -30,11 +33,13 @@ export const NUTRITION_GOAL_CONFIG = {
       maintain: 1.6,
       gain_muscle: 1.8,
       lose_weight: 1.8,
+      recomposition: 1.9,
     } satisfies Record<Objective, number>,
     noResistanceTraining: {
       maintain: 0.9,
       gain_muscle: 1.2,
       lose_weight: 1.4,
+      recomposition: 1.4,
     } satisfies Record<Objective, number>,
     aggressiveCutMaxPerKg: 2,
     highBmiThreshold: 30,

@@ -91,6 +91,7 @@ export default function OnboardingPage() {
         )}
         {step === 4 && (
           <StepTraining
+            objective={objective.objective}
             value={doesResistanceTraining}
             onChange={setDoesResistanceTraining}
             onNext={() => setStep(5)}

@@ -20,6 +20,7 @@ interface Props {
 const OBJECTIVES: { key: Objective; label: string; desc: string; icon: string }[] = [
   { key: 'lose_weight', label: 'Perdi peso',   desc: 'Deficit calorico personalizzato', icon: '📉' },
   { key: 'gain_muscle', label: 'Metti massa',  desc: '+250 kcal/giorno sul TDEE',       icon: '💪' },
+  { key: 'recomposition', label: 'Ricomposizione corporea – ridurre grasso e aumentare massa muscolare', desc: 'Piccolo deficit e proteine alte; il peso può restare stabile', icon: '🔄' },
   { key: 'maintain',    label: 'Mantieni',     desc: 'Calorie = TDEE calcolato',        icon: '⚖️' },
 ]
 
@@ -48,6 +49,7 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
   const valid =
     data.objective === 'maintain' ||
     data.objective === 'gain_muscle' ||
+    data.objective === 'recomposition' ||
     (data.objective === 'lose_weight' && !!data.target_weight_kg && !!data.target_date && !invalidLossTarget)
 
   const defaultTargetDate = format(addMonths(new Date(), 3), 'yyyy-MM-dd')
@@ -62,7 +64,7 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
             key={key}
             onClick={() => onChange({
               objective: key,
-              target_weight_kg: key === 'maintain' ? null : data.target_weight_kg,
+              target_weight_kg: key === 'maintain' || key === 'recomposition' ? null : data.target_weight_kg,
               target_date: key === 'lose_weight' ? (data.target_date ?? defaultTargetDate) : null,
             })}
             className={`w-full p-4 rounded-xl border-2 text-left transition-colors ${
