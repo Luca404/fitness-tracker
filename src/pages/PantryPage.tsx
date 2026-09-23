@@ -63,13 +63,27 @@ const UNIT_LABELS: Record<PantryUnit, string> = { g: 'grammi', ml: 'millilitri',
 const PHOTO_NUTRIENT_FIELDS = [
   { key: 'calories_100g', label: 'Calorie', unit: 'kcal' },
   { key: 'protein_100g', label: 'Proteine', unit: 'g' },
-  { key: 'carbs_100g', label: 'Carboidrati', unit: 'g' },
-  { key: 'fat_100g', label: 'Grassi', unit: 'g' },
+  { key: 'carbs_100g', label: 'Carboidrati totali', unit: 'g' },
+  { key: 'fat_100g', label: 'Grassi totali', unit: 'g' },
   { key: 'fiber_100g', label: 'Fibre', unit: 'g' },
-  { key: 'sugars_100g', label: 'Zuccheri', unit: 'g' },
-  { key: 'saturated_fat_100g', label: 'Grassi saturi', unit: 'g' },
+  { key: 'sugars_100g', label: 'di cui zuccheri', unit: 'g' },
+  { key: 'saturated_fat_100g', label: 'di cui grassi saturi', unit: 'g' },
   { key: 'salt_100g', label: 'Sale', unit: 'g' },
 ] as const
+
+function manualNutritionError(food: Pick<PendingFood,
+  'calories_100g' | 'protein_100g' | 'carbs_100g' | 'fat_100g'
+  | 'fiber_100g' | 'sugars_100g' | 'saturated_fat_100g' | 'salt_100g'>): string | null {
+  if (PHOTO_NUTRIENT_FIELDS.some(({ key }) => {
+    const value = food[key]
+    return value != null && (!Number.isFinite(value) || value < 0)
+  })) return 'I valori nutrizionali devono essere numeri non negativi'
+  if ((food.saturated_fat_100g != null && food.saturated_fat_100g > food.fat_100g)
+    || (food.sugars_100g != null && food.sugars_100g > food.carbs_100g)) {
+    return 'Grassi saturi e zuccheri non possono superare i rispettivi totali'
+  }
+  return null
+}
 
 function aiPhotoMetadata(food: PendingFood): Record<string, unknown> {
   return {
@@ -169,6 +183,10 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
   const [manualProt, setManualProt] = useState(0)
   const [manualCarbs, setManualCarbs] = useState(0)
   const [manualFat, setManualFat] = useState(0)
+  const [manualSaturatedFat, setManualSaturatedFat] = useState<number | null>(null)
+  const [manualSugars, setManualSugars] = useState<number | null>(null)
+  const [manualSalt, setManualSalt] = useState<number | null>(null)
+  const [manualFiber, setManualFiber] = useState<number | null>(null)
   const [manualCategory, setManualCategory] = useState<FoodCategory>('other')
   const [listQuery, setListQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<FoodCategory | 'all'>('all')
@@ -194,7 +212,9 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
     setScanError(null)
     setScannedBarcode(null)
     setAnalysisReviewAcknowledged(false)
-    setManualName(''); setManualCal(0); setManualProt(0); setManualCarbs(0); setManualFat(0); setManualCategory('other')
+    setManualName(''); setManualCal(0); setManualProt(0); setManualCarbs(0); setManualFat(0)
+    setManualSaturatedFat(null); setManualSugars(null); setManualSalt(null); setManualFiber(null)
+    setManualCategory('other')
   }
 
   function goToQuantity(food: PendingFood, defaultUnit: PantryUnit, defaultQuantity?: number) {
@@ -317,8 +337,13 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
 
   function handleManualConfirm() {
     if (!manualName.trim()) return
-    if ([manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0)) {
-      showToast('I valori nutrizionali non possono essere negativi')
+    const nutritionError = manualNutritionError({
+      calories_100g: manualCal, protein_100g: manualProt, carbs_100g: manualCarbs, fat_100g: manualFat,
+      saturated_fat_100g: manualSaturatedFat, sugars_100g: manualSugars,
+      salt_100g: manualSalt, fiber_100g: manualFiber,
+    })
+    if (nutritionError) {
+      showToast(nutritionError)
       return
     }
     goToQuantity({
@@ -332,11 +357,11 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
       source: 'manual',
       off_food_id: null,
       off_data: null,
-      fiber_100g: null,
-      sugars_100g: null,
-      saturated_fat_100g: null,
+      fiber_100g: manualFiber,
+      sugars_100g: manualSugars,
+      saturated_fat_100g: manualSaturatedFat,
       unsaturated_fat_100g: null,
-      salt_100g: null,
+      salt_100g: manualSalt,
       nutrition_score: null,
       nutrition_grade: null,
       nova_group: null,
@@ -346,6 +371,13 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
 
   async function handleAddToPantry() {
     if (!pending || !user || !pending.name.trim() || addInProgressRef.current) return
+    if (pending.source === 'manual') {
+      const nutritionError = manualNutritionError(pending)
+      if (nutritionError) {
+        showToast(nutritionError)
+        return
+      }
+    }
     addInProgressRef.current = true
     setSavingItem(true)
     try {
@@ -616,8 +648,8 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
       {mode === 'manual' && (
         <div className="space-y-3">
           <div>
-            <label className="text-sm text-gray-400">Nome alimento</label>
-            <input value={manualName} onChange={e => setManualName(e.target.value)}
+            <label className="text-sm text-gray-400" htmlFor="manual-food-name">Nome alimento</label>
+            <input id="manual-food-name" value={manualName} onChange={e => setManualName(e.target.value)}
               className="w-full mt-1 px-3 py-2 rounded bg-gray-700 border border-gray-600 outline-none" />
           </div>
           <div>
@@ -632,16 +664,35 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
           {[
             { label: 'Calorie (kcal/100g)', val: manualCal, set: setManualCal },
             { label: 'Proteine (g/100g)', val: manualProt, set: setManualProt },
-            { label: 'Carboidrati (g/100g)', val: manualCarbs, set: setManualCarbs },
-            { label: 'Grassi (g/100g)', val: manualFat, set: setManualFat },
+            { label: 'Carboidrati totali (g/100g)', val: manualCarbs, set: setManualCarbs },
+            { label: 'Grassi totali (g/100g)', val: manualFat, set: setManualFat },
           ].map(({ label, val, set }) => (
-            <div key={label}>
-              <label className="text-sm text-gray-400">{label}</label>
+            <label key={label} className="block text-sm text-gray-400">
+              {label}
               <input type="number" min={0} value={val || ''}
                 onChange={e => set(parseFloat(e.target.value) || 0)}
                 className="w-full mt-1 px-3 py-2 rounded bg-gray-700 border border-gray-600 outline-none" />
-            </div>
+            </label>
           ))}
+          <div>
+            <p className="text-sm text-gray-400">Altri valori per 100 g (facoltativi)</p>
+            <p className="mt-1 text-xs text-gray-500">Saturi e zuccheri sono già compresi nei rispettivi totali.</p>
+            <div className="mt-2 grid grid-cols-2 gap-3">
+              {[
+                { label: 'di cui grassi saturi (g/100g)', val: manualSaturatedFat, set: setManualSaturatedFat },
+                { label: 'di cui zuccheri (g/100g)', val: manualSugars, set: setManualSugars },
+                { label: 'Sale (g/100g)', val: manualSalt, set: setManualSalt },
+                { label: 'Fibre (g/100g)', val: manualFiber, set: setManualFiber },
+              ].map(({ label, val, set }) => (
+                <label key={label} className="min-w-0 text-xs text-gray-400">
+                  {label}
+                  <input type="number" min={0} step="any" inputMode="decimal" value={val ?? ''}
+                    onChange={event => set(event.target.value === '' ? null : Number(event.target.value))}
+                    className="mt-1 w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />
+                </label>
+              ))}
+            </div>
+          </div>
           <button type="button" onClick={handleManualConfirm} disabled={!manualName.trim()}
             className="w-full py-3 bg-primary-600 rounded-lg font-semibold disabled:opacity-40">
             Continua
@@ -784,6 +835,26 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
                   Ho confrontato e corretto i valori segnalati usando la confezione.
                 </label>
               )}
+            </div>
+          )}
+          {pending.source === 'manual' && editingItemId && (
+            <div className="rounded-2xl bg-gray-800 p-4">
+              <p className="text-sm text-gray-400">Valori nutrizionali per 100 g</p>
+              <div className="mt-2 grid grid-cols-2 gap-3">
+                {PHOTO_NUTRIENT_FIELDS.map(field => (
+                  <label key={field.key} className="min-w-0 text-xs text-gray-400">
+                    {field.label} ({field.unit})
+                    <input type="number" min={0} step="any" inputMode="decimal" value={pending[field.key] ?? ''}
+                      onChange={event => setPending({
+                        ...pending,
+                        [field.key]: event.target.value === '' && field.key !== 'calories_100g'
+                          && field.key !== 'protein_100g' && field.key !== 'carbs_100g' && field.key !== 'fat_100g'
+                          ? null : Number(event.target.value),
+                      })}
+                      className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />
+                  </label>
+                ))}
+              </div>
             </div>
           )}
           <div>

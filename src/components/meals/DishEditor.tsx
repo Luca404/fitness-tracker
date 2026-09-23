@@ -149,8 +149,8 @@ export default function DishEditor({
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
             <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">P <b className="text-gray-200">{Math.round(totalProtein)}g</b></span>
-            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">C <b className="text-gray-200">{Math.round(totalCarbs)}g</b></span>
-            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">G <b className="text-gray-200">{Math.round(totalFat)}g</b></span>
+            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">C tot. <b className="text-gray-200">{Math.round(totalCarbs)}g</b></span>
+            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">G tot. <b className="text-gray-200">{Math.round(totalFat)}g</b></span>
           </div>
         </div>
       )}

@@ -13,11 +13,11 @@ export default function MealItemRow({ item, onDelete }: Props) {
     <div className="flex items-center justify-between py-2 border-b border-gray-800">
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{item.food_name}</p>
-        <p className="text-xs text-gray-500">{item.quantity_g}{item.unit ?? 'g'} · P {item.protein_g}g · C {item.carbs_g}g · G {item.fat_g}g</p>
+        <p className="text-xs text-gray-500">{item.quantity_g}{item.unit ?? 'g'} · P {item.protein_g}g · C tot. {item.carbs_g}g · G tot. {item.fat_g}g</p>
         {hasExtendedNutrition && (
           <p className="mt-0.5 text-[11px] text-gray-600">
             {item.fiber_g != null && `Fibre ${item.fiber_g}g`}
-            {item.sugars_g != null && `${item.fiber_g != null ? ' · ' : ''}Zuccheri ${item.sugars_g}g`}
+            {item.sugars_g != null && `${item.fiber_g != null ? ' · ' : ''}di cui zuccheri ${item.sugars_g}g`}
             {item.salt_g != null && `${item.fiber_g != null || item.sugars_g != null ? ' · ' : ''}Sale ${item.salt_g}g`}
           </p>
         )}

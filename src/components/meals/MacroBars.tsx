@@ -36,8 +36,8 @@ export default function MacroBars({ protein, carbs, fat, targets }: Props) {
   return (
     <div className="space-y-3">
       <MacroBar label="Proteine" value={protein} target={targets.protein_g} color="#10b981" />
-      <MacroBar label="Carboidrati" value={carbs} target={targets.carbs_g} color="#3b82f6" />
-      <MacroBar label="Grassi" value={fat} target={targets.fat_g} color="#f59e0b" />
+      <MacroBar label="Carboidrati totali" value={carbs} target={targets.carbs_g} color="#3b82f6" />
+      <MacroBar label="Grassi totali" value={fat} target={targets.fat_g} color="#f59e0b" />
     </div>
   )
 }

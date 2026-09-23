@@ -6,7 +6,7 @@ interface Props {
 
 const NUTRIENTS = [
   { key: 'fiber_g' as const, label: 'Fibre' },
-  { key: 'sugars_g' as const, label: 'Zuccheri' },
+  { key: 'sugars_g' as const, label: 'di cui zuccheri' },
   { key: 'salt_g' as const, label: 'Sale' },
 ]
 

@@ -265,8 +265,8 @@ function DishDetail({ dish, pantry, onEdit, onChangeIcon, onDelete, onSave }: {
         <p className="mt-1 text-sm text-gray-400">{Math.round(totals.weight)} g · {Math.round(totals.calories)} kcal</p>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
           <span className="rounded-xl bg-black/15 py-2">P <b>{Math.round(totals.protein)}g</b></span>
-          <span className="rounded-xl bg-black/15 py-2">C <b>{Math.round(totals.carbs)}g</b></span>
-          <span className="rounded-xl bg-black/15 py-2">G <b>{Math.round(totals.fat)}g</b></span>
+          <span className="rounded-xl bg-black/15 py-2">C tot. <b>{Math.round(totals.carbs)}g</b></span>
+          <span className="rounded-xl bg-black/15 py-2">G tot. <b>{Math.round(totals.fat)}g</b></span>
         </div>
         <ExtendedNutrition totals={extendedTotals} />
       </div>

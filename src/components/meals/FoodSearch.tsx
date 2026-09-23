@@ -21,6 +21,8 @@ function pantryItemToFoodResult(p: PantryItem): FoodResult {
     fat_100g: p.fat_100g,
     fiber_100g: p.fiber_100g ?? null,
     sugars_100g: p.sugars_100g ?? null,
+    saturated_fat_100g: p.saturated_fat_100g ?? null,
+    unsaturated_fat_100g: p.unsaturated_fat_100g ?? null,
     salt_100g: p.salt_100g ?? null,
   }
 }
@@ -90,7 +92,8 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
   function handleAdd() {
     if (manualMode) {
       if (!manualName.trim() || qty <= 0 || [manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0)) return
-      if ([manualFiber, manualSugars, manualSalt].some(v => v !== null && v < 0)) return
+      if ([manualFiber, manualSugars, manualSalt].some(v => v !== null && v < 0)
+        || (manualSugars !== null && manualSugars > manualCarbs)) return
       onAdd({
         food_name: manualName.trim(), quantity_g: qty,
         calories: manualCal, protein_g: manualProt,
@@ -233,23 +236,26 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
               </label>
               {(() => {
                 const n = calcNutrition(selected, qty)
+                const extraNutrients = [
+                  selected.fiber_100g == null ? null : `fibre ${selected.fiber_100g} g`,
+                  selected.sugars_100g == null ? null : `di cui zuccheri ${selected.sugars_100g} g`,
+                  selected.saturated_fat_100g == null ? null : `di cui grassi saturi ${selected.saturated_fat_100g} g`,
+                  selected.unsaturated_fat_100g == null ? null : `di cui grassi insaturi ${selected.unsaturated_fat_100g} g`,
+                  selected.salt_100g == null ? null : `sale ${selected.salt_100g} g`,
+                ].filter(value => value !== null)
                 return (
                   <>
                     <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
                       <span className="rounded-lg bg-black/10 py-2 text-primary-400"><b>{n.calories}</b><small className="block text-[9px] text-gray-500">kcal</small></span>
                       <span className="rounded-lg bg-black/10 py-2"><b>{n.protein_g}g</b><small className="block text-[9px] text-gray-500">proteine</small></span>
-                      <span className="rounded-lg bg-black/10 py-2"><b>{n.carbs_g}g</b><small className="block text-[9px] text-gray-500">carbo</small></span>
-                      <span className="rounded-lg bg-black/10 py-2"><b>{n.fat_g}g</b><small className="block text-[9px] text-gray-500">grassi</small></span>
+                      <span className="rounded-lg bg-black/10 py-2"><b>{n.carbs_g}g</b><small className="block text-[9px] text-gray-500">carbo tot.</small></span>
+                      <span className="rounded-lg bg-black/10 py-2"><b>{n.fat_g}g</b><small className="block text-[9px] text-gray-500">grassi tot.</small></span>
                     </div>
-                    {([selected.fiber_100g, selected.sugars_100g, selected.salt_100g, selected.saturated_fat_100g, selected.unsaturated_fat_100g]
-                      .some(value => value !== null && value !== undefined)) ? (
+                    {selected.source !== 'openfoodfacts' && extraNutrients.length > 0 && (
                       <p className="text-[11px] text-gray-500">
-                        Per 100 g:
-                        {selected.fiber_100g != null && ` fibre ${selected.fiber_100g} g`}
-                        {selected.sugars_100g != null && ` · zuccheri ${selected.sugars_100g} g`}
-                        {selected.salt_100g != null && ` · sale ${selected.salt_100g} g`}
+                        Per 100 g: {extraNutrients.join(' · ')}
                       </p>
-                    ) : null}
+                    )}
                     {(selected.nutrition_grade || (selected.nutrition_score !== null && selected.nutrition_score !== undefined) || selected.nova_group || selected.ecoscore_grade) && (
                       <p className="text-[11px] text-gray-500">
                         {selected.nutrition_grade && `Nutri-Score ${selected.nutrition_grade.toUpperCase()}`}
@@ -317,8 +323,8 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
             {[
               { label: 'Calorie', unit: 'kcal', val: manualCal, set: (v: number) => setManualCal(v), min: 0 },
               { label: 'Proteine', unit: 'g', val: manualProt, set: (v: number) => setManualProt(v), min: 0 },
-              { label: 'Carboidrati', unit: 'g', val: manualCarbs, set: (v: number) => setManualCarbs(v), min: 0 },
-              { label: 'Grassi', unit: 'g', val: manualFat, set: (v: number) => setManualFat(v), min: 0 },
+              { label: 'Carboidrati totali', unit: 'g', val: manualCarbs, set: (v: number) => setManualCarbs(v), min: 0 },
+              { label: 'Grassi totali', unit: 'g', val: manualFat, set: (v: number) => setManualFat(v), min: 0 },
             ].map(({ label, unit, val, set, min }) => (
               <label key={label} className="rounded-xl border border-gray-700 bg-gray-800/80 p-3 focus-within:border-primary-500">
                 <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">{label}</span>
@@ -333,10 +339,11 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
           </div>
           <div>
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Valori aggiuntivi della porzione (facoltativi)</p>
+            <p className="mb-2 text-[10px] text-gray-500">Gli zuccheri sono già compresi nei carboidrati totali.</p>
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: 'Fibre', val: manualFiber, set: setManualFiber },
-                { label: 'Zuccheri', val: manualSugars, set: setManualSugars },
+                { label: 'di cui zuccheri', val: manualSugars, set: setManualSugars },
                 { label: 'Sale', val: manualSalt, set: setManualSalt },
               ].map(({ label, val, set }) => (
                 <label key={label} className="rounded-xl border border-gray-700 bg-gray-800/80 p-2.5 focus-within:border-primary-500">
@@ -357,7 +364,9 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
             </div>
           </div>
           <button type="button" onClick={handleAdd}
-            disabled={!manualName.trim() || qty <= 0 || [manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0) || [manualFiber, manualSugars, manualSalt].some(v => v !== null && v < 0)}
+            disabled={!manualName.trim() || qty <= 0 || [manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0)
+              || [manualFiber, manualSugars, manualSalt].some(v => v !== null && v < 0)
+              || (manualSugars !== null && manualSugars > manualCarbs)}
             className="w-full rounded-xl bg-primary-500 py-3 font-semibold hover:bg-primary-400 disabled:opacity-40">
             + Aggiungi ingrediente
           </button>

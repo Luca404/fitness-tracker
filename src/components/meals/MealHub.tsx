@@ -379,8 +379,8 @@ export default function MealHub({ onAddEntry, beveragesOnly = false, mode, setMo
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
             <MacroPill label="Proteine" value={protein} />
-            <MacroPill label="Carbo" value={carbs} />
-            <MacroPill label="Grassi" value={fat} />
+            <MacroPill label="Carbo tot." value={carbs} />
+            <MacroPill label="Grassi tot." value={fat} />
           </div>
           <ExtendedNutrition totals={extendedTotals} />
         </div>

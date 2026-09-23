@@ -15,10 +15,7 @@ function Nutrient({ label, value }: { label: string; value: number | null | unde
 }
 
 export default function OpenFoodFactsDetails({ food }: Props) {
-  const hasNutrition = [
-    food.fiber_100g, food.sugars_100g, food.saturated_fat_100g,
-    food.unsaturated_fat_100g, food.salt_100g,
-  ].some(value => value !== null && value !== undefined)
+  const hasOtherNutrition = food.fiber_100g != null || food.salt_100g != null
   const hasScores = food.nutrition_grade || food.nutrition_score !== null && food.nutrition_score !== undefined
     || food.nova_group !== null && food.nova_group !== undefined || food.ecoscore_grade
 
@@ -32,19 +29,36 @@ export default function OpenFoodFactsDetails({ food }: Props) {
           {food.serving_size && <span>Porzione indicativa: {food.serving_size}</span>}
         </p>
       )}
-      {(food.calories_100g !== undefined || food.protein_100g !== undefined || food.carbs_100g !== undefined || food.fat_100g !== undefined) && (
+      {(food.calories_100g !== undefined || food.protein_100g !== undefined || food.carbs_100g !== undefined
+        || food.fat_100g !== undefined || food.sugars_100g != null || food.saturated_fat_100g != null
+        || food.unsaturated_fat_100g != null) && (
         <div className="flex flex-wrap gap-1.5">
           {food.calories_100g !== undefined && <span className="rounded-lg bg-black/10 px-2 py-1"><b>{food.calories_100g} kcal</b></span>}
           {food.protein_100g !== undefined && <Nutrient label="Proteine" value={food.protein_100g} />}
-          {food.carbs_100g !== undefined && <Nutrient label="Carboidrati" value={food.carbs_100g} />}
+          {(food.carbs_100g !== undefined || food.sugars_100g != null) && (
+            <span className="rounded-lg bg-black/10 px-2 py-1">
+              {food.carbs_100g !== undefined && <span className="block">Carboidrati totali <b>{food.carbs_100g} g</b></span>}
+              {food.sugars_100g != null && (
+                <span className="block text-gray-500">{food.carbs_100g !== undefined ? 'di cui zuccheri' : 'Zuccheri'} <b>{food.sugars_100g} g</b></span>
+              )}
+            </span>
+          )}
+          {(food.fat_100g !== undefined || food.saturated_fat_100g != null || food.unsaturated_fat_100g != null) && (
+            <span className="rounded-lg bg-black/10 px-2 py-1">
+              {food.fat_100g !== undefined && <span className="block">Grassi totali <b>{food.fat_100g} g</b></span>}
+              {food.saturated_fat_100g != null && (
+                <span className="block text-gray-500">{food.fat_100g !== undefined ? 'di cui saturi' : 'Grassi saturi'} <b>{food.saturated_fat_100g} g</b></span>
+              )}
+              {food.unsaturated_fat_100g != null && (
+                <span className="block text-gray-500">{food.fat_100g !== undefined ? 'di cui insaturi' : 'Grassi insaturi'} <b>{food.unsaturated_fat_100g} g</b></span>
+              )}
+            </span>
+          )}
         </div>
       )}
-      {hasNutrition && (
+      {hasOtherNutrition && (
         <div className="flex flex-wrap gap-1.5">
           <Nutrient label="Fibre" value={food.fiber_100g} />
-          <Nutrient label="Zuccheri" value={food.sugars_100g} />
-          <Nutrient label="Saturi" value={food.saturated_fat_100g} />
-          <Nutrient label="Insaturi" value={food.unsaturated_fat_100g} />
           <Nutrient label="Sale" value={food.salt_100g} />
         </div>
       )}

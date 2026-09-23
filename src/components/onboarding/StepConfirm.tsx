@@ -54,7 +54,7 @@ export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
       <div>
         <h3 className="font-semibold">Goal giornalieri modificabili</h3>
         <p className="mt-1 text-xs text-gray-400">
-          Proteine {recommendation.proteinPerKg.toFixed(1)} g/kg · Grassi {recommendation.fatPerKg.toFixed(1)} g/kg · carboidrati dalle calorie rimanenti
+          Proteine {recommendation.proteinPerKg.toFixed(1)} g/kg · Grassi totali {recommendation.fatPerKg.toFixed(1)} g/kg · carboidrati totali dalle calorie rimanenti
           {recommendation.usesAdjustedWeight && ` · peso di riferimento ${Math.round(recommendation.referenceWeightKg)} kg`}
         </p>
       </div>
@@ -62,8 +62,8 @@ export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
       {[
         { label: 'Calorie (kcal)', val: calories, set: setCalories },
         { label: 'Proteine (g)', val: protein, set: setProtein },
-        { label: 'Carboidrati (g)', val: carbs, set: setCarbs },
-        { label: 'Grassi (g)', val: fat, set: setFat },
+        { label: 'Carboidrati totali (g)', val: carbs, set: setCarbs },
+        { label: 'Grassi totali (g)', val: fat, set: setFat },
       ].map(({ label, val, set }) => (
         <div key={label}>
           <label className="text-sm text-gray-400 mb-1 block">{label}</label>
