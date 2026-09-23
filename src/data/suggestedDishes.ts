@@ -50,13 +50,14 @@ const TEMPLATES: SuggestedDishTemplate[] = [
   ] },
 ]
 
-function buildItem(templateId: string, foodId: string, quantityG: number): DishItem {
+function buildItem(templateId: string, foodId: string, quantityG: number, position: number): DishItem {
   const food = BASIC_FOODS.find(candidate => candidate.id === foodId)
   if (!food) throw new Error(`Unknown suggested food: ${foodId}`)
   const factor = quantityG / 100
   return {
     id: `suggested:${templateId}:${foodId}`,
     dish_id: `suggested:${templateId}`,
+    position,
     food_name: food.name,
     quantity_g: quantityG,
     category: food.category,
@@ -75,9 +76,10 @@ export const SUGGESTED_DISHES: Dish[] = TEMPLATES.map(template => ({
   id: `suggested:${template.id}`,
   user_id: '',
   name: template.name,
+  icon: null,
   created_at: '',
   updated_at: '',
-  items: template.ingredients.map(ingredient =>
-    buildItem(template.id, ingredient.foodId, ingredient.quantityG)
+  items: template.ingredients.map((ingredient, position) =>
+    buildItem(template.id, ingredient.foodId, ingredient.quantityG, position)
   ),
 }))

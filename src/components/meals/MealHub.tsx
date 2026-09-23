@@ -3,11 +3,13 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
 import * as api from '../../services/api'
 import DishEditor, { type DishItemDraft } from './DishEditor'
+import DishIconChoices from '../kitchen/DishIconChoices'
+import Modal from '../common/Modal'
 import FoodSearch from './FoodSearch'
 import IngredientQuantityInput from './IngredientQuantityInput'
 import { BASIC_FOODS, type BasicFood } from '../../data/basicFoods'
 import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
-import { getFoodIcon } from '../../utils/foodIcons'
+import { getDishIcon, getFoodIcon } from '../../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
 import type { Dish, DishItem } from '../../types'
 import ExtendedNutrition from './ExtendedNutrition'
@@ -97,6 +99,8 @@ export default function MealHub({ onAddEntry, beveragesOnly = false }: Props) {
   const [mode, setMode] = useState<Mode>('list')
   const [editingDish, setEditingDish] = useState<Dish | null>(null)
   const [pickingDish, setPickingDish] = useState<Dish | null>(null)
+  const [iconDish, setIconDish] = useState<Dish | null>(null)
+  const [iconSaving, setIconSaving] = useState(false)
   const [targetWeight, setTargetWeight] = useState(0)
   const [selectedBeverage, setSelectedBeverage] = useState<BasicFood | null>(null)
   const [beverageVolume, setBeverageVolume] = useState(330)
@@ -114,6 +118,31 @@ export default function MealHub({ onAddEntry, beveragesOnly = false }: Props) {
       setLoading(false)
     }
   }, [showToast])
+
+  async function saveDishIcon(icon: string | null) {
+    if (!iconDish || iconSaving) return
+    setIconSaving(true)
+    try {
+      await api.updateDishIcon(iconDish.id, icon)
+      setDishes(current => current.map(dish => dish.id === iconDish.id ? { ...dish, icon } : dish))
+      setPickingDish(current => current?.id === iconDish.id ? { ...current, icon } : current)
+      setIconDish(null)
+      showToast('Icona aggiornata')
+    } catch {
+      showToast('Errore modifica icona')
+    } finally {
+      setIconSaving(false)
+    }
+  }
+
+  const iconPicker = (
+    <Modal open={iconDish !== null} onClose={() => setIconDish(null)} title={iconDish ? `Icona di ${iconDish.name}` : 'Icona del piatto'}>
+      {iconDish && (
+        <DishIconChoices automaticIcon={getFoodIcon(iconDish.items)} selectedIcon={iconDish.icon}
+          onSelect={icon => { void saveDishIcon(icon) }} saving={iconSaving} />
+      )}
+    </Modal>
+  )
 
   useEffect(() => { refresh() }, [refresh])
 
@@ -339,7 +368,11 @@ export default function MealHub({ onAddEntry, beveragesOnly = false }: Props) {
         </div>
         <div className="rounded-3xl bg-gradient-to-br from-primary-600/25 via-gray-800 to-gray-800 p-5 ring-1 ring-primary-500/20">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/15 text-3xl">{getFoodIcon(pickingDish.items)}</div>
+            <button type="button" onClick={() => setIconDish(pickingDish)}
+              aria-label={`Cambia icona di ${pickingDish.name}`}
+              className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/15 text-3xl">
+              {getDishIcon(pickingDish)}<span aria-hidden="true" className="absolute -bottom-1 -right-1 rounded-full bg-gray-700 px-1 text-[10px]">✎</span>
+            </button>
             <div className="min-w-0 flex-1">
               <h3 className="truncate text-xl font-bold">{pickingDish.name}</h3>
               <p className="text-sm text-gray-400">Ricetta base: {Math.round(ref)} g</p>
@@ -417,6 +450,7 @@ export default function MealHub({ onAddEntry, beveragesOnly = false }: Props) {
           className="w-full rounded-2xl bg-primary-500 py-4 font-semibold shadow-lg shadow-primary-900/30 transition hover:bg-primary-400 disabled:opacity-40">
           Aggiungi {scaledKcal} kcal al diario
         </button>
+        {iconPicker}
       </div>
     )
   }
@@ -454,9 +488,13 @@ export default function MealHub({ onAddEntry, beveragesOnly = false }: Props) {
           <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
             {dishes.map(dish => (
               <div key={dish.id} className="group flex items-center gap-2 rounded-2xl border border-gray-700/70 bg-gray-900/30 p-2 transition hover:border-gray-600">
+                <button type="button" onClick={() => setIconDish(dish)}
+                  aria-label={`Cambia icona di ${dish.name}`}
+                  className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-xl">
+                  {getDishIcon(dish)}<span aria-hidden="true" className="absolute -bottom-1 -right-1 rounded-full bg-gray-700 px-1 text-[10px]">✎</span>
+                </button>
                 <button type="button" onClick={() => startPick(dish)}
                   className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-2 text-left">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10">{getFoodIcon(dish.items)}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{dish.name}</span>
                     <span className="text-xs text-gray-500">{Math.round(totalKcal(dish))} kcal · {Math.round(referenceWeight(dish))} g</span>
@@ -471,6 +509,7 @@ export default function MealHub({ onAddEntry, beveragesOnly = false }: Props) {
           </div>
         )}
       </div>
+      {iconPicker}
     </div>
   )
 }

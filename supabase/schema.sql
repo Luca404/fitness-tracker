@@ -136,6 +136,7 @@ create table public.dishes (
   id         uuid primary key default gen_random_uuid(),
   user_id    uuid not null references auth.users on delete cascade,
   name       text not null check (length(trim(name)) > 0),
+  icon       text check (icon is null or (length(trim(icon)) between 1 and 16)),
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -148,6 +149,7 @@ create index on public.dishes (user_id);
 create table public.dish_items (
   id          uuid primary key default gen_random_uuid(),
   dish_id     uuid not null references public.dishes on delete cascade,
+  position    integer not null check (position >= 0),
   food_name   text not null,
   quantity_g  float not null check (quantity_g > 0),
   category    text not null default 'other' check (category in ('grain','bakery','legume','vegetable','fruit','nuts_seeds','meat','fish','dairy','egg','plant_protein','spread','fat','sauce','condiment','seasoning','sweet','snack','prepared','supplement','alcohol','beverage','other')),
@@ -163,6 +165,7 @@ create table public.dish_items (
   off_food_id text,
   created_at  timestamptz default now()
 );
+create unique index dish_items_dish_position_idx on public.dish_items (dish_id, position);
 alter table public.dish_items enable row level security;
 create policy "own dish_items" on public.dish_items
   using (exists (
@@ -574,22 +577,23 @@ begin
 
   with inserted as (
     insert into public.dish_items (
-      dish_id, food_name, quantity_g, category, food_key, pantry_item_id,
+      dish_id, position, food_name, quantity_g, category, food_key, pantry_item_id,
       calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g, salt_g, source,
       off_food_id
     )
     select
-      v_dish.id, x.food_name, x.quantity_g, coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories, x.protein_g,
+      v_dish.id, (element.ordinal - 1)::integer, x.food_name, x.quantity_g, coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories, x.protein_g,
       x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
       coalesce(x.source, 'manual'), x.off_food_id
-    from jsonb_to_recordset(p_items) as x(
+    from jsonb_array_elements(p_items) with ordinality as element(value, ordinal)
+    cross join lateral jsonb_to_record(element.value) as x(
       food_name text, quantity_g float, category text, food_key text, pantry_item_id uuid, calories float, protein_g float,
       carbs_g float, fat_g float, fiber_g float, sugars_g float, salt_g float,
       source text, off_food_id text
     )
     returning *
   )
-  select coalesce(jsonb_agg(to_jsonb(inserted)), '[]'::jsonb) into v_items from inserted;
+  select coalesce(jsonb_agg(to_jsonb(inserted) order by inserted.position), '[]'::jsonb) into v_items from inserted;
 
   return to_jsonb(v_dish) || jsonb_build_object('items', v_items);
 end;
@@ -620,22 +624,23 @@ begin
   delete from public.dish_items where dish_id = p_dish_id;
   with inserted as (
     insert into public.dish_items (
-      dish_id, food_name, quantity_g, category, food_key, pantry_item_id,
+      dish_id, position, food_name, quantity_g, category, food_key, pantry_item_id,
       calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g, salt_g, source,
       off_food_id
     )
     select
-      p_dish_id, x.food_name, x.quantity_g, coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories, x.protein_g,
+      p_dish_id, (element.ordinal - 1)::integer, x.food_name, x.quantity_g, coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories, x.protein_g,
       x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
       coalesce(x.source, 'manual'), x.off_food_id
-    from jsonb_to_recordset(p_items) as x(
+    from jsonb_array_elements(p_items) with ordinality as element(value, ordinal)
+    cross join lateral jsonb_to_record(element.value) as x(
       food_name text, quantity_g float, category text, food_key text, pantry_item_id uuid, calories float, protein_g float,
       carbs_g float, fat_g float, fiber_g float, sugars_g float, salt_g float,
       source text, off_food_id text
     )
     returning *
   )
-  select coalesce(jsonb_agg(to_jsonb(inserted)), '[]'::jsonb) into v_items from inserted;
+  select coalesce(jsonb_agg(to_jsonb(inserted) order by inserted.position), '[]'::jsonb) into v_items from inserted;
 
   return to_jsonb(v_dish) || jsonb_build_object('items', v_items);
 end;

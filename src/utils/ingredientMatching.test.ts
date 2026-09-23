@@ -3,7 +3,7 @@ import { getDishAvailability, normalizeIngredientName } from './ingredientMatchi
 import type { Dish, DishItem, PantryItem } from '../types'
 
 const item = (food_name: string, food_key: string | null = null): DishItem => ({
-  id: food_name, dish_id: 'dish-1', food_name, food_key, category: 'other', quantity_g: 100,
+  id: food_name, dish_id: 'dish-1', position: 0, food_name, food_key, category: 'other', quantity_g: 100,
   calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, source: 'basic', off_food_id: null, created_at: '',
 })
 
@@ -21,7 +21,7 @@ describe('ingredient matching', () => {
 
   it('prefers stable keys and reports missing ingredients', () => {
     const dish: Dish = {
-      id: 'dish-1', user_id: 'user-1', name: 'Pasta al sugo', created_at: '', updated_at: '',
+      id: 'dish-1', user_id: 'user-1', name: 'Pasta al sugo', icon: null, created_at: '', updated_at: '',
       items: [item('Pasta', 'basic:pasta-semola-cotta'), item('Sugo', 'basic:sugo-pomodoro')],
     }
     const result = getDishAvailability(dish, [pantryItem('Pasta di semola', 'basic:pasta-semola-cotta')])

@@ -4,7 +4,7 @@ import type { DishItem, MealItemUnit } from '../../types'
 import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import IngredientQuantityInput from './IngredientQuantityInput'
 
-export type DishItemDraft = Omit<DishItem, 'id' | 'dish_id' | 'created_at'> & {
+export type DishItemDraft = Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'> & {
   unit?: MealItemUnit
 }
 

@@ -4,8 +4,9 @@ import { useData } from '../../contexts/DataContext'
 import * as api from '../../services/api'
 import Modal from '../common/Modal'
 import DishEditor, { type DishItemDraft } from '../meals/DishEditor'
+import DishIconChoices from './DishIconChoices'
 import { getDishAvailability } from '../../utils/ingredientMatching'
-import { getFoodIcon } from '../../utils/foodIcons'
+import { getDishIcon, getFoodIcon } from '../../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
 import type { Dish, PantryItem } from '../../types'
 import ExtendedNutrition from '../meals/ExtendedNutrition'
@@ -39,7 +40,7 @@ function toDraft(item: Dish['items'][number]): DishItemDraft {
   }
 }
 
-type EditorMode = 'closed' | 'create' | 'detail' | 'edit'
+type EditorMode = 'closed' | 'create' | 'detail' | 'edit' | 'icon'
 
 export default function KitchenDishes() {
   const { user } = useAuth()
@@ -50,6 +51,8 @@ export default function KitchenDishes() {
   const [query, setQuery] = useState('')
   const [mode, setMode] = useState<EditorMode>('closed')
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null)
+  const [iconReturnMode, setIconReturnMode] = useState<'closed' | 'detail'>('closed')
+  const [iconSaving, setIconSaving] = useState(false)
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -71,6 +74,33 @@ export default function KitchenDishes() {
   function openDetail(dish: Dish) {
     setSelectedDish(dish)
     setMode('detail')
+  }
+
+  function openIconPicker(dish: Dish, returnMode: 'closed' | 'detail') {
+    setSelectedDish(dish)
+    setIconReturnMode(returnMode)
+    setMode('icon')
+  }
+
+  function closeIconPicker() {
+    setMode(iconReturnMode)
+    if (iconReturnMode === 'closed') setSelectedDish(null)
+  }
+
+  async function saveDishIcon(icon: string | null) {
+    if (!selectedDish || iconSaving) return
+    setIconSaving(true)
+    try {
+      await api.updateDishIcon(selectedDish.id, icon)
+      setDishes(current => current.map(dish => dish.id === selectedDish.id ? { ...dish, icon } : dish))
+      setSelectedDish({ ...selectedDish, icon })
+      closeIconPicker()
+      showToast('Icona aggiornata')
+    } catch {
+      showToast('Errore modifica icona')
+    } finally {
+      setIconSaving(false)
+    }
   }
 
   async function createDish(name: string, items: DishItemDraft[]) {
@@ -153,13 +183,18 @@ export default function KitchenDishes() {
             {visibleDishes.map(dish => {
               const totals = dishTotals(dish)
               return (
-                <button key={dish.id} type="button" onClick={() => openDetail(dish)}
-                  className="flex w-full items-center gap-3 rounded-2xl border border-gray-800 bg-gray-800/55 p-3 text-left hover:border-gray-700">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-700/60 text-xl">{getFoodIcon(dish.items)}</span>
-                  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{dish.name}</span><span className="text-xs text-gray-500">{dish.items.length} ingredienti · {Math.round(totals.weight)} g</span></span>
-                  <span className="text-sm font-semibold text-primary-400">{Math.round(totals.calories)}<small className="ml-1 text-[9px]">kcal</small></span>
-                  <span className="text-gray-600">›</span>
-                </button>
+                <div key={dish.id} className="flex w-full items-center gap-2 rounded-2xl border border-gray-800 bg-gray-800/55 p-2 text-left hover:border-gray-700">
+                  <button type="button" onClick={() => openIconPicker(dish, 'closed')}
+                    aria-label={`Cambia icona di ${dish.name}`}
+                    className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-700/60 text-xl">
+                    {getDishIcon(dish)}<span aria-hidden="true" className="absolute -bottom-1 -right-1 rounded-full bg-gray-700 px-1 text-[10px]">✎</span>
+                  </button>
+                  <button type="button" onClick={() => openDetail(dish)} className="flex min-w-0 flex-1 items-center gap-2 py-1 pr-1 text-left">
+                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{dish.name}</span><span className="text-xs text-gray-500">{dish.items.length} ingredienti · {Math.round(totals.weight)} g</span></span>
+                    <span className="text-sm font-semibold text-primary-400">{Math.round(totals.calories)}<small className="ml-1 text-[9px]">kcal</small></span>
+                    <span className="text-gray-600">›</span>
+                  </button>
+                </div>
               )
             })}
           </div>
@@ -167,11 +202,21 @@ export default function KitchenDishes() {
       </section>
 
       <Modal
+        key={mode}
         open={mode !== 'closed'}
-        onClose={() => { setMode('closed'); setSelectedDish(null) }}
+        onClose={() => {
+          if (mode === 'icon') closeIconPicker()
+          else { setMode('closed'); setSelectedDish(null) }
+        }}
         fullScreenOnMobile={mode === 'create' || mode === 'edit'}
       >
-        {mode === 'create' ? (
+        {mode === 'icon' && selectedDish ? (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold">Icona di {selectedDish.name}</h2>
+            <DishIconChoices automaticIcon={getFoodIcon(selectedDish.items)} selectedIcon={selectedDish.icon}
+              onSelect={icon => { void saveDishIcon(icon) }} saving={iconSaving} />
+          </div>
+        ) : mode === 'create' ? (
           <div className="space-y-5">
             <div className="pr-12 lg:pr-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Nuova ricetta</p><h2 className="text-xl font-bold">Crea il tuo piatto</h2></div>
             <DishEditor initialName="" initialItems={[]} onSave={createDish} onCancel={() => setMode('closed')} saveLabel="Salva piatto" />
@@ -186,6 +231,7 @@ export default function KitchenDishes() {
             dish={selectedDish}
             pantry={pantry}
             onEdit={selectedDish.id.startsWith('suggested:') ? undefined : () => setMode('edit')}
+            onChangeIcon={selectedDish.id.startsWith('suggested:') ? undefined : () => openIconPicker(selectedDish, 'detail')}
             onDelete={selectedDish.id.startsWith('suggested:') ? undefined : deleteDish}
             onSave={selectedDish.id.startsWith('suggested:') ? saveSuggestedDish : undefined}
           />
@@ -195,10 +241,11 @@ export default function KitchenDishes() {
   )
 }
 
-function DishDetail({ dish, pantry, onEdit, onDelete, onSave }: {
+function DishDetail({ dish, pantry, onEdit, onChangeIcon, onDelete, onSave }: {
   dish: Dish
   pantry: PantryItem[]
   onEdit?: () => void
+  onChangeIcon?: () => void
   onDelete?: () => void
   onSave?: () => void
 }) {
@@ -208,7 +255,12 @@ function DishDetail({ dish, pantry, onEdit, onDelete, onSave }: {
   return (
     <div className="space-y-5">
       <div className="rounded-3xl bg-gradient-to-br from-primary-600/25 to-gray-800 p-5 ring-1 ring-primary-500/20">
-        <span className="text-3xl">{getFoodIcon(dish.items)}</span>
+        {onChangeIcon ? (
+          <button type="button" onClick={onChangeIcon} aria-label={`Cambia icona di ${dish.name}`}
+            className="relative text-3xl">
+            {getDishIcon(dish)}<span aria-hidden="true" className="absolute -bottom-1 -right-3 rounded-full bg-gray-700 px-1 text-[10px]">✎</span>
+          </button>
+        ) : <span className="text-3xl">{getDishIcon(dish)}</span>}
         <h2 className="mt-3 text-2xl font-bold">{dish.name}</h2>
         <p className="mt-1 text-sm text-gray-400">{Math.round(totals.weight)} g · {Math.round(totals.calories)} kcal</p>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">

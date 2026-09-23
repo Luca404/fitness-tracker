@@ -504,31 +504,18 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
                   </div>
                   <div className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-800/55 divide-y divide-gray-700/60">
                     {group.items.map(item => (
-                      <div
-                        key={item.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => editPantryItem(item)}
-                        onKeyDown={event => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault()
-                            editPantryItem(item)
-                          }
-                        }}
-                        className="flex cursor-pointer items-center justify-between px-4 py-3 hover:bg-gray-700/50"
-                      >
-                        <div className="min-w-0">
+                      <div key={item.id} className="flex items-center pr-4 hover:bg-gray-700/50">
+                        <button type="button" onClick={() => editPantryItem(item)}
+                          aria-label={`Modifica ${item.name}`}
+                          className="min-w-0 flex-1 py-3 pl-4 pr-3 text-left">
                           <p className="truncate text-sm font-medium">{item.name}</p>
                           <p className="text-xs text-gray-500">
                             {item.quantity} {UNIT_LABELS[item.unit]} · {Math.round(item.calories_100g)} kcal/100{item.unit === 'ml' ? 'ml' : 'g'}
                           </p>
-                        </div>
-                        <div className="ml-2 flex shrink-0 items-center gap-3">
-                          <button type="button" onClick={event => { event.stopPropagation(); editPantryItem(item) }}
-                            className="text-xs text-primary-400 hover:text-primary-300" aria-label={`Modifica ${item.name}`}>Modifica</button>
-                          <button type="button" onClick={event => { event.stopPropagation(); void handleDelete(item.id) }}
-                            className="text-lg text-gray-600 hover:text-red-400" aria-label={`Rimuovi ${item.name}`}>✕</button>
-                        </div>
+                        </button>
+                        <button type="button" onClick={() => { void handleDelete(item.id) }}
+                          className="flex h-11 w-11 shrink-0 items-center justify-center text-lg text-gray-600 hover:text-red-400"
+                          aria-label={`Rimuovi ${item.name}`}>✕</button>
                       </div>
                     ))}
                   </div>

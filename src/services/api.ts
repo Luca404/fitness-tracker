@@ -3,6 +3,7 @@ import { supabase } from './supabase'
 import type {
   UserHealthProfile, UserGoals, Meal, MealEntry, MealItemInput, Workout, WeightLog, Dish, DishItem, PantryItem
 } from '../types'
+import { orderDishItems } from '../utils/dishOrder'
 import { BASIC_FOODS } from '../data/basicFoods'
 import { normalizeIngredientName } from '../utils/ingredientMatching'
 
@@ -263,18 +264,20 @@ export async function getDishes(): Promise<Dish[]> {
     .from('dish_items')
     .select('*')
     .in('dish_id', dishIds)
+    .order('position', { ascending: true })
+    .order('id', { ascending: true })
   if (iError) throw iError
 
   return dishes.map(d => ({
     ...d,
-    items: (items ?? []).filter(i => i.dish_id === d.id).map(enrichLegacyFoodItem),
+    items: orderDishItems((items ?? []).filter(i => i.dish_id === d.id).map(enrichLegacyFoodItem)),
   })) as Dish[]
 }
 
 export async function createDish(
   userId: string,
   name: string,
-  items: Omit<DishItem, 'id' | 'dish_id' | 'created_at'>[]
+  items: Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'>[]
 ): Promise<Dish> {
   const { data, error } = await supabase.rpc('create_dish_with_items', {
     p_user_id: userId,
@@ -288,7 +291,7 @@ export async function createDish(
 export async function updateDish(
   dishId: string,
   name: string,
-  items: Omit<DishItem, 'id' | 'dish_id' | 'created_at'>[]
+  items: Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'>[]
 ): Promise<Dish> {
   const { data, error } = await supabase.rpc('update_dish_with_items', {
     p_dish_id: dishId,
@@ -297,6 +300,11 @@ export async function updateDish(
   })
   if (error) throw error
   return data as Dish
+}
+
+export async function updateDishIcon(dishId: string, icon: string | null): Promise<void> {
+  const { error } = await supabase.from('dishes').update({ icon }).eq('id', dishId)
+  if (error) throw error
 }
 
 export async function completeOnboarding(

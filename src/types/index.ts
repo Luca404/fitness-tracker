@@ -219,6 +219,7 @@ export interface Dish {
   id: string
   user_id: string
   name: string
+  icon: string | null
   created_at: string
   updated_at: string
   items: DishItem[]  // hydrated client-side
@@ -227,6 +228,7 @@ export interface Dish {
 export interface DishItem {
   id: string
   dish_id: string
+  position: number
   food_name: string
   quantity_g: number
   category: FoodCategory
