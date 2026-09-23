@@ -323,27 +323,52 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
             {[
               { label: 'Calorie', unit: 'kcal', val: manualCal, set: (v: number) => setManualCal(v), min: 0 },
               { label: 'Proteine', unit: 'g', val: manualProt, set: (v: number) => setManualProt(v), min: 0 },
-              { label: 'Carboidrati totali', unit: 'g', val: manualCarbs, set: (v: number) => setManualCarbs(v), min: 0 },
-              { label: 'Grassi totali', unit: 'g', val: manualFat, set: (v: number) => setManualFat(v), min: 0 },
             ].map(({ label, unit, val, set, min }) => (
               <label key={label} className="rounded-xl border border-gray-700 bg-gray-800/80 p-3 focus-within:border-primary-500">
                 <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">{label}</span>
                 <span className="mt-1 flex items-center gap-2">
-                  <input type="number" min={min} value={val || ''}
+                  <input type="number" min={min} step="any" inputMode="decimal" value={val || ''}
                     onChange={e => set(parseFloat(e.target.value) || 0)}
                     className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none" />
-                  <span className="text-xs text-gray-600">{unit}</span>
+                  <span aria-hidden="true" className="text-xs text-gray-600">{unit}</span>
                 </span>
               </label>
             ))}
           </div>
+          <fieldset aria-label="Carboidrati" className="rounded-xl border border-gray-700 bg-gray-800/80 p-3 focus-within:border-primary-500">
+            <label className="block">
+              <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">Carboidrati totali</span>
+              <span className="mt-1 flex items-center gap-2">
+                <input type="number" min={0} step="any" inputMode="decimal" value={manualCarbs || ''}
+                  onChange={event => setManualCarbs(parseFloat(event.target.value) || 0)}
+                  className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none" />
+                <span aria-hidden="true" className="text-xs text-gray-600">g</span>
+              </span>
+            </label>
+            <label className="mt-3 block border-l-2 border-gray-600 pl-3">
+              <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">di cui zuccheri (facoltativo)</span>
+              <span className="mt-1 flex items-center gap-2">
+                <input type="number" min={0} step="any" inputMode="decimal" value={manualSugars ?? ''}
+                  onChange={event => setManualSugars(event.target.value === '' ? null : Number(event.target.value))}
+                  className="min-w-0 flex-1 bg-transparent text-base font-semibold outline-none" />
+                <span aria-hidden="true" className="text-xs text-gray-600">g</span>
+              </span>
+            </label>
+          </fieldset>
+          <label className="block rounded-xl border border-gray-700 bg-gray-800/80 p-3 focus-within:border-primary-500">
+            <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">Grassi totali</span>
+            <span className="mt-1 flex items-center gap-2">
+              <input type="number" min={0} step="any" inputMode="decimal" value={manualFat || ''}
+                onChange={event => setManualFat(parseFloat(event.target.value) || 0)}
+                className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none" />
+              <span aria-hidden="true" className="text-xs text-gray-600">g</span>
+            </span>
+          </label>
           <div>
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Valori aggiuntivi della porzione (facoltativi)</p>
-            <p className="mb-2 text-[10px] text-gray-500">Gli zuccheri sono già compresi nei carboidrati totali.</p>
-            <div className="grid grid-cols-3 gap-2">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Altri valori della porzione (facoltativi)</p>
+            <div className="grid grid-cols-2 gap-2">
               {[
                 { label: 'Fibre', val: manualFiber, set: setManualFiber },
-                { label: 'di cui zuccheri', val: manualSugars, set: setManualSugars },
                 { label: 'Sale', val: manualSalt, set: setManualSalt },
               ].map(({ label, val, set }) => (
                 <label key={label} className="rounded-xl border border-gray-700 bg-gray-800/80 p-2.5 focus-within:border-primary-500">
@@ -357,7 +382,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
                       onChange={event => set(event.target.value === '' ? null : Number(event.target.value))}
                       className="min-w-0 flex-1 bg-transparent text-base font-semibold outline-none"
                     />
-                    <span className="text-[10px] text-gray-600">g</span>
+                    <span aria-hidden="true" className="text-[10px] text-gray-600">g</span>
                   </span>
                 </label>
               ))}

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PantryItem } from '../types'
 
@@ -39,6 +39,9 @@ describe('PantryPage manual entry', () => {
   it('saves optional saturated fat, sugars, salt and fibre per 100 g', async () => {
     render(<PantryPage />)
     openManualForm()
+
+    expect(within(screen.getByRole('group', { name: 'Carboidrati' })).getByLabelText('di cui zuccheri (g/100g)')).toBeTruthy()
+    expect(within(screen.getByRole('group', { name: 'Grassi' })).getByLabelText('di cui grassi saturi (g/100g)')).toBeTruthy()
 
     fireEvent.change(screen.getByLabelText('Nome alimento'), { target: { value: 'Biscotti' } })
     fireEvent.change(screen.getByLabelText('Carboidrati totali (g/100g)'), { target: { value: '65' } })
@@ -81,6 +84,8 @@ describe('PantryPage manual entry', () => {
     render(<PantryPage />)
 
     fireEvent.click(await screen.findByRole('button', { name: 'Modifica Biscotti' }))
+    expect(within(screen.getByRole('group', { name: 'Carboidrati' })).getByLabelText('di cui zuccheri (g)')).toBeTruthy()
+    expect(within(screen.getByRole('group', { name: 'Grassi' })).getByLabelText('di cui grassi saturi (g)')).toBeTruthy()
     fireEvent.change(screen.getByLabelText('di cui grassi saturi (g)'), { target: { value: '7' } })
     fireEvent.change(screen.getByLabelText('Fibre (g)'), { target: { value: '' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salva modifiche' }))

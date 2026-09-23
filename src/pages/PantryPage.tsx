@@ -64,12 +64,67 @@ const PHOTO_NUTRIENT_FIELDS = [
   { key: 'calories_100g', label: 'Calorie', unit: 'kcal' },
   { key: 'protein_100g', label: 'Proteine', unit: 'g' },
   { key: 'carbs_100g', label: 'Carboidrati totali', unit: 'g' },
-  { key: 'fat_100g', label: 'Grassi totali', unit: 'g' },
-  { key: 'fiber_100g', label: 'Fibre', unit: 'g' },
   { key: 'sugars_100g', label: 'di cui zuccheri', unit: 'g' },
+  { key: 'fat_100g', label: 'Grassi totali', unit: 'g' },
   { key: 'saturated_fat_100g', label: 'di cui grassi saturi', unit: 'g' },
+  { key: 'fiber_100g', label: 'Fibre', unit: 'g' },
   { key: 'salt_100g', label: 'Sale', unit: 'g' },
 ] as const
+
+type NutrientFieldKey = (typeof PHOTO_NUTRIENT_FIELDS)[number]['key']
+const CORE_NUTRIENT_KEYS = new Set<NutrientFieldKey>([
+  'calories_100g', 'protein_100g', 'carbs_100g', 'fat_100g',
+])
+
+function NutrientNumberInput({ label, value, onChange, optional = false }: {
+  label: string
+  value: number | null
+  onChange: (value: number | null) => void
+  optional?: boolean
+}) {
+  return (
+    <label className="block min-w-0 text-xs text-gray-400">
+      {label}
+      <input type="number" min={0} step="any" inputMode="decimal"
+        value={value === 0 && !optional ? '' : value ?? ''}
+        onChange={event => onChange(event.target.value === '' ? (optional ? null : 0) : Number(event.target.value))}
+        className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />
+    </label>
+  )
+}
+
+function PendingNutritionFields({ food, onChange }: {
+  food: PendingFood
+  onChange: (key: NutrientFieldKey, value: number | null) => void
+}) {
+  function field(key: NutrientFieldKey) {
+    const definition = PHOTO_NUTRIENT_FIELDS.find(item => item.key === key)!
+    return <NutrientNumberInput key={key} label={`${definition.label} (${definition.unit})`}
+      value={food[key] ?? null} optional={!CORE_NUTRIENT_KEYS.has(key)}
+      onChange={value => onChange(key, value)} />
+  }
+
+  return (
+    <div className="mt-2 space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        {field('calories_100g')}
+        {field('protein_100g')}
+      </div>
+      <fieldset aria-label="Carboidrati" className="rounded-xl border border-gray-700 p-3">
+        {field('carbs_100g')}
+        <div className="mt-2 border-l-2 border-gray-600 pl-3">{field('sugars_100g')}</div>
+      </fieldset>
+      <fieldset aria-label="Grassi" className="rounded-xl border border-gray-700 p-3">
+        {field('fat_100g')}
+        <div className="mt-2 border-l-2 border-gray-600 pl-3">{field('saturated_fat_100g')}</div>
+      </fieldset>
+      <div className="grid grid-cols-2 gap-3">
+        {field('fiber_100g')}
+        {field('salt_100g')}
+      </div>
+    </div>
+  )
+}
 
 function manualNutritionError(food: Pick<PendingFood,
   'calories_100g' | 'protein_100g' | 'carbs_100g' | 'fat_100g'
@@ -661,37 +716,26 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
               ))}
             </select>
           </div>
-          {[
-            { label: 'Calorie (kcal/100g)', val: manualCal, set: setManualCal },
-            { label: 'Proteine (g/100g)', val: manualProt, set: setManualProt },
-            { label: 'Carboidrati totali (g/100g)', val: manualCarbs, set: setManualCarbs },
-            { label: 'Grassi totali (g/100g)', val: manualFat, set: setManualFat },
-          ].map(({ label, val, set }) => (
-            <label key={label} className="block text-sm text-gray-400">
-              {label}
-              <input type="number" min={0} value={val || ''}
-                onChange={e => set(parseFloat(e.target.value) || 0)}
-                className="w-full mt-1 px-3 py-2 rounded bg-gray-700 border border-gray-600 outline-none" />
-            </label>
-          ))}
-          <div>
-            <p className="text-sm text-gray-400">Altri valori per 100 g (facoltativi)</p>
-            <p className="mt-1 text-xs text-gray-500">Saturi e zuccheri sono già compresi nei rispettivi totali.</p>
-            <div className="mt-2 grid grid-cols-2 gap-3">
-              {[
-                { label: 'di cui grassi saturi (g/100g)', val: manualSaturatedFat, set: setManualSaturatedFat },
-                { label: 'di cui zuccheri (g/100g)', val: manualSugars, set: setManualSugars },
-                { label: 'Sale (g/100g)', val: manualSalt, set: setManualSalt },
-                { label: 'Fibre (g/100g)', val: manualFiber, set: setManualFiber },
-              ].map(({ label, val, set }) => (
-                <label key={label} className="min-w-0 text-xs text-gray-400">
-                  {label}
-                  <input type="number" min={0} step="any" inputMode="decimal" value={val ?? ''}
-                    onChange={event => set(event.target.value === '' ? null : Number(event.target.value))}
-                    className="mt-1 w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />
-                </label>
-              ))}
+          <p className="text-xs text-gray-500">Valori per 100 g. Saturi e zuccheri sono già compresi nei rispettivi totali.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <NutrientNumberInput label="Calorie (kcal/100g)" value={manualCal} onChange={value => setManualCal(value ?? 0)} />
+            <NutrientNumberInput label="Proteine (g/100g)" value={manualProt} onChange={value => setManualProt(value ?? 0)} />
+          </div>
+          <fieldset aria-label="Carboidrati" className="rounded-xl border border-gray-600 bg-gray-800/50 p-3">
+            <NutrientNumberInput label="Carboidrati totali (g/100g)" value={manualCarbs} onChange={value => setManualCarbs(value ?? 0)} />
+            <div className="mt-2 border-l-2 border-gray-600 pl-3">
+              <NutrientNumberInput label="di cui zuccheri (g/100g)" value={manualSugars} onChange={setManualSugars} optional />
             </div>
+          </fieldset>
+          <fieldset aria-label="Grassi" className="rounded-xl border border-gray-600 bg-gray-800/50 p-3">
+            <NutrientNumberInput label="Grassi totali (g/100g)" value={manualFat} onChange={value => setManualFat(value ?? 0)} />
+            <div className="mt-2 border-l-2 border-gray-600 pl-3">
+              <NutrientNumberInput label="di cui grassi saturi (g/100g)" value={manualSaturatedFat} onChange={setManualSaturatedFat} optional />
+            </div>
+          </fieldset>
+          <div className="grid grid-cols-2 gap-3">
+            <NutrientNumberInput label="Fibre (g/100g)" value={manualFiber} onChange={setManualFiber} optional />
+            <NutrientNumberInput label="Sale (g/100g)" value={manualSalt} onChange={setManualSalt} optional />
           </div>
           <button type="button" onClick={handleManualConfirm} disabled={!manualName.trim()}
             className="w-full py-3 bg-primary-600 rounded-lg font-semibold disabled:opacity-40">
@@ -813,19 +857,8 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
               </div>
               <div>
                 <p className="text-sm text-gray-400">Valori nutrizionali per 100 {pending.nutrition_basis === 'per_100ml' ? 'ml' : 'g'}</p>
-                <div className="mt-2 grid grid-cols-2 gap-3">
-                  {PHOTO_NUTRIENT_FIELDS.map(field => (
-                    <label key={field.key} className="text-xs text-gray-400">
-                      {field.label} ({field.unit})
-                      <input type="number" min={0} step="any" value={pending[field.key] || ''}
-                        onChange={event => setPending({
-                          ...pending,
-                          [field.key]: Math.max(0, Number(event.target.value) || 0),
-                        })}
-                        className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />
-                    </label>
-                  ))}
-                </div>
+                <PendingNutritionFields food={pending}
+                  onChange={(key, value) => setPending({ ...pending, [key]: value === null ? null : Math.max(0, value) })} />
               </div>
               {pending.analysis_requires_review && (
                 <label className="flex items-start gap-2 rounded-xl border border-gray-700 bg-gray-900/50 p-3 text-xs text-gray-300">
@@ -840,21 +873,8 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
           {pending.source === 'manual' && editingItemId && (
             <div className="rounded-2xl bg-gray-800 p-4">
               <p className="text-sm text-gray-400">Valori nutrizionali per 100 g</p>
-              <div className="mt-2 grid grid-cols-2 gap-3">
-                {PHOTO_NUTRIENT_FIELDS.map(field => (
-                  <label key={field.key} className="min-w-0 text-xs text-gray-400">
-                    {field.label} ({field.unit})
-                    <input type="number" min={0} step="any" inputMode="decimal" value={pending[field.key] ?? ''}
-                      onChange={event => setPending({
-                        ...pending,
-                        [field.key]: event.target.value === '' && field.key !== 'calories_100g'
-                          && field.key !== 'protein_100g' && field.key !== 'carbs_100g' && field.key !== 'fat_100g'
-                          ? null : Number(event.target.value),
-                      })}
-                      className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />
-                  </label>
-                ))}
-              </div>
+              <PendingNutritionFields food={pending}
+                onChange={(key, value) => setPending({ ...pending, [key]: value })} />
             </div>
           )}
           <div>
