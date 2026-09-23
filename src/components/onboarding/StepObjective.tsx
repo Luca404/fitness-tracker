@@ -20,7 +20,7 @@ interface Props {
 const OBJECTIVES: { key: Objective; label: string; desc: string; icon: string }[] = [
   { key: 'lose_weight', label: 'Perdi peso',   desc: 'Deficit calorico personalizzato', icon: '📉' },
   { key: 'gain_muscle', label: 'Metti massa',  desc: '+250 kcal/giorno sul TDEE',       icon: '💪' },
-  { key: 'recomposition', label: 'Ricomposizione corporea – ridurre grasso e aumentare massa muscolare', desc: 'Piccolo deficit e proteine alte; il peso può restare stabile', icon: '🔄' },
+  { key: 'recomposition', label: 'Ricomposizione corporea', desc: 'Piccolo deficit e proteine alte; il peso può restare stabile', icon: '🔄' },
   { key: 'maintain',    label: 'Mantieni',     desc: 'Calorie = TDEE calcolato',        icon: '⚖️' },
 ]
 

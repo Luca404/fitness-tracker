@@ -14,7 +14,7 @@ const OBJECTIVES: Array<{ value: Objective; label: string }> = [
   { value: 'lose_weight', label: 'Perdere peso' },
   { value: 'maintain', label: 'Mantenere il peso' },
   { value: 'gain_muscle', label: 'Aumentare massa' },
-  { value: 'recomposition', label: 'Ricomposizione corporea – ridurre grasso e aumentare massa muscolare' },
+  { value: 'recomposition', label: 'Ricomposizione corporea' },
 ]
 
 interface Props {
