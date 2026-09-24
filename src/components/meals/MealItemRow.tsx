@@ -1,5 +1,6 @@
 // src/components/meals/MealItemRow.tsx
 import type { MealItem } from '../../types'
+import { formatPieceQuantity } from '../../utils/portionEstimates'
 
 interface Props {
   item: MealItem
@@ -13,7 +14,12 @@ export default function MealItemRow({ item, onDelete }: Props) {
     <div className="flex items-center justify-between py-2 border-b border-gray-800">
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{item.food_name}</p>
-        <p className="text-xs text-gray-500">{item.quantity_g}{item.unit ?? 'g'} · P {item.protein_g}g · C tot. {item.carbs_g}g · G tot. {item.fat_g}g</p>
+        <p className="text-xs text-gray-500">
+          {item.piece_size && item.piece_count
+            ? `${formatPieceQuantity(item.category, item.food_name, item.piece_size, item.piece_count)} · ≈ ${item.quantity_g} g`
+            : `${item.quantity_g}${item.unit ?? 'g'}`}
+          {' · '}P {item.protein_g}g · C tot. {item.carbs_g}g · G tot. {item.fat_g}g
+        </p>
         {hasExtendedNutrition && (
           <p className="mt-0.5 text-[11px] text-gray-600">
             {item.fiber_g != null && `Fibre ${item.fiber_g}g`}

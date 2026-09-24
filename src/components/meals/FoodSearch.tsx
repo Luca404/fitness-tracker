@@ -3,7 +3,7 @@ import { searchBasicFoods, searchFood, calcNutrition } from '../../services/nutr
 import * as api from '../../services/api'
 import { useData } from '../../contexts/DataContext'
 import { FOOD_CATEGORIES } from '../../data/foodCategories'
-import type { FoodResult, FoodSource, PantryItem, FoodCategory } from '../../types'
+import type { FoodResult, FoodSource, PantryItem, FoodCategory, PieceSize } from '../../types'
 import OpenFoodFactsDetails from '../common/OpenFoodFactsDetails'
 import IngredientQuantityInput from './IngredientQuantityInput'
 
@@ -13,6 +13,7 @@ function pantryItemToFoodResult(p: PantryItem): FoodResult {
     name: p.name,
     brand: null,
     source: 'pantry',
+    quantity_unit: p.unit,
     category: p.category,
     food_key: p.food_key,
     calories_100g: p.calories_100g,
@@ -34,6 +35,7 @@ interface Props {
     fiber_g: number | null; sugars_g: number | null; salt_g: number | null
     source: FoodSource; off_food_id: string | null
     category: FoodResult['category']; food_key: string | null; pantry_item_id: string | null
+    piece_count?: number | null; piece_size?: PieceSize | null
   }) => void
   onClose: () => void
   hideHeader?: boolean
@@ -46,6 +48,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
   const [offSearched, setOffSearched] = useState(false)
   const [selected, setSelected] = useState<FoodResult | null>(null)
   const [qty, setQty] = useState(100)
+  const [piece, setPiece] = useState<{ size: PieceSize; count: number } | null>(null)
   const [loading, setLoading] = useState(false)
   const [offError, setOffError] = useState(false)
   const [manualMode, setManualMode] = useState(false)
@@ -101,6 +104,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
         fiber_g: manualFiber, sugars_g: manualSugars, salt_g: manualSalt,
         source: 'manual', off_food_id: null, category: manualCategory, food_key: null,
         pantry_item_id: null,
+        piece_count: piece?.count ?? null, piece_size: piece?.size ?? null,
       })
       return
     }
@@ -115,6 +119,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
       category: selected.category,
       food_key: selected.food_key,
       pantry_item_id: selected.source === 'pantry' ? selected.id : null,
+      piece_count: piece?.count ?? null, piece_size: piece?.size ?? null,
     })
   }
 
@@ -149,7 +154,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
             <div className="max-h-40 overflow-y-auto space-y-1">
               <p className="text-xs uppercase tracking-wide text-gray-500 px-1">La tua dispensa</p>
               {pantryResults.map(f => (
-                <button key={f.id} type="button" onClick={() => setSelected(f)}
+                <button key={f.id} type="button" onClick={() => { setSelected(f); setPiece(null) }}
                   className="w-full rounded-xl bg-gray-800 px-3 py-2.5 text-left text-sm hover:bg-gray-700">
                   <span className="font-medium">🧺 {f.name}</span>
                   <span className="text-gray-500 ml-2">{Math.round(f.calories_100g)} kcal/100g</span>
@@ -162,7 +167,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
             <div className="max-h-40 overflow-y-auto space-y-1">
               <p className="text-xs uppercase tracking-wide text-gray-500 px-1">Alimenti base</p>
               {basicResults.map(f => (
-                <button key={f.id} type="button" onClick={() => setSelected(f)}
+                <button key={f.id} type="button" onClick={() => { setSelected(f); setPiece(null) }}
                   className="w-full rounded-xl bg-gray-800 px-3 py-2.5 text-left text-sm hover:bg-gray-700">
                   <span className="font-medium">{f.name}</span>
                   <span className="text-gray-500 ml-2">{Math.round(f.calories_100g)} kcal/100g</span>
@@ -193,7 +198,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
                 <p className="text-sm text-gray-500 px-1">Nessun risultato.</p>
               )}
               {offResults.map(p => (
-                <button key={p.id} type="button" onClick={() => setSelected(p)}
+                <button key={p.id} type="button" onClick={() => { setSelected(p); setPiece(null) }}
                   className="w-full rounded-xl bg-gray-800 px-3 py-2.5 text-left text-sm hover:bg-gray-700">
                   <span className="font-medium">{p.name}</span>
                   {p.brand && <span className="text-gray-400 ml-2">· {p.brand}</span>}
@@ -207,7 +212,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
             <div className="space-y-4 rounded-2xl bg-gradient-to-br from-primary-600/15 to-gray-800 p-4 ring-1 ring-primary-500/20">
               <div className="flex justify-between">
                 <span className="font-medium text-sm">{selected.name}</span>
-                <button type="button" onClick={() => setSelected(null)} className="text-gray-400 text-sm">Cambia</button>
+                <button type="button" onClick={() => { setSelected(null); setPiece(null) }} className="text-gray-400 text-sm">Cambia</button>
               </div>
               {selected.source === 'openfoodfacts' && (
                 <OpenFoodFactsDetails food={selected} />
@@ -220,13 +225,16 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
                   category={selected.category}
                   grams={qty}
                   onChange={setQty}
+                  pieceSize={piece?.size}
+                  pieceCount={piece?.count}
+                  onPieceChange={setPiece}
                 />
               </div>
               <label className="block">
                 <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Categoria</span>
                 <select
                   value={selected.category}
-                  onChange={event => setSelected({ ...selected, category: event.target.value as FoodCategory })}
+                  onChange={event => { setSelected({ ...selected, category: event.target.value as FoodCategory }); setPiece(null) }}
                   className="mt-1 w-full rounded-xl border border-gray-600 bg-gray-800/70 px-3 py-2.5 text-sm outline-none focus:border-primary-500"
                 >
                   {FOOD_CATEGORIES.map(category => (
@@ -281,7 +289,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
             </div>
           )}
 
-          <button type="button" onClick={() => setManualMode(true)}
+          <button type="button" onClick={() => { setManualMode(true); setPiece(null) }}
             className="w-full rounded-xl border border-dashed border-gray-700 py-2.5 text-center text-sm text-gray-500 hover:border-gray-600 hover:text-gray-300">
             Non lo trovi? Inseriscilo manualmente
           </button>
@@ -293,17 +301,17 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
               <p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Voce personalizzata</p>
               <p className="text-sm text-gray-500">Inserisci i valori della porzione</p>
             </div>
-            <button type="button" onClick={() => setManualMode(false)} className="text-sm text-gray-400 hover:text-white">← Ricerca</button>
+            <button type="button" onClick={() => { setManualMode(false); setPiece(null) }} className="text-sm text-gray-400 hover:text-white">← Ricerca</button>
           </div>
           <div className="rounded-xl border border-gray-700 bg-gray-800/80 px-3 py-2.5 focus-within:border-primary-500">
             <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Nome alimento</label>
-            <input value={manualName} onChange={e => setManualName(e.target.value)}
+            <input value={manualName} onChange={e => { setManualName(e.target.value); setPiece(null) }}
               placeholder="Es. Tiramisù della casa"
               className="mt-1 w-full bg-transparent font-medium outline-none placeholder:text-gray-600" />
           </div>
           <label className="block rounded-xl border border-gray-700 bg-gray-800/80 px-3 py-2.5 focus-within:border-primary-500">
             <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">Categoria</span>
-            <select value={manualCategory} onChange={event => setManualCategory(event.target.value as FoodCategory)}
+            <select value={manualCategory} onChange={event => { setManualCategory(event.target.value as FoodCategory); setPiece(null) }}
               className="mt-1 w-full bg-transparent text-sm font-medium outline-none">
               {FOOD_CATEGORIES.map(category => (
                 <option key={category.id} value={category.id} className="bg-gray-800">{category.icon} {category.label}</option>
@@ -317,6 +325,9 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
               category={manualCategory}
               grams={qty}
               onChange={setQty}
+              pieceSize={piece?.size}
+              pieceCount={piece?.count}
+              onPieceChange={setPiece}
             />
           </div>
           <div className="grid grid-cols-2 gap-2">

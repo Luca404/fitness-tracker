@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import IngredientQuantityInput from './IngredientQuantityInput'
+import type { PieceSize } from '../../types'
 
 function BreadQuantityHarness() {
   const [grams, setGrams] = useState(100)
@@ -14,6 +15,19 @@ function BreadQuantityHarness() {
         onChange={setGrams}
       />
       <output aria-label="Grammi calcolati">{grams}</output>
+    </>
+  )
+}
+
+function AppleQuantityHarness() {
+  const [grams, setGrams] = useState(100)
+  const [piece, setPiece] = useState<{ size: PieceSize; count: number } | null>(null)
+  return (
+    <>
+      <IngredientQuantityInput foodName="Mela" category="fruit" grams={grams} onChange={setGrams}
+        pieceSize={piece?.size} pieceCount={piece?.count} onPieceChange={setPiece} />
+      <output aria-label="Grammi calcolati">{grams}</output>
+      <output aria-label="Pezzi calcolati">{piece ? `${piece.count}:${piece.size}` : 'nessuno'}</output>
     </>
   )
 }
@@ -45,5 +59,19 @@ describe('IngredientQuantityInput', () => {
 
     fireEvent.change(input, { target: { value: '150' } })
     expect(screen.getByLabelText('Grammi calcolati').textContent).toBe('150')
+  })
+
+  it('keeps piece size and count alongside estimated grams', () => {
+    render(<AppleQuantityHarness />)
+    fireEvent.change(screen.getByLabelText('Unità per Mela'), { target: { value: 'small' } })
+    expect(screen.getByLabelText('Grammi calcolati').textContent).toBe('110')
+    expect(screen.getByLabelText('Pezzi calcolati').textContent).toBe('1:small')
+
+    fireEvent.change(screen.getByLabelText('Quantità di Mela'), { target: { value: '2' } })
+    expect(screen.getByLabelText('Grammi calcolati').textContent).toBe('220')
+    expect(screen.getByLabelText('Pezzi calcolati').textContent).toBe('2:small')
+
+    fireEvent.change(screen.getByLabelText('Unità per Mela'), { target: { value: 'grams' } })
+    expect(screen.getByLabelText('Pezzi calcolati').textContent).toBe('nessuno')
   })
 })

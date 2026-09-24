@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import FoodSearch from './FoodSearch'
-import type { DishItem, MealItemUnit } from '../../types'
+import type { DishItem, MealItemUnit, PieceSize } from '../../types'
 import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import IngredientQuantityInput from './IngredientQuantityInput'
 
@@ -53,6 +53,12 @@ export default function DishEditor({
         salt_g: it.salt_g == null ? null : Math.round(it.salt_g * factor * 100) / 100,
       }
     }))
+  }
+
+  function updatePiece(index: number, piece: { size: PieceSize; count: number } | null) {
+    setItems(prev => prev.map((item, itemIndex) => itemIndex === index
+      ? { ...item, piece_count: piece?.count ?? null, piece_size: piece?.size ?? null }
+      : item))
   }
 
   function updateNutrient(
@@ -144,6 +150,9 @@ export default function DishEditor({
                 category={item.category}
                 grams={item.quantity_g}
                 onChange={value => updateQuantity(i, value)}
+                pieceSize={item.piece_size}
+                pieceCount={item.piece_count}
+                onPieceChange={piece => updatePiece(i, piece)}
                 unit={item.unit}
                 compact
               />

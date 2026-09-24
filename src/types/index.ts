@@ -7,6 +7,7 @@ export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'drinks'
 export type FoodSource = 'manual' | 'basic' | 'openfoodfacts' | 'ai_photo' | 'barcode' | 'pantry'
 export type PantryUnit = 'g' | 'ml' | 'pz'
 export type MealItemUnit = 'g' | 'ml'
+export type PieceSize = 'small' | 'medium' | 'large'
 export type FoodCategory =
   | 'grain' | 'legume' | 'vegetable' | 'fruit' | 'meat' | 'fish'
   | 'dairy' | 'egg' | 'plant_protein' | 'bakery' | 'nuts_seeds' | 'spread'
@@ -68,6 +69,8 @@ export interface MealItem {
   dish_item_id?: string | null
   food_name: string
   quantity_g: number
+  piece_count?: number | null
+  piece_size?: PieceSize | null
   unit: MealItemUnit
   category: FoodCategory
   food_key: string | null
@@ -235,6 +238,8 @@ export interface DishItem {
   position: number
   food_name: string
   quantity_g: number
+  piece_count?: number | null
+  piece_size?: PieceSize | null
   category: FoodCategory
   food_key: string | null
   pantry_item_id?: string | null

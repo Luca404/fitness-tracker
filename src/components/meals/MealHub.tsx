@@ -11,7 +11,7 @@ import { BASIC_FOODS, type BasicFood } from '../../data/basicFoods'
 import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import { getDishIcon, getFoodIcon } from '../../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
-import type { Dish, DishItem } from '../../types'
+import type { Dish, DishItem, PieceSize } from '../../types'
 import ExtendedNutrition from './ExtendedNutrition'
 
 interface Props {
@@ -35,6 +35,8 @@ function toDraftItem(i: DishItem): DishItemDraft {
     id: i.id,
     food_name: i.food_name,
     quantity_g: i.quantity_g,
+    piece_count: i.piece_count ?? null,
+    piece_size: i.piece_size ?? null,
     calories: i.calories,
     protein_g: i.protein_g,
     carbs_g: i.carbs_g,
@@ -187,6 +189,8 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
       dish_item_id: i.id,
       food_name: i.food_name,
       quantity_g: Math.round(i.quantity_g * factor * 10) / 10,
+      piece_count: i.piece_count == null ? null : Math.round(i.piece_count * factor * 10) / 10,
+      piece_size: i.piece_size ?? null,
       calories: Math.round(i.calories * factor),
       protein_g: Math.round(i.protein_g * factor * 10) / 10,
       carbs_g: Math.round(i.carbs_g * factor * 10) / 10,
@@ -229,6 +233,12 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
         salt_g: item.salt_g == null ? null : Math.round(item.salt_g * factor * 100) / 100,
       }
     }))
+  }
+
+  function updateExtraPiece(index: number, piece: { size: PieceSize; count: number } | null) {
+    setExtraItems(items => items.map((item, itemIndex) => itemIndex === index
+      ? { ...item, piece_count: piece?.count ?? null, piece_size: piece?.size ?? null }
+      : item))
   }
 
   async function handleSaveNewDish(name: string, items: DishItemDraft[]) {
@@ -447,6 +457,9 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
                   unit={item.unit}
                   compact
                   onChange={quantity => updateExtraQuantity(index, quantity)}
+                  pieceSize={item.piece_size}
+                  pieceCount={item.piece_count}
+                  onPieceChange={piece => updateExtraPiece(index, piece)}
                 />
               </div>
             </div>

@@ -26,6 +26,8 @@ function toDraft(item: Dish['items'][number]): DishItemDraft {
     id: item.id,
     food_name: item.food_name,
     quantity_g: item.quantity_g,
+    piece_count: item.piece_count ?? null,
+    piece_size: item.piece_size ?? null,
     calories: item.calories,
     protein_g: item.protein_g,
     carbs_g: item.carbs_g,

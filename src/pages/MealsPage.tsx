@@ -31,6 +31,8 @@ function mealItemToDraft(item: MealEntry['items'][number]): DishItemDraft {
     dish_item_id: item.dish_item_id ?? null,
     food_name: item.food_name,
     quantity_g: item.quantity_g,
+    piece_count: item.piece_count ?? null,
+    piece_size: item.piece_size ?? null,
     unit: item.unit,
     calories: item.calories,
     protein_g: item.protein_g,

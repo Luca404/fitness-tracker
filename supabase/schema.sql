@@ -74,6 +74,9 @@ create table public.meal_items (
   entry_id    uuid not null references public.meal_entries on delete cascade,
   food_name   text not null,
   quantity_g  float not null check (quantity_g > 0),
+  piece_count float check (piece_count is null or piece_count > 0),
+  piece_size  text check (piece_size in ('small', 'medium', 'large')),
+  constraint meal_items_piece_pair check ((piece_count is null) = (piece_size is null)),
   unit        text not null default 'g' check (unit in ('g', 'ml')),
   category    text not null default 'other' check (category in ('grain','bakery','legume','vegetable','fruit','nuts_seeds','meat','fish','dairy','egg','plant_protein','spread','fat','sauce','condiment','seasoning','sweet','snack','prepared','supplement','alcohol','beverage','other')),
   food_key    text,
@@ -158,6 +161,9 @@ create table public.dish_items (
   position    integer not null check (position >= 0),
   food_name   text not null,
   quantity_g  float not null check (quantity_g > 0),
+  piece_count float check (piece_count is null or piece_count > 0),
+  piece_size  text check (piece_size in ('small', 'medium', 'large')),
+  constraint dish_items_piece_pair check ((piece_count is null) = (piece_size is null)),
   category    text not null default 'other' check (category in ('grain','bakery','legume','vegetable','fruit','nuts_seeds','meat','fish','dairy','egg','plant_protein','spread','fat','sauce','condiment','seasoning','sweet','snack','prepared','supplement','alcohol','beverage','other')),
   food_key    text,
   calories    float not null check (calories >= 0),
@@ -388,17 +394,17 @@ begin
   returning * into v_entry;
 
   insert into public.meal_items (
-    meal_id, entry_id, dish_item_id, food_name, quantity_g, unit, category, food_key,
+    meal_id, entry_id, dish_item_id, food_name, quantity_g, piece_count, piece_size, unit, category, food_key,
     pantry_item_id, calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g,
     salt_g, source, off_food_id
   )
   select
-    v_meal.id, v_entry.id, x.dish_item_id, x.food_name, x.quantity_g, coalesce(x.unit, 'g'),
+    v_meal.id, v_entry.id, x.dish_item_id, x.food_name, x.quantity_g, x.piece_count, x.piece_size, coalesce(x.unit, 'g'),
     coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories,
     x.protein_g, x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
     coalesce(x.source, 'manual'), x.off_food_id
   from jsonb_to_recordset(p_items) as x(
-    dish_item_id uuid, food_name text, quantity_g float, unit text, category text, food_key text,
+    dish_item_id uuid, food_name text, quantity_g float, piece_count float, piece_size text, unit text, category text, food_key text,
     pantry_item_id uuid, calories float, protein_g float, carbs_g float,
     fat_g float, fiber_g float, sugars_g float, salt_g float, source text,
     off_food_id text
@@ -409,7 +415,8 @@ begin
   loop
     select p.* into v_pantry
     from public.pantry_items p
-    where p.user_id = p_user_id and p.quantity > 0 and p.unit = v_item.unit
+    where p.user_id = p_user_id and p.quantity > 0
+      and (p.unit = v_item.unit or (p.unit = 'pz' and v_item.piece_count is not null))
       and (
         (v_item.pantry_item_id is not null and p.id = v_item.pantry_item_id)
         or (v_item.pantry_item_id is null and (
@@ -428,7 +435,7 @@ begin
     limit 1 for update;
 
     if found then
-      v_used := least(v_item.quantity_g, v_pantry.quantity);
+      v_used := least(case when v_pantry.unit = 'pz' then v_item.piece_count else v_item.quantity_g end, v_pantry.quantity);
       update public.pantry_items set quantity = quantity - v_used where id = v_pantry.id;
       update public.meal_items
       set pantry_item_id = v_pantry.id, pantry_quantity_used = v_used
@@ -500,17 +507,17 @@ begin
   delete from public.meal_items where entry_id = p_entry_id;
 
   insert into public.meal_items (
-    meal_id, entry_id, dish_item_id, food_name, quantity_g, unit, category, food_key,
+    meal_id, entry_id, dish_item_id, food_name, quantity_g, piece_count, piece_size, unit, category, food_key,
     pantry_item_id, calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g,
     salt_g, source, off_food_id
   )
   select
-    v_entry.meal_id, v_entry.id, x.dish_item_id, x.food_name, x.quantity_g, coalesce(x.unit, 'g'),
+    v_entry.meal_id, v_entry.id, x.dish_item_id, x.food_name, x.quantity_g, x.piece_count, x.piece_size, coalesce(x.unit, 'g'),
     coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories,
     x.protein_g, x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
     coalesce(x.source, 'manual'), x.off_food_id
   from jsonb_to_recordset(p_items) as x(
-    dish_item_id uuid, food_name text, quantity_g float, unit text, category text, food_key text,
+    dish_item_id uuid, food_name text, quantity_g float, piece_count float, piece_size text, unit text, category text, food_key text,
     pantry_item_id uuid, calories float, protein_g float, carbs_g float,
     fat_g float, fiber_g float, sugars_g float, salt_g float, source text,
     off_food_id text
@@ -521,7 +528,8 @@ begin
   loop
     select p.* into v_pantry
     from public.pantry_items p
-    where p.user_id = v_user_id and p.quantity > 0 and p.unit = v_item.unit
+    where p.user_id = v_user_id and p.quantity > 0
+      and (p.unit = v_item.unit or (p.unit = 'pz' and v_item.piece_count is not null))
       and (
         (v_item.pantry_item_id is not null and p.id = v_item.pantry_item_id)
         or (v_item.pantry_item_id is null and (
@@ -540,7 +548,7 @@ begin
     limit 1 for update;
 
     if found then
-      v_used := least(v_item.quantity_g, v_pantry.quantity);
+      v_used := least(case when v_pantry.unit = 'pz' then v_item.piece_count else v_item.quantity_g end, v_pantry.quantity);
       update public.pantry_items set quantity = quantity - v_used where id = v_pantry.id;
       update public.meal_items
       set pantry_item_id = v_pantry.id, pantry_quantity_used = v_used
@@ -613,17 +621,17 @@ begin
 
   with inserted as (
     insert into public.dish_items (
-      dish_id, position, food_name, quantity_g, category, food_key, pantry_item_id,
+      dish_id, position, food_name, quantity_g, piece_count, piece_size, category, food_key, pantry_item_id,
       calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g, salt_g, source,
       off_food_id
     )
     select
-      v_dish.id, (element.ordinal - 1)::integer, x.food_name, x.quantity_g, coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories, x.protein_g,
+      v_dish.id, (element.ordinal - 1)::integer, x.food_name, x.quantity_g, x.piece_count, x.piece_size, coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories, x.protein_g,
       x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
       coalesce(x.source, 'manual'), x.off_food_id
     from jsonb_array_elements(p_items) with ordinality as element(value, ordinal)
     cross join lateral jsonb_to_record(element.value) as x(
-      food_name text, quantity_g float, category text, food_key text, pantry_item_id uuid, calories float, protein_g float,
+      food_name text, quantity_g float, piece_count float, piece_size text, category text, food_key text, pantry_item_id uuid, calories float, protein_g float,
       carbs_g float, fat_g float, fiber_g float, sugars_g float, salt_g float,
       source text, off_food_id text
     )
@@ -680,13 +688,14 @@ begin
       update public.dish_items di set
         position = (v_element.ordinality - 1)::integer,
         food_name = x.food_name, quantity_g = x.quantity_g,
+        piece_count = x.piece_count, piece_size = x.piece_size,
         category = coalesce(x.category, 'other'), food_key = x.food_key,
         pantry_item_id = x.pantry_item_id, calories = x.calories,
         protein_g = x.protein_g, carbs_g = x.carbs_g, fat_g = x.fat_g,
         fiber_g = x.fiber_g, sugars_g = x.sugars_g, salt_g = x.salt_g,
         source = coalesce(x.source, 'manual'), off_food_id = x.off_food_id
       from jsonb_to_record(v_element.value) as x(
-        food_name text, quantity_g float, category text, food_key text,
+        food_name text, quantity_g float, piece_count float, piece_size text, category text, food_key text,
         pantry_item_id uuid, calories float, protein_g float, carbs_g float,
         fat_g float, fiber_g float, sugars_g float, salt_g float,
         source text, off_food_id text
@@ -697,15 +706,15 @@ begin
       end if;
     else
       insert into public.dish_items (
-        dish_id, position, food_name, quantity_g, category, food_key, pantry_item_id,
+        dish_id, position, food_name, quantity_g, piece_count, piece_size, category, food_key, pantry_item_id,
         calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g, salt_g, source, off_food_id
       )
       select p_dish_id, (v_element.ordinality - 1)::integer, x.food_name, x.quantity_g,
-        coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories,
+        x.piece_count, x.piece_size, coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories,
         x.protein_g, x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
         coalesce(x.source, 'manual'), x.off_food_id
       from jsonb_to_record(v_element.value) as x(
-        food_name text, quantity_g float, category text, food_key text,
+        food_name text, quantity_g float, piece_count float, piece_size text, category text, food_key text,
         pantry_item_id uuid, calories float, protein_g float, carbs_g float,
         fat_g float, fiber_g float, sugars_g float, salt_g float,
         source text, off_food_id text

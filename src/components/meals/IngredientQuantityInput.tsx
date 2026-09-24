@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { FoodCategory, MealItemUnit } from '../../types'
+import type { FoodCategory, MealItemUnit, PieceSize } from '../../types'
 import { getPortionEstimates, type PortionEstimateId } from '../../utils/portionEstimates'
 
 interface Props {
@@ -9,6 +9,9 @@ interface Props {
   onChange: (grams: number) => void
   compact?: boolean
   unit?: MealItemUnit
+  pieceSize?: PieceSize | null
+  pieceCount?: number | null
+  onPieceChange?: (piece: { size: PieceSize; count: number } | null) => void
 }
 
 type QuantityMode = 'grams' | PortionEstimateId
@@ -17,25 +20,32 @@ function roundQuantity(value: number): number {
   return Math.round(value * 10) / 10
 }
 
-export default function IngredientQuantityInput({ foodName, category, grams, onChange, compact = false, unit = 'g' }: Props) {
+function isPieceSize(mode: QuantityMode): mode is PieceSize {
+  return mode === 'small' || mode === 'medium' || mode === 'large'
+}
+
+export default function IngredientQuantityInput({ foodName, category, grams, onChange, compact = false, unit = 'g', pieceSize, pieceCount, onPieceChange }: Props) {
   const selectionKey = `${category}:${foodName}:${unit}`
   const [selection, setSelection] = useState<{ key: string; mode: QuantityMode }>({
     key: selectionKey,
-    mode: 'grams',
+    mode: pieceSize ?? 'grams',
   })
   const mode = selection.key === selectionKey ? selection.mode : 'grams'
   const estimates = unit === 'g' ? getPortionEstimates(category, foodName) : []
   const activeEstimate = estimates.find(estimate => estimate.id === mode)
   const effectiveMode: QuantityMode = activeEstimate ? mode : 'grams'
-  const displayedQuantity = activeEstimate ? roundQuantity(grams / activeEstimate.grams) : roundQuantity(grams)
+  const displayedQuantity = activeEstimate ? roundQuantity(isPieceSize(effectiveMode) && pieceCount ? pieceCount : grams / activeEstimate.grams) : roundQuantity(grams)
   const [draftValue, setDraftValue] = useState<string | null>(null)
 
   function changeMode(nextMode: QuantityMode) {
     setSelection({ key: selectionKey, mode: nextMode })
     setDraftValue(null)
-    if (nextMode === 'grams') return
+    if (nextMode === 'grams') { onPieceChange?.(null); return }
     const estimate = estimates.find(option => option.id === nextMode)
-    if (estimate) onChange(estimate.grams)
+    if (estimate) {
+      onChange(estimate.grams)
+      onPieceChange?.(isPieceSize(nextMode) ? { size: nextMode, count: 1 } : null)
+    }
   }
 
   function changeQuantity(rawValue: string) {
@@ -44,6 +54,7 @@ export default function IngredientQuantityInput({ foodName, category, grams, onC
     const value = Number(rawValue)
     if (!Number.isFinite(value) || value <= 0) return
     onChange(roundQuantity(activeEstimate ? value * activeEstimate.grams : value))
+    if (isPieceSize(effectiveMode)) onPieceChange?.({ size: effectiveMode, count: value })
   }
 
   return (
