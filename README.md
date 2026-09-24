@@ -210,6 +210,27 @@ the Supabase Auth Site URL and add the required preview URL patterns.
 
 ## Roadmap
 
+### Prossime priorità
+
+1. **Rifinire la dispensa e il consumo nei pasti.** Verificare che ogni
+   registrazione sottragga la quantità corretta dalla voce giusta della dispensa,
+   rispettando unità, porzioni e scorte insufficienti. Coprire anche modifica ed
+   eliminazione di un pasto, senza doppi decrementi o quantità negative. Quando
+   una scorta arriva a zero, rimuoverla dalla dispensa attiva mantenendo validi
+   i riferimenti delle registrazioni passate.
+2. **Inserire alcuni alimenti in pezzi.** Per ingredienti adatti, come frutta,
+   verdura e uova, permettere quantità del tipo “1 mela piccola” o “1 uovo medio”,
+   con taglie piccola/media/grande. Definire un peso indicativo specifico per
+   alimento e taglia, usato per nutrienti e consumo della dispensa, lasciando la
+   possibilità di inserire grammi precisi quando disponibili.
+3. **Rendere più leggibile il riepilogo Buone abitudini in Pasti.** Conservare
+   un banner sintetico, ma mostrare piccole caselle con l'icona di ciascuna
+   abitudine e un segno ✓ o ✕ secondo lo stato; usare uno stato neutro quando i
+   dati non bastano ancora. Rendere il significato leggibile anche senza colore
+   e mantenere il collegamento alla pagina di dettaglio.
+
+### Altre voci
+
 - The first nutrition-label photo milestone is implemented: client-side
   preview/compression → server-side MIME/size/auth checks → OpenAI Responses API
   with image input and a strict schema → editable confirmation → pantry save.
