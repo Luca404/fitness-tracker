@@ -870,9 +870,9 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
               )}
             </div>
           )}
-          {pending.source === 'manual' && editingItemId && (
+          {editingItemId && pending.source !== 'ai_photo' && (
             <div className="rounded-2xl bg-gray-800 p-4">
-              <p className="text-sm text-gray-400">Valori nutrizionali per 100 g</p>
+              <p className="text-sm text-gray-400">Valori nutrizionali per 100 {pending.nutrition_basis === 'per_100ml' ? 'ml' : 'g'}</p>
               <PendingNutritionFields food={pending}
                 onChange={(key, value) => setPending({ ...pending, [key]: value })} />
             </div>

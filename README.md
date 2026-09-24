@@ -143,6 +143,11 @@ pieces. Stock stops at zero, depleted items are hidden from ingredient search,
 editing a diary entry recalculates its consumption, and deleting it restores the
 quantity that entry had actually used.
 
+Changing calories, protein, carbohydrates, fat, fibre, sugars or salt in a
+pantry item updates linked saved-dish ingredients and previously logged meal
+portions proportionally to their recorded grams. New meals use the corrected
+values from the pantry or the updated saved dish.
+
 Food categories include dedicated groups for baked goods, nuts and seeds,
 spreads and preserves, savoury snacks, ready meals, supplements, and
 `Proteine vegetali` for tofu, tempeh, seitan, veggie balls, plant-based burgers

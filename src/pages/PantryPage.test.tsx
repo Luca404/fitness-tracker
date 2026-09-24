@@ -95,6 +95,25 @@ describe('PantryPage manual entry', () => {
     })))
   })
 
+  it('allows fibre corrections on a pantry item created from a basic food', async () => {
+    const item: PantryItem = {
+      id: 'item-basic', user_id: 'user-1', name: 'Mela', quantity: 500, unit: 'g',
+      calories_100g: 52, protein_100g: 0.3, carbs_100g: 14, fat_100g: 0.2,
+      fiber_100g: null, category: 'fruit', food_key: 'basic:mela',
+      source: 'basic', off_food_id: null, created_at: '',
+    }
+    mocks.getPantryItems.mockResolvedValue([item])
+    render(<PantryPage />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Modifica Mela' }))
+    fireEvent.change(screen.getByLabelText('Fibre (g)'), { target: { value: '2.4' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salva modifiche' }))
+
+    await waitFor(() => expect(mocks.updatePantryItem).toHaveBeenCalledWith('item-basic', expect.objectContaining({
+      fiber_100g: 2.4,
+    })))
+  })
+
   it('rejects sugars or saturated fat above their respective totals', () => {
     render(<PantryPage />)
     openManualForm()
