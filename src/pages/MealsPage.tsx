@@ -264,7 +264,7 @@ export default function MealsPage() {
                 Fatto
               </button>
             </div>
-            <MealHub onAddEntry={handleAddDishEntry} onDishUpdated={() => fetchForDate(selectedDate)} beveragesOnly={activeMealType === 'drinks'} mode={hubMode} setMode={setHubMode} />
+            <MealHub onAddEntry={handleAddDishEntry} onDishUpdated={() => fetchForDate(selectedDate)} beveragesOnly={activeMealType === 'drinks'} mealType={activeMealType === 'drinks' ? 'lunch' : activeMealType} mode={hubMode} setMode={setHubMode} />
           </div>
         ) : modalStep === 'view-entry' ? (
           selectedEntry && (() => {
@@ -320,6 +320,7 @@ export default function MealsPage() {
               <DishEditor
                 initialName={selectedEntry.name}
                 initialItems={selectedEntry.items.map(mealItemToDraft)}
+                showMealTypes={false}
                 onSave={handleUpdateEntry}
                 onCancel={() => setModalStep('view-entry')}
                 saveLabel="Salva modifiche"

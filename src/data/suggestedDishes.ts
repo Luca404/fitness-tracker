@@ -1,50 +1,51 @@
 import { BASIC_FOODS } from './basicFoods'
-import type { Dish, DishItem } from '../types'
+import type { Dish, DishItem, DishMealType } from '../types'
 
 interface SuggestedDishTemplate {
   id: string
   name: string
+  mealTypes: DishMealType[]
   ingredients: Array<{ foodId: string; quantityG: number }>
 }
 
 const TEMPLATES: SuggestedDishTemplate[] = [
-  { id: 'pasta-pomodoro', name: 'Pasta al pomodoro', ingredients: [
+  { id: 'pasta-pomodoro', name: 'Pasta al pomodoro', mealTypes: ['lunch', 'dinner'], ingredients: [
     { foodId: 'pasta-semola', quantityG: 80 }, { foodId: 'sugo-pomodoro', quantityG: 120 },
     { foodId: 'olio-evo', quantityG: 10 }, { foodId: 'parmigiano', quantityG: 15 },
   ] },
-  { id: 'riso-pollo-zucchine', name: 'Riso, pollo e zucchine', ingredients: [
+  { id: 'riso-pollo-zucchine', name: 'Riso, pollo e zucchine', mealTypes: ['lunch', 'dinner'], ingredients: [
     { foodId: 'riso-basmati', quantityG: 70 }, { foodId: 'petto-pollo', quantityG: 200 },
     { foodId: 'zucchine', quantityG: 180 }, { foodId: 'olio-evo', quantityG: 10 },
   ] },
-  { id: 'pasta-tonno', name: 'Pasta al tonno', ingredients: [
+  { id: 'pasta-tonno', name: 'Pasta al tonno', mealTypes: ['lunch', 'dinner'], ingredients: [
     { foodId: 'pasta-semola', quantityG: 80 }, { foodId: 'tonno-naturale', quantityG: 100 },
     { foodId: 'passata-pomodoro', quantityG: 100 }, { foodId: 'olio-evo', quantityG: 8 },
   ] },
-  { id: 'omelette-spinaci', name: 'Omelette agli spinaci', ingredients: [
+  { id: 'omelette-spinaci', name: 'Omelette agli spinaci', mealTypes: ['breakfast', 'lunch', 'dinner'], ingredients: [
     { foodId: 'uovo-intero', quantityG: 120 }, { foodId: 'spinaci', quantityG: 120 },
     { foodId: 'parmigiano', quantityG: 15 }, { foodId: 'olio-evo', quantityG: 5 },
   ] },
-  { id: 'insalata-ceci', name: 'Insalata di ceci', ingredients: [
+  { id: 'insalata-ceci', name: 'Insalata di ceci', mealTypes: ['lunch', 'dinner'], ingredients: [
     { foodId: 'ceci-secchi', quantityG: 65 }, { foodId: 'pomodori', quantityG: 150 },
     { foodId: 'cetrioli', quantityG: 100 }, { foodId: 'olio-evo', quantityG: 10 },
   ] },
-  { id: 'salmone-broccoli-riso', name: 'Salmone con riso e broccoli', ingredients: [
+  { id: 'salmone-broccoli-riso', name: 'Salmone con riso e broccoli', mealTypes: ['lunch', 'dinner'], ingredients: [
     { foodId: 'salmone', quantityG: 180 }, { foodId: 'riso-basmati', quantityG: 65 },
     { foodId: 'broccoli', quantityG: 180 }, { foodId: 'olio-evo', quantityG: 5 },
   ] },
-  { id: 'yogurt-bowl', name: 'Yogurt bowl alla banana', ingredients: [
+  { id: 'yogurt-bowl', name: 'Yogurt bowl alla banana', mealTypes: ['breakfast', 'snack'], ingredients: [
     { foodId: 'yogurt-greco-0', quantityG: 170 }, { foodId: 'banana', quantityG: 120 },
     { foodId: 'avena-fiocchi', quantityG: 35 }, { foodId: 'miele', quantityG: 10 },
   ] },
-  { id: 'couscous-ceci', name: 'Couscous con ceci e peperoni', ingredients: [
+  { id: 'couscous-ceci', name: 'Couscous con ceci e peperoni', mealTypes: ['lunch', 'dinner'], ingredients: [
     { foodId: 'couscous', quantityG: 75 }, { foodId: 'ceci-secchi', quantityG: 55 },
     { foodId: 'peperoni', quantityG: 150 }, { foodId: 'olio-evo', quantityG: 10 },
   ] },
-  { id: 'zuppa-lenticchie', name: 'Zuppa di lenticchie', ingredients: [
+  { id: 'zuppa-lenticchie', name: 'Zuppa di lenticchie', mealTypes: ['lunch', 'dinner'], ingredients: [
     { foodId: 'lenticchie-secche', quantityG: 80 }, { foodId: 'carote', quantityG: 80 },
     { foodId: 'cipolla', quantityG: 50 }, { foodId: 'passata-pomodoro', quantityG: 100 },
   ] },
-  { id: 'caprese', name: 'Insalata caprese', ingredients: [
+  { id: 'caprese', name: 'Insalata caprese', mealTypes: ['lunch', 'dinner'], ingredients: [
     { foodId: 'mozzarella', quantityG: 125 }, { foodId: 'pomodori', quantityG: 200 },
     { foodId: 'basilico', quantityG: 5 }, { foodId: 'olio-evo', quantityG: 10 },
   ] },
@@ -77,6 +78,7 @@ export const SUGGESTED_DISHES: Dish[] = TEMPLATES.map(template => ({
   user_id: '',
   name: template.name,
   icon: null,
+  meal_types: template.mealTypes,
   created_at: '',
   updated_at: '',
   items: template.ingredients.map((ingredient, position) =>

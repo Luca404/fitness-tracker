@@ -1,7 +1,7 @@
 // src/services/api.ts
 import { supabase } from './supabase'
 import type {
-  UserHealthProfile, UserGoals, Meal, MealEntry, MealItemInput, Workout, WeightLog, Dish, DishItem, PantryItem
+  UserHealthProfile, UserGoals, Meal, MealEntry, MealItemInput, Workout, WeightLog, Dish, DishItem, PantryItem, DishMealType
 } from '../types'
 import { orderDishItems } from '../utils/dishOrder'
 import { BASIC_FOODS } from '../data/basicFoods'
@@ -291,12 +291,14 @@ export async function getDishes(): Promise<Dish[]> {
 export async function createDish(
   userId: string,
   name: string,
-  items: Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'>[]
+  items: Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'>[],
+  mealTypes: DishMealType[],
 ): Promise<Dish> {
-  const { data, error } = await supabase.rpc('create_dish_with_items', {
+  const { data, error } = await supabase.rpc('create_dish_with_categories', {
     p_user_id: userId,
     p_name: name,
     p_items: items,
+    p_meal_types: mealTypes,
   })
   if (error) throw error
   return data as Dish
@@ -305,12 +307,14 @@ export async function createDish(
 export async function updateDish(
   dishId: string,
   name: string,
-  items: Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'>[]
+  items: Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'>[],
+  mealTypes: DishMealType[],
 ): Promise<Dish> {
-  const { data, error } = await supabase.rpc('update_dish_with_items', {
+  const { data, error } = await supabase.rpc('update_dish_with_categories', {
     p_dish_id: dishId,
     p_name: name,
     p_items: items,
+    p_meal_types: mealTypes,
   })
   if (error) throw error
   return data as Dish

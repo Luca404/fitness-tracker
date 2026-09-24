@@ -8,7 +8,8 @@ import DishIconChoices from './DishIconChoices'
 import { getDishAvailability } from '../../utils/ingredientMatching'
 import { getDishIcon, getFoodIcon } from '../../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
-import type { Dish, PantryItem } from '../../types'
+import { dishMealTypeLabels } from '../../data/dishMealTypes'
+import type { Dish, DishMealType, PantryItem } from '../../types'
 import ExtendedNutrition from '../meals/ExtendedNutrition'
 
 function dishTotals(dish: Dish) {
@@ -106,10 +107,10 @@ export default function KitchenDishes() {
     }
   }
 
-  async function createDish(name: string, items: DishItemDraft[]) {
+  async function createDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[]) {
     if (!user) return
     try {
-      await api.createDish(user.id, name, items)
+      await api.createDish(user.id, name, items, mealTypes)
       await refresh()
       setMode('closed')
       showToast('Piatto salvato')
@@ -119,10 +120,10 @@ export default function KitchenDishes() {
     }
   }
 
-  async function updateDish(name: string, items: DishItemDraft[]) {
+  async function updateDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[]) {
     if (!selectedDish) return
     try {
-      await api.updateDish(selectedDish.id, name, items)
+      await api.updateDish(selectedDish.id, name, items, mealTypes)
       await refresh()
       setSelectedDish(null)
       setMode('closed')
@@ -149,7 +150,7 @@ export default function KitchenDishes() {
   async function saveSuggestedDish() {
     if (!selectedDish || !user) return
     try {
-      await api.createDish(user.id, selectedDish.name, selectedDish.items.map(toDraft))
+      await api.createDish(user.id, selectedDish.name, selectedDish.items.map(toDraft), selectedDish.meal_types ?? ['lunch'])
       await refresh()
       setSelectedDish(null)
       setMode('closed')
@@ -193,7 +194,7 @@ export default function KitchenDishes() {
                     {getDishIcon(dish)}<span aria-hidden="true" className="absolute -bottom-1 -right-1 rounded-full bg-gray-700 px-1 text-[10px]">✎</span>
                   </button>
                   <button type="button" onClick={() => openDetail(dish)} className="flex min-w-0 flex-1 items-center gap-2 py-1 pr-1 text-left">
-                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{dish.name}</span><span className="text-xs text-gray-500">{dish.items.length} ingredienti · {Math.round(totals.weight)} g</span></span>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{dish.name}</span><span className="text-xs text-gray-500">{dish.items.length} ingredienti · {Math.round(totals.weight)} g</span><span className="block truncate text-[11px] text-primary-400/80">{dishMealTypeLabels(dish.meal_types)}</span></span>
                     <span className="text-sm font-semibold text-primary-400">{Math.round(totals.calories)}<small className="ml-1 text-[9px]">kcal</small></span>
                     <span className="text-gray-600">›</span>
                   </button>
@@ -222,12 +223,12 @@ export default function KitchenDishes() {
         ) : mode === 'create' ? (
           <div className="space-y-5">
             <div className="pr-12 lg:pr-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Nuova ricetta</p><h2 className="text-xl font-bold">Crea il tuo piatto</h2></div>
-            <DishEditor initialName="" initialItems={[]} onSave={createDish} onCancel={() => setMode('closed')} saveLabel="Salva piatto" />
+            <DishEditor initialName="" initialItems={[]} initialMealTypes={[]} onSave={createDish} onCancel={() => setMode('closed')} saveLabel="Salva piatto" />
           </div>
         ) : mode === 'edit' && selectedDish ? (
           <div className="space-y-5">
             <div className="pr-12 lg:pr-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Modifica ricetta</p><h2 className="text-xl font-bold">{selectedDish.name}</h2></div>
-            <DishEditor initialName={selectedDish.name} initialItems={selectedDish.items.map(toDraft)} onSave={updateDish} onCancel={() => setMode('detail')} saveLabel="Salva modifiche" />
+            <DishEditor initialName={selectedDish.name} initialItems={selectedDish.items.map(toDraft)} initialMealTypes={selectedDish.meal_types} onSave={updateDish} onCancel={() => setMode('detail')} saveLabel="Salva modifiche" />
           </div>
         ) : selectedDish ? (
           <DishDetail
@@ -265,6 +266,7 @@ function DishDetail({ dish, pantry, onEdit, onChangeIcon, onDelete, onSave }: {
           </button>
         ) : <span className="text-3xl">{getDishIcon(dish)}</span>}
         <h2 className="mt-3 text-2xl font-bold">{dish.name}</h2>
+        <p className="mt-1 text-xs text-primary-400">{dishMealTypeLabels(dish.meal_types ?? ['lunch'])}</p>
         <p className="mt-1 text-sm text-gray-400">{Math.round(totals.weight)} g · {Math.round(totals.calories)} kcal</p>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
           <span className="rounded-xl bg-black/15 py-2">P <b>{Math.round(totals.protein)}g</b></span>

@@ -215,6 +215,18 @@ the Supabase Auth Site URL and add the required preview URL patterns.
 
 ## Roadmap
 
+### Prossime priorità
+
+1. **Categorie dei piatti salvati.** Ogni piatto può appartenere a una o più
+   categorie fra Colazione, Pranzo, Cena e Spuntino. Le categorie si scelgono
+   quando si crea o modifica il piatto; in Pasti si vedono solo i piatti della
+   categoria corrispondente al momento selezionato. I piatti già salvati
+   restano disponibili durante la transizione.
+2. **Ingredienti aggiunti ai piatti salvati.** Gli ingredienti aggiunti mentre
+   si registra un piatto salvato restano distinti dalla ricetta base nel diario.
+   Riaprendo la registrazione, si vedono in una sezione separata e si possono
+   modificare o rimuovere senza cambiare la ricetta salvata.
+
 ### Completate
 
 1. **Dispensa e consumo nei pasti.** La registrazione usa le scorte disponibili,

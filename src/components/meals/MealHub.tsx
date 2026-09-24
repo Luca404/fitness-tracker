@@ -11,7 +11,8 @@ import { BASIC_FOODS, type BasicFood } from '../../data/basicFoods'
 import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import { getDishIcon, getFoodIcon } from '../../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
-import type { Dish, DishItem, PieceSize } from '../../types'
+import { dishMealTypeLabels, dishesForMeal } from '../../data/dishMealTypes'
+import type { Dish, DishItem, DishMealType, PieceSize } from '../../types'
 import ExtendedNutrition from './ExtendedNutrition'
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
   beveragesOnly?: boolean
   mode: MealHubMode
   setMode: (mode: MealHubMode) => void
+  mealType: DishMealType
 }
 
 function referenceWeight(dish: Dish): number {
@@ -97,7 +99,7 @@ function beverageToDraft(beverage: BasicFood, volumeMl: number): DishItemDraft {
 
 export type MealHubMode = 'list' | 'new' | 'oneoff' | 'edit' | 'pick'
 
-export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = false, mode, setMode }: Props) {
+export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = false, mode, setMode, mealType }: Props) {
   const { user } = useAuth()
   const { showToast, setDishIcon } = useData()
   const [dishes, setDishes] = useState<Dish[]>([])
@@ -112,6 +114,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
   const [extraItems, setExtraItems] = useState<DishItemDraft[]>([])
   const [extraSearchKey, setExtraSearchKey] = useState(0)
   const [addingExtra, setAddingExtra] = useState(false)
+  const visibleDishes = dishesForMeal(dishes, mealType)
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -241,9 +244,9 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
       : item))
   }
 
-  async function handleSaveNewDish(name: string, items: DishItemDraft[]) {
+  async function handleSaveNewDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[]) {
     if (!user) return
-    const dish = await api.createDish(user.id, name, items)
+    const dish = await api.createDish(user.id, name, items, mealTypes)
     await onAddEntry(name, items.map((item, index) => ({
       ...item,
       dish_item_id: dish.items[index]?.id ?? null,
@@ -252,9 +255,9 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
     await refresh()
   }
 
-  async function handleSaveEditedDish(name: string, items: DishItemDraft[]) {
+  async function handleSaveEditedDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[]) {
     if (!editingDish) return
-    await api.updateDish(editingDish.id, name, items)
+    await api.updateDish(editingDish.id, name, items, mealTypes)
     await onDishUpdated?.()
     setEditingDish(null)
     setMode('list')
@@ -323,6 +326,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
         <DishEditor
           initialName=""
           initialItems={[]}
+          initialMealTypes={[mealType]}
           requireName
           saveLabel="Salva e aggiungi"
           onSave={handleSaveNewDish}
@@ -339,6 +343,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
         <DishEditor
           initialName={editingDish.name}
           initialItems={editingDish.items.map(toDraftItem)}
+          initialMealTypes={editingDish.meal_types}
           requireName
           saveLabel="Salva modifiche"
           onSave={handleSaveEditedDish}
@@ -355,6 +360,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
         <DishEditor
           initialName=""
           initialItems={[]}
+          showMealTypes={false}
           requireName
           saveLabel="Aggiungi al diario"
           onSave={handleSaveOneoff}
@@ -497,15 +503,15 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">La tua cucina</p>
             <p className="text-sm font-medium text-gray-300">Piatti salvati</p>
           </div>
-          <span className="rounded-full bg-gray-700 px-2.5 py-1 text-xs text-gray-400">{dishes.length}</span>
+          <span className="rounded-full bg-gray-700 px-2.5 py-1 text-xs text-gray-400">{visibleDishes.length}</span>
         </div>
         {loading ? (
           <p className="text-sm text-gray-500 text-center py-4">Caricamento...</p>
-        ) : dishes.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-4">Nessun piatto salvato ancora.</p>
+        ) : visibleDishes.length === 0 ? (
+          <p className="text-sm text-gray-500 text-center py-4">Nessun piatto salvato per questo pasto.</p>
         ) : (
           <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-            {dishes.map(dish => (
+            {visibleDishes.map(dish => (
               <div key={dish.id} className="group flex items-center gap-2 rounded-2xl border border-gray-700/70 bg-gray-900/30 p-2 transition hover:border-gray-600">
                 <button type="button" onClick={() => setIconDish(dish)}
                   aria-label={`Cambia icona di ${dish.name}`}
@@ -517,6 +523,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{dish.name}</span>
                     <span className="text-xs text-gray-500">{Math.round(totalKcal(dish))} kcal · {Math.round(referenceWeight(dish))} g</span>
+                    <span className="block truncate text-[11px] text-primary-400/80">{dishMealTypeLabels(dish.meal_types)}</span>
                   </span>
                 </button>
                 <button type="button" onClick={() => startEdit(dish)}

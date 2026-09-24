@@ -21,7 +21,7 @@ describe('ingredient matching', () => {
 
   it('prefers stable keys and reports missing ingredients', () => {
     const dish: Dish = {
-      id: 'dish-1', user_id: 'user-1', name: 'Pasta al sugo', icon: null, created_at: '', updated_at: '',
+      id: 'dish-1', user_id: 'user-1', name: 'Pasta al sugo', icon: null, meal_types: ['lunch'], created_at: '', updated_at: '',
       items: [item('Pasta', 'basic:pasta-semola-cotta'), item('Sugo', 'basic:sugo-pomodoro')],
     }
     const result = getDishAvailability(dish, [pantryItem('Pasta di semola', 'basic:pasta-semola-cotta')])

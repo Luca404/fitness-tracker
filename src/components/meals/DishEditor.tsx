@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import FoodSearch from './FoodSearch'
-import type { DishItem, MealItemUnit, PieceSize } from '../../types'
+import type { DishItem, DishMealType, MealItemUnit, PieceSize } from '../../types'
 import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
+import { DISH_MEAL_TYPES } from '../../data/dishMealTypes'
 import IngredientQuantityInput from './IngredientQuantityInput'
 
 export type DishItemDraft = Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'> & {
@@ -13,17 +14,20 @@ export type DishItemDraft = Omit<DishItem, 'id' | 'dish_id' | 'position' | 'crea
 interface Props {
   initialName: string
   initialItems: DishItemDraft[]
-  onSave: (name: string, items: DishItemDraft[]) => Promise<void>
+  initialMealTypes?: DishMealType[]
+  onSave: (name: string, items: DishItemDraft[], mealTypes: DishMealType[]) => Promise<void>
   onCancel: () => void
   requireName?: boolean
   saveLabel?: string
+  showMealTypes?: boolean
 }
 
 export default function DishEditor({
-  initialName, initialItems, onSave, onCancel,
-  requireName = true, saveLabel = 'Salva piatto',
+  initialName, initialItems, initialMealTypes = ['lunch'], onSave, onCancel,
+  requireName = true, saveLabel = 'Salva piatto', showMealTypes = true,
 }: Props) {
   const [name, setName] = useState(initialName)
+  const [mealTypes, setMealTypes] = useState<DishMealType[]>(initialMealTypes)
   const [items, setItems] = useState<DishItemDraft[]>(initialItems)
   const [searchKey, setSearchKey] = useState(0)
   const [saving, setSaving] = useState(false)
@@ -80,14 +84,14 @@ export default function DishEditor({
   const itemsValid = items.every(i => i.quantity_g > 0 &&
     i.calories >= 0 && i.protein_g >= 0 && i.carbs_g >= 0 && i.fat_g >= 0 &&
     [i.fiber_g, i.sugars_g, i.salt_g].every(value => value == null || value >= 0))
-  const canSave = nameValid && items.length > 0 && itemsValid && !saving
+  const canSave = nameValid && (!showMealTypes || mealTypes.length > 0) && items.length > 0 && itemsValid && !saving
 
   async function handleSave() {
     if (!canSave) return
     setSaving(true)
     setError(null)
     try {
-      await onSave(name.trim(), items)
+      await onSave(name.trim(), items, mealTypes)
     } catch {
       setError('Operazione non riuscita. Riprova.')
     } finally {
@@ -104,6 +108,26 @@ export default function DishEditor({
             placeholder="Es. Pasta al pomodoro"
             className="mt-1 w-full bg-transparent text-xl font-semibold text-white outline-none placeholder:text-gray-600" />
         </div>
+      )}
+
+      {showMealTypes && (
+        <fieldset className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
+          <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-gray-400">Categorie del piatto</legend>
+          <p className="mb-3 text-xs text-gray-500">Puoi sceglierne più di una.</p>
+          <div className="grid grid-cols-2 gap-2">
+            {DISH_MEAL_TYPES.map(type => (
+              <label key={type.id} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm ${mealTypes.includes(type.id)
+                ? 'border-primary-500/60 bg-primary-500/15 text-white' : 'border-gray-700 bg-gray-800/50 text-gray-400'}`}>
+                <input type="checkbox" checked={mealTypes.includes(type.id)}
+                  onChange={event => setMealTypes(current => event.target.checked
+                    ? [...current, type.id] : current.filter(value => value !== type.id))}
+                  className="accent-primary-500" />
+                <span aria-hidden="true">{type.icon}</span>{type.label}
+              </label>
+            ))}
+          </div>
+          {mealTypes.length === 0 && <p className="mt-2 text-xs text-amber-400">Scegli almeno una categoria.</p>}
+        </fieldset>
       )}
 
       <section>

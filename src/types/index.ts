@@ -4,6 +4,7 @@ export type Sex = 'male' | 'female'
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
 export type Objective = 'lose_weight' | 'gain_muscle' | 'maintain' | 'recomposition'
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'drinks'
+export type DishMealType = Exclude<MealType, 'drinks'>
 export type FoodSource = 'manual' | 'basic' | 'openfoodfacts' | 'ai_photo' | 'barcode' | 'pantry'
 export type PantryUnit = 'g' | 'ml' | 'pz'
 export type MealItemUnit = 'g' | 'ml'
@@ -227,6 +228,7 @@ export interface Dish {
   user_id: string
   name: string
   icon: string | null
+  meal_types: DishMealType[]
   created_at: string
   updated_at: string
   items: DishItem[]  // hydrated client-side
