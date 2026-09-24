@@ -343,6 +343,7 @@ export async function getPantryItems(): Promise<PantryItem[]> {
   const { data, error } = await supabase
     .from('pantry_items')
     .select('*')
+    .is('archived_at', null)
     .order('name')
   if (error) throw error
   return ((data ?? []) as PantryItem[]).map(enrichLegacyPantryItem)

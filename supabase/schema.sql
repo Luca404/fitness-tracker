@@ -213,6 +213,7 @@ create table public.pantry_items (
   nutrition_grade text,
   nova_group    int,
   ecoscore_grade text,
+  archived_at   timestamptz,
   created_at    timestamptz default now()
 );
 alter table public.pantry_items enable row level security;
@@ -849,3 +850,23 @@ when (
   old.salt_100g is distinct from new.salt_100g
 )
 execute function public.sync_pantry_nutrition();
+
+create or replace function public.set_pantry_archive_state()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  if new.quantity <= 0 then
+    new.archived_at := coalesce(old.archived_at, now());
+  else
+    new.archived_at := null;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger set_pantry_archive_state_before_update
+before update of quantity on public.pantry_items
+for each row execute function public.set_pantry_archive_state();

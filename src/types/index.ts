@@ -161,6 +161,7 @@ export interface FoodResult {
 export interface PantryItem {
   id: string
   user_id: string
+  archived_at?: string | null
   name: string
   quantity: number
   unit: PantryUnit
