@@ -151,7 +151,9 @@ Pasti display nutrient values without direct inputs: changing an ingredient's
 quantity recalculates its portion, while corrections for pantry-linked
 ingredients are made in Dispensa. Saving a linked ingredient derives its
 nutrition from the current pantry values; existing linked portions are
-reconciled to those values as part of the migration.
+reconciled to those values as part of the migration. Saved-dish editors and
+their personalization flow require custom ingredients to be added in Dispensa
+first; manual nutrition entry remains available for one-off dishes.
 
 Food categories include dedicated groups for baked goods, nuts and seeds,
 spreads and preserves, savoury snacks, ready meals, supplements, and

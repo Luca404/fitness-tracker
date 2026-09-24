@@ -431,6 +431,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
               <FoodSearch
                 key={extraSearchKey}
                 hideHeader
+                allowManualEntry={false}
                 onClose={() => {}}
                 onAdd={item => {
                   setExtraItems(items => [...items, item])

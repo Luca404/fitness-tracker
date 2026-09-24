@@ -39,9 +39,10 @@ interface Props {
   }) => void
   onClose: () => void
   hideHeader?: boolean
+  allowManualEntry?: boolean
 }
 
-export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
+export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntry = true }: Props) {
   const { showToast } = useData()
   const [query, setQuery] = useState('')
   const [offResults, setOffResults] = useState<FoodResult[]>([])
@@ -289,10 +290,14 @@ export default function FoodSearch({ onAdd, onClose, hideHeader }: Props) {
             </div>
           )}
 
-          <button type="button" onClick={() => { setManualMode(true); setPiece(null) }}
-            className="w-full rounded-xl border border-dashed border-gray-700 py-2.5 text-center text-sm text-gray-500 hover:border-gray-600 hover:text-gray-300">
-            Non lo trovi? Inseriscilo manualmente
-          </button>
+          {allowManualEntry ? (
+            <button type="button" onClick={() => { setManualMode(true); setPiece(null) }}
+              className="w-full rounded-xl border border-dashed border-gray-700 py-2.5 text-center text-sm text-gray-500 hover:border-gray-600 hover:text-gray-300">
+              Non lo trovi? Inseriscilo manualmente
+            </button>
+          ) : (
+            <p className="text-xs text-gray-500">Per un ingrediente personalizzato, aggiungilo prima alla Dispensa.</p>
+          )}
         </>
       ) : (
         <div className="space-y-4">

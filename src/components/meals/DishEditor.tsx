@@ -132,6 +132,7 @@ export default function DishEditor({
           <FoodSearch
             key={searchKey}
             hideHeader
+            allowManualEntry={!showMealTypes && !separateCustomizations}
             onClose={() => {}}
             onAdd={(item) => {
               setItems(prev => [...prev, { ...item, is_customization: separateCustomizations }])
