@@ -78,7 +78,7 @@ describe('DataProvider', () => {
       ],
     }
     const entry = {
-      id: 'entry-1', meal_id: meal.id, name: 'Riso con pollo', created_at: '', items: meal.items,
+      id: 'entry-1', meal_id: meal.id, dish_id: 'dish-1', name: 'Riso con pollo', created_at: '', items: meal.items,
     }
     mocks.addMealEntry.mockResolvedValue({
       meal: {
@@ -104,14 +104,17 @@ describe('DataProvider', () => {
       food_key: item.food_key,
     }))
     await act(async () => {
-      await result.current.addMealEntry('lunch', entry.name, drafts, meal.date, 'user-1')
+      await result.current.addMealEntry('lunch', entry.name, drafts, meal.date, 'user-1', 'dish-1', '🍚')
     })
 
     expect(mocks.addMealEntry).toHaveBeenCalledTimes(1)
-    expect(mocks.addMealEntry).toHaveBeenCalledWith('user-1', meal.date, 'lunch', entry.name, drafts)
+    expect(mocks.addMealEntry).toHaveBeenCalledWith('user-1', meal.date, 'lunch', entry.name, drafts, 'dish-1')
     expect(result.current.meals).toHaveLength(1)
-    expect(result.current.meals[0].entries).toEqual([entry])
+    expect(result.current.meals[0].entries).toEqual([{ ...entry, dish_icon: '🍚' }])
     expect(result.current.meals[0].items).toHaveLength(2)
+
+    act(() => result.current.setDishIcon('dish-1', '🍝'))
+    expect(result.current.meals[0].entries[0].dish_icon).toBe('🍝')
 
     const updatedEntry = {
       ...entry,
@@ -124,7 +127,7 @@ describe('DataProvider', () => {
       await result.current.updateMealEntry(updatedEntry.id, updatedEntry.name, drafts.slice(0, 1))
     })
 
-    expect(result.current.meals[0].entries[0]).toEqual(updatedEntry)
+    expect(result.current.meals[0].entries[0]).toEqual({ ...updatedEntry, dish_icon: '🍝' })
     expect(result.current.meals[0].items).toEqual(updatedEntry.items)
 
     mocks.deleteMealEntry.mockResolvedValue(undefined)

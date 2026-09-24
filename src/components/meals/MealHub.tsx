@@ -15,7 +15,7 @@ import type { Dish, DishItem } from '../../types'
 import ExtendedNutrition from './ExtendedNutrition'
 
 interface Props {
-  onAddEntry: (name: string, items: DishItemDraft[]) => Promise<void>
+  onAddEntry: (name: string, items: DishItemDraft[], dishId?: string, dishIcon?: string | null) => Promise<void>
   beveragesOnly?: boolean
   mode: MealHubMode
   setMode: (mode: MealHubMode) => void
@@ -95,7 +95,7 @@ export type MealHubMode = 'list' | 'new' | 'oneoff' | 'edit' | 'pick'
 
 export default function MealHub({ onAddEntry, beveragesOnly = false, mode, setMode }: Props) {
   const { user } = useAuth()
-  const { showToast } = useData()
+  const { showToast, setDishIcon } = useData()
   const [dishes, setDishes] = useState<Dish[]>([])
   const [loading, setLoading] = useState(true)
   const [editingDish, setEditingDish] = useState<Dish | null>(null)
@@ -125,6 +125,7 @@ export default function MealHub({ onAddEntry, beveragesOnly = false, mode, setMo
     setIconSaving(true)
     try {
       await api.updateDishIcon(iconDish.id, icon)
+      setDishIcon(iconDish.id, icon)
       setDishes(current => current.map(dish => dish.id === iconDish.id ? { ...dish, icon } : dish))
       setPickingDish(current => current?.id === iconDish.id ? { ...current, icon } : current)
       setIconDish(null)
@@ -196,7 +197,7 @@ export default function MealHub({ onAddEntry, beveragesOnly = false, mode, setMo
       food_key: i.food_key,
       pantry_item_id: i.pantry_item_id ?? null,
     }))
-    await onAddEntry(pickingDish.name, [...dishItems, ...extraItems])
+    await onAddEntry(pickingDish.name, [...dishItems, ...extraItems], pickingDish.id, pickingDish.icon)
     setPickingDish(null)
     setExtraItems([])
     setMode('list')
@@ -229,8 +230,8 @@ export default function MealHub({ onAddEntry, beveragesOnly = false, mode, setMo
 
   async function handleSaveNewDish(name: string, items: DishItemDraft[]) {
     if (!user) return
-    await api.createDish(user.id, name, items)
-    await onAddEntry(name, items)
+    const dish = await api.createDish(user.id, name, items)
+    await onAddEntry(name, items, dish.id)
     setMode('list')
     await refresh()
   }

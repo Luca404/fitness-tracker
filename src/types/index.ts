@@ -54,6 +54,8 @@ export interface Meal {
 export interface MealEntry {
   id: string
   meal_id: string
+  dish_id?: string | null
+  dish_icon?: string | null
   name: string
   created_at: string
   items: MealItem[]

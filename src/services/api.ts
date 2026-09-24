@@ -101,10 +101,22 @@ async function hydrateMeals(meals: Omit<Meal, 'entries' | 'items'>[]): Promise<M
     .order('created_at')
   if (iError) throw iError
 
+  const dishIds = [...new Set(entries.map(e => e.dish_id).filter((id): id is string => Boolean(id)))]
+  let dishIcons = new Map<string, string | null>()
+  if (dishIds.length > 0) {
+    const { data: dishes, error: dError } = await supabase
+      .from('dishes')
+      .select('id, icon')
+      .in('id', dishIds)
+    if (dError) throw dError
+    dishIcons = new Map((dishes ?? []).map(dish => [dish.id, dish.icon]))
+  }
+
   return meals.map(m => ({
     ...m,
     entries: entries.filter(e => e.meal_id === m.id).map(e => ({
       ...e,
+      dish_icon: e.dish_id ? dishIcons.get(e.dish_id) ?? null : null,
       items: (items ?? []).filter(i => i.entry_id === e.id).map(enrichLegacyFoodItem),
     })),
     items: (items ?? []).filter(i => i.meal_id === m.id).map(enrichLegacyFoodItem),
@@ -116,7 +128,8 @@ export async function addMealEntry(
   date: string,
   mealType: Meal['meal_type'],
   name: string,
-  items: MealItemInput[]
+  items: MealItemInput[],
+  dishId: string | null = null,
 ): Promise<{ meal: Omit<Meal, 'entries' | 'items'>; entry: MealEntry }> {
   const { data, error } = await supabase.rpc('add_meal_entry', {
     p_user_id: userId,
@@ -124,6 +137,7 @@ export async function addMealEntry(
     p_meal_type: mealType,
     p_name: name,
     p_items: items,
+    p_dish_id: dishId,
   })
   if (error) throw error
   return data as { meal: Omit<Meal, 'entries' | 'items'>; entry: MealEntry }

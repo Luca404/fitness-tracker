@@ -40,7 +40,9 @@ interface DataContextType {
     name: string,
     items: MealItemInput[],
     date: string,
-    userId: string
+    userId: string,
+    dishId?: string | null,
+    dishIcon?: string | null
   ) => Promise<void>
   updateMealEntry: (
     entryId: string,
@@ -48,6 +50,7 @@ interface DataContextType {
     items: MealItemInput[]
   ) => Promise<void>
   removeMealEntry: (entryId: string) => Promise<void>
+  setDishIcon: (dishId: string, icon: string | null) => void
   addWorkout: (w: Omit<Workout, 'id' | 'created_at'>) => Promise<void>
   removeWorkout: (id: string) => Promise<void>
   daySummary: DaySummary
@@ -248,27 +251,37 @@ export function DataProvider({ children }: { children: ReactNode }) {
     name: string,
     items: MealItemInput[],
     date: string,
-    userId: string
+    userId: string,
+    dishId: string | null = null,
+    dishIcon: string | null = null
   ) => {
     if (items.length === 0) return
-    const result = await api.addMealEntry(userId, date, mealType, name, items)
+    const result = await api.addMealEntry(userId, date, mealType, name, items, dishId)
+    const entry = { ...result.entry, dish_icon: dishIcon }
     setMeals(prev => {
       const existing = prev.find(m => m.id === result.meal.id)
       if (!existing) {
         return [...prev, {
           ...result.meal,
-          entries: [result.entry],
-          items: result.entry.items,
+          entries: [entry],
+          items: entry.items,
         }]
       }
       return prev.map(m => m.id === result.meal.id
         ? {
             ...m,
-            entries: [...m.entries, result.entry],
-            items: [...m.items, ...result.entry.items],
+            entries: [...m.entries, entry],
+            items: [...m.items, ...entry.items],
           }
         : m)
     })
+  }, [])
+
+  const setDishIcon = useCallback((dishId: string, icon: string | null) => {
+    setMeals(current => current.map(meal => ({
+      ...meal,
+      entries: meal.entries.map(entry => entry.dish_id === dishId ? { ...entry, dish_icon: icon } : entry),
+    })))
   }, [])
 
   const updateMealEntry = useCallback(async (
@@ -279,7 +292,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const updated = await api.updateMealEntry(entryId, name, items)
     setMeals(prev => prev.map(meal => {
       if (!meal.entries.some(entry => entry.id === entryId)) return meal
-      const entries = meal.entries.map(entry => entry.id === entryId ? updated : entry)
+      const entries = meal.entries.map(entry => entry.id === entryId
+        ? { ...updated, dish_icon: updated.dish_id === entry.dish_id ? entry.dish_icon : null }
+        : entry)
       return { ...meal, entries, items: entries.flatMap(entry => entry.items) }
     }))
   }, [])
@@ -322,7 +337,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       rollingWeightSampleCount, meals, workouts, loading, toast,
       fetchForDate, fetchProfile, refreshCurrentWeight, completeOnboarding, saveGoals,
       saveProfileAndRecalculate,
-      addMealEntry, updateMealEntry, removeMealEntry, addWorkout, removeWorkout,
+      addMealEntry, updateMealEntry, removeMealEntry, setDishIcon, addWorkout, removeWorkout,
       daySummary, showToast,
     }}>
       {children}

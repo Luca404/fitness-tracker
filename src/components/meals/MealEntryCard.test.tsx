@@ -3,6 +3,26 @@ import { describe, expect, it, vi } from 'vitest'
 import MealEntryCard from './MealEntryCard'
 
 describe('MealEntryCard', () => {
+  it('uses the current saved dish icon for an existing diary entry', () => {
+    render(
+      <MealEntryCard
+        entry={{
+          id: 'entry-2', meal_id: 'meal-1', dish_id: 'dish-1', dish_icon: '🍝',
+          name: 'Pasta', created_at: '',
+          items: [{
+            id: 'item-1', meal_id: 'meal-1', entry_id: 'entry-2', food_name: 'Pasta',
+            quantity_g: 100, unit: 'g', calories: 150, protein_g: 5, carbs_g: 30, fat_g: 1,
+            source: 'basic', off_food_id: null, category: 'grain', food_key: null, created_at: '',
+          }],
+        }}
+        onOpen={() => {}}
+      />
+    )
+
+    expect(screen.getByText('🍝')).toBeTruthy()
+    expect(screen.queryByText('🍚')).toBeNull()
+  })
+
   it('shows the eaten dish summary without exposing its ingredients', () => {
     const onOpen = vi.fn()
     render(

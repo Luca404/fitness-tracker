@@ -145,6 +145,12 @@ create policy "own dishes" on public.dishes
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create index on public.dishes (user_id);
 
+-- Keep diary entries linked to the saved dish whose icon they display.
+alter table public.meal_entries
+  add column dish_id uuid references public.dishes on delete set null;
+create index meal_entries_dish_id_idx on public.meal_entries (dish_id)
+  where dish_id is not null;
+
 -- dish_items
 create table public.dish_items (
   id          uuid primary key default gen_random_uuid(),
@@ -326,7 +332,8 @@ create or replace function public.add_meal_entry(
   p_date date,
   p_meal_type text,
   p_name text,
-  p_items jsonb
+  p_items jsonb,
+  p_dish_id uuid
 )
 returns jsonb
 language plpgsql
@@ -350,14 +357,19 @@ begin
   if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
     raise exception 'items must be a non-empty array' using errcode = '22023';
   end if;
+  if p_dish_id is not null and not exists (
+    select 1 from public.dishes d where d.id = p_dish_id and d.user_id = p_user_id
+  ) then
+    raise exception 'dish not found' using errcode = 'P0002';
+  end if;
 
   insert into public.meals (user_id, date, meal_type, name)
   values (p_user_id, p_date, p_meal_type, null)
   on conflict (user_id, date, meal_type) do update set name = public.meals.name
   returning * into v_meal;
 
-  insert into public.meal_entries (meal_id, name)
-  values (v_meal.id, trim(p_name))
+  insert into public.meal_entries (meal_id, name, dish_id)
+  values (v_meal.id, trim(p_name), p_dish_id)
   returning * into v_entry;
 
   insert into public.meal_items (
@@ -647,13 +659,13 @@ end;
 $$;
 
 revoke execute on function public.complete_health_onboarding(jsonb, jsonb) from public, anon;
-revoke execute on function public.add_meal_entry(uuid, date, text, text, jsonb) from public, anon;
+revoke execute on function public.add_meal_entry(uuid, date, text, text, jsonb, uuid) from public, anon;
 revoke execute on function public.update_meal_entry(uuid, text, jsonb) from public, anon;
 revoke execute on function public.delete_meal_entry(uuid) from public, anon;
 revoke execute on function public.create_dish_with_items(uuid, text, jsonb) from public, anon;
 revoke execute on function public.update_dish_with_items(uuid, text, jsonb) from public, anon;
 grant execute on function public.complete_health_onboarding(jsonb, jsonb) to authenticated;
-grant execute on function public.add_meal_entry(uuid, date, text, text, jsonb) to authenticated;
+grant execute on function public.add_meal_entry(uuid, date, text, text, jsonb, uuid) to authenticated;
 grant execute on function public.update_meal_entry(uuid, text, jsonb) to authenticated;
 grant execute on function public.delete_meal_entry(uuid) to authenticated;
 grant execute on function public.create_dish_with_items(uuid, text, jsonb) to authenticated;

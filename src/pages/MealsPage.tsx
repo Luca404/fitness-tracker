@@ -84,10 +84,10 @@ export default function MealsPage() {
     setFoodSearchOpen(true)
   }
 
-  async function handleAddDishEntry(name: string, items: DishItemDraft[]) {
+  async function handleAddDishEntry(name: string, items: DishItemDraft[], dishId?: string, dishIcon?: string | null) {
     if (!user) return
     try {
-      await addMealEntry(activeMealType, name, items, selectedDate, user.id)
+      await addMealEntry(activeMealType, name, items, selectedDate, user.id, dishId, dishIcon)
       showToast(activeMealType === 'drinks' ? 'Bevanda registrata' : 'Piatto aggiunto al pasto')
     } catch {
       showToast('Errore aggiunta piatto')
@@ -275,7 +275,7 @@ export default function MealsPage() {
                 </div>
                 <div className="rounded-3xl bg-gradient-to-br from-primary-600/25 via-gray-800 to-gray-800 p-5 ring-1 ring-primary-500/20">
                   <div className="mb-4 flex items-start gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/15 text-3xl">{getFoodIcon(selectedEntry.items)}</div>
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/15 text-3xl">{selectedEntry.dish_icon || getFoodIcon(selectedEntry.items)}</div>
                     <div className="min-w-0 flex-1">
                       <h2 className="text-xl font-bold text-white">{selectedEntry.name}</h2>
                       <p className="mt-1 text-sm text-gray-400">
