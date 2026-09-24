@@ -6,7 +6,7 @@ vi.mock('./FoodSearch', () => ({ default: () => null }))
 
 describe('DishEditor', () => {
   afterEach(cleanup)
-  it('saves corrected ingredient macros while retaining its saved ingredient ID', async () => {
+  it('only edits the quantity, scaling nutrients without exposing nutrient inputs', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined)
     render(<DishEditor initialName="Pasta" initialItems={[{
       id: 'ingredient-1', food_name: 'Pasta cotta', quantity_g: 100,
@@ -14,15 +14,15 @@ describe('DishEditor', () => {
       category: 'grain', food_key: null, source: 'manual', off_food_id: null,
     }]} onSave={onSave} onCancel={() => {}} />)
 
-    fireEvent.change(screen.getByLabelText('Proteine (g)'), { target: { value: '8.5' } })
-    fireEvent.change(screen.getByLabelText('Fibre (g)'), { target: { value: '3.2' } })
-    fireEvent.change(screen.getByLabelText('Zuccheri (g)'), { target: { value: '1.4' } })
-    fireEvent.change(screen.getByLabelText('Sale (g)'), { target: { value: '0.08' } })
+    expect(screen.queryByLabelText('Proteine (g)')).toBeNull()
+    expect(screen.queryByLabelText('Fibre (g)')).toBeNull()
+    expect(screen.queryByLabelText('Zuccheri (g)')).toBeNull()
+    expect(screen.queryByLabelText('Sale (g)')).toBeNull()
+    fireEvent.change(screen.getByLabelText('Quantità di Pasta cotta'), { target: { value: '200' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salva piatto' }))
 
     await waitFor(() => expect(onSave).toHaveBeenCalledWith('Pasta', [expect.objectContaining({
-      id: 'ingredient-1', quantity_g: 100, protein_g: 8.5,
-      fiber_g: 3.2, sugars_g: 1.4, salt_g: 0.08,
+      id: 'ingredient-1', quantity_g: 200, calories: 300, protein_g: 10,
     })], ['lunch']))
   })
 

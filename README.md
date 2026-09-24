@@ -146,7 +146,12 @@ quantity that entry had actually used.
 Changing calories, protein, carbohydrates, fat, fibre, sugars or salt in a
 pantry item updates linked saved-dish ingredients and previously logged meal
 portions proportionally to their recorded grams. New meals use the corrected
-values from the pantry or the updated saved dish.
+values from the pantry or the updated saved dish. Dish editors in Cucina and
+Pasti display nutrient values without direct inputs: changing an ingredient's
+quantity recalculates its portion, while corrections for pantry-linked
+ingredients are made in Dispensa. Saving a linked ingredient derives its
+nutrition from the current pantry values; existing linked portions are
+reconciled to those values as part of the migration.
 
 Food categories include dedicated groups for baked goods, nuts and seeds,
 spreads and preserves, savoury snacks, ready meals, supplements, and

@@ -69,17 +69,6 @@ export default function DishEditor({
       : item))
   }
 
-  function updateNutrient(
-    index: number,
-    field: 'calories' | 'protein_g' | 'carbs_g' | 'fat_g' | 'fiber_g' | 'sugars_g' | 'salt_g',
-    rawValue: string,
-  ) {
-    const optional = field === 'fiber_g' || field === 'sugars_g' || field === 'salt_g'
-    const value = rawValue === '' && optional ? null : Number(rawValue)
-    if (value !== null && (!Number.isFinite(value) || value < 0)) return
-    setItems(prev => prev.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item))
-  }
-
   function removeItem(index: number) {
     setItems(prev => prev.filter((_, i) => i !== index))
   }
@@ -190,30 +179,19 @@ export default function DishEditor({
                 unit={item.unit}
                 compact
               />
-              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {([
-                  ['calories', 'kcal'],
-                  ['protein_g', 'Proteine (g)'],
-                  ['carbs_g', 'Carboidrati (g)'],
-                  ['fat_g', 'Grassi (g)'],
-                  ['fiber_g', 'Fibre (g)'],
-                  ['sugars_g', 'Zuccheri (g)'],
-                  ['salt_g', 'Sale (g)'],
-                ] as const).map(([field, label]) => (
-                  <label key={field} className="text-xs text-gray-400">
-                    {label}
-                    <input type="number" min="0" step={field === 'calories' ? '1' : '0.01'}
-                      value={item[field] ?? ''}
-                      onChange={event => updateNutrient(i, field, event.target.value)}
-                      className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-2 py-1.5 text-sm text-white outline-none focus:border-primary-500" />
-                  </label>
-                ))}
-              </div>
+              <p className="mt-2 text-xs text-gray-500">
+                P {item.protein_g} g · C {item.carbs_g} g · G {item.fat_g} g
+                {item.fiber_g != null ? ` · Fibre ${item.fiber_g} g` : ''}
+                {item.sugars_g != null ? ` · Zuccheri ${item.sugars_g} g` : ''}
+                {item.salt_g != null ? ` · Sale ${item.salt_g} g` : ''}
+              </p>
             </div>
           </div>
           </Fragment>
         ))}
       </section>
+
+      {items.length > 0 && <p className="text-xs text-gray-500">Per correggere i valori nutrizionali di un ingrediente, modificalo in Dispensa.</p>}
 
       {items.length > 0 && (
         <div className="rounded-3xl bg-gradient-to-r from-primary-600/20 to-emerald-400/5 p-4 ring-1 ring-primary-500/20">
