@@ -11,6 +11,7 @@ describe('DishEditor', () => {
     render(<DishEditor initialName="Pasta" initialItems={[{
       id: 'ingredient-1', food_name: 'Pasta cotta', quantity_g: 100,
       calories: 150, protein_g: 5, carbs_g: 30, fat_g: 1,
+      fiber_g: 3, sugars_g: 2, salt_g: 0.1,
       category: 'grain', food_key: null, source: 'manual', off_food_id: null,
     }]} onSave={onSave} onCancel={() => {}} />)
 
@@ -18,11 +19,9 @@ describe('DishEditor', () => {
     expect(screen.queryByLabelText('Fibre (g)')).toBeNull()
     expect(screen.queryByLabelText('Zuccheri (g)')).toBeNull()
     expect(screen.queryByLabelText('Sale (g)')).toBeNull()
-    const nutrientGrid = screen.getByText('P 5 g').parentElement
-    expect(nutrientGrid?.className).toContain('grid-cols-3')
-    expect(Array.from(nutrientGrid?.children ?? []).map(node => node.textContent)).toEqual([
-      'P 5 g', 'C 30 g', 'G 1 g', 'Fibre —', 'Zuccheri —', 'Sale —',
-    ])
+    expect(screen.getByText('100 g', { selector: 'span' })).toBeTruthy()
+    expect(screen.getByText('P 5g · C 30g · G 1g')).toBeTruthy()
+    expect(screen.getByText('Fibre 3g · Zuccheri 2g · Sale 0.1g')).toBeTruthy()
     fireEvent.change(screen.getByLabelText('Quantità di Pasta cotta'), { target: { value: '200' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salva piatto' }))
 

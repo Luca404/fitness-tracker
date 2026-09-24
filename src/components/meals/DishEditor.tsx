@@ -1,7 +1,6 @@
 import { Fragment, useState } from 'react'
 import FoodSearch from './FoodSearch'
 import type { DishItem, DishMealType, MealItemUnit, PieceSize } from '../../types'
-import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import { DISH_MEAL_TYPES } from '../../data/dishMealTypes'
 import IngredientQuantityInput from './IngredientQuantityInput'
 
@@ -160,16 +159,17 @@ export default function DishEditor({
               {item.is_customization ? 'Ingredienti aggiunti' : 'Ricetta base'}
             </p>
           )}
-          <div className="rounded-2xl bg-gray-900/35 p-3 ring-1 ring-gray-700/60">
-            <div className="flex items-center">
-              <div className="mr-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-700/70 text-sm">{FOOD_CATEGORY_BY_ID[item.category].icon}</div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{item.food_name}</p>
-                <span className="text-xs text-primary-400">{Math.round(item.calories)} kcal</span>
-              </div>
-              <button type="button" onClick={() => removeItem(i)} className="ml-2 text-lg text-gray-600 hover:text-red-400" aria-label={`Rimuovi ${item.food_name}`}>✕</button>
+          <div className="rounded-xl bg-gray-900/35 px-3 py-2.5 text-sm">
+            <div className="flex items-center justify-between gap-2">
+              <span className="min-w-0 truncate text-gray-300">{item.food_name}</span>
+              <span className="shrink-0 text-gray-500">{item.quantity_g} {item.unit ?? 'g'}</span>
+              <button type="button" onClick={() => removeItem(i)} className="text-lg text-gray-600 hover:text-red-400" aria-label={`Rimuovi ${item.food_name}`}>✕</button>
             </div>
-            <div className="mt-2 pl-12">
+            <p className="mt-1 text-xs text-gray-500">P {item.protein_g}g · C {item.carbs_g}g · G {item.fat_g}g</p>
+            <p className="mt-0.5 text-[11px] text-gray-600">
+              Fibre {item.fiber_g == null ? '—' : `${item.fiber_g}g`} · Zuccheri {item.sugars_g == null ? '—' : `${item.sugars_g}g`} · Sale {item.salt_g == null ? '—' : `${item.salt_g}g`}
+            </p>
+            <div className="mt-2">
               <IngredientQuantityInput
                 foodName={item.food_name}
                 category={item.category}
@@ -181,14 +181,6 @@ export default function DishEditor({
                 unit={item.unit}
                 compact
               />
-              <div className="mt-2 grid grid-cols-3 gap-x-2 gap-y-1 text-xs text-gray-500">
-                <span>P {item.protein_g} g</span>
-                <span>C {item.carbs_g} g</span>
-                <span>G {item.fat_g} g</span>
-                <span>Fibre {item.fiber_g == null ? '—' : `${item.fiber_g} g`}</span>
-                <span>Zuccheri {item.sugars_g == null ? '—' : `${item.sugars_g} g`}</span>
-                <span>Sale {item.salt_g == null ? '—' : `${item.salt_g} g`}</span>
-              </div>
             </div>
           </div>
           </Fragment>
