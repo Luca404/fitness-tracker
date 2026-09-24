@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Meal, MealItem } from '../types'
-import { calculateHabitRows, summarizeHabitRows } from './goodHabits'
+import { calculateHabitRows, habitStatus, summarizeHabitRows } from './goodHabits'
 
 function meal(date: string, items: Array<Partial<MealItem> & Pick<MealItem, 'category' | 'quantity_g'>>): Meal {
   return {
@@ -69,5 +69,11 @@ describe('good habits calculations', () => {
       needsAttention: 4,
       incomplete: 2,
     })
+  })
+
+  it('uses a neutral tile when a partial nutrient value cannot establish the result', () => {
+    expect(habitStatus({ label: 'Fibre', icon: '🌾', value: 10, target: 25, period: 'oggi', direction: 'min', partial: true })).toBe('incomplete')
+    expect(habitStatus({ label: 'Fibre', icon: '🌾', value: 30, target: 25, period: 'oggi', direction: 'min', partial: true })).toBe('ok')
+    expect(habitStatus({ label: 'Sale', icon: '🧂', value: 6, target: 5, period: 'oggi', direction: 'max', partial: true })).toBe('attention')
   })
 })

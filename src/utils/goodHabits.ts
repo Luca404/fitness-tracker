@@ -20,17 +20,23 @@ export interface HabitTargets {
   salt: number
 }
 
+export type HabitStatus = 'ok' | 'attention' | 'incomplete'
+
+export function habitStatus(row: HabitRow): HabitStatus {
+  if (row.value == null) return 'incomplete'
+  const meetsTarget = row.direction === 'min' ? row.value >= row.target : row.value <= row.target
+  if (row.partial && !(
+    (row.direction === 'min' && meetsTarget)
+    || (row.direction === 'max' && !meetsTarget)
+  )) return 'incomplete'
+  return meetsTarget ? 'ok' : 'attention'
+}
+
 export function summarizeHabitRows(rows: HabitRow[]) {
   return rows.reduce((summary, row) => {
-    if (row.value == null) summary.incomplete += 1
-    else if (row.partial && !(
-      (row.direction === 'min' && row.value >= row.target)
-      || (row.direction === 'max' && row.value > row.target)
-    )) summary.incomplete += 1
-    else if (
-      (row.direction === 'min' && row.value >= row.target)
-      || (row.direction === 'max' && row.value <= row.target)
-    ) summary.ok += 1
+    const status = habitStatus(row)
+    if (status === 'incomplete') summary.incomplete += 1
+    else if (status === 'ok') summary.ok += 1
     else summary.needsAttention += 1
     return summary
   }, { ok: 0, needsAttention: 0, incomplete: 0 })

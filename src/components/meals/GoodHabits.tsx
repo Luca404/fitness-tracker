@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { useData } from '../../contexts/DataContext'
 import { getGuideline } from '../../data/nutritionGuidelines'
 import { getMealsForRange } from '../../services/api'
-import { calculateHabitRows, summarizeHabitRows } from '../../utils/goodHabits'
+import { calculateHabitRows, habitStatus, summarizeHabitRows } from '../../utils/goodHabits'
 import type { Meal } from '../../types'
 
 interface Props {
@@ -62,18 +62,39 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
     return (
       <Link
         to="/wellbeing"
-        className="group flex items-center gap-3 rounded-2xl border border-gray-700/70 bg-gray-800/55 px-4 py-3 transition hover:border-primary-700 hover:bg-gray-800"
+        className="group block rounded-2xl border border-gray-700/70 bg-gray-800/55 px-4 py-3 transition hover:border-primary-700 hover:bg-gray-800"
+        aria-label="Apri il dettaglio delle buone abitudini"
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-xl">🌿</span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold text-gray-200">Buone abitudini</span>
-          <span className="mt-0.5 block truncate text-xs text-gray-500">
+        <span className="flex items-center gap-2">
+          <span className="text-base" aria-hidden="true">🌿</span>
+          <span className="text-sm font-semibold text-gray-200">Buone abitudini</span>
+          <span className="ml-auto truncate text-[11px] text-gray-500">
             {loading
-              ? 'Aggiorno il riepilogo…'
-              : `${summary.ok} in linea · ${summary.needsAttention} da migliorare${summary.incomplete > 0 ? ` · ${summary.incomplete} da completare` : ''}`}
+              ? 'Aggiorno…'
+              : `${summary.ok} su ${rows.length} in linea`}
           </span>
         </span>
-        <span className="text-gray-600 transition group-hover:translate-x-0.5 group-hover:text-primary-400">→</span>
+        <span className="mt-2 grid grid-cols-7 gap-1.5">
+          {rows.map(row => {
+            const status = loading ? 'incomplete' : habitStatus(row)
+            const statusLabel = status === 'ok' ? 'in linea' : status === 'attention' ? 'da migliorare' : 'dato incompleto'
+            return (
+              <span key={row.label}
+                className={`flex min-w-0 flex-col items-center rounded-lg border px-0.5 py-1 ${
+                  status === 'ok' ? 'border-emerald-700/50 bg-emerald-500/10' :
+                    status === 'attention' ? 'border-amber-700/50 bg-amber-500/10' : 'border-gray-700 bg-gray-900/40'
+                }`}
+                aria-label={`${row.label}: ${statusLabel}`}
+                title={`${row.label} · ${statusLabel}`}
+              >
+                <span className="text-base leading-none" aria-hidden="true">{row.icon}</span>
+                <span className={`mt-0.5 text-xs font-bold leading-none ${
+                  status === 'ok' ? 'text-emerald-400' : status === 'attention' ? 'text-amber-400' : 'text-gray-500'
+                }`} aria-hidden="true">{status === 'ok' ? '✓' : status === 'attention' ? '×' : '–'}</span>
+              </span>
+            )
+          })}
+        </span>
       </Link>
     )
   }
