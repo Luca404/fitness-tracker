@@ -8,14 +8,14 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 
 - **Meal logging** — log meals by time slot (breakfast, lunch, dinner, snack, drinks); calorie and macro breakdown per meal and per day. Snacks appear where they were registered relative to other entries, while the usual breakfast → lunch → dinner order stays fixed ([ordering details](docs/meal-diary-order.md))
 - **Dish-centric entry** — opening a meal slot shows saved dishes assigned to that slot; a dish can belong to breakfast, lunch, dinner and/or snack. Personalization ingredients remain separate from the saved recipe when the diary entry is reopened for editing or removal. New and one-off dishes are also supported; drinks stay in their own flow
-- **Kitchen** — one area with saved dishes and pantry tabs for creating, inspecting and editing recipes and stock; saved ingredients retain their insertion order, and each dish has one or more meal categories and can have a custom icon
+- **Kitchen** — one area with saved dishes and pantry tabs for creating, inspecting and editing recipes and stock; saved ingredients retain their insertion order, and each dish has one or more meal categories and can have a custom icon. In the dish editor, ingredients use the same compact cards as the dish detail, with a quantity input and two read-only nutrition lines
 - **Pantry** — track groceries at home by culinary category (quantity + unit: g/ml/pieces), added via barcode scan, nutrition-label photo, or manual/basic-food entry; manual products can include saturated fat, sugars, salt and fibre per 100 g; barcode and nutrition data are reused through a shared read-only product catalog, while pantry stock remains private; pantry items surface first when searching ingredients and matching stock is consumed automatically when a dish is logged
 - **Nutrition-label photo import** — take or choose a package photo, extract product and per-100 nutrition data through an authenticated OpenAI-backed Edge Function, review every field, then save it to the pantry
 - **Macros** — visual progress bars for protein, total carbohydrates, and total fat against daily targets; sugars and saturated fat are subsets of their respective totals, not extra grams to add
 - **Calorie ring** — at-a-glance daily calorie budget vs. consumed
 - **Workout tracking** — choose from 20 activities and log sessions with MET-based calorie burn calculation
 - **Weight log** — record body weight over time with history view; calorie and macro targets use a 7-day rolling average and are recalculated only after a significant (at least 2%) change from the last calculation weight
-- **Wellbeing** — dedicated daily/weekly healthy-habits dashboard, with a compact status summary on the Meals page
+- **Wellbeing** — dedicated daily/weekly healthy-habits dashboard, with a compact status summary on the Meals page: minimum goals fill toward their target, while maximum limits fill orange only when exceeded
 - **BMR / TDEE** — personalized pipeline from BMR and activity-adjusted TDEE through calorie target, weight-based protein/fat targets, and residual carbohydrates; supports maintenance, muscle gain, weight loss and body recomposition, with prudent loss-rate and calorie limits
 - **Onboarding** — 5-step wizard (physical stats → objective → lifestyle → resistance training → confirm) to set up goals; the same calculation inputs can later be edited from Settings
 - **History** — 7/30-day calorie and workout trends
@@ -155,6 +155,11 @@ reconciled to those values as part of the migration. Saved-dish editors and
 their personalization flow require custom ingredients to be added in Dispensa
 first; manual nutrition entry remains available for one-off dishes.
 
+In dish editing, each ingredient card shows P, C and G on the first nutrition
+line and fibre, sugars and salt on the second. The amount is shown only in the
+editable quantity control. Outside dish insertion, the UI uses the shorter
+labels C, G and Zuccheri instead of "C tot.", "G tot." and "di cui zuccheri".
+
 Food categories include dedicated groups for baked goods, nuts and seeds,
 spreads and preserves, savoury snacks, ready meals, supplements, and
 `Proteine vegetali` for tofu, tempeh, seitan, veggie balls, plant-based burgers
@@ -233,7 +238,13 @@ the Supabase Auth Site URL and add the required preview URL patterns.
    conserva pezzi e taglia; nutrienti e dispensa in grammi usano il peso stimato,
    mentre la dispensa in `pz` usa il numero di pezzi. Restano disponibili i grammi.
 3. **Buone abitudini in Pasti.** Il banner mostra una casella per ogni abitudine
-   con icona e ✓, × o stato neutro, più il collegamento al dettaglio.
+   con icona e ✓, × o stato neutro, più il collegamento al dettaglio. Per gli
+   obiettivi minimi la casella si riempie progressivamente fino al 100%, poi
+   mostra la spunta. Per i limiti massimi resta verde con spunta entro soglia;
+   oltre soglia mostra la × e si riempie di arancione in proporzione allo
+   sforamento (20% oltre il limite = 20% di riempimento, fino al 100%).
+   I valori sconosciuti restano neutri; i valori parziali mantengono lo stato
+   neutro quando non bastano a stabilire se l'obiettivo è raggiunto.
 4. **Categorie dei piatti salvati.** Ogni piatto può appartenere a una o più
    categorie fra Colazione, Pranzo, Cena e Spuntino. Le categorie si scelgono
    quando si crea o modifica il piatto; in Pasti si vedono solo i piatti della
