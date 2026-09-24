@@ -74,6 +74,7 @@ create table public.meal_items (
   entry_id    uuid not null references public.meal_entries on delete cascade,
   food_name   text not null,
   quantity_g  float not null check (quantity_g > 0),
+  is_customization boolean not null default false,
   piece_count float check (piece_count is null or piece_count > 0),
   piece_size  text check (piece_size in ('small', 'medium', 'large')),
   constraint meal_items_piece_pair check ((piece_count is null) = (piece_size is null)),
@@ -396,17 +397,17 @@ begin
   returning * into v_entry;
 
   insert into public.meal_items (
-    meal_id, entry_id, dish_item_id, food_name, quantity_g, piece_count, piece_size, unit, category, food_key,
+    meal_id, entry_id, dish_item_id, is_customization, food_name, quantity_g, piece_count, piece_size, unit, category, food_key,
     pantry_item_id, calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g,
     salt_g, source, off_food_id
   )
   select
-    v_meal.id, v_entry.id, x.dish_item_id, x.food_name, x.quantity_g, x.piece_count, x.piece_size, coalesce(x.unit, 'g'),
+    v_meal.id, v_entry.id, x.dish_item_id, coalesce(x.is_customization, p_dish_id is not null and x.dish_item_id is null), x.food_name, x.quantity_g, x.piece_count, x.piece_size, coalesce(x.unit, 'g'),
     coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories,
     x.protein_g, x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
     coalesce(x.source, 'manual'), x.off_food_id
   from jsonb_to_recordset(p_items) as x(
-    dish_item_id uuid, food_name text, quantity_g float, piece_count float, piece_size text, unit text, category text, food_key text,
+    dish_item_id uuid, is_customization boolean, food_name text, quantity_g float, piece_count float, piece_size text, unit text, category text, food_key text,
     pantry_item_id uuid, calories float, protein_g float, carbs_g float,
     fat_g float, fiber_g float, sugars_g float, salt_g float, source text,
     off_food_id text
@@ -509,17 +510,17 @@ begin
   delete from public.meal_items where entry_id = p_entry_id;
 
   insert into public.meal_items (
-    meal_id, entry_id, dish_item_id, food_name, quantity_g, piece_count, piece_size, unit, category, food_key,
+    meal_id, entry_id, dish_item_id, is_customization, food_name, quantity_g, piece_count, piece_size, unit, category, food_key,
     pantry_item_id, calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g,
     salt_g, source, off_food_id
   )
   select
-    v_entry.meal_id, v_entry.id, x.dish_item_id, x.food_name, x.quantity_g, x.piece_count, x.piece_size, coalesce(x.unit, 'g'),
+    v_entry.meal_id, v_entry.id, x.dish_item_id, coalesce(x.is_customization, v_entry.dish_id is not null and x.dish_item_id is null), x.food_name, x.quantity_g, x.piece_count, x.piece_size, coalesce(x.unit, 'g'),
     coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories,
     x.protein_g, x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
     coalesce(x.source, 'manual'), x.off_food_id
   from jsonb_to_recordset(p_items) as x(
-    dish_item_id uuid, food_name text, quantity_g float, piece_count float, piece_size text, unit text, category text, food_key text,
+    dish_item_id uuid, is_customization boolean, food_name text, quantity_g float, piece_count float, piece_size text, unit text, category text, food_key text,
     pantry_item_id uuid, calories float, protein_g float, carbs_g float,
     fat_g float, fiber_g float, sugars_g float, salt_g float, source text,
     off_food_id text

@@ -17,6 +17,7 @@ import { getMealEntryTotals } from '../utils/mealEntries'
 import { buildMealTimeline } from '../utils/mealTimeline'
 import { getFoodIcon } from '../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../utils/extendedNutrition'
+import { splitMealItems } from '../utils/mealCustomizations'
 
 const MEAL_TYPES: { type: MealType; label: string }[] = [
   { type: 'breakfast', label: '☀️ Colazione' },
@@ -29,6 +30,7 @@ const MEAL_TYPES: { type: MealType; label: string }[] = [
 function mealItemToDraft(item: MealEntry['items'][number]): DishItemDraft {
   return {
     dish_item_id: item.dish_item_id ?? null,
+    is_customization: item.is_customization ?? false,
     food_name: item.food_name,
     quantity_g: item.quantity_g,
     piece_count: item.piece_count ?? null,
@@ -270,6 +272,11 @@ export default function MealsPage() {
           selectedEntry && (() => {
             const totals = getMealEntryTotals(selectedEntry)
             const extendedTotals = getExtendedNutritionTotals(selectedEntry.items)
+            const hasSavedRecipe = Boolean(selectedEntry.dish_id) || selectedEntry.items.some(item => item.is_customization)
+            const { baseItems, addedItems } = splitMealItems(selectedEntry.items)
+            const ingredientSections = hasSavedRecipe
+              ? [{ label: 'Ricetta base', items: baseItems }, { label: 'Ingredienti aggiunti', items: addedItems }]
+              : [{ label: 'Ingredienti', items: selectedEntry.items }]
             return (
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
@@ -294,12 +301,14 @@ export default function MealsPage() {
                   </div>
                   <ExtendedNutrition totals={extendedTotals} />
                 </div>
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Ingredienti</p>
-                  <div className="rounded-2xl bg-gray-900/40 px-4">
-                    {selectedEntry.items.map(item => <MealItemRow key={item.id} item={item} />)}
+                {ingredientSections.filter(section => section.items.length > 0).map(section => (
+                  <div key={section.label}>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">{section.label}</p>
+                    <div className="rounded-2xl bg-gray-900/40 px-4">
+                      {section.items.map(item => <MealItemRow key={item.id} item={item} />)}
+                    </div>
                   </div>
-                </div>
+                ))}
                 <div className="grid grid-cols-[1fr_auto] gap-3">
                   <button type="button" onClick={() => setModalStep('edit-entry')} className="btn-primary py-3">Modifica piatto</button>
                   <button type="button" onClick={handleDeleteEntry} className="rounded-xl border border-red-900 px-4 text-red-400 hover:bg-red-950/30" aria-label="Elimina piatto">🗑️</button>
@@ -321,6 +330,7 @@ export default function MealsPage() {
                 initialName={selectedEntry.name}
                 initialItems={selectedEntry.items.map(mealItemToDraft)}
                 showMealTypes={false}
+                separateCustomizations={Boolean(selectedEntry.dish_id) || selectedEntry.items.some(item => item.is_customization)}
                 onSave={handleUpdateEntry}
                 onCancel={() => setModalStep('view-entry')}
                 saveLabel="Salva modifiche"

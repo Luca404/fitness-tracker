@@ -68,6 +68,7 @@ export interface MealItem {
   meal_id: string
   entry_id: string
   dish_item_id?: string | null
+  is_customization?: boolean
   food_name: string
   quantity_g: number
   piece_count?: number | null

@@ -7,8 +7,8 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 ## Features
 
 - **Meal logging** — log meals by time slot (breakfast, lunch, dinner, snack, drinks); calorie and macro breakdown per meal and per day. Snacks appear where they were registered relative to other entries, while the usual breakfast → lunch → dinner order stays fixed ([ordering details](docs/meal-diary-order.md))
-- **Dish-centric entry** — opening a meal slot shows one hub: pick and personalize a saved dish, cook something new (composed from a curated basic-ingredients dataset + Open Food Facts, then saved for reuse), or log a one-off dish/item that isn't saved; drinks stay in their own flow
-- **Kitchen** — one area with saved dishes and pantry tabs for creating, inspecting and editing recipes and stock; saved ingredients retain their insertion order and each dish can have a custom icon
+- **Dish-centric entry** — opening a meal slot shows saved dishes assigned to that slot; a dish can belong to breakfast, lunch, dinner and/or snack. Personalization ingredients remain separate from the saved recipe when the diary entry is reopened for editing or removal. New and one-off dishes are also supported; drinks stay in their own flow
+- **Kitchen** — one area with saved dishes and pantry tabs for creating, inspecting and editing recipes and stock; saved ingredients retain their insertion order, and each dish has one or more meal categories and can have a custom icon
 - **Pantry** — track groceries at home by culinary category (quantity + unit: g/ml/pieces), added via barcode scan, nutrition-label photo, or manual/basic-food entry; manual products can include saturated fat, sugars, salt and fibre per 100 g; barcode and nutrition data are reused through a shared read-only product catalog, while pantry stock remains private; pantry items surface first when searching ingredients and matching stock is consumed automatically when a dish is logged
 - **Nutrition-label photo import** — take or choose a package photo, extract product and per-100 nutrition data through an authenticated OpenAI-backed Edge Function, review every field, then save it to the pantry
 - **Macros** — visual progress bars for protein, total carbohydrates, and total fat against daily targets; sugars and saturated fat are subsets of their respective totals, not extra grams to add
@@ -126,10 +126,10 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 | `user_goals` | Calorie and macro targets plus the body weight used by the latest calculation |
 | `meals` | Meal records scoped by user and date |
 | `meal_entries` | Named dishes actually eaten within a meal slot; `created_at` records when each entry was registered, and `dish_id` links saved dishes |
-| `meal_items` | Ingredients and drinks belonging to an eaten dish, with `g`/`ml` units, nutrition values, pantry quantity actually consumed, and an optional saved ingredient link for nutrition updates |
+| `meal_items` | Ingredients and drinks belonging to an eaten dish, with `g`/`ml` units, optional piece size/count, nutrition values, pantry quantity actually consumed, an optional saved ingredient link and an `is_customization` marker for added ingredients |
 | `workouts` | Workout sessions (activity type, duration, MET, calories burned) |
 | `weight_logs` | Daily weight entries |
-| `dishes` | Saved reusable dishes (name, optional custom icon, reference weight derived from items) |
+| `dishes` | Saved reusable dishes (name, one or more meal categories, optional custom icon, reference weight derived from items) |
 | `dish_items` | Ingredients within a saved dish, including insertion position and the selected pantry-item reference when available |
 | `pantry_items` | Groceries at home (quantity + unit, kcal/macros and optional fibre, sugars, saturated fat and salt per 100g/100ml, Open Food Facts payload and nutrition scores when available) |
 | `barcode_products` | Shared product catalog keyed by barcode; authenticated clients can read it and trusted Edge Functions populate it from Open Food Facts or from label values reviewed and explicitly confirmed by a user |
@@ -137,9 +137,9 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 Pantry synchronization is performed inside the same PostgreSQL transaction that
 creates or updates a diary entry. Ingredients are matched to the exact selected
 pantry row first, then by stable catalog/Open Food Facts identifiers and finally
-by normalized name. Only compatible units are consumed (`g` from `g`, `ml` from
-`ml`); recipe quantities cannot automatically convert pantry items stored as
-pieces. Stock stops at zero, depleted items are hidden from ingredient search,
+by normalized name. Compatible units are consumed (`g` from `g`, `ml` from
+`ml`, and a recorded piece count from `pz`); portions entered only in grams do
+not deduct stock stored in pieces. Stock stops at zero, depleted items are hidden from ingredient search,
 editing a diary entry recalculates its consumption, and deleting it restores the
 quantity that entry had actually used.
 
@@ -215,18 +215,6 @@ the Supabase Auth Site URL and add the required preview URL patterns.
 
 ## Roadmap
 
-### Prossime priorità
-
-1. **Categorie dei piatti salvati.** Ogni piatto può appartenere a una o più
-   categorie fra Colazione, Pranzo, Cena e Spuntino. Le categorie si scelgono
-   quando si crea o modifica il piatto; in Pasti si vedono solo i piatti della
-   categoria corrispondente al momento selezionato. I piatti già salvati
-   restano disponibili durante la transizione.
-2. **Ingredienti aggiunti ai piatti salvati.** Gli ingredienti aggiunti mentre
-   si registra un piatto salvato restano distinti dalla ricetta base nel diario.
-   Riaprendo la registrazione, si vedono in una sezione separata e si possono
-   modificare o rimuovere senza cambiare la ricetta salvata.
-
 ### Completate
 
 1. **Dispensa e consumo nei pasti.** La registrazione usa le scorte disponibili,
@@ -239,6 +227,15 @@ the Supabase Auth Site URL and add the required preview URL patterns.
    mentre la dispensa in `pz` usa il numero di pezzi. Restano disponibili i grammi.
 3. **Buone abitudini in Pasti.** Il banner mostra una casella per ogni abitudine
    con icona e ✓, × o stato neutro, più il collegamento al dettaglio.
+4. **Categorie dei piatti salvati.** Ogni piatto può appartenere a una o più
+   categorie fra Colazione, Pranzo, Cena e Spuntino. Le categorie si scelgono
+   quando si crea o modifica il piatto; in Pasti si vedono solo i piatti della
+   categoria corrispondente al momento selezionato. I piatti già salvati
+   restano disponibili in tutte le categorie finché non vengono ricategorizzati.
+5. **Ingredienti aggiunti ai piatti salvati.** Gli ingredienti aggiunti mentre
+   si registra un piatto salvato restano distinti dalla ricetta base nel diario.
+   Riaprendo la registrazione, si vedono in una sezione separata e si possono
+   modificare o rimuovere senza cambiare la ricetta salvata.
 
 ### Altre voci
 

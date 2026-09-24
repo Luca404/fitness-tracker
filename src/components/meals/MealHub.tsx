@@ -190,6 +190,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
     const factor = ref > 0 ? targetWeight / ref : 1
     const dishItems: DishItemDraft[] = pickingDish.items.map(i => ({
       dish_item_id: i.id,
+      is_customization: false,
       food_name: i.food_name,
       quantity_g: Math.round(i.quantity_g * factor * 10) / 10,
       piece_count: i.piece_count == null ? null : Math.round(i.piece_count * factor * 10) / 10,
@@ -207,7 +208,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
       food_key: i.food_key,
       pantry_item_id: i.pantry_item_id ?? null,
     }))
-    await onAddEntry(pickingDish.name, [...dishItems, ...extraItems], pickingDish.id, pickingDish.icon)
+    await onAddEntry(pickingDish.name, [...dishItems, ...extraItems.map(item => ({ ...item, is_customization: true }))], pickingDish.id, pickingDish.icon)
     setPickingDish(null)
     setExtraItems([])
     setMode('list')

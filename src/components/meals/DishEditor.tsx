@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import FoodSearch from './FoodSearch'
 import type { DishItem, DishMealType, MealItemUnit, PieceSize } from '../../types'
 import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
@@ -8,6 +8,7 @@ import IngredientQuantityInput from './IngredientQuantityInput'
 export type DishItemDraft = Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'> & {
   id?: string
   dish_item_id?: string | null
+  is_customization?: boolean
   unit?: MealItemUnit
 }
 
@@ -20,11 +21,12 @@ interface Props {
   requireName?: boolean
   saveLabel?: string
   showMealTypes?: boolean
+  separateCustomizations?: boolean
 }
 
 export default function DishEditor({
   initialName, initialItems, initialMealTypes = ['lunch'], onSave, onCancel,
-  requireName = true, saveLabel = 'Salva piatto', showMealTypes = true,
+  requireName = true, saveLabel = 'Salva piatto', showMealTypes = true, separateCustomizations = false,
 }: Props) {
   const [name, setName] = useState(initialName)
   const [mealTypes, setMealTypes] = useState<DishMealType[]>(initialMealTypes)
@@ -39,6 +41,8 @@ export default function DishEditor({
   const totalProtein = items.reduce((s, i) => s + i.protein_g, 0)
   const totalCarbs = items.reduce((s, i) => s + i.carbs_g, 0)
   const totalFat = items.reduce((s, i) => s + i.fat_g, 0)
+  const orderedItems = items.map((item, index) => ({ item, index }))
+  if (separateCustomizations) orderedItems.sort((a, b) => Number(Boolean(a.item.is_customization)) - Number(Boolean(b.item.is_customization)))
 
   function updateQuantity(index: number, quantity_g: number) {
     if (!Number.isFinite(quantity_g) || quantity_g <= 0) return
@@ -141,7 +145,7 @@ export default function DishEditor({
             hideHeader
             onClose={() => {}}
             onAdd={(item) => {
-              setItems(prev => [...prev, item])
+              setItems(prev => [...prev, { ...item, is_customization: separateCustomizations }])
               setSearchKey(k => k + 1)
             }}
           />
@@ -158,8 +162,14 @@ export default function DishEditor({
             <p className="mt-2 text-sm text-gray-500">Cerca e aggiungi il primo ingrediente</p>
           </div>
         )}
-        {items.map((item, i) => (
-          <div key={`${item.food_name}-${i}`} className="rounded-2xl bg-gray-900/35 p-3 ring-1 ring-gray-700/60">
+        {orderedItems.map(({ item, index: i }, position) => (
+          <Fragment key={`${item.food_name}-${i}`}>
+          {separateCustomizations && (position === 0 || Boolean(orderedItems[position - 1].item.is_customization) !== Boolean(item.is_customization)) && (
+            <p className="px-1 pt-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              {item.is_customization ? 'Ingredienti aggiunti' : 'Ricetta base'}
+            </p>
+          )}
+          <div className="rounded-2xl bg-gray-900/35 p-3 ring-1 ring-gray-700/60">
             <div className="flex items-center">
               <div className="mr-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-700/70 text-sm">{FOOD_CATEGORY_BY_ID[item.category].icon}</div>
               <div className="min-w-0 flex-1">
@@ -201,6 +211,7 @@ export default function DishEditor({
               </div>
             </div>
           </div>
+          </Fragment>
         ))}
       </section>
 
