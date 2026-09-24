@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Meal, MealItem } from '../types'
-import { calculateHabitRows, habitStatus, summarizeHabitRows } from './goodHabits'
+import { calculateHabitRows, habitStatus, habitTileFill, summarizeHabitRows } from './goodHabits'
 
 function meal(date: string, items: Array<Partial<MealItem> & Pick<MealItem, 'category' | 'quantity_g'>>): Meal {
   return {
@@ -75,5 +75,17 @@ describe('good habits calculations', () => {
     expect(habitStatus({ label: 'Fibre', icon: '🌾', value: 10, target: 25, period: 'oggi', direction: 'min', partial: true })).toBe('incomplete')
     expect(habitStatus({ label: 'Fibre', icon: '🌾', value: 30, target: 25, period: 'oggi', direction: 'min', partial: true })).toBe('ok')
     expect(habitStatus({ label: 'Sale', icon: '🧂', value: 6, target: 5, period: 'oggi', direction: 'max', partial: true })).toBe('attention')
+  })
+
+  it('fills minimum goals toward the target and maximum goals only after exceeding it', () => {
+    const row = { label: 'Verdura', icon: '🥬', value: 200, target: 400, period: 'oggi' as const, direction: 'min' as const }
+    expect(habitTileFill(row)).toBe(50)
+    expect(habitTileFill({ ...row, value: 500 })).toBe(100)
+    expect(habitTileFill({ ...row, value: null })).toBe(0)
+
+    const maximum = { ...row, label: 'Sale', target: 5, direction: 'max' as const }
+    expect(habitTileFill({ ...maximum, value: 4 })).toBe(0)
+    expect(habitTileFill({ ...maximum, value: 6 })).toBe(20)
+    expect(habitTileFill({ ...maximum, value: 11 })).toBe(100)
   })
 })

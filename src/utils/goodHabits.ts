@@ -32,6 +32,14 @@ export function habitStatus(row: HabitRow): HabitStatus {
   return meetsTarget ? 'ok' : 'attention'
 }
 
+export function habitTileFill(row: HabitRow): number {
+  if (row.value == null || row.target <= 0) return 0
+  const ratio = row.direction === 'min'
+    ? row.value / row.target
+    : (row.value - row.target) / row.target
+  return Math.min(100, Math.max(0, Math.round(ratio * 100)))
+}
+
 export function summarizeHabitRows(rows: HabitRow[]) {
   return rows.reduce((summary, row) => {
     const status = habitStatus(row)

@@ -162,7 +162,6 @@ export default function DishEditor({
           <div className="rounded-xl bg-gray-900/35 px-3 py-2.5 text-sm">
             <div className="flex items-center justify-between gap-2">
               <span className="min-w-0 truncate text-gray-300">{item.food_name}</span>
-              <span className="shrink-0 text-gray-500">{item.quantity_g} {item.unit ?? 'g'}</span>
               <button type="button" onClick={() => removeItem(i)} className="text-lg text-gray-600 hover:text-red-400" aria-label={`Rimuovi ${item.food_name}`}>✕</button>
             </div>
             <p className="mt-1 text-xs text-gray-500">P {item.protein_g}g · C {item.carbs_g}g · G {item.fat_g}g</p>

@@ -19,7 +19,7 @@ describe('DishEditor', () => {
     expect(screen.queryByLabelText('Fibre (g)')).toBeNull()
     expect(screen.queryByLabelText('Zuccheri (g)')).toBeNull()
     expect(screen.queryByLabelText('Sale (g)')).toBeNull()
-    expect(screen.getByText('100 g', { selector: 'span' })).toBeTruthy()
+    expect(screen.queryByText('100 g', { selector: 'span' })).toBeNull()
     expect(screen.getByText('P 5g · C 30g · G 1g')).toBeTruthy()
     expect(screen.getByText('Fibre 3g · Zuccheri 2g · Sale 0.1g')).toBeTruthy()
     fireEvent.change(screen.getByLabelText('Quantità di Pasta cotta'), { target: { value: '200' } })

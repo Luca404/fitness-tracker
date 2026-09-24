@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { useData } from '../../contexts/DataContext'
 import { getGuideline } from '../../data/nutritionGuidelines'
 import { getMealsForRange } from '../../services/api'
-import { calculateHabitRows, habitStatus, summarizeHabitRows } from '../../utils/goodHabits'
+import { calculateHabitRows, habitStatus, habitTileFill, summarizeHabitRows } from '../../utils/goodHabits'
 import type { Meal } from '../../types'
 
 interface Props {
@@ -78,17 +78,25 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
           {rows.map(row => {
             const status = loading ? 'incomplete' : habitStatus(row)
             const statusLabel = status === 'ok' ? 'in linea' : status === 'attention' ? 'da migliorare' : 'dato incompleto'
+            const fill = loading ? 0 : habitTileFill(row)
+            const overMaximum = row.direction === 'max' && row.value != null && row.value > row.target
+            const progressLabel = loading || row.value == null ? '' : row.direction === 'min'
+              ? `, ${Math.round(row.value / row.target * 100)}% dell'obiettivo`
+              : overMaximum ? `, limite superato del ${Math.round((row.value - row.target) / row.target * 100)}%` : ', entro il limite'
+            const tileLabel = `${row.label}: ${statusLabel}${progressLabel}`
             return (
               <span key={row.label}
-                className={`flex min-w-0 flex-col items-center rounded-lg border px-0.5 py-1 ${
+                className={`relative flex min-w-0 flex-col items-center overflow-hidden rounded-lg border px-0.5 py-1 ${
                   status === 'ok' ? 'border-emerald-700/50 bg-emerald-500/10' :
                     status === 'attention' ? 'border-amber-700/50 bg-amber-500/10' : 'border-gray-700 bg-gray-900/40'
                 }`}
-                aria-label={`${row.label}: ${statusLabel}`}
-                title={`${row.label} · ${statusLabel}`}
+                aria-label={tileLabel}
+                title={tileLabel}
               >
-                <span className="text-base leading-none" aria-hidden="true">{row.icon}</span>
-                <span className={`mt-0.5 text-xs font-bold leading-none ${
+                {fill > 0 && <span className={`absolute inset-x-0 bottom-0 transition-all ${overMaximum ? 'bg-orange-500/35' : 'bg-primary-500/25'}`}
+                  style={{ height: `${fill}%` }} aria-hidden="true" />}
+                <span className="relative text-base leading-none" aria-hidden="true">{row.icon}</span>
+                <span className={`relative mt-0.5 text-xs font-bold leading-none ${
                   status === 'ok' ? 'text-emerald-400' : status === 'attention' ? 'text-amber-400' : 'text-gray-500'
                 }`} aria-hidden="true">{status === 'ok' ? '✓' : status === 'attention' ? '×' : '–'}</span>
               </span>
