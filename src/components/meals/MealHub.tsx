@@ -16,6 +16,7 @@ import ExtendedNutrition from './ExtendedNutrition'
 
 interface Props {
   onAddEntry: (name: string, items: DishItemDraft[], dishId?: string, dishIcon?: string | null) => Promise<void>
+  onDishUpdated?: () => Promise<void>
   beveragesOnly?: boolean
   mode: MealHubMode
   setMode: (mode: MealHubMode) => void
@@ -31,6 +32,7 @@ function totalKcal(dish: Dish): number {
 
 function toDraftItem(i: DishItem): DishItemDraft {
   return {
+    id: i.id,
     food_name: i.food_name,
     quantity_g: i.quantity_g,
     calories: i.calories,
@@ -93,7 +95,7 @@ function beverageToDraft(beverage: BasicFood, volumeMl: number): DishItemDraft {
 
 export type MealHubMode = 'list' | 'new' | 'oneoff' | 'edit' | 'pick'
 
-export default function MealHub({ onAddEntry, beveragesOnly = false, mode, setMode }: Props) {
+export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = false, mode, setMode }: Props) {
   const { user } = useAuth()
   const { showToast, setDishIcon } = useData()
   const [dishes, setDishes] = useState<Dish[]>([])
@@ -182,6 +184,7 @@ export default function MealHub({ onAddEntry, beveragesOnly = false, mode, setMo
     const ref = referenceWeight(pickingDish)
     const factor = ref > 0 ? targetWeight / ref : 1
     const dishItems: DishItemDraft[] = pickingDish.items.map(i => ({
+      dish_item_id: i.id,
       food_name: i.food_name,
       quantity_g: Math.round(i.quantity_g * factor * 10) / 10,
       calories: Math.round(i.calories * factor),
@@ -231,7 +234,10 @@ export default function MealHub({ onAddEntry, beveragesOnly = false, mode, setMo
   async function handleSaveNewDish(name: string, items: DishItemDraft[]) {
     if (!user) return
     const dish = await api.createDish(user.id, name, items)
-    await onAddEntry(name, items, dish.id)
+    await onAddEntry(name, items.map((item, index) => ({
+      ...item,
+      dish_item_id: dish.items[index]?.id ?? null,
+    })), dish.id)
     setMode('list')
     await refresh()
   }
@@ -239,6 +245,7 @@ export default function MealHub({ onAddEntry, beveragesOnly = false, mode, setMo
   async function handleSaveEditedDish(name: string, items: DishItemDraft[]) {
     if (!editingDish) return
     await api.updateDish(editingDish.id, name, items)
+    await onDishUpdated?.()
     setEditingDish(null)
     setMode('list')
     await refresh()

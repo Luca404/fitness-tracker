@@ -28,6 +28,7 @@ const MEAL_TYPES: { type: MealType; label: string }[] = [
 
 function mealItemToDraft(item: MealEntry['items'][number]): DishItemDraft {
   return {
+    dish_item_id: item.dish_item_id ?? null,
     food_name: item.food_name,
     quantity_g: item.quantity_g,
     unit: item.unit,
@@ -261,7 +262,7 @@ export default function MealsPage() {
                 Fatto
               </button>
             </div>
-            <MealHub onAddEntry={handleAddDishEntry} beveragesOnly={activeMealType === 'drinks'} mode={hubMode} setMode={setHubMode} />
+            <MealHub onAddEntry={handleAddDishEntry} onDishUpdated={() => fetchForDate(selectedDate)} beveragesOnly={activeMealType === 'drinks'} mode={hubMode} setMode={setHubMode} />
           </div>
         ) : modalStep === 'view-entry' ? (
           selectedEntry && (() => {

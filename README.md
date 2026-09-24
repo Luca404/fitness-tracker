@@ -125,8 +125,8 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 | `user_health_profiles` | Physical stats, activity level, resistance training, objective, target weight and date |
 | `user_goals` | Calorie and macro targets plus the body weight used by the latest calculation |
 | `meals` | Meal records scoped by user and date |
-| `meal_entries` | Named dishes actually eaten within a meal slot; `created_at` records when each entry was registered |
-| `meal_items` | Ingredients and drinks belonging to an eaten dish, with `g`/`ml` units, nutrition values and the pantry quantity actually consumed |
+| `meal_entries` | Named dishes actually eaten within a meal slot; `created_at` records when each entry was registered, and `dish_id` links saved dishes |
+| `meal_items` | Ingredients and drinks belonging to an eaten dish, with `g`/`ml` units, nutrition values, pantry quantity actually consumed, and an optional saved ingredient link for nutrition updates |
 | `workouts` | Workout sessions (activity type, duration, MET, calories burned) |
 | `weight_logs` | Daily weight entries |
 | `dishes` | Saved reusable dishes (name, optional custom icon, reference weight derived from items) |

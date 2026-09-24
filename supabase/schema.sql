@@ -172,6 +172,11 @@ create table public.dish_items (
   created_at  timestamptz default now()
 );
 create unique index dish_items_dish_position_idx on public.dish_items (dish_id, position);
+
+alter table public.meal_items
+  add column dish_item_id uuid references public.dish_items on delete set null;
+create index meal_items_dish_item_id_idx on public.meal_items (dish_item_id)
+  where dish_item_id is not null;
 alter table public.dish_items enable row level security;
 create policy "own dish_items" on public.dish_items
   using (exists (
@@ -362,6 +367,15 @@ begin
   ) then
     raise exception 'dish not found' using errcode = 'P0002';
   end if;
+  if exists (
+    select 1 from jsonb_to_recordset(p_items) as x(dish_item_id uuid)
+    where x.dish_item_id is not null and not exists (
+      select 1 from public.dish_items di
+      where di.id = x.dish_item_id and di.dish_id = p_dish_id
+    )
+  ) then
+    raise exception 'dish ingredient not found' using errcode = 'P0002';
+  end if;
 
   insert into public.meals (user_id, date, meal_type, name)
   values (p_user_id, p_date, p_meal_type, null)
@@ -373,17 +387,17 @@ begin
   returning * into v_entry;
 
   insert into public.meal_items (
-    meal_id, entry_id, food_name, quantity_g, unit, category, food_key,
+    meal_id, entry_id, dish_item_id, food_name, quantity_g, unit, category, food_key,
     pantry_item_id, calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g,
     salt_g, source, off_food_id
   )
   select
-    v_meal.id, v_entry.id, x.food_name, x.quantity_g, coalesce(x.unit, 'g'),
+    v_meal.id, v_entry.id, x.dish_item_id, x.food_name, x.quantity_g, coalesce(x.unit, 'g'),
     coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories,
     x.protein_g, x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
     coalesce(x.source, 'manual'), x.off_food_id
   from jsonb_to_recordset(p_items) as x(
-    food_name text, quantity_g float, unit text, category text, food_key text,
+    dish_item_id uuid, food_name text, quantity_g float, unit text, category text, food_key text,
     pantry_item_id uuid, calories float, protein_g float, carbs_g float,
     fat_g float, fiber_g float, sugars_g float, salt_g float, source text,
     off_food_id text
@@ -460,6 +474,15 @@ begin
   if not found then
     raise exception 'meal entry not found' using errcode = 'P0002';
   end if;
+  if exists (
+    select 1 from jsonb_to_recordset(p_items) as x(dish_item_id uuid)
+    where x.dish_item_id is not null and not exists (
+      select 1 from public.dish_items di
+      where di.id = x.dish_item_id and di.dish_id = v_entry.dish_id
+    )
+  ) then
+    raise exception 'dish ingredient not found' using errcode = 'P0002';
+  end if;
 
   select user_id into v_user_id from public.meals where id = v_entry.meal_id;
 
@@ -476,17 +499,17 @@ begin
   delete from public.meal_items where entry_id = p_entry_id;
 
   insert into public.meal_items (
-    meal_id, entry_id, food_name, quantity_g, unit, category, food_key,
+    meal_id, entry_id, dish_item_id, food_name, quantity_g, unit, category, food_key,
     pantry_item_id, calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g,
     salt_g, source, off_food_id
   )
   select
-    v_entry.meal_id, v_entry.id, x.food_name, x.quantity_g, coalesce(x.unit, 'g'),
+    v_entry.meal_id, v_entry.id, x.dish_item_id, x.food_name, x.quantity_g, coalesce(x.unit, 'g'),
     coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories,
     x.protein_g, x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
     coalesce(x.source, 'manual'), x.off_food_id
   from jsonb_to_recordset(p_items) as x(
-    food_name text, quantity_g float, unit text, category text, food_key text,
+    dish_item_id uuid, food_name text, quantity_g float, unit text, category text, food_key text,
     pantry_item_id uuid, calories float, protein_g float, carbs_g float,
     fat_g float, fiber_g float, sugars_g float, salt_g float, source text,
     off_food_id text
@@ -619,10 +642,20 @@ set search_path = public
 as $$
 declare
   v_dish public.dishes%rowtype;
+  v_element record;
+  v_item_id uuid;
+  v_offset integer;
   v_items jsonb;
 begin
   if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
     raise exception 'items must be a non-empty array' using errcode = '22023';
+  end if;
+  if exists (
+    select 1 from jsonb_array_elements(p_items) as element(value)
+    where element.value->>'id' is not null
+    group by element.value->>'id' having count(*) > 1
+  ) then
+    raise exception 'duplicate dish ingredient' using errcode = '22023';
   end if;
 
   update public.dishes
@@ -633,26 +666,70 @@ begin
     raise exception 'dish not found' using errcode = 'P0002';
   end if;
 
-  delete from public.dish_items where dish_id = p_dish_id;
-  with inserted as (
-    insert into public.dish_items (
-      dish_id, position, food_name, quantity_g, category, food_key, pantry_item_id,
-      calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g, salt_g, source,
-      off_food_id
-    )
-    select
-      p_dish_id, (element.ordinal - 1)::integer, x.food_name, x.quantity_g, coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories, x.protein_g,
-      x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
-      coalesce(x.source, 'manual'), x.off_food_id
-    from jsonb_array_elements(p_items) with ordinality as element(value, ordinal)
-    cross join lateral jsonb_to_record(element.value) as x(
-      food_name text, quantity_g float, category text, food_key text, pantry_item_id uuid, calories float, protein_g float,
-      carbs_g float, fat_g float, fiber_g float, sugars_g float, salt_g float,
-      source text, off_food_id text
-    )
-    returning *
-  )
-  select coalesce(jsonb_agg(to_jsonb(inserted) order by inserted.position), '[]'::jsonb) into v_items from inserted;
+  -- Move old positions beyond the new range, preserving IDs for retained items.
+  select coalesce(max(position), -1) + jsonb_array_length(p_items) + 1
+  into v_offset from public.dish_items where dish_id = p_dish_id;
+  update public.dish_items set position = position + v_offset where dish_id = p_dish_id;
+
+  for v_element in
+    select value, ordinality from jsonb_array_elements(p_items) with ordinality
+  loop
+    v_item_id := nullif(v_element.value->>'id', '')::uuid;
+    if v_item_id is not null then
+      update public.dish_items di set
+        position = (v_element.ordinality - 1)::integer,
+        food_name = x.food_name, quantity_g = x.quantity_g,
+        category = coalesce(x.category, 'other'), food_key = x.food_key,
+        pantry_item_id = x.pantry_item_id, calories = x.calories,
+        protein_g = x.protein_g, carbs_g = x.carbs_g, fat_g = x.fat_g,
+        fiber_g = x.fiber_g, sugars_g = x.sugars_g, salt_g = x.salt_g,
+        source = coalesce(x.source, 'manual'), off_food_id = x.off_food_id
+      from jsonb_to_record(v_element.value) as x(
+        food_name text, quantity_g float, category text, food_key text,
+        pantry_item_id uuid, calories float, protein_g float, carbs_g float,
+        fat_g float, fiber_g float, sugars_g float, salt_g float,
+        source text, off_food_id text
+      )
+      where di.id = v_item_id and di.dish_id = p_dish_id and di.position >= v_offset;
+      if not found then
+        raise exception 'dish ingredient not found' using errcode = 'P0002';
+      end if;
+    else
+      insert into public.dish_items (
+        dish_id, position, food_name, quantity_g, category, food_key, pantry_item_id,
+        calories, protein_g, carbs_g, fat_g, fiber_g, sugars_g, salt_g, source, off_food_id
+      )
+      select p_dish_id, (v_element.ordinality - 1)::integer, x.food_name, x.quantity_g,
+        coalesce(x.category, 'other'), x.food_key, x.pantry_item_id, x.calories,
+        x.protein_g, x.carbs_g, x.fat_g, x.fiber_g, x.sugars_g, x.salt_g,
+        coalesce(x.source, 'manual'), x.off_food_id
+      from jsonb_to_record(v_element.value) as x(
+        food_name text, quantity_g float, category text, food_key text,
+        pantry_item_id uuid, calories float, protein_g float, carbs_g float,
+        fat_g float, fiber_g float, sugars_g float, salt_g float,
+        source text, off_food_id text
+      );
+    end if;
+  end loop;
+
+  delete from public.dish_items where dish_id = p_dish_id and position >= v_offset;
+
+  -- Recalculate logged portions from the current per-gram values. Quantities,
+  -- added extras, pantry usage and unrelated diary entries stay intact.
+  update public.meal_items mi set
+    calories = round((di.calories * mi.quantity_g / di.quantity_g)::numeric),
+    protein_g = round((di.protein_g * mi.quantity_g / di.quantity_g)::numeric, 1),
+    carbs_g = round((di.carbs_g * mi.quantity_g / di.quantity_g)::numeric, 1),
+    fat_g = round((di.fat_g * mi.quantity_g / di.quantity_g)::numeric, 1),
+    fiber_g = round((di.fiber_g * mi.quantity_g / di.quantity_g)::numeric, 2),
+    sugars_g = round((di.sugars_g * mi.quantity_g / di.quantity_g)::numeric, 2),
+    salt_g = round((di.salt_g * mi.quantity_g / di.quantity_g)::numeric, 2)
+  from public.dish_items di, public.meal_entries e
+  where mi.dish_item_id = di.id and mi.entry_id = e.id
+    and e.dish_id = p_dish_id and di.dish_id = p_dish_id;
+
+  select coalesce(jsonb_agg(to_jsonb(di) order by di.position), '[]'::jsonb)
+  into v_items from public.dish_items di where di.dish_id = p_dish_id;
 
   return to_jsonb(v_dish) || jsonb_build_object('items', v_items);
 end;

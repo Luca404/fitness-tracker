@@ -5,6 +5,8 @@ import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import IngredientQuantityInput from './IngredientQuantityInput'
 
 export type DishItemDraft = Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'> & {
+  id?: string
+  dish_item_id?: string | null
   unit?: MealItemUnit
 }
 
@@ -51,6 +53,17 @@ export default function DishEditor({
         salt_g: it.salt_g == null ? null : Math.round(it.salt_g * factor * 100) / 100,
       }
     }))
+  }
+
+  function updateNutrient(
+    index: number,
+    field: 'calories' | 'protein_g' | 'carbs_g' | 'fat_g' | 'fiber_g' | 'sugars_g' | 'salt_g',
+    rawValue: string,
+  ) {
+    const optional = field === 'fiber_g' || field === 'sugars_g' || field === 'salt_g'
+    const value = rawValue === '' && optional ? null : Number(rawValue)
+    if (value !== null && (!Number.isFinite(value) || value < 0)) return
+    setItems(prev => prev.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item))
   }
 
   function removeItem(index: number) {
@@ -134,6 +147,25 @@ export default function DishEditor({
                 unit={item.unit}
                 compact
               />
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {([
+                  ['calories', 'kcal'],
+                  ['protein_g', 'Proteine (g)'],
+                  ['carbs_g', 'Carboidrati (g)'],
+                  ['fat_g', 'Grassi (g)'],
+                  ['fiber_g', 'Fibre (g)'],
+                  ['sugars_g', 'Zuccheri (g)'],
+                  ['salt_g', 'Sale (g)'],
+                ] as const).map(([field, label]) => (
+                  <label key={field} className="text-xs text-gray-400">
+                    {label}
+                    <input type="number" min="0" step={field === 'calories' ? '1' : '0.01'}
+                      value={item[field] ?? ''}
+                      onChange={event => updateNutrient(i, field, event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-2 py-1.5 text-sm text-white outline-none focus:border-primary-500" />
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         ))}

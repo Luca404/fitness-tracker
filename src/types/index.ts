@@ -65,6 +65,7 @@ export interface MealItem {
   id: string
   meal_id: string
   entry_id: string
+  dish_item_id?: string | null
   food_name: string
   quantity_g: number
   unit: MealItemUnit

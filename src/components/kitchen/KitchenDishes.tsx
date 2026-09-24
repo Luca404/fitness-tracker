@@ -23,6 +23,7 @@ function dishTotals(dish: Dish) {
 
 function toDraft(item: Dish['items'][number]): DishItemDraft {
   return {
+    id: item.id,
     food_name: item.food_name,
     quantity_g: item.quantity_g,
     calories: item.calories,
