@@ -216,7 +216,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
                 <button type="button" onClick={() => { setSelected(null); setPiece(null) }} className="text-gray-400 text-sm">Cambia</button>
               </div>
               {selected.source === 'openfoodfacts' && (
-                <OpenFoodFactsDetails food={selected} />
+                <OpenFoodFactsDetails food={selected} detailedLabels />
               )}
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quantità</label>

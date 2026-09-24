@@ -22,11 +22,12 @@ interface Props {
   saveLabel?: string
   showMealTypes?: boolean
   separateCustomizations?: boolean
+  editing?: boolean
 }
 
 export default function DishEditor({
   initialName, initialItems, initialMealTypes = ['lunch'], onSave, onCancel,
-  requireName = true, saveLabel = 'Salva piatto', showMealTypes = true, separateCustomizations = false,
+  requireName = true, saveLabel = 'Salva piatto', showMealTypes = true, separateCustomizations = false, editing = false,
 }: Props) {
   const [name, setName] = useState(initialName)
   const [mealTypes, setMealTypes] = useState<DishMealType[]>(initialMealTypes)
@@ -180,12 +181,14 @@ export default function DishEditor({
                 unit={item.unit}
                 compact
               />
-              <p className="mt-2 text-xs text-gray-500">
-                P {item.protein_g} g · C {item.carbs_g} g · G {item.fat_g} g
-                {item.fiber_g != null ? ` · Fibre ${item.fiber_g} g` : ''}
-                {item.sugars_g != null ? ` · Zuccheri ${item.sugars_g} g` : ''}
-                {item.salt_g != null ? ` · Sale ${item.salt_g} g` : ''}
-              </p>
+              <div className="mt-2 grid grid-cols-3 gap-x-2 gap-y-1 text-xs text-gray-500">
+                <span>P {item.protein_g} g</span>
+                <span>C {item.carbs_g} g</span>
+                <span>G {item.fat_g} g</span>
+                <span>Fibre {item.fiber_g == null ? '—' : `${item.fiber_g} g`}</span>
+                <span>Zuccheri {item.sugars_g == null ? '—' : `${item.sugars_g} g`}</span>
+                <span>Sale {item.salt_g == null ? '—' : `${item.salt_g} g`}</span>
+              </div>
             </div>
           </div>
           </Fragment>
@@ -204,8 +207,8 @@ export default function DishEditor({
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
             <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">P <b className="text-gray-200">{Math.round(totalProtein)}g</b></span>
-            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">C tot. <b className="text-gray-200">{Math.round(totalCarbs)}g</b></span>
-            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">G tot. <b className="text-gray-200">{Math.round(totalFat)}g</b></span>
+            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">{editing ? 'C' : 'C tot.'} <b className="text-gray-200">{Math.round(totalCarbs)}g</b></span>
+            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">{editing ? 'G' : 'G tot.'} <b className="text-gray-200">{Math.round(totalFat)}g</b></span>
           </div>
         </div>
       )}

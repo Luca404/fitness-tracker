@@ -128,7 +128,7 @@ export default function SettingsPage() {
         {recommendation && (
           <div className="space-y-2 rounded-xl bg-gray-800 p-4 text-xs text-gray-400">
             <p>
-              TDEE {Math.round(recommendation.tdee)} kcal · Proteine {recommendation.proteinPerKg.toFixed(1)} g/kg · Grassi totali {recommendation.fatPerKg.toFixed(1)} g/kg
+              TDEE {Math.round(recommendation.tdee)} kcal · Proteine {recommendation.proteinPerKg.toFixed(1)} g/kg · Grassi {recommendation.fatPerKg.toFixed(1)} g/kg
               {recommendation.usesAdjustedWeight && ` · peso di riferimento ${Math.round(recommendation.referenceWeightKg)} kg`}
             </p>
             {recommendation.warnings.map(warning => (
@@ -140,8 +140,8 @@ export default function SettingsPage() {
         {[
           { label: 'Calorie (kcal)', val: calories, set: setCalories },
           { label: 'Proteine (g)', val: protein, set: setProtein },
-          { label: 'Carboidrati totali (g)', val: carbs, set: setCarbs },
-          { label: 'Grassi totali (g)', val: fat, set: setFat },
+          { label: 'Carboidrati (g)', val: carbs, set: setCarbs },
+          { label: 'Grassi (g)', val: fat, set: setFat },
         ].map(({ label, val, set }) => (
           <div key={label}>
             <label className="text-sm text-gray-400 mb-1 block">{label}</label>

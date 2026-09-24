@@ -40,14 +40,14 @@ describe('PantryPage manual entry', () => {
     render(<PantryPage />)
     openManualForm()
 
-    expect(within(screen.getByRole('group', { name: 'Carboidrati' })).getByLabelText('di cui zuccheri (g/100g)')).toBeTruthy()
+    expect(within(screen.getByRole('group', { name: 'Carboidrati' })).getByLabelText('Zuccheri (g/100g)')).toBeTruthy()
     expect(within(screen.getByRole('group', { name: 'Grassi' })).getByLabelText('di cui grassi saturi (g/100g)')).toBeTruthy()
 
     fireEvent.change(screen.getByLabelText('Nome alimento'), { target: { value: 'Biscotti' } })
-    fireEvent.change(screen.getByLabelText('Carboidrati totali (g/100g)'), { target: { value: '65' } })
-    fireEvent.change(screen.getByLabelText('Grassi totali (g/100g)'), { target: { value: '20' } })
+    fireEvent.change(screen.getByLabelText('Carboidrati (g/100g)'), { target: { value: '65' } })
+    fireEvent.change(screen.getByLabelText('Grassi (g/100g)'), { target: { value: '20' } })
     fireEvent.change(screen.getByLabelText('di cui grassi saturi (g/100g)'), { target: { value: '8.5' } })
-    fireEvent.change(screen.getByLabelText('di cui zuccheri (g/100g)'), { target: { value: '22' } })
+    fireEvent.change(screen.getByLabelText('Zuccheri (g/100g)'), { target: { value: '22' } })
     fireEvent.change(screen.getByLabelText('Sale (g/100g)'), { target: { value: '0.45' } })
     fireEvent.change(screen.getByLabelText('Fibre (g/100g)'), { target: { value: '4.2' } })
     fireEvent.click(screen.getByRole('button', { name: 'Continua' }))
@@ -84,7 +84,7 @@ describe('PantryPage manual entry', () => {
     render(<PantryPage />)
 
     fireEvent.click(await screen.findByRole('button', { name: 'Modifica Biscotti' }))
-    expect(within(screen.getByRole('group', { name: 'Carboidrati' })).getByLabelText('di cui zuccheri (g)')).toBeTruthy()
+    expect(within(screen.getByRole('group', { name: 'Carboidrati' })).getByLabelText('Zuccheri (g)')).toBeTruthy()
     expect(within(screen.getByRole('group', { name: 'Grassi' })).getByLabelText('di cui grassi saturi (g)')).toBeTruthy()
     fireEvent.change(screen.getByLabelText('di cui grassi saturi (g)'), { target: { value: '7' } })
     fireEvent.change(screen.getByLabelText('Fibre (g)'), { target: { value: '' } })
@@ -119,7 +119,7 @@ describe('PantryPage manual entry', () => {
     openManualForm()
 
     fireEvent.change(screen.getByLabelText('Nome alimento'), { target: { value: 'Biscotti' } })
-    fireEvent.change(screen.getByLabelText('di cui zuccheri (g/100g)'), { target: { value: '3' } })
+    fireEvent.change(screen.getByLabelText('Zuccheri (g/100g)'), { target: { value: '3' } })
     fireEvent.click(screen.getByRole('button', { name: 'Continua' }))
 
     expect(mocks.showToast).toHaveBeenCalledWith('Grassi saturi e zuccheri non possono superare i rispettivi totali')

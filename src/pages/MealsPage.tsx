@@ -296,8 +296,8 @@ export default function MealsPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="rounded-xl bg-black/15 p-2 text-center"><p className="text-xs text-gray-500">Proteine</p><p className="font-semibold">{Math.round(totals.protein)}g</p></div>
-                    <div className="rounded-xl bg-black/15 p-2 text-center"><p className="text-xs text-gray-500">Carbo tot.</p><p className="font-semibold">{Math.round(totals.carbs)}g</p></div>
-                    <div className="rounded-xl bg-black/15 p-2 text-center"><p className="text-xs text-gray-500">Grassi tot.</p><p className="font-semibold">{Math.round(totals.fat)}g</p></div>
+                    <div className="rounded-xl bg-black/15 p-2 text-center"><p className="text-xs text-gray-500">Carboidrati</p><p className="font-semibold">{Math.round(totals.carbs)}g</p></div>
+                    <div className="rounded-xl bg-black/15 p-2 text-center"><p className="text-xs text-gray-500">Grassi</p><p className="font-semibold">{Math.round(totals.fat)}g</p></div>
                   </div>
                   <ExtendedNutrition totals={extendedTotals} />
                 </div>
@@ -330,6 +330,7 @@ export default function MealsPage() {
                 initialName={selectedEntry.name}
                 initialItems={selectedEntry.items.map(mealItemToDraft)}
                 showMealTypes={false}
+                editing
                 separateCustomizations={Boolean(selectedEntry.dish_id) || selectedEntry.items.some(item => item.is_customization)}
                 onSave={handleUpdateEntry}
                 onCancel={() => setModalStep('view-entry')}

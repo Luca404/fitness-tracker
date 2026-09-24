@@ -7,6 +7,7 @@ interface Props {
     'nutrition_score' | 'nutrition_grade' | 'nova_group' | 'ecoscore_grade' |
     'ingredients' | 'allergens' | 'traces' | 'labels' | 'categories'
   >>
+  detailedLabels?: boolean
 }
 
 function Nutrient({ label, value }: { label: string; value: number | null | undefined }) {
@@ -14,7 +15,7 @@ function Nutrient({ label, value }: { label: string; value: number | null | unde
   return <span className="rounded-lg bg-black/10 px-2 py-1">{label} <b>{value} g</b></span>
 }
 
-export default function OpenFoodFactsDetails({ food }: Props) {
+export default function OpenFoodFactsDetails({ food, detailedLabels = false }: Props) {
   const hasOtherNutrition = food.fiber_100g != null || food.salt_100g != null
   const hasScores = food.nutrition_grade || food.nutrition_score !== null && food.nutrition_score !== undefined
     || food.nova_group !== null && food.nova_group !== undefined || food.ecoscore_grade
@@ -37,15 +38,15 @@ export default function OpenFoodFactsDetails({ food }: Props) {
           {food.protein_100g !== undefined && <Nutrient label="Proteine" value={food.protein_100g} />}
           {(food.carbs_100g !== undefined || food.sugars_100g != null) && (
             <span className="rounded-lg bg-black/10 px-2 py-1">
-              {food.carbs_100g !== undefined && <span className="block">Carboidrati totali <b>{food.carbs_100g} g</b></span>}
+              {food.carbs_100g !== undefined && <span className="block">Carboidrati{detailedLabels ? ' totali' : ''} <b>{food.carbs_100g} g</b></span>}
               {food.sugars_100g != null && (
-                <span className="block text-gray-500">{food.carbs_100g !== undefined ? 'di cui zuccheri' : 'Zuccheri'} <b>{food.sugars_100g} g</b></span>
+                <span className="block text-gray-500">{detailedLabels && food.carbs_100g !== undefined ? 'di cui zuccheri' : 'Zuccheri'} <b>{food.sugars_100g} g</b></span>
               )}
             </span>
           )}
           {(food.fat_100g !== undefined || food.saturated_fat_100g != null || food.unsaturated_fat_100g != null) && (
             <span className="rounded-lg bg-black/10 px-2 py-1">
-              {food.fat_100g !== undefined && <span className="block">Grassi totali <b>{food.fat_100g} g</b></span>}
+              {food.fat_100g !== undefined && <span className="block">Grassi{detailedLabels ? ' totali' : ''} <b>{food.fat_100g} g</b></span>}
               {food.saturated_fat_100g != null && (
                 <span className="block text-gray-500">{food.fat_100g !== undefined ? 'di cui saturi' : 'Grassi saturi'} <b>{food.saturated_fat_100g} g</b></span>
               )}

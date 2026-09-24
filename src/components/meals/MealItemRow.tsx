@@ -18,12 +18,12 @@ export default function MealItemRow({ item, onDelete }: Props) {
           {item.piece_size && item.piece_count
             ? `${formatPieceQuantity(item.category, item.food_name, item.piece_size, item.piece_count)} · ≈ ${item.quantity_g} g`
             : `${item.quantity_g}${item.unit ?? 'g'}`}
-          {' · '}P {item.protein_g}g · C tot. {item.carbs_g}g · G tot. {item.fat_g}g
+          {' · '}P {item.protein_g}g · C {item.carbs_g}g · G {item.fat_g}g
         </p>
         {hasExtendedNutrition && (
           <p className="mt-0.5 text-[11px] text-gray-600">
             {item.fiber_g != null && `Fibre ${item.fiber_g}g`}
-            {item.sugars_g != null && `${item.fiber_g != null ? ' · ' : ''}di cui zuccheri ${item.sugars_g}g`}
+            {item.sugars_g != null && `${item.fiber_g != null ? ' · ' : ''}Zuccheri ${item.sugars_g}g`}
             {item.salt_g != null && `${item.fiber_g != null || item.sugars_g != null ? ' · ' : ''}Sale ${item.salt_g}g`}
           </p>
         )}

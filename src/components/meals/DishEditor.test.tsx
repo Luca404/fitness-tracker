@@ -18,6 +18,11 @@ describe('DishEditor', () => {
     expect(screen.queryByLabelText('Fibre (g)')).toBeNull()
     expect(screen.queryByLabelText('Zuccheri (g)')).toBeNull()
     expect(screen.queryByLabelText('Sale (g)')).toBeNull()
+    const nutrientGrid = screen.getByText('P 5 g').parentElement
+    expect(nutrientGrid?.className).toContain('grid-cols-3')
+    expect(Array.from(nutrientGrid?.children ?? []).map(node => node.textContent)).toEqual([
+      'P 5 g', 'C 30 g', 'G 1 g', 'Fibre —', 'Zuccheri —', 'Sale —',
+    ])
     fireEvent.change(screen.getByLabelText('Quantità di Pasta cotta'), { target: { value: '200' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salva piatto' }))
 

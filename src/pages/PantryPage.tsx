@@ -63,9 +63,9 @@ const UNIT_LABELS: Record<PantryUnit, string> = { g: 'grammi', ml: 'millilitri',
 const PHOTO_NUTRIENT_FIELDS = [
   { key: 'calories_100g', label: 'Calorie', unit: 'kcal' },
   { key: 'protein_100g', label: 'Proteine', unit: 'g' },
-  { key: 'carbs_100g', label: 'Carboidrati totali', unit: 'g' },
-  { key: 'sugars_100g', label: 'di cui zuccheri', unit: 'g' },
-  { key: 'fat_100g', label: 'Grassi totali', unit: 'g' },
+  { key: 'carbs_100g', label: 'Carboidrati', unit: 'g' },
+  { key: 'sugars_100g', label: 'Zuccheri', unit: 'g' },
+  { key: 'fat_100g', label: 'Grassi', unit: 'g' },
   { key: 'saturated_fat_100g', label: 'di cui grassi saturi', unit: 'g' },
   { key: 'fiber_100g', label: 'Fibre', unit: 'g' },
   { key: 'salt_100g', label: 'Sale', unit: 'g' },
@@ -716,19 +716,19 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
               ))}
             </select>
           </div>
-          <p className="text-xs text-gray-500">Valori per 100 g. Saturi e zuccheri sono già compresi nei rispettivi totali.</p>
+          <p className="text-xs text-gray-500">Valori per 100 g. Gli zuccheri sono inclusi nei carboidrati e i saturi nei grassi.</p>
           <div className="grid grid-cols-2 gap-3">
             <NutrientNumberInput label="Calorie (kcal/100g)" value={manualCal} onChange={value => setManualCal(value ?? 0)} />
             <NutrientNumberInput label="Proteine (g/100g)" value={manualProt} onChange={value => setManualProt(value ?? 0)} />
           </div>
           <fieldset aria-label="Carboidrati" className="rounded-xl border border-gray-600 bg-gray-800/50 p-3">
-            <NutrientNumberInput label="Carboidrati totali (g/100g)" value={manualCarbs} onChange={value => setManualCarbs(value ?? 0)} />
+            <NutrientNumberInput label="Carboidrati (g/100g)" value={manualCarbs} onChange={value => setManualCarbs(value ?? 0)} />
             <div className="mt-2 border-l-2 border-gray-600 pl-3">
-              <NutrientNumberInput label="di cui zuccheri (g/100g)" value={manualSugars} onChange={setManualSugars} optional />
+              <NutrientNumberInput label="Zuccheri (g/100g)" value={manualSugars} onChange={setManualSugars} optional />
             </div>
           </fieldset>
           <fieldset aria-label="Grassi" className="rounded-xl border border-gray-600 bg-gray-800/50 p-3">
-            <NutrientNumberInput label="Grassi totali (g/100g)" value={manualFat} onChange={value => setManualFat(value ?? 0)} />
+            <NutrientNumberInput label="Grassi (g/100g)" value={manualFat} onChange={value => setManualFat(value ?? 0)} />
             <div className="mt-2 border-l-2 border-gray-600 pl-3">
               <NutrientNumberInput label="di cui grassi saturi (g/100g)" value={manualSaturatedFat} onChange={setManualSaturatedFat} optional />
             </div>

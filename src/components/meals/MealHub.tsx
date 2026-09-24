@@ -345,6 +345,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
           initialName={editingDish.name}
           initialItems={editingDish.items.map(toDraftItem)}
           initialMealTypes={editingDish.meal_types}
+          editing
           requireName
           saveLabel="Salva modifiche"
           onSave={handleSaveEditedDish}
@@ -407,7 +408,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
             <MacroPill label="Carbo tot." value={carbs} />
             <MacroPill label="Grassi tot." value={fat} />
           </div>
-          <ExtendedNutrition totals={extendedTotals} />
+          <ExtendedNutrition totals={extendedTotals} detailedLabels />
         </div>
         <div className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
           <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quanto ne hai mangiato?</label>
