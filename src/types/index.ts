@@ -58,6 +58,8 @@ export interface MealEntry {
   meal_id: string
   dish_id?: string | null
   dish_icon?: string | null
+  prepared_batch_id?: string | null
+  cooked_portion_g?: number | null
   name: string
   created_at: string
   items: MealItem[]
@@ -166,10 +168,8 @@ export interface FoodResult {
 export interface PantryItem {
   id: string
   user_id: string
-  archived_at?: string | null
   name: string
-  quantity: number
-  unit: PantryUnit
+  nutrition_unit?: 'g' | 'ml'
   calories_100g: number
   protein_100g: number
   carbs_100g: number
@@ -229,10 +229,23 @@ export interface Dish {
   user_id: string
   name: string
   icon: string | null
+  is_preparation?: boolean
   meal_types: DishMealType[]
   created_at: string
   updated_at: string
   items: DishItem[]  // hydrated client-side
+}
+
+export interface PreparedBatch {
+  id: string
+  user_id: string
+  snapshot_dish_id: string
+  source_dish_id: string | null
+  total_cooked_g: number
+  remaining_g: number
+  closed_at: string | null
+  created_at: string
+  dish: Dish
 }
 
 export interface DishItem {
@@ -241,6 +254,7 @@ export interface DishItem {
   position: number
   food_name: string
   quantity_g: number
+  unit?: MealItemUnit
   piece_count?: number | null
   piece_size?: PieceSize | null
   category: FoodCategory

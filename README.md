@@ -93,7 +93,7 @@ src/
 │   ├── WorkoutPage.tsx
 │   ├── WeightPage.tsx
 │   ├── HistoryPage.tsx
-│   ├── KitchenPage.tsx  # Piatti + Dispensa tabs
+│   ├── KitchenPage.tsx  # Ingredienti + Piatti tabs
 │   ├── PantryPage.tsx   # Pantry tab and legacy standalone view
 │   └── SettingsPage.tsx
 ├── services/
@@ -125,34 +125,35 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 | `user_health_profiles` | Physical stats, activity level, resistance training, objective, target weight and date |
 | `user_goals` | Calorie and macro targets plus the body weight used by the latest calculation |
 | `meals` | Meal records scoped by user and date |
-| `meal_entries` | Named dishes actually eaten within a meal slot; `created_at` records when each entry was registered, and `dish_id` links saved dishes |
-| `meal_items` | Ingredients and drinks belonging to an eaten dish, with `g`/`ml` units, optional piece size/count, nutrition values, pantry quantity actually consumed, an optional saved ingredient link and an `is_customization` marker for added ingredients |
+| `meal_entries` | Named dishes actually eaten within a meal slot; prepared portions also store their cooked grams and batch ID |
+| `meal_items` | Ingredients and drinks belonging to an eaten dish, with `g`/`ml` units, optional piece size/count, nutrition values and an optional saved ingredient link |
 | `workouts` | Workout sessions (activity type, duration, MET, calories burned) |
 | `weight_logs` | Daily weight entries |
-| `dishes` | Saved reusable dishes (name, one or more meal categories, optional custom icon, reference weight derived from items) |
-| `dish_items` | Ingredients within a saved dish, including insertion position and the selected pantry-item reference when available |
-| `pantry_items` | Groceries at home (quantity + unit, kcal/macros and optional fibre, sugars, saturated fat and salt per 100g/100ml, Open Food Facts payload and nutrition scores when available) |
+| `dishes` | Saved reusable recipes and separate snapshots of prepared batches |
+| `dish_items` | Ingredients within a saved recipe or preparation snapshot, including order, g/ml unit and optional personal ingredient reference |
+| `pantry_items` | Permanent personal ingredient catalog, with nutritional values per 100 g/ml; legacy stock columns remain temporarily for compatibility |
+| `prepared_batches` | Independently prepared dishes, with estimated total cooked grams and remaining cooked grams |
 | `barcode_products` | Shared product catalog keyed by barcode; authenticated clients can read it and trusted Edge Functions populate it from Open Food Facts or from label values reviewed and explicitly confirmed by a user |
 
-Pantry synchronization is performed inside the same PostgreSQL transaction that
-creates or updates a diary entry. Ingredients are matched to the exact selected
-pantry row first, then by stable catalog/Open Food Facts identifiers and finally
-by normalized name. Compatible units are consumed (`g` from `g`, `ml` from
-`ml`, and a recorded piece count from `pz`); portions entered only in grams do
-not deduct stock stored in pieces. Stock stops at zero, depleted items are hidden from ingredient search,
-editing a diary entry recalculates its consumption, and deleting it restores the
-quantity that entry had actually used.
+The personal ingredient catalog does not track stock or decrease quantities.
+Scan a barcode or photograph a label while composing a dish, or edit a saved
+ingredient in Cucina → Ingredienti. Preparing a dish creates a snapshot of its
+ingredients; editing the saved recipe later leaves that batch intact. Its cooked
+weight is estimated from the ingredient amounts, with an optional correction.
+Eating a portion records cooked grams and decreases the remaining batch amount.
+Deleting or editing that diary portion adjusts the remaining amount accordingly.
+The quarter, half and three-quarter shortcuts refer to the original cooked total.
 
 Changing calories, protein, carbohydrates, fat, fibre, sugars or salt in a
-pantry item updates linked saved-dish ingredients and previously logged meal
+personal ingredient updates linked saved-dish ingredients and previously logged meal
 portions proportionally to their recorded grams. New meals use the corrected
-values from the pantry or the updated saved dish. Dish editors in Cucina and
+values from the ingredient catalog or the updated saved dish. Dish editors in Cucina and
 Pasti display nutrient values without direct inputs: changing an ingredient's
-quantity recalculates its portion, while corrections for pantry-linked
-ingredients are made in Dispensa. Saving a linked ingredient derives its
-nutrition from the current pantry values; existing linked portions are
+quantity recalculates its portion, while corrections for linked
+ingredients are made in Ingredienti. Saving a linked ingredient derives its
+nutrition from the current catalog values; existing linked portions are
 reconciled to those values as part of the migration. Saved-dish editors and
-their personalization flow require custom ingredients to be added in Dispensa
+their personalization flow require custom ingredients to be added in Ingredienti
 first; manual nutrition entry remains available for one-off dishes.
 
 In dish editing, each ingredient card shows P, C and G on the first nutrition
@@ -229,14 +230,14 @@ the Supabase Auth Site URL and add the required preview URL patterns.
 
 ### Completate
 
-1. **Dispensa e consumo nei pasti.** La registrazione usa le scorte disponibili,
-   salva la quantità effettivamente prelevata e la ripristina modificando o
-   eliminando un pasto. Le voci esaurite vengono archiviate e tornano visibili
-   se la quantità risale sopra zero.
+1. **Catalogo ingredienti e piatti preparati.** I prodotti salvati restano
+   disponibili senza contatore di scorte. Le preparazioni hanno un peso cotto
+   stimato, porzioni registrate in grammi cotti e quantità residua; le
+   preparazioni con quantità residua compaiono per prime in Piatti.
 2. **Alimenti in pezzi.** Mela, banana, pera, arancia, pomodoro, carota,
    zucchina e uovo accettano piccola/media/grande con pesi indicativi. Il diario
-   conserva pezzi e taglia; nutrienti e dispensa in grammi usano il peso stimato,
-   mentre la dispensa in `pz` usa il numero di pezzi. Restano disponibili i grammi.
+   conserva pezzi e taglia; i nutrienti usano il peso stimato e restano
+   disponibili anche i grammi.
 3. **Buone abitudini in Pasti.** Il banner mostra una casella per ogni abitudine
    con icona e ✓, × o stato neutro, più il collegamento al dettaglio. Per gli
    obiettivi minimi la casella si riempie progressivamente fino al 100%, poi

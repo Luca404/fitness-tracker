@@ -19,7 +19,7 @@ export default function KitchenPage() {
       <div className="grid grid-cols-2 rounded-2xl bg-gray-800/80 p-1 ring-1 ring-gray-700/70" role="tablist" aria-label="Sezioni Cucina">
         <button type="button" role="tab" aria-selected={tab === 'pantry'} onClick={() => selectTab('pantry')}
           className={`rounded-xl py-2.5 text-sm font-semibold transition ${tab === 'pantry' ? 'bg-primary-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>
-          🧺 Dispensa
+          🧺 Ingredienti
         </button>
         <button type="button" role="tab" aria-selected={tab === 'dishes'} onClick={() => selectTab('dishes')}
           className={`rounded-xl py-2.5 text-sm font-semibold transition ${tab === 'dishes' ? 'bg-primary-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>

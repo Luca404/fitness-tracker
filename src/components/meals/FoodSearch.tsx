@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { searchBasicFoods, searchFood, calcNutrition } from '../../services/nutrition'
 import * as api from '../../services/api'
 import { useData } from '../../contexts/DataContext'
@@ -7,13 +7,15 @@ import type { FoodResult, FoodSource, PantryItem, FoodCategory, PieceSize } from
 import OpenFoodFactsDetails from '../common/OpenFoodFactsDetails'
 import IngredientQuantityInput from './IngredientQuantityInput'
 
+const IngredientCatalog = lazy(() => import('../../pages/PantryPage'))
+
 function pantryItemToFoodResult(p: PantryItem): FoodResult {
   return {
     id: p.id,
     name: p.name,
     brand: null,
     source: 'pantry',
-    quantity_unit: p.unit,
+    quantity_unit: p.nutrition_unit ?? 'g',
     category: p.category,
     food_key: p.food_key,
     calories_100g: p.calories_100g,
@@ -31,6 +33,7 @@ function pantryItemToFoodResult(p: PantryItem): FoodResult {
 interface Props {
   onAdd: (item: {
     food_name: string; quantity_g: number; calories: number
+    unit?: 'g' | 'ml'
     protein_g: number; carbs_g: number; fat_g: number
     fiber_g: number | null; sugars_g: number | null; salt_g: number | null
     source: FoodSource; off_food_id: string | null
@@ -63,10 +66,11 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
   const [manualSalt, setManualSalt] = useState<number | null>(null)
   const [manualCategory, setManualCategory] = useState<FoodCategory>('other')
   const [pantryItems, setPantryItems] = useState<PantryItem[]>([])
+  const [importMode, setImportMode] = useState<'scan' | 'photo' | null>(null)
 
   useEffect(() => {
     api.getPantryItems().then(setPantryItems).catch(() => {
-      showToast('Dispensa non disponibile')
+      showToast('Ingredienti salvati non disponibili')
     })
   }, [showToast])
 
@@ -75,7 +79,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
   const pantryResults = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return []
-    return pantryItems.filter(p => p.quantity > 0 && p.name.toLowerCase().includes(q)).map(pantryItemToFoodResult)
+    return pantryItems.filter(p => p.name.toLowerCase().includes(q)).map(pantryItemToFoodResult)
   }, [query, pantryItems])
 
   async function handleOffSearch() {
@@ -115,6 +119,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
       food_name: selected.name,
       quantity_g: qty,
       ...nutrition,
+      unit: selected.quantity_unit === 'ml' ? 'ml' : 'g',
       source: selected.source,
       off_food_id: selected.source === 'openfoodfacts' ? selected.id : null,
       category: selected.category,
@@ -126,6 +131,20 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
 
   return (
     <div className="space-y-4">
+      {importMode ? (
+        <div className="space-y-3">
+          <button type="button" onClick={() => setImportMode(null)} className="text-sm text-gray-400">← Torna agli ingredienti</button>
+          <Suspense fallback={<p className="text-sm text-gray-500">Caricamento…</p>}>
+            <IngredientCatalog embedded initialMode={importMode} onSaved={item => {
+              setPantryItems(current => [...current.filter(existing => existing.id !== item.id), item])
+              setSelected(pantryItemToFoodResult(item))
+              setQty(100)
+              setImportMode(null)
+            }} />
+          </Suspense>
+        </div>
+      ) : (
+      <>
       {!hideHeader && (
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold">Aggiungi alimento</h2>
@@ -153,12 +172,12 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
 
           {!selected && pantryResults.length > 0 && (
             <div className="max-h-40 overflow-y-auto space-y-1">
-              <p className="text-xs uppercase tracking-wide text-gray-500 px-1">La tua dispensa</p>
+              <p className="text-xs uppercase tracking-wide text-gray-500 px-1">I tuoi ingredienti</p>
               {pantryResults.map(f => (
                 <button key={f.id} type="button" onClick={() => { setSelected(f); setPiece(null) }}
                   className="w-full rounded-xl bg-gray-800 px-3 py-2.5 text-left text-sm hover:bg-gray-700">
                   <span className="font-medium">🧺 {f.name}</span>
-                  <span className="text-gray-500 ml-2">{Math.round(f.calories_100g)} kcal/100g</span>
+                  <span className="text-gray-500 ml-2">{Math.round(f.calories_100g)} kcal/100{f.quantity_unit === 'ml' ? 'ml' : 'g'}</span>
                 </button>
               ))}
             </div>
@@ -186,6 +205,15 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
             >
               {loading ? 'Cerco...' : '🔍 Cerca prodotti confezionati (Open Food Facts)'}
             </button>
+          )}
+
+          {!selected && (
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setImportMode('scan')}
+                className="rounded-xl border border-gray-700 px-2 py-2.5 text-sm text-gray-300 hover:bg-gray-700">📷 Scansiona prodotto</button>
+              <button type="button" onClick={() => setImportMode('photo')}
+                className="rounded-xl border border-gray-700 px-2 py-2.5 text-sm text-gray-300 hover:bg-gray-700">📸 Foto etichetta</button>
+            </div>
           )}
 
           {!selected && offError && (
@@ -225,6 +253,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
                   foodName={selected.name}
                   category={selected.category}
                   grams={qty}
+                  unit={selected.quantity_unit === 'ml' ? 'ml' : 'g'}
                   onChange={setQty}
                   pieceSize={piece?.size}
                   pieceCount={piece?.count}
@@ -296,7 +325,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
               Non lo trovi? Inseriscilo manualmente
             </button>
           ) : (
-            <p className="text-xs text-gray-500">Per un ingrediente personalizzato, aggiungilo prima alla Dispensa.</p>
+            <p className="text-xs text-gray-500">Per salvare un ingrediente personalizzato, apri Ingredienti in Cucina.</p>
           )}
         </>
       ) : (
@@ -412,6 +441,8 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
             + Aggiungi ingrediente
           </button>
         </div>
+      )}
+      </>
       )}
     </div>
   )

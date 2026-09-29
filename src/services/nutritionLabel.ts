@@ -302,7 +302,7 @@ export type ConfirmedBarcodeProduct = {
 export async function confirmBarcodeProduct(product: ConfirmedBarcodeProduct): Promise<void> {
   const { error } = await supabase.functions.invoke('confirm-barcode-product', { body: product })
   if (error) {
-    throw new Error(await functionErrorMessage(error, 'Prodotto salvato in dispensa, ma non nel catalogo condiviso.'))
+    throw new Error(await functionErrorMessage(error, 'Prodotto salvato tra gli ingredienti, ma non nel catalogo condiviso.'))
   }
 }
 

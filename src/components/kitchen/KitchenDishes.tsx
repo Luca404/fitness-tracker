@@ -5,12 +5,12 @@ import * as api from '../../services/api'
 import Modal from '../common/Modal'
 import DishEditor, { type DishItemDraft } from '../meals/DishEditor'
 import DishIconChoices from './DishIconChoices'
-import { getDishAvailability } from '../../utils/ingredientMatching'
 import { getDishIcon, getFoodIcon } from '../../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
 import { dishMealTypeLabels } from '../../data/dishMealTypes'
-import type { Dish, DishMealType, PantryItem } from '../../types'
+import type { Dish, DishMealType } from '../../types'
 import ExtendedNutrition from '../meals/ExtendedNutrition'
+import PreparedDishesPanel from '../meals/PreparedDishesPanel'
 
 function dishTotals(dish: Dish) {
   return dish.items.reduce((total, item) => ({
@@ -27,6 +27,7 @@ function toDraft(item: Dish['items'][number]): DishItemDraft {
     id: item.id,
     food_name: item.food_name,
     quantity_g: item.quantity_g,
+    unit: item.unit ?? 'g',
     piece_count: item.piece_count ?? null,
     piece_size: item.piece_size ?? null,
     calories: item.calories,
@@ -50,7 +51,6 @@ export default function KitchenDishes() {
   const { user } = useAuth()
   const { showToast } = useData()
   const [dishes, setDishes] = useState<Dish[]>([])
-  const [pantry, setPantry] = useState<PantryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [mode, setMode] = useState<EditorMode>('closed')
@@ -61,9 +61,7 @@ export default function KitchenDishes() {
   const refresh = useCallback(async () => {
     setLoading(true)
     try {
-      const [nextDishes, nextPantry] = await Promise.all([api.getDishes(), api.getPantryItems()])
-      setDishes(nextDishes)
-      setPantry(nextPantry)
+      setDishes(await api.getDishes())
     } catch {
       showToast('Errore caricamento Cucina')
     } finally {
@@ -162,6 +160,7 @@ export default function KitchenDishes() {
 
   return (
     <div className="space-y-6">
+      <PreparedDishesPanel />
       <button type="button" onClick={() => { setSelectedDish(null); setMode('create') }}
         className="flex w-full items-center gap-3 rounded-2xl bg-primary-500 px-4 py-3.5 text-left font-semibold shadow-lg shadow-primary-950/30 hover:bg-primary-400">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-xl">+</span>
@@ -233,7 +232,6 @@ export default function KitchenDishes() {
         ) : selectedDish ? (
           <DishDetail
             dish={selectedDish}
-            pantry={pantry}
             onEdit={selectedDish.id.startsWith('suggested:') ? undefined : () => setMode('edit')}
             onChangeIcon={selectedDish.id.startsWith('suggested:') ? undefined : () => openIconPicker(selectedDish, 'detail')}
             onDelete={selectedDish.id.startsWith('suggested:') ? undefined : deleteDish}
@@ -245,9 +243,8 @@ export default function KitchenDishes() {
   )
 }
 
-function DishDetail({ dish, pantry, onEdit, onChangeIcon, onDelete, onSave }: {
+function DishDetail({ dish, onEdit, onChangeIcon, onDelete, onSave }: {
   dish: Dish
-  pantry: PantryItem[]
   onEdit?: () => void
   onChangeIcon?: () => void
   onDelete?: () => void
@@ -255,7 +252,6 @@ function DishDetail({ dish, pantry, onEdit, onChangeIcon, onDelete, onSave }: {
 }) {
   const totals = dishTotals(dish)
   const extendedTotals = getExtendedNutritionTotals(dish.items)
-  const availability = getDishAvailability(dish, pantry)
   return (
     <div className="space-y-5">
       <div className="rounded-3xl bg-gradient-to-br from-primary-600/25 to-gray-800 p-5 ring-1 ring-primary-500/20">
@@ -279,11 +275,10 @@ function DishDetail({ dish, pantry, onEdit, onChangeIcon, onDelete, onSave }: {
         <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Ingredienti</p>
         <div className="space-y-2">
           {dish.items.map(item => {
-            const available = availability.available.some(candidate => candidate.id === item.id)
             return (
               <div key={item.id} className="flex items-center justify-between rounded-xl bg-gray-900/35 px-3 py-2.5 text-sm">
-                <span><span className={available ? 'text-primary-400' : 'text-gray-600'}>{available ? '✓' : '○'}</span> {item.food_name}</span>
-                <span className="text-gray-500">{item.quantity_g} g</span>
+                <span>{item.food_name}</span>
+                <span className="text-gray-500">{item.quantity_g} {item.unit ?? 'g'}</span>
               </div>
             )
           })}

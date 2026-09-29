@@ -58,8 +58,6 @@ interface PendingFood {
 
 type Mode = 'list' | 'choose' | 'scan' | 'photo' | 'search' | 'manual' | 'quantity'
 
-const UNIT_LABELS: Record<PantryUnit, string> = { g: 'grammi', ml: 'millilitri', pz: 'pezzi' }
-
 const PHOTO_NUTRIENT_FIELDS = [
   { key: 'calories_100g', label: 'Calorie', unit: 'kcal' },
   { key: 'protein_100g', label: 'Proteine', unit: 'g' },
@@ -215,16 +213,18 @@ function openFoodFactsMetadata(metadata: Record<string, unknown> | null): Partia
   }
 }
 
-export default function PantryPage({ embedded = false }: { embedded?: boolean }) {
+export default function PantryPage({ embedded = false, onSaved, initialMode = 'list' }: {
+  embedded?: boolean
+  onSaved?: (item: PantryItem) => void
+  initialMode?: Mode
+}) {
   const { user } = useAuth()
   const { showToast } = useData()
   const [items, setItems] = useState<PantryItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [mode, setMode] = useState<Mode>('list')
+  const [mode, setMode] = useState<Mode>(initialMode)
   const [pending, setPending] = useState<PendingFood | null>(null)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
-  const [quantity, setQuantity] = useState(1)
-  const [unit, setUnit] = useState<PantryUnit>('pz')
   const [scanError, setScanError] = useState<string | null>(null)
   const [scanLoading, setScanLoading] = useState(false)
   const [scannedBarcode, setScannedBarcode] = useState<string | null>(null)
@@ -251,7 +251,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
     try {
       setItems(await api.getPantryItems())
     } catch {
-      showToast('Errore caricamento dispensa')
+      showToast('Errore caricamento ingredienti')
     } finally {
       setLoading(false)
     }
@@ -272,11 +272,9 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
     setManualCategory('other')
   }
 
-  function goToQuantity(food: PendingFood, defaultUnit: PantryUnit, defaultQuantity?: number) {
+  function goToReview(food: PendingFood) {
     setEditingItemId(null)
     setPending(food)
-    setUnit(defaultUnit)
-    setQuantity(defaultQuantity ?? (defaultUnit === 'pz' ? 1 : 100))
     setMode('quantity')
   }
 
@@ -304,10 +302,9 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
       nutrition_grade: item.nutrition_grade,
       nova_group: item.nova_group,
       ecoscore_grade: item.ecoscore_grade,
+      nutrition_basis: item.nutrition_unit === 'ml' ? 'per_100ml' : 'per_100g',
       ...storedAiPhotoFields(item),
     })
-    setQuantity(item.quantity)
-    setUnit(item.unit)
     setAnalysisReviewAcknowledged(true)
     setMode('quantity')
   }
@@ -344,15 +341,13 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
     if (draft.confidence === 'low' && warnings.length === 0) {
       warnings.push('La lettura della foto è poco affidabile: verifica tutti i campi.')
     }
-    const defaultUnit = draft.quantityUnit
-      ?? (draft.category === 'beverage' || draft.category === 'alcohol' ? 'ml' : 'g')
     const quantityLabel = draft.quantityLabel
       ?? (draft.quantityValue && draft.quantityUnit ? `${draft.quantityValue} ${draft.quantityUnit}` : null)
 
     if (draft.cacheHit) showToast('Prodotto recuperato dal catalogo condiviso')
     setAnalysisReviewAcknowledged(!draft.requiresReview)
 
-    goToQuantity({
+    goToReview({
       barcode: draft.barcode,
       name: draft.name,
       brand: draft.brand,
@@ -387,7 +382,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
       analysis_requires_review: draft.requiresReview,
       analysis_confirmation_token: draft.confirmationToken,
       analysis_raw_extraction: draft.rawExtraction,
-    }, defaultUnit, draft.quantityValue ?? undefined)
+    })
   }
 
   function handleManualConfirm() {
@@ -401,7 +396,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
       showToast(nutritionError)
       return
     }
-    goToQuantity({
+    goToReview({
       name: manualName.trim(),
       calories_100g: manualCal,
       protein_100g: manualProt,
@@ -421,7 +416,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
       nutrition_grade: null,
       nova_group: null,
       ecoscore_grade: null,
-    }, 'g')
+    })
   }
 
   async function handleAddToPantry() {
@@ -438,8 +433,8 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
     try {
       const pantryValues: Omit<PantryItem, 'id' | 'user_id' | 'created_at'> = {
         name: pending.name.trim(),
-        quantity,
-        unit,
+        nutrition_unit: pending.nutrition_basis === 'per_100ml'
+          || (pending.category === 'beverage' || pending.category === 'alcohol') ? 'ml' : 'g',
         calories_100g: pending.calories_100g,
         protein_100g: pending.protein_100g,
         carbs_100g: pending.carbs_100g,
@@ -460,17 +455,18 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
         nova_group: pending.nova_group ?? null,
         ecoscore_grade: pending.ecoscore_grade ?? null,
       }
+      let savedItem: PantryItem
       try {
         if (editingItemId) {
-          await api.updatePantryItem(editingItemId, pantryValues)
+          savedItem = await api.updatePantryItem(editingItemId, pantryValues)
         } else {
-          await api.addPantryItem({
+          savedItem = await api.addPantryItem({
             user_id: user.id,
             ...pantryValues,
           })
         }
       } catch {
-        showToast('Errore aggiunta articolo')
+        showToast('Errore salvataggio ingrediente')
         return
       }
 
@@ -513,8 +509,9 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
         }
       }
       showToast(catalogSaveFailed
-        ? 'Salvato in dispensa, ma il catalogo condiviso non è stato aggiornato'
-        : editingItemId ? 'Ingrediente aggiornato' : 'Aggiunto alla dispensa')
+        ? 'Ingrediente salvato, ma il catalogo condiviso non è stato aggiornato'
+        : editingItemId ? 'Ingrediente aggiornato' : 'Ingrediente salvato')
+      onSaved?.(savedItem)
       resetAddFlow()
       await refresh()
     } finally {
@@ -528,7 +525,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
       await api.deletePantryItem(id)
       await refresh()
     } catch {
-      showToast('Errore eliminazione articolo')
+      showToast('Errore eliminazione ingrediente')
     }
   }
 
@@ -545,7 +542,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
 
   return (
     <div className={embedded ? 'space-y-4' : 'p-4 pb-24 space-y-4'}>
-      {!embedded && <h1 className="text-lg font-semibold">Dispensa</h1>}
+      {!embedded && <h1 className="text-lg font-semibold">Ingredienti</h1>}
 
       {mode === 'list' && (
         <>
@@ -558,7 +555,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
             <input
               value={listQuery}
               onChange={event => setListQuery(event.target.value)}
-              placeholder="Cerca nella dispensa..."
+              placeholder="Cerca tra gli ingredienti salvati..."
               className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm outline-none focus:border-primary-500"
             />
             <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -578,7 +575,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
           {loading ? (
             <div className="h-32 bg-gray-800 rounded-xl animate-pulse" />
           ) : items.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">Dispensa vuota. Scansiona un prodotto o aggiungilo a mano.</p>
+            <p className="text-sm text-gray-500 text-center py-8">Nessun ingrediente salvato. Scansiona un prodotto o aggiungilo a mano.</p>
           ) : visibleItems.length === 0 ? (
             <p className="py-8 text-center text-sm text-gray-500">Nessun ingrediente corrisponde ai filtri.</p>
           ) : (
@@ -597,7 +594,7 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
                           className="min-w-0 flex-1 py-3 pl-4 pr-3 text-left">
                           <p className="truncate text-sm font-medium">{item.name}</p>
                           <p className="text-xs text-gray-500">
-                            {item.quantity} {UNIT_LABELS[item.unit]} · {Math.round(item.calories_100g)} kcal/100{item.unit === 'ml' ? 'ml' : 'g'}
+                            {Math.round(item.calories_100g)} kcal/100{item.nutrition_unit === 'ml' ? 'ml' : 'g'}
                           </p>
                         </button>
                         <button type="button" onClick={() => { void handleDelete(item.id) }}
@@ -683,11 +680,11 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
           <div className="max-h-64 overflow-y-auto space-y-1">
             {basicResults.map(f => (
               <button key={f.id} type="button"
-                onClick={() => goToQuantity({
+                onClick={() => goToReview({
                   name: f.name, calories_100g: f.calories_100g, protein_100g: f.protein_100g,
                   carbs_100g: f.carbs_100g, fat_100g: f.fat_100g, category: f.category,
                   food_key: f.food_key, source: 'basic', off_food_id: null,
-                }, f.category === 'beverage' || f.category === 'alcohol' ? 'ml' : 'g')}
+                })}
                 className="w-full text-left px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">
                 <span className="font-medium">{f.name}</span>
                 <span className="text-gray-500 ml-2">{Math.round(f.calories_100g)} kcal/100g</span>
@@ -804,7 +801,6 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
                     onChange={event => {
                       const value = event.target.value ? Math.max(1, Math.round(Number(event.target.value))) : null
                       setPending({ ...pending, package_piece_count: value })
-                      if (value !== null && !editingItemId) { setQuantity(value); setUnit('pz') }
                     }}
                     className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />
                 </label>
@@ -814,10 +810,6 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
                     onChange={event => {
                       const value = event.target.value ? Math.max(0, Number(event.target.value)) : null
                       setPending({ ...pending, package_net_quantity_value: value })
-                      if (value !== null && !pending.package_piece_count && !editingItemId) {
-                        setQuantity(value)
-                        setUnit(pending.package_net_quantity_unit ?? 'g')
-                      }
                     }}
                     className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />
                 </label>
@@ -828,7 +820,6 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
                   onChange={event => {
                     const value = event.target.value === 'g' || event.target.value === 'ml' ? event.target.value : null
                     setPending({ ...pending, package_net_quantity_unit: value })
-                    if (value && pending.package_net_quantity_value && !pending.package_piece_count && !editingItemId) setUnit(value)
                   }}
                   className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 outline-none focus:border-primary-500">
                   <option value="">Non indicata</option>
@@ -892,26 +883,6 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
             )}
           </div>
           <div>
-            <label className="text-sm text-gray-400">Quantità totale in dispensa</label>
-            <input type="number" min={0} value={quantity === 0 ? '' : quantity}
-              onChange={e => setQuantity(parseFloat(e.target.value) || 0)}
-              className="w-full mt-1 px-3 py-2 rounded bg-gray-700 border border-gray-600 outline-none" />
-            {pending.quantity && !editingItemId && (
-              <p className="mt-1 text-xs text-gray-500">Precompilata dalla confezione rilevata: {pending.quantity}</p>
-            )}
-          </div>
-          <div>
-            <label className="text-sm text-gray-400">Unità</label>
-            <div className="grid grid-cols-3 gap-2 mt-1">
-              {(['g', 'ml', 'pz'] as const).map(u => (
-                <button key={u} type="button" onClick={() => setUnit(u)}
-                  className={`py-2 rounded-lg text-sm font-medium ${unit === u ? 'bg-primary-600' : 'bg-gray-700 hover:bg-gray-600'}`}>
-                  {UNIT_LABELS[u]}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
             <label className="text-sm text-gray-400">Categoria</label>
             <select
               value={pending.category}
@@ -925,12 +896,11 @@ export default function PantryPage({ embedded = false }: { embedded?: boolean })
           </div>
           <button type="button" onClick={handleAddToPantry}
             disabled={savingItem
-              || quantity <= 0
               || !pending.name.trim()
               || Boolean(pending.barcode && !normalizeBarcode(pending.barcode))
               || Boolean(pending.analysis_requires_review && !analysisReviewAcknowledged)}
             className="w-full py-3 bg-primary-600 rounded-lg font-semibold disabled:opacity-40">
-            {savingItem ? 'Salvataggio…' : editingItemId ? 'Salva modifiche' : 'Aggiungi alla dispensa'}
+            {savingItem ? 'Salvataggio…' : editingItemId ? 'Salva modifiche' : 'Salva ingrediente'}
           </button>
           <button type="button" onClick={resetAddFlow} disabled={savingItem}
             className="text-sm text-gray-500 text-center w-full disabled:opacity-40">

@@ -186,7 +186,7 @@ export default function DishEditor({
         ))}
       </section>
 
-      {items.length > 0 && <p className="text-xs text-gray-500">Per correggere i valori nutrizionali di un ingrediente, modificalo in Dispensa.</p>}
+      {items.length > 0 && <p className="text-xs text-gray-500">Per correggere i valori nutrizionali di un ingrediente salvato, modificalo in Cucina → Ingredienti.</p>}
 
       {items.length > 0 && (
         <div className="rounded-3xl bg-gradient-to-r from-primary-600/20 to-emerald-400/5 p-4 ring-1 ring-primary-500/20">

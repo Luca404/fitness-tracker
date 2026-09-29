@@ -18,6 +18,8 @@ import { buildMealTimeline } from '../utils/mealTimeline'
 import { getFoodIcon } from '../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../utils/extendedNutrition'
 import { splitMealItems } from '../utils/mealCustomizations'
+import PreparedPortionInput from '../components/meals/PreparedPortionInput'
+import * as api from '../services/api'
 
 const MEAL_TYPES: { type: MealType; label: string }[] = [
   { type: 'breakfast', label: '☀️ Colazione' },
@@ -64,6 +66,9 @@ export default function MealsPage() {
   const [modalStep, setModalStep] = useState<'meal-type' | 'meal-hub' | 'view-entry' | 'edit-entry'>('meal-type')
   const [hubMode, setHubMode] = useState<MealHubMode>('list')
   const [selectedEntry, setSelectedEntry] = useState<MealEntry | null>(null)
+  const [preparedAmounts, setPreparedAmounts] = useState<{ total_cooked_g: number; remaining_g: number } | null>(null)
+  const [preparedEditG, setPreparedEditG] = useState(0)
+  const [savingPreparedEdit, setSavingPreparedEdit] = useState(false)
 
   useEffect(() => {
     fetchForDate(selectedDate)
@@ -87,6 +92,13 @@ export default function MealsPage() {
     setActiveMealType(mealType)
     setModalStep('view-entry')
     setFoodSearchOpen(true)
+    setPreparedAmounts(null)
+    setPreparedEditG(entry.cooked_portion_g ?? 0)
+    if (entry.prepared_batch_id) {
+      void api.getPreparedBatchAmounts(entry.prepared_batch_id).then(setPreparedAmounts).catch(() => {
+        showToast('Errore caricamento preparazione')
+      })
+    }
   }
 
   async function handleAddDishEntry(name: string, items: DishItemDraft[], dishId?: string, dishIcon?: string | null) {
@@ -122,6 +134,24 @@ export default function MealsPage() {
       showToast('Piatto eliminato')
     } catch {
       showToast('Errore eliminazione piatto')
+    }
+  }
+
+  async function handleUpdatePreparedPortion() {
+    if (!selectedEntry?.prepared_batch_id || !preparedAmounts || savingPreparedEdit) return
+    const available = preparedAmounts.remaining_g + (selectedEntry.cooked_portion_g ?? 0)
+    if (!Number.isFinite(preparedEditG) || preparedEditG <= 0 || preparedEditG > available) return
+    setSavingPreparedEdit(true)
+    try {
+      await api.updatePreparedPortion(selectedEntry.id, preparedEditG)
+      await fetchForDate(selectedDate)
+      setFoodSearchOpen(false)
+      setSelectedEntry(null)
+      showToast('Porzione aggiornata')
+    } catch {
+      showToast('Errore modifica porzione')
+    } finally {
+      setSavingPreparedEdit(false)
     }
   }
 
@@ -266,7 +296,10 @@ export default function MealsPage() {
                 Fatto
               </button>
             </div>
-            <MealHub onAddEntry={handleAddDishEntry} onDishUpdated={() => fetchForDate(selectedDate)} beveragesOnly={activeMealType === 'drinks'} mealType={activeMealType === 'drinks' ? 'lunch' : activeMealType} mode={hubMode} setMode={setHubMode} />
+            <MealHub onAddEntry={handleAddDishEntry} onDishUpdated={() => fetchForDate(selectedDate)}
+              onPrepared={() => fetchForDate(selectedDate)} date={selectedDate}
+              beveragesOnly={activeMealType === 'drinks'} mealType={activeMealType === 'drinks' ? 'lunch' : activeMealType}
+              mode={hubMode} setMode={setHubMode} />
           </div>
         ) : modalStep === 'view-entry' ? (
           selectedEntry && (() => {
@@ -289,7 +322,9 @@ export default function MealsPage() {
                     <div className="min-w-0 flex-1">
                       <h2 className="text-xl font-bold text-white">{selectedEntry.name}</h2>
                       <p className="mt-1 text-sm text-gray-400">
-                        {Math.round(totals.weight)} g{totals.volumeMl > 0 ? ` + ${Math.round(totals.volumeMl)} ml` : ''} · {selectedEntry.items.length} elementi
+                        {selectedEntry.cooked_portion_g != null
+                          ? `${Math.round(selectedEntry.cooked_portion_g)} g da cotto`
+                          : `${Math.round(totals.weight)} g${totals.volumeMl > 0 ? ` + ${Math.round(totals.volumeMl)} ml` : ''}`} · {selectedEntry.items.length} elementi
                       </p>
                     </div>
                     <span className="text-xl font-bold text-primary-400">{Math.round(totals.calories)}<small className="ml-1 text-[10px] font-medium">kcal</small></span>
@@ -326,7 +361,17 @@ export default function MealsPage() {
                 </div>
                 <button type="button" onClick={() => setFoodSearchOpen(false)} className="text-gray-400 text-xl" aria-label="Chiudi">✕</button>
               </div>
-              <DishEditor
+              {selectedEntry.prepared_batch_id ? (
+                preparedAmounts ? <div className="space-y-4">
+                  <PreparedPortionInput
+                    totalCookedG={preparedAmounts.total_cooked_g}
+                    remainingG={preparedAmounts.remaining_g + (selectedEntry.cooked_portion_g ?? 0)}
+                    value={preparedEditG} onChange={setPreparedEditG} />
+                  <button type="button" onClick={() => void handleUpdatePreparedPortion()}
+                    disabled={savingPreparedEdit || preparedEditG <= 0 || preparedEditG > preparedAmounts.remaining_g + (selectedEntry.cooked_portion_g ?? 0)}
+                    className="w-full rounded-xl bg-primary-500 py-3 font-semibold disabled:opacity-40">Salva porzione</button>
+                </div> : <p className="text-sm text-gray-500">Caricamento preparazione…</p>
+              ) : <DishEditor
                 initialName={selectedEntry.name}
                 initialItems={selectedEntry.items.map(mealItemToDraft)}
                 showMealTypes={false}
@@ -335,7 +380,7 @@ export default function MealsPage() {
                 onSave={handleUpdateEntry}
                 onCancel={() => setModalStep('view-entry')}
                 saveLabel="Salva modifiche"
-              />
+              />}
             </div>
           )
         )}

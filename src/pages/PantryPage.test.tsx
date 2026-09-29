@@ -51,7 +51,7 @@ describe('PantryPage manual entry', () => {
     fireEvent.change(screen.getByLabelText('Sale (g/100g)'), { target: { value: '0.45' } })
     fireEvent.change(screen.getByLabelText('Fibre (g/100g)'), { target: { value: '4.2' } })
     fireEvent.click(screen.getByRole('button', { name: 'Continua' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Aggiungi alla dispensa' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Salva ingrediente' }))
 
     await waitFor(() => expect(mocks.addPantryItem).toHaveBeenCalledWith(expect.objectContaining({
       name: 'Biscotti', saturated_fat_100g: 8.5, sugars_100g: 22,
@@ -66,7 +66,7 @@ describe('PantryPage manual entry', () => {
     fireEvent.change(screen.getByLabelText('Nome alimento'), { target: { value: 'Pane' } })
     fireEvent.change(screen.getByLabelText('Sale (g/100g)'), { target: { value: '0' } })
     fireEvent.click(screen.getByRole('button', { name: 'Continua' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Aggiungi alla dispensa' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Salva ingrediente' }))
 
     await waitFor(() => expect(mocks.addPantryItem).toHaveBeenCalledWith(expect.objectContaining({
       saturated_fat_100g: null, sugars_100g: null, salt_100g: 0, fiber_100g: null,
@@ -75,7 +75,7 @@ describe('PantryPage manual entry', () => {
 
   it('allows the new values to be corrected on a saved manual product', async () => {
     const item: PantryItem = {
-      id: 'item-1', user_id: 'user-1', name: 'Biscotti', quantity: 100, unit: 'g',
+      id: 'item-1', user_id: 'user-1', name: 'Biscotti', nutrition_unit: 'g',
       calories_100g: 450, protein_100g: 6, carbs_100g: 65, fat_100g: 20,
       saturated_fat_100g: 8.5, sugars_100g: 22, salt_100g: 0.45, fiber_100g: 4.2,
       category: 'sweet', food_key: null, source: 'manual', off_food_id: null, created_at: '',
@@ -97,7 +97,7 @@ describe('PantryPage manual entry', () => {
 
   it('allows fibre corrections on a pantry item created from a basic food', async () => {
     const item: PantryItem = {
-      id: 'item-basic', user_id: 'user-1', name: 'Mela', quantity: 500, unit: 'g',
+      id: 'item-basic', user_id: 'user-1', name: 'Mela', nutrition_unit: 'g',
       calories_100g: 52, protein_100g: 0.3, carbs_100g: 14, fat_100g: 0.2,
       fiber_100g: null, category: 'fruit', food_key: 'basic:mela',
       source: 'basic', off_food_id: null, created_at: '',

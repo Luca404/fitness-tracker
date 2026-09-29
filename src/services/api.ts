@@ -1,7 +1,7 @@
 // src/services/api.ts
 import { supabase } from './supabase'
 import type {
-  UserHealthProfile, UserGoals, Meal, MealEntry, MealItemInput, Workout, WeightLog, Dish, DishItem, PantryItem, DishMealType
+  UserHealthProfile, UserGoals, Meal, MealEntry, MealItemInput, Workout, WeightLog, Dish, DishItem, PantryItem, DishMealType, PreparedBatch
 } from '../types'
 import { orderDishItems } from '../utils/dishOrder'
 import { BASIC_FOODS } from '../data/basicFoods'
@@ -269,6 +269,7 @@ export async function getDishes(): Promise<Dish[]> {
   const { data: dishes, error: dError } = await supabase
     .from('dishes')
     .select('*')
+    .eq('is_preparation', false)
     .order('name')
   if (dError) throw dError
   if (!dishes || dishes.length === 0) return []
@@ -341,13 +342,12 @@ export async function deleteDish(id: string): Promise<void> {
   if (error) throw error
 }
 
-// --- Pantry (dispensa) ---
+// --- Personal ingredient catalog ---
 
 export async function getPantryItems(): Promise<PantryItem[]> {
   const { data, error } = await supabase
     .from('pantry_items')
     .select('*')
-    .is('archived_at', null)
     .order('name')
   if (error) throw error
   return ((data ?? []) as PantryItem[]).map(enrichLegacyPantryItem)
@@ -365,20 +365,83 @@ export async function addPantryItem(
   return data as PantryItem
 }
 
-export async function updatePantryItemQuantity(id: string, quantity: number): Promise<void> {
-  const { error } = await supabase.from('pantry_items').update({ quantity }).eq('id', id)
-  if (error) throw error
-}
-
 export async function updatePantryItem(
   id: string,
   item: Omit<PantryItem, 'id' | 'user_id' | 'created_at'>
-): Promise<void> {
-  const { error } = await supabase.from('pantry_items').update(item).eq('id', id)
+): Promise<PantryItem> {
+  const { data, error } = await supabase.from('pantry_items').update(item).eq('id', id).select().single()
   if (error) throw error
+  return data as PantryItem
 }
 
 export async function deletePantryItem(id: string): Promise<void> {
   const { error } = await supabase.from('pantry_items').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function getPreparedBatches(): Promise<PreparedBatch[]> {
+  const { data: batches, error } = await supabase
+    .from('prepared_batches').select('*').is('closed_at', null).gt('remaining_g', 0)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  if (!batches?.length) return []
+  const dishIds = batches.map(batch => batch.snapshot_dish_id as string)
+  const [{ data: dishes, error: dishesError }, { data: items, error: itemsError }] = await Promise.all([
+    supabase.from('dishes').select('*').in('id', dishIds),
+    supabase.from('dish_items').select('*').in('dish_id', dishIds).order('position'),
+  ])
+  if (dishesError) throw dishesError
+  if (itemsError) throw itemsError
+  const dishById = new Map((dishes ?? []).map(dish => [dish.id, {
+    ...dish, items: orderDishItems((items ?? []).filter(item => item.dish_id === dish.id).map(enrichLegacyFoodItem)),
+  } as Dish]))
+  return batches.flatMap(batch => {
+    const dish = dishById.get(batch.snapshot_dish_id)
+    return dish ? [{ ...batch, dish } as PreparedBatch] : []
+  })
+}
+
+export async function getPreparedBatchAmounts(id: string): Promise<Pick<PreparedBatch, 'total_cooked_g' | 'remaining_g'>> {
+  const { data, error } = await supabase.from('prepared_batches')
+    .select('total_cooked_g, remaining_g').eq('id', id).single()
+  if (error) throw error
+  return data
+}
+
+export async function createPreparedBatch(args: {
+  userId: string
+  name: string
+  items: MealItemInput[]
+  sourceDishId: string | null
+  icon: string | null
+  totalCookedG: number
+  firstPortionG: number
+  date: string
+  mealType: Meal['meal_type']
+}): Promise<void> {
+  const { error } = await supabase.rpc('create_prepared_batch', {
+    p_user_id: args.userId, p_name: args.name, p_items: args.items,
+    p_source_dish_id: args.sourceDishId, p_icon: args.icon,
+    p_total_cooked_g: args.totalCookedG,
+    p_first_portion_g: args.firstPortionG, p_date: args.date,
+    p_meal_type: args.mealType,
+  })
+  if (error) throw error
+}
+
+export async function consumePreparedBatch(batchId: string, date: string, mealType: Meal['meal_type'], grams: number): Promise<void> {
+  const { error } = await supabase.rpc('consume_prepared_batch', {
+    p_batch_id: batchId, p_date: date, p_meal_type: mealType, p_grams: grams,
+  })
+  if (error) throw error
+}
+
+export async function updatePreparedPortion(entryId: string, grams: number): Promise<void> {
+  const { error } = await supabase.rpc('update_prepared_portion', { p_entry_id: entryId, p_grams: grams })
+  if (error) throw error
+}
+
+export async function closePreparedBatch(batchId: string): Promise<void> {
+  const { error } = await supabase.rpc('close_prepared_batch', { p_batch_id: batchId })
   if (error) throw error
 }

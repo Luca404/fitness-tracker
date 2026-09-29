@@ -14,6 +14,9 @@ import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
 import { dishMealTypeLabels, dishesForMeal } from '../../data/dishMealTypes'
 import type { Dish, DishItem, DishMealType, PieceSize } from '../../types'
 import ExtendedNutrition from './ExtendedNutrition'
+import PreparedPortionInput from './PreparedPortionInput'
+import PreparedDishesPanel from './PreparedDishesPanel'
+import { estimateCookedWeight } from '../../utils/preparedDishes'
 
 interface Props {
   onAddEntry: (name: string, items: DishItemDraft[], dishId?: string, dishIcon?: string | null) => Promise<void>
@@ -22,6 +25,8 @@ interface Props {
   mode: MealHubMode
   setMode: (mode: MealHubMode) => void
   mealType: DishMealType
+  date: string
+  onPrepared?: () => Promise<void>
 }
 
 function referenceWeight(dish: Dish): number {
@@ -37,6 +42,7 @@ function toDraftItem(i: DishItem): DishItemDraft {
     id: i.id,
     food_name: i.food_name,
     quantity_g: i.quantity_g,
+    unit: i.unit ?? 'g',
     piece_count: i.piece_count ?? null,
     piece_size: i.piece_size ?? null,
     calories: i.calories,
@@ -97,9 +103,9 @@ function beverageToDraft(beverage: BasicFood, volumeMl: number): DishItemDraft {
   }
 }
 
-export type MealHubMode = 'list' | 'new' | 'oneoff' | 'edit' | 'pick'
+export type MealHubMode = 'list' | 'new' | 'oneoff' | 'edit' | 'pick' | 'prepare'
 
-export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = false, mode, setMode, mealType }: Props) {
+export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beveragesOnly = false, mode, setMode, mealType, date }: Props) {
   const { user } = useAuth()
   const { showToast, setDishIcon } = useData()
   const [dishes, setDishes] = useState<Dish[]>([])
@@ -108,7 +114,13 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
   const [pickingDish, setPickingDish] = useState<Dish | null>(null)
   const [iconDish, setIconDish] = useState<Dish | null>(null)
   const [iconSaving, setIconSaving] = useState(false)
-  const [targetWeight, setTargetWeight] = useState(0)
+  const [recipeMultiplier, setRecipeMultiplier] = useState(1)
+  const [pendingPreparation, setPendingPreparation] = useState<{
+    name: string; items: DishItemDraft[]; sourceDishId: string | null; icon: string | null
+  } | null>(null)
+  const [cookedWeightOverride, setCookedWeightOverride] = useState<number | null>(null)
+  const [firstPortionG, setFirstPortionG] = useState(0)
+  const [preparing, setPreparing] = useState(false)
   const [selectedBeverage, setSelectedBeverage] = useState<BasicFood | null>(null)
   const [beverageVolume, setBeverageVolume] = useState(330)
   const [extraItems, setExtraItems] = useState<DishItemDraft[]>([])
@@ -157,7 +169,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
 
   function startPick(dish: Dish) {
     setPickingDish(dish)
-    setTargetWeight(Math.round(referenceWeight(dish)))
+    setRecipeMultiplier(1)
     setExtraItems([])
     setAddingExtra(false)
     setMode('pick')
@@ -186,13 +198,13 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
 
   async function confirmPick() {
     if (!pickingDish) return
-    const ref = referenceWeight(pickingDish)
-    const factor = ref > 0 ? targetWeight / ref : 1
+    const factor = recipeMultiplier
     const dishItems: DishItemDraft[] = pickingDish.items.map(i => ({
       dish_item_id: i.id,
       is_customization: false,
       food_name: i.food_name,
       quantity_g: Math.round(i.quantity_g * factor * 10) / 10,
+      unit: i.unit ?? 'g',
       piece_count: i.piece_count == null ? null : Math.round(i.piece_count * factor * 10) / 10,
       piece_size: i.piece_size ?? null,
       calories: Math.round(i.calories * factor),
@@ -208,10 +220,17 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
       food_key: i.food_key,
       pantry_item_id: i.pantry_item_id ?? null,
     }))
-    await onAddEntry(pickingDish.name, [...dishItems, ...extraItems.map(item => ({ ...item, is_customization: true }))], pickingDish.id, pickingDish.icon)
+    setPendingPreparation({
+      name: pickingDish.name,
+      items: [...dishItems, ...extraItems.map(item => ({ ...item, is_customization: true }))],
+      sourceDishId: pickingDish.id,
+      icon: pickingDish.icon,
+    })
+    setCookedWeightOverride(null)
+    setFirstPortionG(0)
     setPickingDish(null)
     setExtraItems([])
-    setMode('list')
+    setMode('prepare')
   }
 
   async function confirmBeverage() {
@@ -248,12 +267,10 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
   async function handleSaveNewDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[]) {
     if (!user) return
     const dish = await api.createDish(user.id, name, items, mealTypes)
-    await onAddEntry(name, items.map((item, index) => ({
-      ...item,
-      dish_item_id: dish.items[index]?.id ?? null,
-    })), dish.id)
-    setMode('list')
-    await refresh()
+    setPendingPreparation({ name, items: dish.items.map(toDraftItem), sourceDishId: dish.id, icon: dish.icon })
+    setCookedWeightOverride(null)
+    setFirstPortionG(0)
+    setMode('prepare')
   }
 
   async function handleSaveEditedDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[]) {
@@ -266,8 +283,40 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
   }
 
   async function handleSaveOneoff(name: string, items: DishItemDraft[]) {
-    await onAddEntry(name, items)
-    setMode('list')
+    setPendingPreparation({ name, items, sourceDishId: null, icon: null })
+    setCookedWeightOverride(null)
+    setFirstPortionG(0)
+    setMode('prepare')
+  }
+
+  async function savePreparation() {
+    if (!user || !pendingPreparation || preparing) return
+    const estimated = estimateCookedWeight(pendingPreparation.items)
+    const totalCookedG = cookedWeightOverride ?? estimated
+    if (totalCookedG <= 0 || firstPortionG < 0 || firstPortionG > totalCookedG) return
+    setPreparing(true)
+    try {
+      await api.createPreparedBatch({
+        userId: user.id,
+        name: pendingPreparation.name,
+        items: pendingPreparation.items,
+        sourceDishId: pendingPreparation.sourceDishId,
+        icon: pendingPreparation.icon,
+        totalCookedG,
+        firstPortionG,
+        date,
+        mealType,
+      })
+      await onPrepared?.()
+      await refresh()
+      setPendingPreparation(null)
+      setMode('list')
+      showToast(firstPortionG > 0 ? 'Preparazione salvata e porzione registrata' : 'Preparazione salvata')
+    } catch {
+      showToast('Errore salvataggio preparazione')
+    } finally {
+      setPreparing(false)
+    }
   }
 
   if (beveragesOnly) {
@@ -329,7 +378,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
           initialItems={[]}
           initialMealTypes={[mealType]}
           requireName
-          saveLabel="Salva e aggiungi"
+          saveLabel="Salva e prepara"
           onSave={handleSaveNewDish}
           onCancel={() => setMode('list')}
         />
@@ -364,7 +413,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
           initialItems={[]}
           showMealTypes={false}
           requireName
-          saveLabel="Aggiungi al diario"
+          saveLabel="Prepara il piatto"
           onSave={handleSaveOneoff}
           onCancel={() => setMode('list')}
         />
@@ -372,9 +421,39 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
     )
   }
 
+  if (mode === 'prepare' && pendingPreparation) {
+    const estimated = estimateCookedWeight(pendingPreparation.items)
+    const totalCookedG = cookedWeightOverride ?? estimated
+    const totalCalories = pendingPreparation.items.reduce((sum, item) => sum + item.calories, 0)
+    return <div className="space-y-5">
+      <ComposerHeader icon="🍲" eyebrow="Preparazione" title={pendingPreparation.name} />
+      <div className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
+        <p className="text-sm text-gray-300">Ingredienti: {Math.round(totalCalories)} kcal in totale</p>
+        <p className="mt-2 text-sm font-semibold">Peso cotto stimato: {estimated} g</p>
+        <p className="mt-1 text-xs text-gray-500">La stima considera l’acqua assorbita dagli ingredienti secchi riconosciuti. Puoi correggerla senza pesare il piatto ogni volta.</p>
+        <label className="mt-3 block text-xs text-gray-400">Correggi il peso cotto totale (facoltativo)
+          <input type="number" min={1} step="any" inputMode="decimal"
+            value={cookedWeightOverride ?? ''}
+            onChange={event => { setCookedWeightOverride(event.target.value === '' ? null : Number(event.target.value)); setFirstPortionG(0) }}
+            placeholder={`${estimated} g stimati`}
+            className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm outline-none focus:border-primary-500" />
+        </label>
+      </div>
+      <PreparedPortionInput totalCookedG={totalCookedG} remainingG={totalCookedG}
+        value={firstPortionG} onChange={setFirstPortionG} allowZero />
+      <button type="button" onClick={() => void savePreparation()}
+        disabled={preparing || !Number.isFinite(totalCookedG) || totalCookedG <= 0
+          || !Number.isFinite(firstPortionG) || firstPortionG < 0 || firstPortionG > totalCookedG}
+        className="w-full rounded-xl bg-primary-500 py-3 font-semibold disabled:opacity-40">
+        {preparing ? 'Salvataggio…' : firstPortionG > 0 ? 'Salva e registra la porzione' : 'Salva per mangiarlo dopo'}
+      </button>
+      <button type="button" onClick={() => setMode('list')} className="w-full text-sm text-gray-400">Annulla</button>
+    </div>
+  }
+
   if (mode === 'pick' && pickingDish) {
     const ref = referenceWeight(pickingDish)
-    const factor = ref > 0 ? targetWeight / ref : 1
+    const factor = recipeMultiplier
     const scaledKcal = Math.round(totalKcal(pickingDish) * factor) + Math.round(extraItems.reduce((sum, item) => sum + item.calories, 0))
     const protein = pickingDish.items.reduce((sum, item) => sum + item.protein_g, 0) * factor + extraItems.reduce((sum, item) => sum + item.protein_g, 0)
     const carbs = pickingDish.items.reduce((sum, item) => sum + item.carbs_g, 0) * factor + extraItems.reduce((sum, item) => sum + item.carbs_g, 0)
@@ -411,12 +490,12 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
           <ExtendedNutrition totals={extendedTotals} detailedLabels />
         </div>
         <div className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
-          <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quanto ne hai mangiato?</label>
+          <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quante volte prepari la ricetta?</label>
           <div className="mt-2 flex items-center gap-3">
-            <input type="number" min={1} value={targetWeight === 0 ? '' : targetWeight}
-              onChange={e => setTargetWeight(parseInt(e.target.value) || 0)}
+            <input type="number" min={0.1} step={0.25} value={recipeMultiplier}
+              onChange={e => setRecipeMultiplier(Number(e.target.value) || 0)}
               className="min-w-0 flex-1 bg-transparent text-3xl font-bold outline-none" />
-            <span className="text-lg text-gray-500">grammi</span>
+            <span className="text-lg text-gray-500">× ricetta</span>
           </div>
         </div>
         <section className="rounded-2xl border border-gray-700 bg-gray-900/25 p-4">
@@ -447,7 +526,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
           {pickingDish.items.map(item => (
             <div key={item.id} className="flex justify-between rounded-xl bg-gray-900/30 px-3 py-2 text-sm">
               <span className="text-gray-300">{item.food_name}</span>
-              <span className="text-gray-500">{Math.round(item.quantity_g * factor)} g</span>
+              <span className="text-gray-500">{Math.round(item.quantity_g * factor)} {item.unit ?? 'g'}</span>
             </div>
           ))}
           {extraItems.map((item, index) => (
@@ -474,9 +553,9 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
             </div>
           ))}
         </div>
-        <button type="button" onClick={confirmPick} disabled={targetWeight <= 0}
+        <button type="button" onClick={confirmPick} disabled={recipeMultiplier <= 0}
           className="w-full rounded-2xl bg-primary-500 py-4 font-semibold shadow-lg shadow-primary-900/30 transition hover:bg-primary-400 disabled:opacity-40">
-          Aggiungi {scaledKcal} kcal al diario
+          Continua: prepara il piatto
         </button>
         {iconPicker}
       </div>
@@ -485,18 +564,19 @@ export default function MealHub({ onAddEntry, onDishUpdated, beveragesOnly = fal
 
   return (
     <div className="space-y-6">
+      <PreparedDishesPanel mealType={mealType} onConsumed={onPrepared} />
       <div className="grid grid-cols-2 gap-3">
         <button type="button" onClick={() => setMode('new')}
           className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4 text-left transition hover:border-primary-600 hover:bg-primary-950/20">
           <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/10 text-xl">🍳</span>
           <span className="block text-sm font-semibold">Nuova ricetta</span>
-          <span className="mt-1 block text-xs leading-snug text-gray-500">Componi, salva e registra</span>
+          <span className="mt-1 block text-xs leading-snug text-gray-500">Componi, salva e prepara</span>
         </button>
         <button type="button" onClick={() => setMode('oneoff')}
           className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4 text-left transition hover:border-primary-600 hover:bg-primary-950/20">
           <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-400/10 text-xl">✨</span>
           <span className="block text-sm font-semibold">Occasionale</span>
-          <span className="mt-1 block text-xs leading-snug text-gray-500">Solo nel diario di oggi</span>
+          <span className="mt-1 block text-xs leading-snug text-gray-500">Prepara senza salvare la ricetta</span>
         </button>
       </div>
 
