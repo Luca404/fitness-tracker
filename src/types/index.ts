@@ -107,6 +107,51 @@ export interface Workout {
   created_at: string
 }
 
+export interface GymPlanExercise {
+  id: string
+  plan_id: string
+  position: number
+  exercise_key: string | null
+  exercise_name: string
+  equipment: string
+  target_sets: number
+  target_reps: number
+}
+
+export interface GymPlan {
+  id: string
+  user_id: string
+  name: string
+  created_at: string
+  updated_at: string
+  exercises: GymPlanExercise[]
+}
+
+export interface GymSet {
+  id: string
+  session_id: string
+  exercise_position: number
+  exercise_key: string | null
+  exercise_name: string
+  equipment: string
+  set_number: number
+  target_reps: number
+  weight_kg: number | null
+  reps: number | null
+  done: boolean
+}
+
+export interface GymSession {
+  id: string
+  user_id: string
+  plan_id: string | null
+  plan_name: string
+  date: string
+  started_at: string
+  completed_at: string | null
+  sets: GymSet[]
+}
+
 export interface DaySummary {
   calories: number
   protein_g: number

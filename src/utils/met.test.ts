@@ -1,10 +1,12 @@
 // src/utils/met.test.ts
 import { describe, it, expect } from 'vitest'
-import { MET_ACTIVITIES, calculateCaloriesBurned } from './met'
+import { BASIC_ACTIVITY_KEYS, MET_ACTIVITIES, calculateCaloriesBurned } from './met'
 
 describe('MET_ACTIVITIES', () => {
-  it('has 20 activities', () => {
-    expect(Object.keys(MET_ACTIVITIES)).toHaveLength(20)
+  it('keeps the basic activity picker focused', () => {
+    expect(BASIC_ACTIVITY_KEYS).toEqual([
+      'weights', 'walking', 'running', 'cycling', 'swimming', 'treadmill', 'rowing_machine',
+    ])
   })
 
   it('each activity has label, met, icon', () => {

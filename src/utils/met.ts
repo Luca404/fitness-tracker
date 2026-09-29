@@ -12,6 +12,9 @@ export const MET_ACTIVITIES: Record<string, ActivityInfo> = {
   cycling:     { label: 'Ciclismo',      met: 7.5,  icon: '🚴' },
   swimming:    { label: 'Nuoto',         met: 8.0,  icon: '🏊' },
   weights:     { label: 'Pesi',          met: 5.0,  icon: '🏋️' },
+  // Moderate reference efforts from the 2024 Compendium (pacompendium.com).
+  treadmill:   { label: 'Tapis roulant', met: 5.8,  icon: '🏃' },
+  rowing_machine: { label: 'Vogatore',   met: 5.0,  icon: '🚣' },
   hiit:        { label: 'HIIT',          met: 10.0, icon: '⚡' },
   yoga:        { label: 'Yoga',          met: 2.5,  icon: '🧘' },
   pilates:     { label: 'Pilates',       met: 3.0,  icon: '🤸' },
@@ -28,6 +31,10 @@ export const MET_ACTIVITIES: Record<string, ActivityInfo> = {
   hiking:      { label: 'Escursionismo', met: 6.0,  icon: '🥾' },
   spinning:    { label: 'Spinning',      met: 8.5,  icon: '🚴' },
 }
+
+export const BASIC_ACTIVITY_KEYS = [
+  'weights', 'walking', 'running', 'cycling', 'swimming', 'treadmill', 'rowing_machine',
+] as const
 
 export function calculateCaloriesBurned(
   activityKey: string,

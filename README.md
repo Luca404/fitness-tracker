@@ -128,6 +128,8 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 | `meal_entries` | Named dishes or single ingredients actually eaten within a meal slot; prepared portions also store their cooked grams and batch ID |
 | `meal_items` | Ingredients and drinks belonging to an eaten dish, with `g`/`ml` units, optional piece size/count, nutrition values and an optional saved ingredient link |
 | `workouts` | Workout sessions (activity type, duration, MET, calories burned) |
+| `gym_plans`, `gym_plan_exercises` | Reusable gym plans and their ordered exercises with target sets and reps |
+| `gym_sessions`, `gym_sets` | Performed gym sessions and each set's weight, reps and completion state; plan edits do not change history |
 | `weight_logs` | Daily weight entries |
 | `dishes` | Saved reusable recipes and separate snapshots of prepared batches |
 | `dish_items` | Ingredients within a saved recipe or preparation snapshot, including order, g/ml unit and optional personal ingredient reference |
@@ -147,6 +149,14 @@ For a single food such as an apple, Pasti → Ingrediente singolo registers its
 quantity directly in the diary without creating a recipe or prepared batch.
 The diary entry offers a direct quantity edit, and saved ingredients keep their
 nutrition link.
+
+Fitness → Allenamenti starts with gym plans. Exercises can be searched by name
+or equipment, with a custom exercise option. Starting a plan creates a session
+with one row per planned set; previous performed weight and reps are suggested.
+Sessions can be resumed, completed, reviewed and compared by exercise. The
+simple activity picker is kept for Pesi, Camminata, Corsa, Ciclismo, Nuoto,
+Tapis roulant and Vogatore; older activity types remain readable in history.
+Gym sets do not receive an estimated calorie value.
 
 Changing calories, protein, carbohydrates, fat, fibre, sugars or salt in a
 personal ingredient updates linked saved-dish ingredients and previously logged meal
