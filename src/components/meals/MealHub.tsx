@@ -103,7 +103,7 @@ function beverageToDraft(beverage: BasicFood, volumeMl: number): DishItemDraft {
   }
 }
 
-export type MealHubMode = 'list' | 'new' | 'oneoff' | 'edit' | 'pick' | 'prepare'
+export type MealHubMode = 'list' | 'ingredient' | 'new' | 'oneoff' | 'edit' | 'pick' | 'prepare'
 
 export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beveragesOnly = false, mode, setMode, mealType, date }: Props) {
   const { user } = useAuth()
@@ -121,6 +121,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   const [cookedWeightOverride, setCookedWeightOverride] = useState<number | null>(null)
   const [firstPortionG, setFirstPortionG] = useState<number | null>(null)
   const [preparing, setPreparing] = useState(false)
+  const [addingIngredient, setAddingIngredient] = useState(false)
   const [selectedBeverage, setSelectedBeverage] = useState<BasicFood | null>(null)
   const [beverageVolume, setBeverageVolume] = useState(330)
   const [extraItems, setExtraItems] = useState<DishItemDraft[]>([])
@@ -237,6 +238,19 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     if (!selectedBeverage || beverageVolume <= 0) return
     await onAddEntry(selectedBeverage.name, [beverageToDraft(selectedBeverage, beverageVolume)])
     setSelectedBeverage(null)
+  }
+
+  async function addSingleIngredient(item: DishItemDraft) {
+    if (addingIngredient) return
+    setAddingIngredient(true)
+    try {
+      await onAddEntry(item.food_name, [item])
+      setMode('list')
+    } catch {
+      // The meal page already reports the failed registration.
+    } finally {
+      setAddingIngredient(false)
+    }
   }
 
   function updateExtraQuantity(index: number, quantity: number) {
@@ -385,6 +399,15 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
         />
       </div>
     )
+  }
+
+  if (mode === 'ingredient') {
+    return <div className="space-y-5">
+      <ComposerHeader icon="🍎" eyebrow="Inserimento veloce" title="Registra un ingrediente" />
+      <FoodSearch hideHeader onClose={() => setMode('list')}
+        addLabel="Registra ingrediente" saving={addingIngredient}
+        onAdd={item => { void addSingleIngredient(item) }} />
+    </div>
   }
 
   if (mode === 'edit' && editingDish) {
@@ -567,6 +590,12 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   return (
     <div className="space-y-6">
       <PreparedDishesPanel mealType={mealType} onConsumed={onPrepared} />
+      <button type="button" onClick={() => setMode('ingredient')}
+        className="flex w-full items-center gap-3 rounded-2xl border border-primary-700/50 bg-primary-950/20 p-4 text-left transition hover:border-primary-500 hover:bg-primary-950/30">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-500/15 text-xl">🍎</span>
+        <span><span className="block text-sm font-semibold">Ingrediente singolo</span>
+          <span className="mt-1 block text-xs text-gray-400">Per una mela, uno yogurt o uno spuntino veloce</span></span>
+      </button>
       <div className="grid grid-cols-2 gap-3">
         <button type="button" onClick={() => setMode('new')}
           className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4 text-left transition hover:border-primary-600 hover:bg-primary-950/20">

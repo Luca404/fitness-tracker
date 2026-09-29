@@ -43,9 +43,11 @@ interface Props {
   onClose: () => void
   hideHeader?: boolean
   allowManualEntry?: boolean
+  addLabel?: string
+  saving?: boolean
 }
 
-export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntry = true }: Props) {
+export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntry = true, addLabel = '+ Aggiungi ingrediente', saving = false }: Props) {
   const { showToast } = useData()
   const [query, setQuery] = useState('')
   const [offResults, setOffResults] = useState<FoodResult[]>([])
@@ -98,6 +100,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
   }
 
   function handleAdd() {
+    if (saving) return
     if (manualMode) {
       if (!manualName.trim() || qty <= 0 || [manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0)) return
       if ([manualFiber, manualSugars, manualSalt].some(v => v !== null && v < 0)
@@ -312,9 +315,9 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
                   </>
                 )
               })()}
-              <button type="button" onClick={handleAdd} disabled={qty <= 0}
+              <button type="button" onClick={handleAdd} disabled={qty <= 0 || saving}
                 className="w-full rounded-xl bg-primary-500 py-3 font-semibold hover:bg-primary-400 disabled:opacity-40">
-                + Aggiungi ingrediente
+                {saving ? 'Registrazione…' : addLabel}
               </button>
             </div>
           )}
@@ -434,11 +437,11 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
             </div>
           </div>
           <button type="button" onClick={handleAdd}
-            disabled={!manualName.trim() || qty <= 0 || [manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0)
+            disabled={saving || !manualName.trim() || qty <= 0 || [manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0)
               || [manualFiber, manualSugars, manualSalt].some(v => v !== null && v < 0)
               || (manualSugars !== null && manualSugars > manualCarbs)}
             className="w-full rounded-xl bg-primary-500 py-3 font-semibold hover:bg-primary-400 disabled:opacity-40">
-            + Aggiungi ingrediente
+            {saving ? 'Registrazione…' : addLabel}
           </button>
         </div>
       )}

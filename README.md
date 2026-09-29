@@ -125,7 +125,7 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 | `user_health_profiles` | Physical stats, activity level, resistance training, objective, target weight and date |
 | `user_goals` | Calorie and macro targets plus the body weight used by the latest calculation |
 | `meals` | Meal records scoped by user and date |
-| `meal_entries` | Named dishes actually eaten within a meal slot; prepared portions also store their cooked grams and batch ID |
+| `meal_entries` | Named dishes or single ingredients actually eaten within a meal slot; prepared portions also store their cooked grams and batch ID |
 | `meal_items` | Ingredients and drinks belonging to an eaten dish, with `g`/`ml` units, optional piece size/count, nutrition values and an optional saved ingredient link |
 | `workouts` | Workout sessions (activity type, duration, MET, calories burned) |
 | `weight_logs` | Daily weight entries |
@@ -143,6 +143,10 @@ weight is estimated from the ingredient amounts, with an optional correction.
 Eating a portion records cooked grams and decreases the remaining batch amount.
 Deleting or editing that diary portion adjusts the remaining amount accordingly.
 The quarter, half and three-quarter shortcuts refer to the original cooked total.
+For a single food such as an apple, Pasti → Ingrediente singolo registers its
+quantity directly in the diary without creating a recipe or prepared batch.
+The diary entry offers a direct quantity edit, and saved ingredients keep their
+nutrition link.
 
 Changing calories, protein, carbohydrates, fat, fibre, sugars or salt in a
 personal ingredient updates linked saved-dish ingredients and previously logged meal

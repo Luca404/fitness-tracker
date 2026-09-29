@@ -19,6 +19,7 @@ import { getFoodIcon } from '../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../utils/extendedNutrition'
 import { splitMealItems } from '../utils/mealCustomizations'
 import PreparedPortionInput from '../components/meals/PreparedPortionInput'
+import SingleIngredientEditor from '../components/meals/SingleIngredientEditor'
 import * as api from '../services/api'
 
 const MEAL_TYPES: { type: MealType; label: string }[] = [
@@ -157,6 +158,8 @@ export default function MealsPage() {
 
   const activeMealLabel = MEAL_TYPES.find(m => m.type === activeMealType)?.label ?? activeMealType
   const mealTimeline = buildMealTimeline(meals)
+  const isSingleIngredientEntry = selectedEntry?.items.length === 1
+    && !selectedEntry.dish_id && !selectedEntry.prepared_batch_id
 
   return (
     <div className="p-4 pb-24 space-y-4">
@@ -212,7 +215,7 @@ export default function MealsPage() {
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-500 text-2xl font-light text-white shadow-lg shadow-primary-900/30">+</div>
         <div className="flex-1">
           <p className="font-semibold">Registra ciò che hai consumato</p>
-          <p className="text-xs text-gray-400">Piatto salvato, nuovo oppure bevanda</p>
+          <p className="text-xs text-gray-400">Ingrediente, piatto o bevanda</p>
         </div>
         <span className="text-gray-600 transition group-hover:translate-x-0.5 group-hover:text-primary-400">→</span>
       </button>
@@ -345,7 +348,9 @@ export default function MealsPage() {
                   </div>
                 ))}
                 <div className="grid grid-cols-[1fr_auto] gap-3">
-                  <button type="button" onClick={() => setModalStep('edit-entry')} className="btn-primary py-3">Modifica piatto</button>
+                  <button type="button" onClick={() => setModalStep('edit-entry')} className="btn-primary py-3">
+                    {isSingleIngredientEntry ? 'Modifica quantità' : 'Modifica piatto'}
+                  </button>
                   <button type="button" onClick={handleDeleteEntry} className="rounded-xl border border-red-900 px-4 text-red-400 hover:bg-red-950/30" aria-label="Elimina piatto">🗑️</button>
                 </div>
               </div>
@@ -371,7 +376,12 @@ export default function MealsPage() {
                     disabled={savingPreparedEdit || preparedEditG <= 0 || preparedEditG > preparedAmounts.remaining_g + (selectedEntry.cooked_portion_g ?? 0)}
                     className="w-full rounded-xl bg-primary-500 py-3 font-semibold disabled:opacity-40">Salva porzione</button>
                 </div> : <p className="text-sm text-gray-500">Caricamento preparazione…</p>
-              ) : <DishEditor
+              ) : isSingleIngredientEntry ? <SingleIngredientEditor
+                key={selectedEntry.id}
+                item={mealItemToDraft(selectedEntry.items[0])}
+                onSave={item => handleUpdateEntry(selectedEntry.name, [item])}
+                onCancel={() => setModalStep('view-entry')}
+              /> : <DishEditor
                 initialName={selectedEntry.name}
                 initialItems={selectedEntry.items.map(mealItemToDraft)}
                 showMealTypes={false}
