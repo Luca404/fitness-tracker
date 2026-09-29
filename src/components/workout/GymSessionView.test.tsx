@@ -16,7 +16,8 @@ const session: GymSession = {
   date: '2026-09-29', started_at: '2026-09-29T10:00:00Z', completed_at: null,
   sets: [{ id: 'set-1', session_id: 'session-1', exercise_position: 0,
     exercise_key: 'lat-pulldown', exercise_name: 'Lat machine', equipment: 'Macchina',
-    set_number: 1, target_reps: 10, weight_kg: 40, reps: 10, done: false }],
+    set_number: 1, target_reps: 10, target_reps_max: 12, per_side: false,
+    weight_kg: 40, reps: 10, done: false }],
 }
 
 describe('GymSessionView', () => {
@@ -31,5 +32,16 @@ describe('GymSessionView', () => {
 
     await waitFor(() => expect(mocks.saveGymSet).toHaveBeenCalledWith('set-1', 45, 8))
     expect(await screen.findByText('1/1 serie completate', { exact: false })).toBeTruthy()
+  })
+
+  it('shows a repetition range per side and allows free repetition goals', () => {
+    render(<GymSessionView session={{ ...session, sets: [
+      { ...session.sets[0], per_side: true, target_reps: 8, target_reps_max: 12 },
+      { ...session.sets[0], id: 'set-2', set_number: 2, target_reps: null, target_reps_max: null, reps: null, per_side: true },
+    ] }} onBack={vi.fn()} onCompleted={vi.fn()} onDeleted={vi.fn()} />)
+
+    expect(screen.getByText(/obiettivo 8–12 rip. per lato/)).toBeTruthy()
+    expect(screen.getByText(/obiettivo libero/)).toBeTruthy()
+    expect(screen.getAllByLabelText('Ripetizioni per lato')).toHaveLength(2)
   })
 })

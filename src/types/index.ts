@@ -115,7 +115,9 @@ export interface GymPlanExercise {
   exercise_name: string
   equipment: string
   target_sets: number
-  target_reps: number
+  target_reps: number | null
+  target_reps_max: number | null
+  per_side: boolean
 }
 
 export interface GymPlan {
@@ -135,7 +137,9 @@ export interface GymSet {
   exercise_name: string
   equipment: string
   set_number: number
-  target_reps: number
+  target_reps: number | null
+  target_reps_max: number | null
+  per_side: boolean
   weight_kg: number | null
   reps: number | null
   done: boolean

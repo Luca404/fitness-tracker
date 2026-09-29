@@ -11,7 +11,7 @@ function GymSetRow({ set, onSaved, onDeleted, canDelete }: {
 }) {
   const { showToast } = useData()
   const [weight, setWeight] = useState(set.weight_kg?.toString() ?? '')
-  const [reps, setReps] = useState((set.reps ?? set.target_reps).toString())
+  const [reps, setReps] = useState((set.reps ?? set.target_reps ?? '').toString())
   const [saving, setSaving] = useState(false)
   const valid = reps.trim() !== '' && Number.isInteger(Number(reps)) && Number(reps) > 0
     && Number(reps) <= 100 && (weight.trim() === '' || (Number.isFinite(Number(weight)) && Number(weight) >= 0))
@@ -42,7 +42,9 @@ function GymSetRow({ set, onSaved, onDeleted, canDelete }: {
 
   return <div className={`rounded-xl p-3 ${set.done ? 'bg-primary-950/30 ring-1 ring-primary-800/40' : 'bg-gray-800/70'}`}>
     <div className="mb-2 flex items-center justify-between text-xs">
-      <span className="font-semibold text-gray-300">Serie {set.set_number} · obiettivo {set.target_reps} rip.</span>
+      <span className="font-semibold text-gray-300">Serie {set.set_number} · obiettivo {
+        set.target_reps === null ? 'libero' : `${set.target_reps}${set.target_reps_max && set.target_reps_max !== set.target_reps ? `–${set.target_reps_max}` : ''} rip.${set.per_side ? ' per lato' : ''}`
+      }</span>
       {set.done && <span className="text-primary-400">✓ Completata</span>}
     </div>
     <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
@@ -51,7 +53,7 @@ function GymSetRow({ set, onSaved, onDeleted, canDelete }: {
           onChange={event => setWeight(event.target.value)} placeholder="Corpo libero"
           className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-2 py-2 text-white" />
       </label>
-      <label className="text-xs text-gray-400">Ripetizioni
+      <label className="text-xs text-gray-400">{set.per_side ? 'Ripetizioni per lato' : 'Ripetizioni'}
         <input type="number" min={1} max={100} step={1} inputMode="numeric" value={reps}
           onChange={event => setReps(event.target.value)}
           className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-2 py-2 text-white" />
@@ -95,6 +97,8 @@ export default function GymSessionView({ session, onBack, onCompleted, onDeleted
         equipment: last.equipment,
         set_number: last.set_number + 1,
         target_reps: last.target_reps,
+        target_reps_max: last.target_reps_max,
+        per_side: last.per_side,
         weight_kg: last.weight_kg,
         reps: last.reps ?? last.target_reps,
         done: false,

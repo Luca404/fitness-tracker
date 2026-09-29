@@ -2,7 +2,7 @@ import { supabase } from './supabase'
 import type { GymPlan, GymPlanExercise, GymSession, GymSet } from '../types'
 
 export type GymPlanExerciseInput = Pick<GymPlanExercise,
-  'exercise_key' | 'exercise_name' | 'equipment' | 'target_sets' | 'target_reps'>
+  'exercise_key' | 'exercise_name' | 'equipment' | 'target_sets' | 'target_reps' | 'target_reps_max' | 'per_side'>
 
 export async function getGymPlans(): Promise<GymPlan[]> {
   const { data: plans, error } = await supabase.from('gym_plans').select('*').order('created_at')

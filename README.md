@@ -150,9 +150,11 @@ quantity directly in the diary without creating a recipe or prepared batch.
 The diary entry offers a direct quantity edit, and saved ingredients keep their
 nutrition link.
 
-Fitness → Allenamenti starts with gym plans. Exercises can be searched by name
-or equipment, with a custom exercise option. Starting a plan creates a session
-with one row per planned set; previous performed weight and reps are suggested.
+Fitness → Allenamenti starts with gym plans. Exercises can be searched by Italian
+or English name or by equipment, with a custom exercise option. Plans support
+fixed or ranged repetition goals, per-side work and sets with free repetitions.
+Starting a plan creates a session with one row per planned set; previous performed
+weight and reps are suggested.
 Sessions can be resumed, completed, reviewed and compared by exercise. The
 simple activity picker is kept for Pesi, Camminata, Corsa, Ciclismo, Nuoto,
 Tapis roulant and Vogatore; older activity types remain readable in history.
