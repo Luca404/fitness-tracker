@@ -8,12 +8,13 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 
 - **Meal logging** — log meals by time slot (breakfast, lunch, dinner, snack, drinks); calorie and macro breakdown per meal and per day. Snacks appear where they were registered relative to other entries, while the usual breakfast → lunch → dinner order stays fixed ([ordering details](docs/meal-diary-order.md))
 - **Dish-centric entry** — opening a meal slot shows saved dishes assigned to that slot; a dish can belong to breakfast, lunch, dinner and/or snack. Personalization ingredients remain separate from the saved recipe when the diary entry is reopened for editing or removal. New and one-off dishes are also supported; drinks stay in their own flow
-- **Kitchen** — one area with saved dishes and pantry tabs for creating, inspecting and editing recipes and stock; saved ingredients retain their insertion order, and each dish has one or more meal categories and can have a custom icon. In the dish editor, ingredients use the same compact cards as the dish detail, with a quantity input and two read-only nutrition lines
-- **Pantry** — track groceries at home by culinary category (quantity + unit: g/ml/pieces), added via barcode scan, nutrition-label photo, or manual/basic-food entry; manual products can include saturated fat, sugars, salt and fibre per 100 g; barcode and nutrition data are reused through a shared read-only product catalog, while pantry stock remains private; pantry items surface first when searching ingredients and matching stock is consumed automatically when a dish is logged
-- **Nutrition-label photo import** — take or choose a package photo, extract product and per-100 nutrition data through an authenticated OpenAI-backed Edge Function, review every field, then save it to the pantry
+- **Kitchen** — one area with saved dishes and personal ingredients. Recipes retain ingredient order, meal categories and optional custom icons. The dish editor shows quantities and read-only nutrition values; prepared batches track remaining cooked portions
+- **Personal ingredients** — save reusable foods by category through barcode scan, nutrition-label photo or manual/basic-food entry. Nutrition values are stored per 100 g/ml and corrections update linked dishes and diary entries; ingredients do not have a stock counter
+- **Nutrition-label photo import** — take or choose a package photo, extract product and per-100 nutrition data through an authenticated OpenAI-backed Edge Function, review every field, then save it among personal ingredients
 - **Macros** — visual progress bars for protein, total carbohydrates, and total fat against daily targets; sugars and saturated fat are subsets of their respective totals, not extra grams to add
 - **Calorie ring** — at-a-glance daily calorie budget vs. consumed
-- **Workout tracking** — choose from 20 activities and log sessions with MET-based calorie burn calculation
+- **Gym training** — create reusable plans, search exercises in Italian or English, set fixed or ranged repetition goals, record weight and performed reps for each set, then review recent sessions and progress ([guide](docs/allenamenti-palestra.md))
+- **Other activities** — log Pesi, Camminata, Corsa, Ciclismo, Nuoto, Tapis roulant or Vogatore by duration with a MET-based calorie estimate; older activity types remain readable
 - **Weight log** — record body weight over time with history view; calorie and macro targets use a 7-day rolling average and are recalculated only after a significant (at least 2%) change from the last calculation weight
 - **Wellbeing** — dedicated daily/weekly healthy-habits dashboard, with a compact status summary on the Meals page: minimum goals fill toward their target, while maximum limits fill orange only when exceeded
 - **BMR / TDEE** — personalized pipeline from BMR and activity-adjusted TDEE through calorie target, weight-based protein/fat targets, and residual carbohydrates; supports maintenance, muscle gain, weight loss and body recomposition, with prudent loss-rate and calorie limits
@@ -27,7 +28,7 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 - Tailwind CSS (mobile-first, dark mode)
 - Supabase (PostgreSQL + Auth — email/password + RLS)
 - Italian interface
-- `@zxing/browser` for client-side barcode scanning (pantry), including rotated/vertical 1D barcodes
+- `@zxing/browser` for client-side barcode scanning, including rotated/vertical 1D barcodes
 
 ## Getting Started
 
@@ -74,12 +75,12 @@ src/
 ├── components/
 │   ├── common/          # Modal, Toast, DaySelector
 │   ├── layout/          # Layout shell with bottom nav
-│   ├── kitchen/         # Saved dishes, details and pantry-driven recommendations
+│   ├── kitchen/         # Saved dishes and prepared batches
 │   ├── meals/           # Meal cards/details, calorie/macros, ingredient search and dish composer
 │   ├── onboarding/      # Physical, objective, lifestyle, resistance-training and confirmation steps
 │   ├── pantry/          # BarcodeScanner, NutritionLabelPhoto
 │   ├── settings/        # Profile inputs that affect calorie/macro calculations
-│   └── workout/         # WorkoutDrawer, WorkoutRow, ActivityGrid
+│   └── workout/         # Gym plans/sessions and simple activity logging
 ├── contexts/
 │   ├── AuthContext.tsx  # Supabase Auth, session management
 │   ├── DataContext.tsx  # Daily meals, workouts, weight logs, goals
@@ -94,10 +95,11 @@ src/
 │   ├── WeightPage.tsx
 │   ├── HistoryPage.tsx
 │   ├── KitchenPage.tsx  # Ingredienti + Piatti tabs
-│   ├── PantryPage.tsx   # Pantry tab and legacy standalone view
+│   ├── PantryPage.tsx   # Personal ingredients tab in Cucina
 │   └── SettingsPage.tsx
 ├── services/
-│   ├── api.ts           # All Supabase CRUD
+│   ├── api.ts           # Meals, dishes, ingredients and weight API
+│   ├── gymApi.ts        # Gym plans, sessions and sets
 │   ├── nutrition.ts     # Basic-foods search, Open Food Facts search + barcode lookup
 │   ├── barcodeProducts.ts # Shared barcode catalog client and photo barcode detection
 │   ├── nutritionLabel.ts # Photo preparation + nutrition-label Edge Function client
@@ -106,7 +108,7 @@ src/
 │   ├── basicFoods.ts    # Curated ingredients (raw/dry weight unless named otherwise)
 │   ├── basicFoodExtendedNutrition.ts # Indicative fibre, sugars and salt per 100 g/ml
 │   ├── foodCategories.ts # Shared category labels and metadata
-│   ├── suggestedDishes.ts # Reserved recipe templates
+│   ├── gymExercises.ts  # Searchable exercise catalog
 │   └── nutritionGuidelines.ts # Reference targets for healthy-habits indicators
 ├── utils/
 │   ├── bmr.ts           # Full BMR → TDEE → calorie/macro target pipeline
@@ -128,8 +130,8 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 | `meal_entries` | Named dishes or single ingredients actually eaten within a meal slot; prepared portions also store their cooked grams and batch ID |
 | `meal_items` | Ingredients and drinks belonging to an eaten dish, with `g`/`ml` units, optional piece size/count, nutrition values and an optional saved ingredient link |
 | `workouts` | Workout sessions (activity type, duration, MET, calories burned) |
-| `gym_plans`, `gym_plan_exercises` | Reusable gym plans and their ordered exercises with target sets and reps |
-| `gym_sessions`, `gym_sets` | Performed gym sessions and each set's weight, reps and completion state; plan edits do not change history |
+| `gym_plans`, `gym_plan_exercises` | Reusable gym plans with ordered exercises, set counts, repetition goals and per-side flags |
+| `gym_sessions`, `gym_sets` | Session snapshots and each set's weight, performed reps and completion state; later plan edits do not change history |
 | `weight_logs` | Daily weight entries |
 | `dishes` | Saved reusable recipes and separate snapshots of prepared batches |
 | `dish_items` | Ingredients within a saved recipe or preparation snapshot, including order, g/ml unit and optional personal ingredient reference |
@@ -158,7 +160,8 @@ weight and reps are suggested.
 Sessions can be resumed, completed, reviewed and compared by exercise. The
 simple activity picker is kept for Pesi, Camminata, Corsa, Ciclismo, Nuoto,
 Tapis roulant and Vogatore; older activity types remain readable in history.
-Gym sets do not receive an estimated calorie value.
+Gym sets do not receive an estimated calorie value. See the
+[gym training guide](docs/allenamenti-palestra.md) for the exact flow and sample plans.
 
 Changing calories, protein, carbohydrates, fat, fibre, sugars or salt in a
 personal ingredient updates linked saved-dish ingredients and previously logged meal
@@ -192,7 +195,7 @@ abitudini” indicators. Fibre, sugars and salt are persisted as nullable values
 the pantry, Open Food Facts or manual entry; incomplete days are marked as partial
 instead of treating missing nutrition data as zero. The local basic-food catalog
 also provides indicative fibre, sugars and salt values for every ingredient.
-Manual pantry entry keeps omitted optional values as unknown, distinct from an
+Manual ingredient entry keeps omitted optional values as unknown, distinct from an
 explicit zero. Across the UI, total carbohydrates already include sugars and
 total fat already includes saturated fat (and unsaturated fat when shown).
 
