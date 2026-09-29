@@ -119,7 +119,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     name: string; items: DishItemDraft[]; sourceDishId: string | null; icon: string | null
   } | null>(null)
   const [cookedWeightOverride, setCookedWeightOverride] = useState<number | null>(null)
-  const [firstPortionG, setFirstPortionG] = useState(0)
+  const [firstPortionG, setFirstPortionG] = useState<number | null>(null)
   const [preparing, setPreparing] = useState(false)
   const [selectedBeverage, setSelectedBeverage] = useState<BasicFood | null>(null)
   const [beverageVolume, setBeverageVolume] = useState(330)
@@ -227,7 +227,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
       icon: pickingDish.icon,
     })
     setCookedWeightOverride(null)
-    setFirstPortionG(0)
+    setFirstPortionG(null)
     setPickingDish(null)
     setExtraItems([])
     setMode('prepare')
@@ -269,7 +269,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     const dish = await api.createDish(user.id, name, items, mealTypes)
     setPendingPreparation({ name, items: dish.items.map(toDraftItem), sourceDishId: dish.id, icon: dish.icon })
     setCookedWeightOverride(null)
-    setFirstPortionG(0)
+    setFirstPortionG(null)
     setMode('prepare')
   }
 
@@ -285,7 +285,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   async function handleSaveOneoff(name: string, items: DishItemDraft[]) {
     setPendingPreparation({ name, items, sourceDishId: null, icon: null })
     setCookedWeightOverride(null)
-    setFirstPortionG(0)
+    setFirstPortionG(null)
     setMode('prepare')
   }
 
@@ -293,7 +293,8 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     if (!user || !pendingPreparation || preparing) return
     const estimated = estimateCookedWeight(pendingPreparation.items)
     const totalCookedG = cookedWeightOverride ?? estimated
-    if (totalCookedG <= 0 || firstPortionG < 0 || firstPortionG > totalCookedG) return
+    const portionG = firstPortionG ?? totalCookedG
+    if (totalCookedG <= 0 || portionG < 0 || portionG > totalCookedG) return
     setPreparing(true)
     try {
       await api.createPreparedBatch({
@@ -303,7 +304,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
         sourceDishId: pendingPreparation.sourceDishId,
         icon: pendingPreparation.icon,
         totalCookedG,
-        firstPortionG,
+        firstPortionG: portionG,
         date,
         mealType,
       })
@@ -311,7 +312,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
       await refresh()
       setPendingPreparation(null)
       setMode('list')
-      showToast(firstPortionG > 0 ? 'Preparazione salvata e porzione registrata' : 'Preparazione salvata')
+      showToast(portionG > 0 ? 'Preparazione salvata e porzione registrata' : 'Preparazione salvata')
     } catch {
       showToast('Errore salvataggio preparazione')
     } finally {
@@ -424,6 +425,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   if (mode === 'prepare' && pendingPreparation) {
     const estimated = estimateCookedWeight(pendingPreparation.items)
     const totalCookedG = cookedWeightOverride ?? estimated
+    const portionG = firstPortionG ?? totalCookedG
     const totalCalories = pendingPreparation.items.reduce((sum, item) => sum + item.calories, 0)
     return <div className="space-y-5">
       <ComposerHeader icon="🍲" eyebrow="Preparazione" title={pendingPreparation.name} />
@@ -434,18 +436,18 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
         <label className="mt-3 block text-xs text-gray-400">Correggi il peso cotto totale (facoltativo)
           <input type="number" min={1} step="any" inputMode="decimal"
             value={cookedWeightOverride ?? ''}
-            onChange={event => { setCookedWeightOverride(event.target.value === '' ? null : Number(event.target.value)); setFirstPortionG(0) }}
+            onChange={event => setCookedWeightOverride(event.target.value === '' ? null : Number(event.target.value))}
             placeholder={`${estimated} g stimati`}
             className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm outline-none focus:border-primary-500" />
         </label>
       </div>
       <PreparedPortionInput totalCookedG={totalCookedG} remainingG={totalCookedG}
-        value={firstPortionG} onChange={setFirstPortionG} allowZero />
+        value={portionG} onChange={setFirstPortionG} allowZero />
       <button type="button" onClick={() => void savePreparation()}
         disabled={preparing || !Number.isFinite(totalCookedG) || totalCookedG <= 0
-          || !Number.isFinite(firstPortionG) || firstPortionG < 0 || firstPortionG > totalCookedG}
+          || !Number.isFinite(portionG) || portionG < 0 || portionG > totalCookedG}
         className="w-full rounded-xl bg-primary-500 py-3 font-semibold disabled:opacity-40">
-        {preparing ? 'Salvataggio…' : firstPortionG > 0 ? 'Salva e registra la porzione' : 'Salva per mangiarlo dopo'}
+        {preparing ? 'Salvataggio…' : portionG > 0 ? 'Salva e registra la porzione' : 'Salva per mangiarlo dopo'}
       </button>
       <button type="button" onClick={() => setMode('list')} className="w-full text-sm text-gray-400">Annulla</button>
     </div>
