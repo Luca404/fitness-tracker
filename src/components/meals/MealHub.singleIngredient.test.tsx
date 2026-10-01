@@ -49,14 +49,17 @@ describe('single ingredient meal flow', () => {
 })
 
 describe('saved dish meal flow', () => {
-  const dish = {
-    id: 'dish-1', name: 'Pasta al pomodoro', icon: '🍝', meal_types: ['snack'],
+  const dish: Dish = {
+    id: 'dish-1', user_id: 'user-1', name: 'Pasta al pomodoro', icon: '🍝',
+    meal_types: ['snack'], created_at: '2026-09-29', updated_at: '2026-09-29',
     items: [{
-      id: 'item-1', food_name: 'Pasta', quantity_g: 100, unit: 'g', calories: 350,
+      id: 'item-1', dish_id: 'dish-1', position: 0, food_name: 'Pasta',
+      quantity_g: 100, unit: 'g', calories: 350,
       protein_g: 12, carbs_g: 70, fat_g: 2, source: 'basic', off_food_id: null,
-      category: 'grains', food_key: 'basic:pasta', pantry_item_id: null,
+      category: 'grain', food_key: 'basic:pasta', pantry_item_id: null,
+      created_at: '2026-09-29',
     }],
-  } as Dish
+  }
 
   it('registers the whole saved recipe without creating a prepared batch', async () => {
     mocks.getDishes.mockResolvedValueOnce([dish])
