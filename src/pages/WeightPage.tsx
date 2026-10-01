@@ -6,6 +6,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts'
 import type { WeightLog } from '../types'
+import { formatDecimal, roundToTwo } from '../utils/decimal'
 
 type Range = '7' | '30' | '90'
 
@@ -44,7 +45,7 @@ export default function WeightPage({ embedded = false }: { embedded?: boolean })
 
   async function handleSave() {
     if (!user || !weightInput) return
-    const kg = parseFloat(weightInput)
+    const kg = roundToTwo(parseFloat(weightInput))
     if (isNaN(kg) || kg < 20 || kg > 400) {
       showToast('Inserisci un peso tra 20 e 400 kg')
       return
@@ -96,17 +97,17 @@ export default function WeightPage({ embedded = false }: { embedded?: boolean })
         <div className="card flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-400">Peso attuale</p>
-            <p className="text-3xl font-bold text-white">{latest.weight_kg} <span className="text-lg text-gray-400">kg</span></p>
+            <p className="text-3xl font-bold text-white">{formatDecimal(latest.weight_kg)} <span className="text-lg text-gray-400">kg</span></p>
             <p className="text-xs text-gray-500 mt-1">{new Date(latest.date + 'T00:00:00').toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
           </div>
           {target && (
             <div className="text-right">
               <p className="text-sm text-gray-400">Obiettivo</p>
-              <p className="text-2xl font-semibold text-primary-400">{target} <span className="text-base text-gray-400">kg</span></p>
+              <p className="text-2xl font-semibold text-primary-400">{formatDecimal(target)} <span className="text-base text-gray-400">kg</span></p>
               <p className={`text-xs mt-1 font-medium ${latest.weight_kg > target ? 'text-orange-400' : 'text-green-400'}`}>
                 {latest.weight_kg > target
-                  ? `${(latest.weight_kg - target).toFixed(1)} kg da perdere`
-                  : `${(target - latest.weight_kg).toFixed(1)} kg da guadagnare`}
+                  ? `${formatDecimal(latest.weight_kg - target)} kg da perdere`
+                  : `${formatDecimal(target - latest.weight_kg)} kg da guadagnare`}
               </p>
             </div>
           )}
@@ -142,14 +143,14 @@ export default function WeightPage({ embedded = false }: { embedded?: boolean })
             <LineChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-              <YAxis domain={[yMin, yMax]} tick={{ fill: '#9ca3af', fontSize: 10 }} />
+              <YAxis domain={[yMin, yMax]} tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={value => formatDecimal(Number(value))} />
               <Tooltip
                 contentStyle={{ background: '#1f2937', border: 'none', borderRadius: 8 }}
                 labelStyle={{ color: '#e5e7eb', fontSize: 12 }}
-                formatter={(v: unknown) => [`${v} kg`, 'Peso']}
+                formatter={(v: unknown) => [`${formatDecimal(Number(v))} kg`, 'Peso']}
               />
               {target && (
-                <ReferenceLine y={target} stroke="#10b981" strokeDasharray="4 4" label={{ value: `obiettivo ${target}kg`, fill: '#10b981', fontSize: 10 }} />
+                <ReferenceLine y={target} stroke="#10b981" strokeDasharray="4 4" label={{ value: `obiettivo ${formatDecimal(target)}kg`, fill: '#10b981', fontSize: 10 }} />
               )}
               <Line
                 type="monotone"
@@ -178,11 +179,15 @@ export default function WeightPage({ embedded = false }: { embedded?: boolean })
           <div className="flex items-center gap-1 flex-1 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 focus-within:border-primary-500">
             <input
               type="number"
-              step="0.1"
+              step="0.01"
               min="20"
               max="400"
               value={weightInput}
               onChange={e => setWeightInput(e.target.value)}
+              onBlur={() => {
+                const value = Number(weightInput)
+                if (weightInput !== '' && Number.isFinite(value)) setWeightInput(formatDecimal(value))
+              }}
               placeholder="es. 75.5"
               className="flex-1 bg-transparent outline-none text-sm"
               onKeyDown={e => e.key === 'Enter' && handleSave()}
@@ -210,7 +215,7 @@ export default function WeightPage({ embedded = false }: { embedded?: boolean })
                 {new Date(l.date + 'T00:00:00').toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
               </span>
               <div className="flex items-center gap-4">
-                <span className="text-sm font-semibold">{l.weight_kg} kg</span>
+                <span className="text-sm font-semibold">{formatDecimal(l.weight_kg)} kg</span>
                 <button
                   type="button"
                   onClick={() => handleDelete(l.id, l.date)}

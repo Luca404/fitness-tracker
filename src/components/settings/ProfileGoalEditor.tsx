@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { ActivityLevel, Objective, Sex, UserHealthProfile } from '../../types'
+import { formatDecimal, roundToTwo } from '../../utils/decimal'
 import { RECOMPOSITION_TRAINING_ADVICE } from '../../config/nutritionGoals'
 
 const ACTIVITY_LEVELS: Array<{ value: ActivityLevel; label: string }> = [
@@ -95,8 +96,8 @@ export default function ProfileGoalEditor({ profile, currentWeightKg, onSave, on
 
       <label className="block">
         <span className="mb-1 block text-xs text-gray-400">Grasso corporeo % (facoltativo)</span>
-        <input type="number" min={1} max={75} step={0.1} value={draft.body_fat_pct ?? ''}
-          onChange={event => set('body_fat_pct', event.target.value ? Number(event.target.value) : null)} className="input-field" />
+        <input type="number" min={1} max={75} step={0.01} value={draft.body_fat_pct == null ? '' : formatDecimal(draft.body_fat_pct)}
+          onChange={event => set('body_fat_pct', event.target.value ? roundToTwo(Number(event.target.value)) : null)} className="input-field" />
       </label>
 
       <label className="block">
@@ -134,8 +135,8 @@ export default function ProfileGoalEditor({ profile, currentWeightKg, onSave, on
           <span className="mb-1 block text-xs text-gray-400">
             Peso obiettivo (kg){draft.objective === 'gain_muscle' ? ' — facoltativo' : ''}
           </span>
-          <input type="number" min={20} max={400} step={0.1} value={draft.target_weight_kg ?? ''}
-            onChange={event => set('target_weight_kg', event.target.value ? Number(event.target.value) : null)} className="input-field" />
+          <input type="number" min={20} max={400} step={0.01} value={draft.target_weight_kg == null ? '' : formatDecimal(draft.target_weight_kg)}
+            onChange={event => set('target_weight_kg', event.target.value ? roundToTwo(Number(event.target.value)) : null)} className="input-field" />
           {draft.objective === 'lose_weight' && draft.target_weight_kg !== null && draft.target_weight_kg >= currentWeightKg && (
             <span className="mt-1 block text-xs text-orange-400">Deve essere inferiore al peso corrente.</span>
           )}

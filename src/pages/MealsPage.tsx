@@ -21,6 +21,7 @@ import { splitMealItems } from '../utils/mealCustomizations'
 import PreparedPortionInput from '../components/meals/PreparedPortionInput'
 import SingleIngredientEditor from '../components/meals/SingleIngredientEditor'
 import * as api from '../services/api'
+import { formatDecimal } from '../utils/decimal'
 
 const MEAL_TYPES: { type: MealType; label: string }[] = [
   { type: 'breakfast', label: '☀️ Colazione' },
@@ -171,7 +172,7 @@ export default function MealsPage() {
         <div className="flex-1 space-y-2.5 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-400">Consumate</span>
-            <span className="font-semibold">{Math.round(daySummary.calories)} kcal</span>
+            <span className="font-semibold">{formatDecimal(daySummary.calories)} kcal</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-400">Obiettivo</span>
@@ -180,13 +181,13 @@ export default function MealsPage() {
           {totalBurned > 0 && (
             <div className="flex justify-between">
               <span className="text-gray-400">🔥 Bruciate</span>
-              <span className="text-orange-400 font-semibold">{Math.round(totalBurned)} kcal</span>
+              <span className="text-orange-400 font-semibold">{formatDecimal(totalBurned)} kcal</span>
             </div>
           )}
           <div className="flex justify-between border-t border-gray-700 pt-2">
             <span className="text-gray-400">Rimanenti</span>
             <span className={`font-bold ${isOver ? 'text-orange-400' : 'text-primary-400'}`}>
-              {isOver ? `+${Math.abs(Math.round(remaining))}` : Math.round(remaining)} kcal
+              {isOver ? `+${formatDecimal(Math.abs(remaining))}` : formatDecimal(remaining)} kcal
             </span>
           </div>
         </div>
@@ -241,7 +242,7 @@ export default function MealsPage() {
                   <div key={entries[0].id}>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-semibold text-gray-400">{label}</span>
-                      <span className="text-xs text-gray-600">{Math.round(total)} kcal</span>
+                      <span className="text-xs text-gray-600">{formatDecimal(total)} kcal</span>
                     </div>
                     <div className="space-y-2">
                       {entries.map(entry => (
@@ -326,16 +327,16 @@ export default function MealsPage() {
                       <h2 className="text-xl font-bold text-white">{selectedEntry.name}</h2>
                       <p className="mt-1 text-sm text-gray-400">
                         {selectedEntry.cooked_portion_g != null
-                          ? `${Math.round(selectedEntry.cooked_portion_g)} g da cotto`
-                          : `${Math.round(totals.weight)} g${totals.volumeMl > 0 ? ` + ${Math.round(totals.volumeMl)} ml` : ''}`} · {selectedEntry.items.length} elementi
+                          ? `${formatDecimal(selectedEntry.cooked_portion_g)} g da cotto`
+                          : `${formatDecimal(totals.weight)} g${totals.volumeMl > 0 ? ` + ${formatDecimal(totals.volumeMl)} ml` : ''}`} · {selectedEntry.items.length} elementi
                       </p>
                     </div>
-                    <span className="text-xl font-bold text-primary-400">{Math.round(totals.calories)}<small className="ml-1 text-[10px] font-medium">kcal</small></span>
+                    <span className="text-xl font-bold text-primary-400">{formatDecimal(totals.calories)}<small className="ml-1 text-[10px] font-medium">kcal</small></span>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="rounded-xl bg-black/15 p-2 text-center"><p className="text-xs text-gray-500">Proteine</p><p className="font-semibold">{Math.round(totals.protein)}g</p></div>
-                    <div className="rounded-xl bg-black/15 p-2 text-center"><p className="text-xs text-gray-500">Carboidrati</p><p className="font-semibold">{Math.round(totals.carbs)}g</p></div>
-                    <div className="rounded-xl bg-black/15 p-2 text-center"><p className="text-xs text-gray-500">Grassi</p><p className="font-semibold">{Math.round(totals.fat)}g</p></div>
+                    <div className="rounded-xl bg-black/15 p-2 text-center"><p className="text-xs text-gray-500">Proteine</p><p className="font-semibold">{formatDecimal(totals.protein)}g</p></div>
+                    <div className="rounded-xl bg-black/15 p-2 text-center"><p className="text-xs text-gray-500">Carboidrati</p><p className="font-semibold">{formatDecimal(totals.carbs)}g</p></div>
+                    <div className="rounded-xl bg-black/15 p-2 text-center"><p className="text-xs text-gray-500">Grassi</p><p className="font-semibold">{formatDecimal(totals.fat)}g</p></div>
                   </div>
                   <ExtendedNutrition totals={extendedTotals} />
                 </div>

@@ -1,5 +1,6 @@
 import { BASIC_FOODS } from './basicFoods'
 import type { Dish, DishItem, DishMealType } from '../types'
+import { roundToTwo } from '../utils/decimal'
 
 interface SuggestedDishTemplate {
   id: string
@@ -63,10 +64,10 @@ function buildItem(templateId: string, foodId: string, quantityG: number, positi
     quantity_g: quantityG,
     category: food.category,
     food_key: `basic:${food.id}`,
-    calories: Math.round(food.calories * factor),
-    protein_g: Math.round(food.protein_g * factor * 10) / 10,
-    carbs_g: Math.round(food.carbs_g * factor * 10) / 10,
-    fat_g: Math.round(food.fat_g * factor * 10) / 10,
+    calories: roundToTwo(food.calories * factor),
+    protein_g: roundToTwo(food.protein_g * factor),
+    carbs_g: roundToTwo(food.carbs_g * factor),
+    fat_g: roundToTwo(food.fat_g * factor),
     source: 'basic',
     off_food_id: null,
     created_at: '',

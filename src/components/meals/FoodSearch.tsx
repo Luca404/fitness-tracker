@@ -6,6 +6,7 @@ import { FOOD_CATEGORIES } from '../../data/foodCategories'
 import type { FoodResult, FoodSource, PantryItem, FoodCategory, PieceSize } from '../../types'
 import OpenFoodFactsDetails from '../common/OpenFoodFactsDetails'
 import IngredientQuantityInput from './IngredientQuantityInput'
+import { formatDecimal, roundToTwo } from '../../utils/decimal'
 
 const IngredientCatalog = lazy(() => import('../../pages/PantryPage'))
 
@@ -180,7 +181,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
                 <button key={f.id} type="button" onClick={() => { setSelected(f); setPiece(null) }}
                   className="w-full rounded-xl bg-gray-800 px-3 py-2.5 text-left text-sm hover:bg-gray-700">
                   <span className="font-medium">🧺 {f.name}</span>
-                  <span className="text-gray-500 ml-2">{Math.round(f.calories_100g)} kcal/100{f.quantity_unit === 'ml' ? 'ml' : 'g'}</span>
+                  <span className="text-gray-500 ml-2">{formatDecimal(f.calories_100g)} kcal/100{f.quantity_unit === 'ml' ? 'ml' : 'g'}</span>
                 </button>
               ))}
             </div>
@@ -193,7 +194,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
                 <button key={f.id} type="button" onClick={() => { setSelected(f); setPiece(null) }}
                   className="w-full rounded-xl bg-gray-800 px-3 py-2.5 text-left text-sm hover:bg-gray-700">
                   <span className="font-medium">{f.name}</span>
-                  <span className="text-gray-500 ml-2">{Math.round(f.calories_100g)} kcal/100g</span>
+                  <span className="text-gray-500 ml-2">{formatDecimal(f.calories_100g)} kcal/100g</span>
                 </button>
               ))}
             </div>
@@ -234,7 +235,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
                   className="w-full rounded-xl bg-gray-800 px-3 py-2.5 text-left text-sm hover:bg-gray-700">
                   <span className="font-medium">{p.name}</span>
                   {p.brand && <span className="text-gray-400 ml-2">· {p.brand}</span>}
-                  <span className="text-gray-500 ml-2">{Math.round(p.calories_100g)} kcal/100g</span>
+                  <span className="text-gray-500 ml-2">{formatDecimal(p.calories_100g)} kcal/100g</span>
                 </button>
               ))}
             </div>
@@ -278,19 +279,19 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
               {(() => {
                 const n = calcNutrition(selected, qty)
                 const extraNutrients = [
-                  selected.fiber_100g == null ? null : `fibre ${selected.fiber_100g} g`,
-                  selected.sugars_100g == null ? null : `di cui zuccheri ${selected.sugars_100g} g`,
-                  selected.saturated_fat_100g == null ? null : `di cui grassi saturi ${selected.saturated_fat_100g} g`,
-                  selected.unsaturated_fat_100g == null ? null : `di cui grassi insaturi ${selected.unsaturated_fat_100g} g`,
-                  selected.salt_100g == null ? null : `sale ${selected.salt_100g} g`,
+                  selected.fiber_100g == null ? null : `fibre ${formatDecimal(selected.fiber_100g)} g`,
+                  selected.sugars_100g == null ? null : `di cui zuccheri ${formatDecimal(selected.sugars_100g)} g`,
+                  selected.saturated_fat_100g == null ? null : `di cui grassi saturi ${formatDecimal(selected.saturated_fat_100g)} g`,
+                  selected.unsaturated_fat_100g == null ? null : `di cui grassi insaturi ${formatDecimal(selected.unsaturated_fat_100g)} g`,
+                  selected.salt_100g == null ? null : `sale ${formatDecimal(selected.salt_100g)} g`,
                 ].filter(value => value !== null)
                 return (
                   <>
                     <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
-                      <span className="rounded-lg bg-black/10 py-2 text-primary-400"><b>{n.calories}</b><small className="block text-[9px] text-gray-500">kcal</small></span>
-                      <span className="rounded-lg bg-black/10 py-2"><b>{n.protein_g}g</b><small className="block text-[9px] text-gray-500">proteine</small></span>
-                      <span className="rounded-lg bg-black/10 py-2"><b>{n.carbs_g}g</b><small className="block text-[9px] text-gray-500">carbo tot.</small></span>
-                      <span className="rounded-lg bg-black/10 py-2"><b>{n.fat_g}g</b><small className="block text-[9px] text-gray-500">grassi tot.</small></span>
+                      <span className="rounded-lg bg-black/10 py-2 text-primary-400"><b>{formatDecimal(n.calories)}</b><small className="block text-[9px] text-gray-500">kcal</small></span>
+                      <span className="rounded-lg bg-black/10 py-2"><b>{formatDecimal(n.protein_g)}g</b><small className="block text-[9px] text-gray-500">proteine</small></span>
+                      <span className="rounded-lg bg-black/10 py-2"><b>{formatDecimal(n.carbs_g)}g</b><small className="block text-[9px] text-gray-500">carbo tot.</small></span>
+                      <span className="rounded-lg bg-black/10 py-2"><b>{formatDecimal(n.fat_g)}g</b><small className="block text-[9px] text-gray-500">grassi tot.</small></span>
                     </div>
                     {selected.source !== 'openfoodfacts' && extraNutrients.length > 0 && (
                       <p className="text-[11px] text-gray-500">
@@ -375,8 +376,8 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
               <label key={label} className="rounded-xl border border-gray-700 bg-gray-800/80 p-3 focus-within:border-primary-500">
                 <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">{label}</span>
                 <span className="mt-1 flex items-center gap-2">
-                  <input type="number" min={min} step="any" inputMode="decimal" value={val || ''}
-                    onChange={e => set(parseFloat(e.target.value) || 0)}
+                  <input type="number" min={min} step="0.01" inputMode="decimal" value={val || ''}
+                    onChange={e => set(roundToTwo(parseFloat(e.target.value) || 0))}
                     className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none" />
                   <span aria-hidden="true" className="text-xs text-gray-600">{unit}</span>
                 </span>
@@ -387,8 +388,8 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
             <label className="block">
               <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">Carboidrati totali</span>
               <span className="mt-1 flex items-center gap-2">
-                <input type="number" min={0} step="any" inputMode="decimal" value={manualCarbs || ''}
-                  onChange={event => setManualCarbs(parseFloat(event.target.value) || 0)}
+                <input type="number" min={0} step="0.01" inputMode="decimal" value={manualCarbs || ''}
+                  onChange={event => setManualCarbs(roundToTwo(parseFloat(event.target.value) || 0))}
                   className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none" />
                 <span aria-hidden="true" className="text-xs text-gray-600">g</span>
               </span>
@@ -396,8 +397,8 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
             <label className="mt-3 block border-l-2 border-gray-600 pl-3">
               <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">di cui zuccheri (facoltativo)</span>
               <span className="mt-1 flex items-center gap-2">
-                <input type="number" min={0} step="any" inputMode="decimal" value={manualSugars ?? ''}
-                  onChange={event => setManualSugars(event.target.value === '' ? null : Number(event.target.value))}
+                <input type="number" min={0} step="0.01" inputMode="decimal" value={manualSugars ?? ''}
+                  onChange={event => setManualSugars(event.target.value === '' ? null : roundToTwo(Number(event.target.value)))}
                   className="min-w-0 flex-1 bg-transparent text-base font-semibold outline-none" />
                 <span aria-hidden="true" className="text-xs text-gray-600">g</span>
               </span>
@@ -406,8 +407,8 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
           <label className="block rounded-xl border border-gray-700 bg-gray-800/80 p-3 focus-within:border-primary-500">
             <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">Grassi totali</span>
             <span className="mt-1 flex items-center gap-2">
-              <input type="number" min={0} step="any" inputMode="decimal" value={manualFat || ''}
-                onChange={event => setManualFat(parseFloat(event.target.value) || 0)}
+              <input type="number" min={0} step="0.01" inputMode="decimal" value={manualFat || ''}
+                onChange={event => setManualFat(roundToTwo(parseFloat(event.target.value) || 0))}
                 className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none" />
               <span aria-hidden="true" className="text-xs text-gray-600">g</span>
             </span>
@@ -427,7 +428,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
                       min={0}
                       step="0.01"
                       value={val ?? ''}
-                      onChange={event => set(event.target.value === '' ? null : Number(event.target.value))}
+                      onChange={event => set(event.target.value === '' ? null : roundToTwo(Number(event.target.value)))}
                       className="min-w-0 flex-1 bg-transparent text-base font-semibold outline-none"
                     />
                     <span aria-hidden="true" className="text-[10px] text-gray-600">g</span>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
+import { formatDecimal } from '../utils/decimal'
 import { useSettings } from '../contexts/SettingsContext'
 import ActivityGrid from '../components/workout/ActivityGrid'
 import WorkoutDrawer from '../components/workout/WorkoutDrawer'
@@ -66,7 +67,7 @@ export default function WorkoutPage({ embedded = false }: { embedded?: boolean }
         <div>
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-semibold text-gray-300">Altre attività del giorno</h3>
-            <span className="text-sm text-orange-400">🔥 {Math.round(totalBurned)} kcal</span>
+            <span className="text-sm text-orange-400">🔥 {formatDecimal(totalBurned)} kcal</span>
           </div>
           {workouts.map(w => (
             <WorkoutRow key={w.id} workout={w} onDelete={() => handleDelete(w.id)} />

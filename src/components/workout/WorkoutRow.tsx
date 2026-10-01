@@ -1,4 +1,5 @@
 import type { Workout } from '../../types'
+import { formatDecimal } from '../../utils/decimal'
 import { MET_ACTIVITIES } from '../../utils/met'
 
 interface Props {
@@ -18,7 +19,7 @@ export default function WorkoutRow({ workout, onDelete }: Props) {
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <span className="text-orange-400 font-medium text-sm">{Math.round(workout.calories_burned)} kcal</span>
+        <span className="text-orange-400 font-medium text-sm">{formatDecimal(workout.calories_burned)} kcal</span>
         <button type="button" onClick={onDelete} className="text-gray-600 hover:text-red-400 text-lg" aria-label="Elimina workout">✕</button>
       </div>
     </div>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { PieceSize } from '../../types'
 import type { DishItemDraft } from './DishEditor'
 import IngredientQuantityInput from './IngredientQuantityInput'
+import { formatDecimal, roundToTwo } from '../../utils/decimal'
 
 export default function SingleIngredientEditor({ item, onSave, onCancel }: {
   item: DishItemDraft
@@ -23,16 +24,16 @@ export default function SingleIngredientEditor({ item, onSave, onCancel }: {
     try {
       await onSave({
         ...item,
-        quantity_g: quantity,
-        piece_count: piece?.count ?? null,
+        quantity_g: roundToTwo(quantity),
+        piece_count: piece == null ? null : roundToTwo(piece.count),
         piece_size: piece?.size ?? null,
-        calories: Math.round(item.calories * factor),
-        protein_g: Math.round(item.protein_g * factor * 10) / 10,
-        carbs_g: Math.round(item.carbs_g * factor * 10) / 10,
-        fat_g: Math.round(item.fat_g * factor * 10) / 10,
-        fiber_g: item.fiber_g == null ? null : Math.round(item.fiber_g * factor * 100) / 100,
-        sugars_g: item.sugars_g == null ? null : Math.round(item.sugars_g * factor * 100) / 100,
-        salt_g: item.salt_g == null ? null : Math.round(item.salt_g * factor * 100) / 100,
+        calories: roundToTwo(item.calories * factor),
+        protein_g: roundToTwo(item.protein_g * factor),
+        carbs_g: roundToTwo(item.carbs_g * factor),
+        fat_g: roundToTwo(item.fat_g * factor),
+        fiber_g: item.fiber_g == null ? null : roundToTwo(item.fiber_g * factor),
+        sugars_g: item.sugars_g == null ? null : roundToTwo(item.sugars_g * factor),
+        salt_g: item.salt_g == null ? null : roundToTwo(item.salt_g * factor),
       })
     } catch {
       setError(true)
@@ -46,7 +47,7 @@ export default function SingleIngredientEditor({ item, onSave, onCancel }: {
     <IngredientQuantityInput foodName={item.food_name} category={item.category}
       grams={quantity} unit={item.unit} onChange={setQuantity}
       pieceCount={piece?.count} pieceSize={piece?.size} onPieceChange={setPiece} />
-    <p className="text-sm text-gray-400">{Number.isFinite(factor) ? Math.round(item.calories * factor) : 0} kcal</p>
+    <p className="text-sm text-gray-400">{Number.isFinite(factor) ? formatDecimal(item.calories * factor) : 0} kcal</p>
     {error && <p className="text-sm text-red-400">Impossibile aggiornare la quantità. Riprova.</p>}
     <button type="button" onClick={() => void save()} disabled={saving || !Number.isFinite(quantity) || quantity <= 0}
       className="w-full rounded-xl bg-primary-500 py-3 font-semibold disabled:opacity-40">

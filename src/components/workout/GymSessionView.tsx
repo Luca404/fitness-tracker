@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useData } from '../../contexts/DataContext'
 import * as gymApi from '../../services/gymApi'
 import type { GymSession, GymSet } from '../../types'
+import { formatDecimal, roundToTwo } from '../../utils/decimal'
 
 function GymSetRow({ set, onSaved, onDeleted, canDelete }: {
   set: GymSet
@@ -10,7 +11,7 @@ function GymSetRow({ set, onSaved, onDeleted, canDelete }: {
   canDelete: boolean
 }) {
   const { showToast } = useData()
-  const [weight, setWeight] = useState(set.weight_kg?.toString() ?? '')
+  const [weight, setWeight] = useState(set.weight_kg == null ? '' : formatDecimal(set.weight_kg))
   const [reps, setReps] = useState((set.reps ?? set.target_reps ?? '').toString())
   const [saving, setSaving] = useState(false)
   const valid = reps.trim() !== '' && Number.isInteger(Number(reps)) && Number(reps) > 0
@@ -20,7 +21,7 @@ function GymSetRow({ set, onSaved, onDeleted, canDelete }: {
     if (!valid || saving) return
     setSaving(true)
     try {
-      onSaved(await gymApi.saveGymSet(set.id, weight.trim() === '' ? null : Number(weight), Number(reps)))
+      onSaved(await gymApi.saveGymSet(set.id, weight.trim() === '' ? null : roundToTwo(Number(weight)), Number(reps)))
     } catch {
       showToast('Errore salvataggio serie')
     } finally {
@@ -49,8 +50,11 @@ function GymSetRow({ set, onSaved, onDeleted, canDelete }: {
     </div>
     <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
       <label className="text-xs text-gray-400">Peso (kg)
-        <input type="number" min={0} step="0.5" inputMode="decimal" value={weight}
-          onChange={event => setWeight(event.target.value)} placeholder="Corpo libero"
+        <input type="number" min={0} step="0.01" inputMode="decimal" value={weight}
+          onChange={event => setWeight(event.target.value)} onBlur={() => {
+            const value = Number(weight)
+            if (weight.trim() !== '' && Number.isFinite(value)) setWeight(formatDecimal(value))
+          }} placeholder="Corpo libero"
           className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-2 py-2 text-white" />
       </label>
       <label className="text-xs text-gray-400">{set.per_side ? 'Ripetizioni per lato' : 'Ripetizioni'}

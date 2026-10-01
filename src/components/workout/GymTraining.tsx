@@ -4,11 +4,12 @@ import { useData } from '../../contexts/DataContext'
 import { useSettings } from '../../contexts/SettingsContext'
 import * as gymApi from '../../services/gymApi'
 import type { GymPlan, GymSession, GymSet } from '../../types'
+import { formatDecimal } from '../../utils/decimal'
 import GymPlanEditor from './GymPlanEditor'
 import GymSessionView from './GymSessionView'
 
 function formatPerformance(set: GymSet): string {
-  return `${set.weight_kg == null ? 'Corpo libero' : `${set.weight_kg} kg`} × ${set.reps} rip.`
+  return `${set.weight_kg == null ? 'Corpo libero' : `${formatDecimal(set.weight_kg)} kg`} × ${set.reps} rip.`
 }
 
 function gymProgress(sessions: GymSession[]) {

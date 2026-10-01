@@ -1,4 +1,5 @@
 import type { Sex } from '../../types'
+import { roundToTwo } from '../../utils/decimal'
 
 interface PhysicalData {
   age: number
@@ -53,8 +54,9 @@ export default function StepPhysical({ data, onChange, onNext }: Props) {
             type="number"
             min={min}
             max={max}
+            step={key === 'age' ? 1 : 0.01}
             value={data[key] || ''}
-            onChange={e => set(key, parseFloat(e.target.value) || 0)}
+            onChange={e => set(key, key === 'age' ? Math.round(Number(e.target.value) || 0) : roundToTwo(parseFloat(e.target.value) || 0))}
             className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
           />
         </div>
@@ -66,8 +68,9 @@ export default function StepPhysical({ data, onChange, onNext }: Props) {
           type="number"
           min={1}
           max={75}
+          step={0.01}
           value={data.body_fat_pct ?? ''}
-          onChange={e => set('body_fat_pct', e.target.value ? parseFloat(e.target.value) : null)}
+          onChange={e => set('body_fat_pct', e.target.value ? roundToTwo(parseFloat(e.target.value)) : null)}
           className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
         />
       </div>

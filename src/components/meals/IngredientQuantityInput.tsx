@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FoodCategory, MealItemUnit, PieceSize } from '../../types'
 import { getPortionEstimates, type PortionEstimateId } from '../../utils/portionEstimates'
+import { formatDecimal, roundToTwo } from '../../utils/decimal'
 
 interface Props {
   foodName: string
@@ -17,7 +18,7 @@ interface Props {
 type QuantityMode = 'grams' | PortionEstimateId
 
 function roundQuantity(value: number): number {
-  return Math.round(value * 10) / 10
+  return roundToTwo(value)
 }
 
 function isPieceSize(mode: QuantityMode): mode is PieceSize {
@@ -54,7 +55,7 @@ export default function IngredientQuantityInput({ foodName, category, grams, onC
     const value = Number(rawValue)
     if (!Number.isFinite(value) || value <= 0) return
     onChange(roundQuantity(activeEstimate ? value * activeEstimate.grams : value))
-    if (isPieceSize(effectiveMode)) onPieceChange?.({ size: effectiveMode, count: value })
+    if (isPieceSize(effectiveMode)) onPieceChange?.({ size: effectiveMode, count: roundQuantity(value) })
   }
 
   return (
@@ -63,10 +64,10 @@ export default function IngredientQuantityInput({ foodName, category, grams, onC
         <input
           type="number"
           min={activeEstimate ? 0.5 : 1}
-          step={activeEstimate ? 0.5 : 1}
+          step={activeEstimate ? 0.5 : 0.01}
           value={draftValue ?? (displayedQuantity > 0 ? displayedQuantity : '')}
           onChange={event => changeQuantity(event.target.value)}
-          onBlur={() => { if (draftValue === '') setDraftValue(null) }}
+          onBlur={() => setDraftValue(null)}
           onFocus={event => event.currentTarget.select()}
           aria-label={`Quantità di ${foodName}`}
           className={`min-w-0 flex-1 bg-transparent font-semibold outline-none ${compact ? 'px-2 py-2 text-sm' : 'px-3 py-2.5 text-lg'}`}
@@ -89,7 +90,7 @@ export default function IngredientQuantityInput({ foodName, category, grams, onC
       </div>
       {activeEstimate && (
         <p className={`text-gray-500 ${compact ? 'mt-1 text-[10px]' : 'mt-1.5 text-xs'}`}>
-          ≈ {roundQuantity(grams)} g · 1 {activeEstimate.singularLabel} ≈ {activeEstimate.grams} g
+          ≈ {formatDecimal(grams)} g · 1 {activeEstimate.singularLabel} ≈ {formatDecimal(activeEstimate.grams)} g
         </p>
       )}
     </div>

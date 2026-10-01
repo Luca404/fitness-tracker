@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import type { Objective } from '../../types'
 import { differenceInDays, format, addMonths } from 'date-fns'
 import { NUTRITION_GOAL_CONFIG } from '../../config/nutritionGoals'
+import { roundToTwo } from '../../utils/decimal'
 
 interface ObjectiveData {
   objective: Objective
@@ -89,8 +90,9 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
             type="number"
             min={30}
             max={300}
+            step={0.01}
             value={data.target_weight_kg ?? ''}
-            onChange={e => set('target_weight_kg', e.target.value ? parseFloat(e.target.value) : null)}
+            onChange={e => set('target_weight_kg', e.target.value ? roundToTwo(parseFloat(e.target.value)) : null)}
             className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
           />
           {invalidLossTarget && (

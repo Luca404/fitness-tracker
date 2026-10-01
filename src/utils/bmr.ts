@@ -159,7 +159,7 @@ export function calculateNutritionGoals(
   if (carbsPerKg < lowCarbThreshold) {
     warnings.push({
       code: 'low_carbs',
-      message: `I carboidrati risultano bassi (${carbsPerKg.toFixed(1)} g/kg) rispetto al livello di attività indicato. Valuta energia, recupero e volume di allenamento.`,
+      message: `I carboidrati risultano bassi (${carbsPerKg.toFixed(2)} g/kg) rispetto al livello di attività indicato. Valuta energia, recupero e volume di allenamento.`,
     })
   }
 

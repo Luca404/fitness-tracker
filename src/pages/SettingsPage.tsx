@@ -6,6 +6,7 @@ import { NUTRITION_GOAL_CONFIG, RECOMPOSITION_TRAINING_ADVICE } from '../config/
 import Modal from '../components/common/Modal'
 import ProfileGoalEditor from '../components/settings/ProfileGoalEditor'
 import type { UserHealthProfile } from '../types'
+import { formatDecimal, roundToTwo } from '../utils/decimal'
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth()
@@ -100,8 +101,8 @@ export default function SettingsPage() {
               Modifica dati
             </button>
           </div>
-          <p className="text-gray-400">Peso attuale: <span className="text-white">{currentWeightKg ?? profile.weight_kg} kg</span></p>
-          <p className="text-gray-400">Altezza: <span className="text-white">{profile.height_cm} cm</span></p>
+          <p className="text-gray-400">Peso attuale: <span className="text-white">{formatDecimal(currentWeightKg ?? profile.weight_kg)} kg</span></p>
+          <p className="text-gray-400">Altezza: <span className="text-white">{formatDecimal(profile.height_cm)} cm</span></p>
           <p className="text-gray-400">Obiettivo: <span className="text-white">{profile.objective === 'recomposition' ? 'Ricomposizione corporea' : profile.objective.replace('_', ' ')}</span></p>
           <p className="text-gray-400">Forza/pesi: <span className="text-white">{profile.does_resistance_training ? 'Sì' : 'No'}</span></p>
           {profile.objective === 'recomposition' && !profile.does_resistance_training && (
@@ -121,15 +122,15 @@ export default function SettingsPage() {
 
         <div className="rounded-xl bg-gray-800/70 p-3 text-xs text-gray-400">
           {rollingWeightKg !== null && rollingWeightSampleCount >= NUTRITION_GOAL_CONFIG.weightRecalculation.minimumSamples
-            ? <>Media peso 7 giorni: <span className="text-white">{rollingWeightKg} kg</span> su {rollingWeightSampleCount} misurazioni. Ricalcolo automatico al ±2% rispetto a {goals?.calculation_weight_kg ?? profile?.weight_kg} kg.</>
+            ? <>Media peso 7 giorni: <span className="text-white">{formatDecimal(rollingWeightKg)} kg</span> su {rollingWeightSampleCount} misurazioni. Ricalcolo automatico al ±2% rispetto a {formatDecimal(goals?.calculation_weight_kg ?? profile?.weight_kg ?? 0)} kg.</>
             : <>Servono almeno {NUTRITION_GOAL_CONFIG.weightRecalculation.minimumSamples} pesate negli ultimi 7 giorni per il ricalcolo automatico.</>}
         </div>
 
         {recommendation && (
           <div className="space-y-2 rounded-xl bg-gray-800 p-4 text-xs text-gray-400">
             <p>
-              TDEE {Math.round(recommendation.tdee)} kcal · Proteine {recommendation.proteinPerKg.toFixed(1)} g/kg · Grassi {recommendation.fatPerKg.toFixed(1)} g/kg
-              {recommendation.usesAdjustedWeight && ` · peso di riferimento ${Math.round(recommendation.referenceWeightKg)} kg`}
+              TDEE {formatDecimal(recommendation.tdee)} kcal · Proteine {formatDecimal(recommendation.proteinPerKg)} g/kg · Grassi {formatDecimal(recommendation.fatPerKg)} g/kg
+              {recommendation.usesAdjustedWeight && ` · peso di riferimento ${formatDecimal(recommendation.referenceWeightKg)} kg`}
             </p>
             {recommendation.warnings.map(warning => (
               <p key={warning.code} className="text-orange-300">⚠️ {warning.message}</p>
@@ -145,8 +146,8 @@ export default function SettingsPage() {
         ].map(({ label, val, set }) => (
           <div key={label}>
             <label className="text-sm text-gray-400 mb-1 block">{label}</label>
-            <input type="number" min={label.startsWith('Calorie') ? 1 : 0} value={val === 0 ? '' : val}
-              onChange={e => set(parseInt(e.target.value) || 0)}
+            <input type="number" min={label.startsWith('Calorie') ? 1 : 0} step={label.startsWith('Calorie') ? 1 : 0.01} value={val === 0 ? '' : formatDecimal(val)}
+              onChange={e => set(label.startsWith('Calorie') ? parseInt(e.target.value) || 0 : roundToTwo(Number(e.target.value) || 0))}
               className="input-field py-3" />
           </div>
         ))}

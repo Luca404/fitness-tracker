@@ -1,4 +1,5 @@
 // src/components/meals/MacroBars.tsx
+import { formatDecimal } from '../../utils/decimal'
 
 interface MacroBarProps {
   label: string
@@ -13,7 +14,7 @@ function MacroBar({ label, value, target, color }: MacroBarProps) {
     <div>
       <div className="flex justify-between text-sm mb-1">
         <span className="text-gray-400">{label}</span>
-        <span>{Math.round(value)}g / {target}g</span>
+        <span>{formatDecimal(value)}g / {formatDecimal(target)}g</span>
       </div>
       <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
         <div

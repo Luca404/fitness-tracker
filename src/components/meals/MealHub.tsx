@@ -17,6 +17,7 @@ import ExtendedNutrition from './ExtendedNutrition'
 import PreparedPortionInput from './PreparedPortionInput'
 import PreparedDishesPanel from './PreparedDishesPanel'
 import { estimateCookedWeight } from '../../utils/preparedDishes'
+import { formatDecimal, roundToTwo } from '../../utils/decimal'
 
 interface Props {
   onAddEntry: (name: string, items: DishItemDraft[], dishId?: string, dishIcon?: string | null) => Promise<void>
@@ -88,13 +89,13 @@ function beverageToDraft(beverage: BasicFood, volumeMl: number): DishItemDraft {
     food_name: beverage.name,
     quantity_g: volumeMl,
     unit: 'ml',
-    calories: Math.round(beverage.calories * factor),
-    protein_g: Math.round(beverage.protein_g * factor * 10) / 10,
-    carbs_g: Math.round(beverage.carbs_g * factor * 10) / 10,
-    fat_g: Math.round(beverage.fat_g * factor * 10) / 10,
-    fiber_g: beverage.fiber_g == null ? null : Math.round(beverage.fiber_g * factor * 100) / 100,
-    sugars_g: beverage.sugars_g == null ? null : Math.round(beverage.sugars_g * factor * 100) / 100,
-    salt_g: beverage.salt_g == null ? null : Math.round(beverage.salt_g * factor * 100) / 100,
+    calories: roundToTwo(beverage.calories * factor),
+    protein_g: roundToTwo(beverage.protein_g * factor),
+    carbs_g: roundToTwo(beverage.carbs_g * factor),
+    fat_g: roundToTwo(beverage.fat_g * factor),
+    fiber_g: beverage.fiber_g == null ? null : roundToTwo(beverage.fiber_g * factor),
+    sugars_g: beverage.sugars_g == null ? null : roundToTwo(beverage.sugars_g * factor),
+    salt_g: beverage.salt_g == null ? null : roundToTwo(beverage.salt_g * factor),
     source: 'basic',
     off_food_id: null,
     category: beverage.category,
@@ -175,7 +176,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
 
   function startPick(dish: Dish) {
     setPickingDish(dish)
-    setItemQuantities(Object.fromEntries(dish.items.map(item => [item.id, String(item.quantity_g)])))
+    setItemQuantities(Object.fromEntries(dish.items.map(item => [item.id, formatDecimal(item.quantity_g)])))
     setExtraItems([])
     setAddingExtra(false)
     setMode('pick')
@@ -245,9 +246,9 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     if (!pickingDish) return []
     const dishItems: DishItemDraft[] = pickingDish.items.map(i => {
       const rawQuantity = Number(itemQuantities[i.id])
-      const quantity = Number.isFinite(rawQuantity) && rawQuantity > 0 ? Math.round(rawQuantity * 10) / 10 : 0
+      const quantity = Number.isFinite(rawQuantity) && rawQuantity > 0 ? roundToTwo(rawQuantity) : 0
       const factor = quantity / i.quantity_g
-      const pieceCount = i.piece_count == null ? null : Math.round(i.piece_count * factor * 10) / 10 || null
+      const pieceCount = i.piece_count == null ? null : roundToTwo(i.piece_count * factor) || null
       return {
         dish_item_id: i.id,
         is_customization: false,
@@ -256,13 +257,13 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
         unit: i.unit ?? 'g',
         piece_count: pieceCount,
         piece_size: pieceCount == null ? null : i.piece_size ?? null,
-        calories: Math.round(i.calories * factor),
-        protein_g: Math.round(i.protein_g * factor * 10) / 10,
-        carbs_g: Math.round(i.carbs_g * factor * 10) / 10,
-        fat_g: Math.round(i.fat_g * factor * 10) / 10,
-        fiber_g: i.fiber_g == null ? null : Math.round(i.fiber_g * factor * 100) / 100,
-        sugars_g: i.sugars_g == null ? null : Math.round(i.sugars_g * factor * 100) / 100,
-        salt_g: i.salt_g == null ? null : Math.round(i.salt_g * factor * 100) / 100,
+        calories: roundToTwo(i.calories * factor),
+        protein_g: roundToTwo(i.protein_g * factor),
+        carbs_g: roundToTwo(i.carbs_g * factor),
+        fat_g: roundToTwo(i.fat_g * factor),
+        fiber_g: i.fiber_g == null ? null : roundToTwo(i.fiber_g * factor),
+        sugars_g: i.sugars_g == null ? null : roundToTwo(i.sugars_g * factor),
+        salt_g: i.salt_g == null ? null : roundToTwo(i.salt_g * factor),
         source: i.source,
         off_food_id: i.off_food_id,
         category: i.category,
@@ -276,7 +277,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   function validPickedQuantities(): boolean {
     return pickingDish?.items.every(item => {
       const quantity = Number(itemQuantities[item.id])
-      return Number.isFinite(quantity) && Math.round(quantity * 10) / 10 > 0
+      return Number.isFinite(quantity) && roundToTwo(quantity) > 0
     }) ?? false
   }
 
@@ -337,13 +338,13 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
       return {
         ...item,
         quantity_g: quantity,
-        calories: Math.round(item.calories * factor),
-        protein_g: Math.round(item.protein_g * factor * 10) / 10,
-        carbs_g: Math.round(item.carbs_g * factor * 10) / 10,
-        fat_g: Math.round(item.fat_g * factor * 10) / 10,
-        fiber_g: item.fiber_g == null ? null : Math.round(item.fiber_g * factor * 100) / 100,
-        sugars_g: item.sugars_g == null ? null : Math.round(item.sugars_g * factor * 100) / 100,
-        salt_g: item.salt_g == null ? null : Math.round(item.salt_g * factor * 100) / 100,
+        calories: roundToTwo(item.calories * factor),
+        protein_g: roundToTwo(item.protein_g * factor),
+        carbs_g: roundToTwo(item.carbs_g * factor),
+        fat_g: roundToTwo(item.fat_g * factor),
+        fiber_g: item.fiber_g == null ? null : roundToTwo(item.fiber_g * factor),
+        sugars_g: item.sugars_g == null ? null : roundToTwo(item.sugars_g * factor),
+        salt_g: item.salt_g == null ? null : roundToTwo(item.salt_g * factor),
       }
     }))
   }
@@ -529,14 +530,14 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     return <div className="space-y-5">
       <ComposerHeader icon="🍲" eyebrow="Preparazione" title={pendingPreparation.name} />
       <div className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
-        <p className="text-sm text-gray-300">Ingredienti: {Math.round(totalCalories)} kcal in totale</p>
+        <p className="text-sm text-gray-300">Ingredienti: {formatDecimal(totalCalories)} kcal in totale</p>
         <p className="mt-2 text-sm font-semibold">Peso cotto stimato: {estimated} g</p>
         <p className="mt-1 text-xs text-gray-500">La stima considera l’acqua assorbita dagli ingredienti secchi riconosciuti. Puoi correggerla senza pesare il piatto ogni volta.</p>
         <label className="mt-3 block text-xs text-gray-400">Correggi il peso cotto totale (facoltativo)
-          <input type="number" min={1} step="any" inputMode="decimal"
+          <input type="number" min={1} step="0.01" inputMode="decimal"
             value={cookedWeightOverride ?? ''}
-            onChange={event => setCookedWeightOverride(event.target.value === '' ? null : Number(event.target.value))}
-            placeholder={`${estimated} g stimati`}
+            onChange={event => setCookedWeightOverride(event.target.value === '' ? null : roundToTwo(Number(event.target.value)))}
+            placeholder={`${formatDecimal(estimated)} g stimati`}
             className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm outline-none focus:border-primary-500" />
         </label>
       </div>
@@ -565,9 +566,9 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-400">Pronto da mangiare</p>
             <h3 className="truncate text-xl font-bold">{selectedBatch.dish.name}</h3>
-            <p className="text-sm text-gray-400">Restano {Math.round(selectedBatch.remaining_g)} g</p>
+            <p className="text-sm text-gray-400">Restano {formatDecimal(selectedBatch.remaining_g)} g</p>
           </div>
-          <p className="text-xl font-bold text-primary-400">{Math.round(remainingKcal)}<span className="ml-1 text-xs font-normal">kcal</span></p>
+          <p className="text-xl font-bold text-primary-400">{formatDecimal(remainingKcal)}<span className="ml-1 text-xs font-normal">kcal</span></p>
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
           <MacroPill label="Proteine" value={protein} />
@@ -579,7 +580,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
         <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Composizione</p>
         {selectedBatch.dish.items.map(item => <div key={item.id} className="flex justify-between rounded-xl bg-gray-900/30 px-3 py-2 text-sm">
           <span className="text-gray-300">{item.food_name}</span>
-          <span className="text-gray-500">{Math.round(item.quantity_g * ratio)} {item.unit ?? 'g'}</span>
+          <span className="text-gray-500">{formatDecimal(item.quantity_g * ratio)} {item.unit ?? 'g'}</span>
         </div>)}
       </div>
       <PreparedPortionInput totalCookedG={selectedBatch.total_cooked_g} remainingG={selectedBatch.remaining_g}
@@ -616,7 +617,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
               <h3 className="truncate text-xl font-bold">{pickingDish.name}</h3>
               <p className="text-sm text-gray-400">{pickingDish.items.length} ingredienti nella ricetta salvata</p>
             </div>
-            <p className="text-xl font-bold text-primary-400">{scaledKcal}<span className="ml-1 text-xs font-normal">kcal</span></p>
+            <p className="text-xl font-bold text-primary-400">{formatDecimal(scaledKcal)}<span className="ml-1 text-xs font-normal">kcal</span></p>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
             <button type="button" onClick={() => void logPickedDish()} disabled={!validQuantities || loggingDish}
@@ -643,10 +644,14 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           {pickingDish.items.map(item => (
             <label key={item.id} className="flex items-center gap-3 rounded-xl border border-gray-700/70 bg-gray-900/30 px-3 py-2 text-sm focus-within:border-primary-500">
               <span className="min-w-0 flex-1 truncate text-gray-300">{item.food_name}</span>
-              <input type="number" min="0.1" step="0.1" inputMode="decimal"
+              <input type="number" min="0.01" step="0.01" inputMode="decimal"
                 aria-label={`${item.unit === 'ml' ? 'Millilitri' : 'Grammi'} di ${item.food_name}`}
                 value={itemQuantities[item.id] ?? ''}
                 onChange={event => setItemQuantities(current => ({ ...current, [item.id]: event.target.value }))}
+                onBlur={event => {
+                  const quantity = Number(event.target.value)
+                  if (Number.isFinite(quantity) && quantity > 0) setItemQuantities(current => ({ ...current, [item.id]: String(roundToTwo(quantity)) }))
+                }}
                 onFocus={event => event.currentTarget.select()}
                 className="w-16 rounded-lg border border-gray-600 bg-gray-800 px-2 py-1.5 text-right font-semibold outline-none focus:border-primary-500" />
               <span className="w-5 text-xs text-gray-500">{item.unit ?? 'g'}</span>
@@ -749,7 +754,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
                   className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-2 text-left">
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{dish.name}</span>
-                    <span className="text-xs text-gray-500">{Math.round(totalKcal(dish))} kcal · {Math.round(referenceWeight(dish))} g</span>
+                    <span className="text-xs text-gray-500">{formatDecimal(totalKcal(dish))} kcal · {formatDecimal(referenceWeight(dish))} g</span>
                     <span className="block truncate text-[11px] text-primary-400/80">{dishMealTypeLabels(dish.meal_types)}</span>
                   </span>
                 </button>
@@ -786,7 +791,7 @@ function MacroPill({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl bg-black/15 p-2">
       <p className="text-[10px] uppercase tracking-wide text-gray-500">{label}</p>
-      <p className="text-sm font-semibold">{Math.round(value)}g</p>
+      <p className="text-sm font-semibold">{formatDecimal(value)}g</p>
     </div>
   )
 }

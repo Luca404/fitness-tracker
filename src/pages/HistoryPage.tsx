@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } f
 import { useData } from '../contexts/DataContext'
 import { getMealsForRange, getWorkoutsForRange } from '../services/api'
 import type { Meal, Workout } from '../types'
+import { formatDecimal, roundToTwo } from '../utils/decimal'
 
 type Range = 7 | 30
 
@@ -48,8 +49,8 @@ export default function HistoryPage() {
       const burned = dayWorkouts.reduce((s, w) => s + w.calories_burned, 0)
       return {
         date: format(day, 'dd/MM'),
-        Mangiato: Math.round(consumed),
-        Bruciato: Math.round(burned),
+        Mangiato: roundToTwo(consumed),
+        Bruciato: roundToTwo(burned),
       }
     })
   }, [meals, workouts, range])
@@ -107,11 +108,11 @@ export default function HistoryPage() {
       <div className="grid grid-cols-2 gap-3">
         <div className="card">
           <p className="text-xs text-gray-400 mb-1">Media kcal/giorno</p>
-          <p className="text-2xl font-bold text-primary-400">{Math.round(avgConsumed)}</p>
+          <p className="text-2xl font-bold text-primary-400">{formatDecimal(avgConsumed)}</p>
         </div>
         <div className="card">
           <p className="text-xs text-gray-400 mb-1">Media bruciate/giorno</p>
-          <p className="text-2xl font-bold text-orange-400">{Math.round(avgBurned)}</p>
+          <p className="text-2xl font-bold text-orange-400">{formatDecimal(avgBurned)}</p>
         </div>
       </div>
     </div>

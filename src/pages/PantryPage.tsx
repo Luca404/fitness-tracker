@@ -11,6 +11,7 @@ import NutritionLabelPhoto from '../components/pantry/NutritionLabelPhoto'
 import OpenFoodFactsDetails from '../components/common/OpenFoodFactsDetails'
 import { FOOD_CATEGORIES, FOOD_CATEGORY_BY_ID } from '../data/foodCategories'
 import type { PantryItem, PantryUnit, FoodSource, FoodCategory } from '../types'
+import { formatDecimal, roundToTwo } from '../utils/decimal'
 
 interface PendingFood {
   barcode?: string | null
@@ -83,9 +84,9 @@ function NutrientNumberInput({ label, value, onChange, optional = false }: {
   return (
     <label className="block min-w-0 text-xs text-gray-400">
       {label}
-      <input type="number" min={0} step="any" inputMode="decimal"
-        value={value === 0 && !optional ? '' : value ?? ''}
-        onChange={event => onChange(event.target.value === '' ? (optional ? null : 0) : Number(event.target.value))}
+      <input type="number" min={0} step="0.01" inputMode="decimal"
+        value={value === 0 && !optional ? '' : value == null ? '' : formatDecimal(value)}
+        onChange={event => onChange(event.target.value === '' ? (optional ? null : 0) : roundToTwo(Number(event.target.value)))}
         className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />
     </label>
   )
@@ -342,7 +343,7 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
       warnings.push('La lettura della foto è poco affidabile: verifica tutti i campi.')
     }
     const quantityLabel = draft.quantityLabel
-      ?? (draft.quantityValue && draft.quantityUnit ? `${draft.quantityValue} ${draft.quantityUnit}` : null)
+      ?? (draft.quantityValue && draft.quantityUnit ? `${formatDecimal(draft.quantityValue)} ${draft.quantityUnit}` : null)
 
     if (draft.cacheHit) showToast('Prodotto recuperato dal catalogo condiviso')
     setAnalysisReviewAcknowledged(!draft.requiresReview)
@@ -594,7 +595,7 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
                           className="min-w-0 flex-1 py-3 pl-4 pr-3 text-left">
                           <p className="truncate text-sm font-medium">{item.name}</p>
                           <p className="text-xs text-gray-500">
-                            {Math.round(item.calories_100g)} kcal/100{item.nutrition_unit === 'ml' ? 'ml' : 'g'}
+                            {formatDecimal(item.calories_100g)} kcal/100{item.nutrition_unit === 'ml' ? 'ml' : 'g'}
                           </p>
                         </button>
                         <button type="button" onClick={() => { void handleDelete(item.id) }}
@@ -687,7 +688,7 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
                 })}
                 className="w-full text-left px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">
                 <span className="font-medium">{f.name}</span>
-                <span className="text-gray-500 ml-2">{Math.round(f.calories_100g)} kcal/100g</span>
+                <span className="text-gray-500 ml-2">{formatDecimal(f.calories_100g)} kcal/100g</span>
               </button>
             ))}
           </div>
@@ -806,9 +807,9 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
                 </label>
                 <label className="text-xs text-gray-400">
                   Peso/volume netto
-                  <input type="number" min={0} step="any" value={pending.package_net_quantity_value ?? ''}
+                  <input type="number" min={0} step="0.01" value={pending.package_net_quantity_value ?? ''}
                     onChange={event => {
-                      const value = event.target.value ? Math.max(0, Number(event.target.value)) : null
+                      const value = event.target.value ? Math.max(0, roundToTwo(Number(event.target.value))) : null
                       setPending({ ...pending, package_net_quantity_value: value })
                     }}
                     className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />

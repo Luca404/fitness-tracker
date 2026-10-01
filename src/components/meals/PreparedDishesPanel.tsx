@@ -5,6 +5,7 @@ import { useSettings } from '../../contexts/SettingsContext'
 import type { DishMealType, PreparedBatch } from '../../types'
 import { DISH_MEAL_TYPES } from '../../data/dishMealTypes'
 import PreparedPortionInput from './PreparedPortionInput'
+import { formatDecimal } from '../../utils/decimal'
 
 export default function PreparedDishesPanel({ mealType, onConsumed, compact = false, onCountChange, onSelect }: {
   mealType?: DishMealType
@@ -77,7 +78,7 @@ export default function PreparedDishesPanel({ mealType, onConsumed, compact = fa
         <span className={compact ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-xl' : 'text-2xl'}>{batch.dish.icon ?? '🍲'}</span>
         <span className="min-w-0 flex-1">
           <span className={`block truncate font-semibold ${compact ? 'text-sm' : ''}`}>{batch.dish.name}</span>
-          <span className="block text-xs text-gray-400">{Math.round(batch.remaining_g)} g rimasti · {Math.round(batch.dish.items.reduce((sum, item) => sum + item.calories, 0) * batch.remaining_g / batch.total_cooked_g)} kcal</span>
+          <span className="block text-xs text-gray-400">{formatDecimal(batch.remaining_g)} g rimasti · {formatDecimal(batch.dish.items.reduce((sum, item) => sum + item.calories, 0) * batch.remaining_g / batch.total_cooked_g)} kcal</span>
           {compact && <span className="mt-0.5 block text-[11px] font-medium text-primary-400">Pronto da mangiare</span>}
         </span>
         <span className="text-primary-400">›</span>

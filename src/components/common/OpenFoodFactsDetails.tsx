@@ -1,4 +1,5 @@
 import type { FoodResult } from '../../types'
+import { formatDecimal } from '../../utils/decimal'
 
 interface Props {
   food: Partial<Pick<FoodResult,
@@ -12,7 +13,7 @@ interface Props {
 
 function Nutrient({ label, value }: { label: string; value: number | null | undefined }) {
   if (value === null || value === undefined) return null
-  return <span className="rounded-lg bg-black/10 px-2 py-1">{label} <b>{value} g</b></span>
+  return <span className="rounded-lg bg-black/10 px-2 py-1">{label} <b>{formatDecimal(value)} g</b></span>
 }
 
 export default function OpenFoodFactsDetails({ food, detailedLabels = false }: Props) {
@@ -34,24 +35,24 @@ export default function OpenFoodFactsDetails({ food, detailedLabels = false }: P
         || food.fat_100g !== undefined || food.sugars_100g != null || food.saturated_fat_100g != null
         || food.unsaturated_fat_100g != null) && (
         <div className="flex flex-wrap gap-1.5">
-          {food.calories_100g !== undefined && <span className="rounded-lg bg-black/10 px-2 py-1"><b>{food.calories_100g} kcal</b></span>}
+          {food.calories_100g !== undefined && <span className="rounded-lg bg-black/10 px-2 py-1"><b>{formatDecimal(food.calories_100g)} kcal</b></span>}
           {food.protein_100g !== undefined && <Nutrient label="Proteine" value={food.protein_100g} />}
           {(food.carbs_100g !== undefined || food.sugars_100g != null) && (
             <span className="rounded-lg bg-black/10 px-2 py-1">
-              {food.carbs_100g !== undefined && <span className="block">Carboidrati{detailedLabels ? ' totali' : ''} <b>{food.carbs_100g} g</b></span>}
+              {food.carbs_100g !== undefined && <span className="block">Carboidrati{detailedLabels ? ' totali' : ''} <b>{formatDecimal(food.carbs_100g)} g</b></span>}
               {food.sugars_100g != null && (
-                <span className="block text-gray-500">{detailedLabels && food.carbs_100g !== undefined ? 'di cui zuccheri' : 'Zuccheri'} <b>{food.sugars_100g} g</b></span>
+                <span className="block text-gray-500">{detailedLabels && food.carbs_100g !== undefined ? 'di cui zuccheri' : 'Zuccheri'} <b>{formatDecimal(food.sugars_100g)} g</b></span>
               )}
             </span>
           )}
           {(food.fat_100g !== undefined || food.saturated_fat_100g != null || food.unsaturated_fat_100g != null) && (
             <span className="rounded-lg bg-black/10 px-2 py-1">
-              {food.fat_100g !== undefined && <span className="block">Grassi{detailedLabels ? ' totali' : ''} <b>{food.fat_100g} g</b></span>}
+              {food.fat_100g !== undefined && <span className="block">Grassi{detailedLabels ? ' totali' : ''} <b>{formatDecimal(food.fat_100g)} g</b></span>}
               {food.saturated_fat_100g != null && (
-                <span className="block text-gray-500">{food.fat_100g !== undefined ? 'di cui saturi' : 'Grassi saturi'} <b>{food.saturated_fat_100g} g</b></span>
+                <span className="block text-gray-500">{food.fat_100g !== undefined ? 'di cui saturi' : 'Grassi saturi'} <b>{formatDecimal(food.saturated_fat_100g)} g</b></span>
               )}
               {food.unsaturated_fat_100g != null && (
-                <span className="block text-gray-500">{food.fat_100g !== undefined ? 'di cui insaturi' : 'Grassi insaturi'} <b>{food.unsaturated_fat_100g} g</b></span>
+                <span className="block text-gray-500">{food.fat_100g !== undefined ? 'di cui insaturi' : 'Grassi insaturi'} <b>{formatDecimal(food.unsaturated_fat_100g)} g</b></span>
               )}
             </span>
           )}

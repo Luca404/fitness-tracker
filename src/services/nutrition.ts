@@ -1,5 +1,6 @@
 import type { FoodResult, PantryUnit } from '../types'
 import { BASIC_FOODS } from '../data/basicFoods'
+import { roundToTwo } from '../utils/decimal'
 
 const OFF_SEARCH_URL = 'https://world.openfoodfacts.org/api/v2/search'
 const OFF_PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product'
@@ -348,12 +349,12 @@ export function calcNutrition(
   const factor = quantityG / 100
   const scaledOptional = (value: number | null | undefined) => value == null
     ? null
-    : Math.round(value * factor * 100) / 100
+    : roundToTwo(value * factor)
   return {
-    calories: Math.round(food.calories_100g * factor),
-    protein_g: Math.round(food.protein_100g * factor * 10) / 10,
-    carbs_g: Math.round(food.carbs_100g * factor * 10) / 10,
-    fat_g: Math.round(food.fat_100g * factor * 10) / 10,
+    calories: roundToTwo(food.calories_100g * factor),
+    protein_g: roundToTwo(food.protein_100g * factor),
+    carbs_g: roundToTwo(food.carbs_100g * factor),
+    fat_g: roundToTwo(food.fat_100g * factor),
     fiber_g: scaledOptional(food.fiber_100g),
     sugars_g: scaledOptional(food.sugars_100g),
     salt_g: scaledOptional(food.salt_100g),

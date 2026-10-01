@@ -61,6 +61,15 @@ describe('IngredientQuantityInput', () => {
     expect(screen.getByLabelText('Grammi calcolati').textContent).toBe('150')
   })
 
+  it('rounds entered grams to two decimals', () => {
+    render(<BreadQuantityHarness />)
+    const input = screen.getByLabelText('Quantità di Pane in cassetta')
+    fireEvent.change(input, { target: { value: '12.345' } })
+    expect(screen.getByLabelText('Grammi calcolati').textContent).toBe('12.35')
+    fireEvent.blur(input)
+    expect((input as HTMLInputElement).value).toBe('12.35')
+  })
+
   it('keeps piece size and count alongside estimated grams', () => {
     render(<AppleQuantityHarness />)
     fireEvent.change(screen.getByLabelText('Unità per Mela'), { target: { value: 'small' } })

@@ -3,6 +3,7 @@ import FoodSearch from './FoodSearch'
 import type { DishItem, DishMealType, MealItemUnit, PieceSize } from '../../types'
 import { DISH_MEAL_TYPES } from '../../data/dishMealTypes'
 import IngredientQuantityInput from './IngredientQuantityInput'
+import { formatDecimal, roundToTwo } from '../../utils/decimal'
 
 export type DishItemDraft = Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'> & {
   id?: string
@@ -51,14 +52,14 @@ export default function DishEditor({
       const factor = it.quantity_g > 0 ? quantity_g / it.quantity_g : 0
       return {
         ...it,
-        quantity_g,
-        calories: Math.round(it.calories * factor),
-        protein_g: Math.round(it.protein_g * factor * 10) / 10,
-        carbs_g: Math.round(it.carbs_g * factor * 10) / 10,
-        fat_g: Math.round(it.fat_g * factor * 10) / 10,
-        fiber_g: it.fiber_g == null ? null : Math.round(it.fiber_g * factor * 100) / 100,
-        sugars_g: it.sugars_g == null ? null : Math.round(it.sugars_g * factor * 100) / 100,
-        salt_g: it.salt_g == null ? null : Math.round(it.salt_g * factor * 100) / 100,
+        quantity_g: roundToTwo(quantity_g),
+        calories: roundToTwo(it.calories * factor),
+        protein_g: roundToTwo(it.protein_g * factor),
+        carbs_g: roundToTwo(it.carbs_g * factor),
+        fat_g: roundToTwo(it.fat_g * factor),
+        fiber_g: it.fiber_g == null ? null : roundToTwo(it.fiber_g * factor),
+        sugars_g: it.sugars_g == null ? null : roundToTwo(it.sugars_g * factor),
+        salt_g: it.salt_g == null ? null : roundToTwo(it.salt_g * factor),
       }
     }))
   }
@@ -164,9 +165,9 @@ export default function DishEditor({
               <span className="min-w-0 truncate text-gray-300">{item.food_name}</span>
               <button type="button" onClick={() => removeItem(i)} className="text-lg text-gray-600 hover:text-red-400" aria-label={`Rimuovi ${item.food_name}`}>✕</button>
             </div>
-            <p className="mt-1 text-xs text-gray-500">P {item.protein_g}g · C {item.carbs_g}g · G {item.fat_g}g</p>
+            <p className="mt-1 text-xs text-gray-500">P {formatDecimal(item.protein_g)}g · C {formatDecimal(item.carbs_g)}g · G {formatDecimal(item.fat_g)}g</p>
             <p className="mt-0.5 text-[11px] text-gray-600">
-              Fibre {item.fiber_g == null ? '—' : `${item.fiber_g}g`} · Zuccheri {item.sugars_g == null ? '—' : `${item.sugars_g}g`} · Sale {item.salt_g == null ? '—' : `${item.salt_g}g`}
+              Fibre {item.fiber_g == null ? '—' : `${formatDecimal(item.fiber_g)}g`} · Zuccheri {item.sugars_g == null ? '—' : `${formatDecimal(item.sugars_g)}g`} · Sale {item.salt_g == null ? '—' : `${formatDecimal(item.salt_g)}g`}
             </p>
             <div className="mt-2">
               <IngredientQuantityInput
@@ -191,15 +192,15 @@ export default function DishEditor({
       {items.length > 0 && (
         <div className="rounded-3xl bg-gradient-to-r from-primary-600/20 to-emerald-400/5 p-4 ring-1 ring-primary-500/20">
           <div className="flex items-end justify-between">
-            <div><p className="text-xs text-gray-500">Totale piatto</p><p className="text-2xl font-bold">{Math.round(totalKcal)} <span className="text-sm font-normal text-primary-400">kcal</span></p></div>
+            <div><p className="text-xs text-gray-500">Totale piatto</p><p className="text-2xl font-bold">{formatDecimal(totalKcal)} <span className="text-sm font-normal text-primary-400">kcal</span></p></div>
             <p className="text-sm text-gray-400">
-              {Math.round(totalWeight)} g{totalVolume > 0 ? ` + ${Math.round(totalVolume)} ml` : ''}
+              {formatDecimal(totalWeight)} g{totalVolume > 0 ? ` + ${formatDecimal(totalVolume)} ml` : ''}
             </p>
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">P <b className="text-gray-200">{Math.round(totalProtein)}g</b></span>
-            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">{editing ? 'C' : 'C tot.'} <b className="text-gray-200">{Math.round(totalCarbs)}g</b></span>
-            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">{editing ? 'G' : 'G tot.'} <b className="text-gray-200">{Math.round(totalFat)}g</b></span>
+            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">P <b className="text-gray-200">{formatDecimal(totalProtein)}g</b></span>
+            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">{editing ? 'C' : 'C tot.'} <b className="text-gray-200">{formatDecimal(totalCarbs)}g</b></span>
+            <span className="rounded-lg bg-black/10 py-1.5 text-gray-400">{editing ? 'G' : 'G tot.'} <b className="text-gray-200">{formatDecimal(totalFat)}g</b></span>
           </div>
         </div>
       )}

@@ -1,6 +1,7 @@
 import type { MealEntry } from '../../types'
 import { getMealEntryTotals } from '../../utils/mealEntries'
 import { getFoodIcon } from '../../utils/foodIcons'
+import { formatDecimal } from '../../utils/decimal'
 
 interface Props {
   entry: MealEntry
@@ -23,12 +24,12 @@ export default function MealEntryCard({ entry, onOpen }: Props) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3">
             <p className="truncate font-semibold text-gray-100">{entry.name}</p>
-            <span className="shrink-0 font-semibold text-primary-400">{Math.round(totals.calories)} kcal</span>
+            <span className="shrink-0 font-semibold text-primary-400">{formatDecimal(totals.calories)} kcal</span>
           </div>
           <p className="mt-1 text-xs text-gray-500">
             {entry.cooked_portion_g != null
-              ? `${Math.round(entry.cooked_portion_g)} g da cotto`
-              : `${Math.round(totals.weight)} g${totals.volumeMl > 0 ? ` + ${Math.round(totals.volumeMl)} ml` : ''}`} · P {Math.round(totals.protein)}g · C {Math.round(totals.carbs)}g · G {Math.round(totals.fat)}g
+              ? `${formatDecimal(entry.cooked_portion_g)} g da cotto`
+              : `${formatDecimal(totals.weight)} g${totals.volumeMl > 0 ? ` + ${formatDecimal(totals.volumeMl)} ml` : ''}`} · P {formatDecimal(totals.protein)}g · C {formatDecimal(totals.carbs)}g · G {formatDecimal(totals.fat)}g
           </p>
         </div>
         <svg className="h-4 w-4 shrink-0 text-gray-600 transition group-hover:translate-x-0.5 group-hover:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

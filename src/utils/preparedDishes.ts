@@ -1,4 +1,5 @@
 import type { DishItem } from '../types'
+import { roundToTwo } from './decimal'
 
 type Ingredient = Pick<DishItem, 'food_name' | 'food_key' | 'category' | 'quantity_g' | 'calories'> & { unit?: 'g' | 'ml' }
 
@@ -16,9 +17,9 @@ function cookedWeightFactor(item: Ingredient): number {
 }
 
 export function estimateCookedWeight(items: Ingredient[]): number {
-  return Math.max(1, Math.round(items.reduce((sum, item) => sum + item.quantity_g * cookedWeightFactor(item), 0)))
+  return Math.max(1, roundToTwo(items.reduce((sum, item) => sum + item.quantity_g * cookedWeightFactor(item), 0)))
 }
 
 export function fractionOfPreparedDish(totalCookedG: number, numerator: 1 | 2 | 3): number {
-  return Math.round(totalCookedG * numerator / 4)
+  return roundToTwo(totalCookedG * numerator / 4)
 }

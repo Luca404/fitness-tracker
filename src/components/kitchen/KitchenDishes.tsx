@@ -11,6 +11,7 @@ import { dishMealTypeLabels } from '../../data/dishMealTypes'
 import type { Dish, DishMealType } from '../../types'
 import ExtendedNutrition from '../meals/ExtendedNutrition'
 import PreparedDishesPanel from '../meals/PreparedDishesPanel'
+import { formatDecimal } from '../../utils/decimal'
 
 function dishTotals(dish: Dish) {
   return dish.items.reduce((total, item) => ({
@@ -193,8 +194,8 @@ export default function KitchenDishes() {
                     {getDishIcon(dish)}<span aria-hidden="true" className="absolute -bottom-1 -right-1 rounded-full bg-gray-700 px-1 text-[10px]">✎</span>
                   </button>
                   <button type="button" onClick={() => openDetail(dish)} className="flex min-w-0 flex-1 items-center gap-2 py-1 pr-1 text-left">
-                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{dish.name}</span><span className="text-xs text-gray-500">{dish.items.length} ingredienti · {Math.round(totals.weight)} g</span><span className="block truncate text-[11px] text-primary-400/80">{dishMealTypeLabels(dish.meal_types)}</span></span>
-                    <span className="text-sm font-semibold text-primary-400">{Math.round(totals.calories)}<small className="ml-1 text-[9px]">kcal</small></span>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{dish.name}</span><span className="text-xs text-gray-500">{dish.items.length} ingredienti · {formatDecimal(totals.weight)} g</span><span className="block truncate text-[11px] text-primary-400/80">{dishMealTypeLabels(dish.meal_types)}</span></span>
+                    <span className="text-sm font-semibold text-primary-400">{formatDecimal(totals.calories)}<small className="ml-1 text-[9px]">kcal</small></span>
                     <span className="text-gray-600">›</span>
                   </button>
                 </div>
@@ -263,11 +264,11 @@ function DishDetail({ dish, onEdit, onChangeIcon, onDelete, onSave }: {
         ) : <span className="text-3xl">{getDishIcon(dish)}</span>}
         <h2 className="mt-3 text-2xl font-bold">{dish.name}</h2>
         <p className="mt-1 text-xs text-primary-400">{dishMealTypeLabels(dish.meal_types ?? ['lunch'])}</p>
-        <p className="mt-1 text-sm text-gray-400">{Math.round(totals.weight)} g · {Math.round(totals.calories)} kcal</p>
+        <p className="mt-1 text-sm text-gray-400">{formatDecimal(totals.weight)} g · {formatDecimal(totals.calories)} kcal</p>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-          <span className="rounded-xl bg-black/15 py-2">P <b>{Math.round(totals.protein)}g</b></span>
-          <span className="rounded-xl bg-black/15 py-2">C <b>{Math.round(totals.carbs)}g</b></span>
-          <span className="rounded-xl bg-black/15 py-2">G <b>{Math.round(totals.fat)}g</b></span>
+          <span className="rounded-xl bg-black/15 py-2">P <b>{formatDecimal(totals.protein)}g</b></span>
+          <span className="rounded-xl bg-black/15 py-2">C <b>{formatDecimal(totals.carbs)}g</b></span>
+          <span className="rounded-xl bg-black/15 py-2">G <b>{formatDecimal(totals.fat)}g</b></span>
         </div>
         <ExtendedNutrition totals={extendedTotals} />
       </div>
@@ -278,7 +279,7 @@ function DishDetail({ dish, onEdit, onChangeIcon, onDelete, onSave }: {
             return (
               <div key={item.id} className="flex items-center justify-between rounded-xl bg-gray-900/35 px-3 py-2.5 text-sm">
                 <span>{item.food_name}</span>
-                <span className="text-gray-500">{item.quantity_g} {item.unit ?? 'g'}</span>
+                <span className="text-gray-500">{formatDecimal(item.quantity_g)} {item.unit ?? 'g'}</span>
               </div>
             )
           })}

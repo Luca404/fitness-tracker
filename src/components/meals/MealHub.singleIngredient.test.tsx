@@ -106,12 +106,12 @@ describe('saved dish meal flow', () => {
     render(<TestHub onAddEntry={onAddEntry} />)
 
     fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Grammi di Pasta' }), { target: { value: '80' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Grammi di Pasta' }), { target: { value: '80.126' } })
     expect((screen.getByRole('spinbutton', { name: 'Grammi di Pomodoro' }) as HTMLInputElement).value).toBe('50')
     fireEvent.click(screen.getByRole('button', { name: 'Registra tutto' }))
 
     await waitFor(() => expect(onAddEntry).toHaveBeenCalledWith('Pasta al pomodoro', [
-      expect.objectContaining({ dish_item_id: 'item-1', quantity_g: 80, calories: 280 }),
+      expect.objectContaining({ dish_item_id: 'item-1', quantity_g: 80.13, calories: 280.46 }),
       expect.objectContaining({ dish_item_id: 'item-2', quantity_g: 50, calories: 15 }),
     ], 'dish-1', '🍝'))
     fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))

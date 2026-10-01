@@ -1,4 +1,5 @@
 import type { FoodCategory, PieceSize } from '../types'
+import { formatDecimal } from './decimal'
 
 export type PortionEstimateId = 'slice' | 'teaspoon' | 'tablespoon' | PieceSize
 
@@ -46,7 +47,7 @@ export function formatPieceQuantity(category: FoodCategory, foodName: string, si
   const plural = count !== 1
   const feminine = food ? isFeminine(food, plural) : false
   const noun = food ? (plural ? food.plural : food.singular) : (plural ? 'pezzi' : 'pezzo')
-  return `${count} ${noun} ${adjective(size, plural, feminine)}`
+  return `${formatDecimal(count)} ${noun} ${adjective(size, plural, feminine)}`
 }
 
 const SLICE: PortionEstimate = {

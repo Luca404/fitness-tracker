@@ -6,6 +6,7 @@ import { getGuideline } from '../../data/nutritionGuidelines'
 import { getMealsForRange } from '../../services/api'
 import { calculateHabitRows, habitStatus, habitTileFill, summarizeHabitRows } from '../../utils/goodHabits'
 import type { Meal } from '../../types'
+import { formatDecimal, roundToTwo } from '../../utils/decimal'
 
 interface Props {
   selectedDate: string
@@ -52,7 +53,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
       legumes: getGuideline('legumes', sex, age)?.limitValue ?? 450,
       fish: getGuideline('fish', sex, age)?.limitValue ?? 300,
       fiber: getGuideline('fiber', sex, age)?.limitValue ?? 25,
-      sugars: Math.round(((goals?.calorie_target ?? 2000) * sugarsPercent / 100 / 4) * 10) / 10,
+      sugars: roundToTwo((goals?.calorie_target ?? 2000) * sugarsPercent / 100 / 4),
       salt: getGuideline('salt', sex, age)?.limitValue ?? 5,
     })
   }, [currentMeals, goals?.calorie_target, profile, selectedDate, weeklyMeals])
@@ -114,9 +115,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
     return habitRows.map(row => {
       const progress = row.value == null ? 0 : Math.min(100, Math.round((row.value / row.target) * 100))
       const overMaximum = row.direction === 'max' && row.value != null && row.value > row.target
-      const displayValue = row.value == null
-        ? null
-        : row.label === 'Sale' ? Math.round(row.value * 100) / 100 : Math.round(row.value * 10) / 10
+      const displayValue = row.value == null ? null : formatDecimal(row.value)
       return (
         <div key={row.label} className="rounded-2xl border border-gray-800 bg-gray-800/55 p-3">
           <div className="flex items-center gap-2">
@@ -129,7 +128,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
             ) : (
               <>
                 <span className={`font-semibold ${overMaximum ? 'text-orange-400' : 'text-gray-300'}`}>{row.partial ? '≈ ' : ''}{displayValue} g</span>
-                {' '}{row.direction === 'max' ? '≤' : '≥'} {row.target} g
+                {' '}{row.direction === 'max' ? '≤' : '≥'} {formatDecimal(row.target)} g
                 {row.partial && <span className="text-amber-500/80"> · parziale</span>}
               </>
             )}
