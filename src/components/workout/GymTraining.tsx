@@ -4,8 +4,10 @@ import { useData } from '../../contexts/DataContext'
 import { useSettings } from '../../contexts/SettingsContext'
 import { useNavigate } from 'react-router-dom'
 import * as gymApi from '../../services/gymApi'
-import type { GymPlan, GymSession, GymSet } from '../../types'
+import { getLatestWeightLog, getWeightLogs } from '../../services/api'
+import type { GymPlan, GymSession, GymSet, WeightLog } from '../../types'
 import { formatDecimal } from '../../utils/decimal'
+import { estimateGymSessionCalories, formatGymDuration, sessionDurationMinutes, weightForSessionDate } from '../../utils/gymSessionSummary'
 import GymPlanEditor from './GymPlanEditor'
 
 function formatPerformance(set: GymSet): string {
@@ -31,13 +33,49 @@ function gymProgress(sessions: GymSession[]) {
   return [...history.values()]
 }
 
+function CompletedSessionRow({ session, weightLogs, fallbackWeightKg, showDate, onOpen }: {
+  session: GymSession
+  weightLogs: WeightLog[]
+  fallbackWeightKg: number | null
+  showDate?: boolean
+  onOpen: () => void
+}) {
+  const duration = sessionDurationMinutes(session)
+  const bodyWeightKg = weightForSessionDate(session.date, weightLogs, fallbackWeightKg)
+  const calories = estimateGymSessionCalories(session, bodyWeightKg)
+
+  return <button type="button" onClick={onOpen}
+    className="w-full rounded-2xl border border-gray-700 bg-gray-800/70 p-4 text-left transition hover:border-primary-700">
+    <div className="flex items-start justify-between gap-3">
+      <span className="font-semibold">{session.plan_name}{showDate && <span className="ml-2 text-xs font-normal text-gray-400">{session.date}</span>}</span>
+      <span className="shrink-0 text-primary-400" aria-hidden="true">›</span>
+    </div>
+    <p className="mt-1 text-xs text-gray-400">{session.sets.filter(set => set.done).length} serie completate</p>
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      <span className="rounded-xl bg-gray-900/70 px-3 py-2">
+        <span className="block text-xs text-gray-400">⏱ Durata totale</span>
+        <span className="mt-0.5 block font-semibold text-white">{duration === null ? 'Non disponibile' : formatGymDuration(duration)}</span>
+      </span>
+      <span className="rounded-xl bg-gray-900/70 px-3 py-2">
+        <span className="block text-xs text-gray-400">🔥 Calorie stimate</span>
+        <span className="mt-0.5 block font-semibold text-orange-400">{calories === null ? 'Non disponibili' : `≈ ${calories} kcal`}</span>
+      </span>
+    </div>
+    <p className="mt-2 text-xs text-gray-500">{calories !== null && bodyWeightKg !== null
+      ? `Da esercizi, carichi e peso corporeo usato nella stima (${formatDecimal(bodyWeightKg)} kg).`
+      : bodyWeightKg === null ? 'Serve un peso corporeo registrato per stimare le calorie.'
+        : 'Durata non disponibile per la stima delle calorie.'}</p>
+  </button>
+}
+
 export default function GymTraining() {
   const { user } = useAuth()
-  const { showToast } = useData()
+  const { showToast, currentWeightKg } = useData()
   const { selectedDate } = useSettings()
   const navigate = useNavigate()
   const [plans, setPlans] = useState<GymPlan[]>([])
   const [sessions, setSessions] = useState<GymSession[]>([])
+  const [weightLogs, setWeightLogs] = useState<WeightLog[]>([])
   const [editingPlan, setEditingPlan] = useState<{ plan: GymPlan | null } | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -50,6 +88,20 @@ export default function GymTraining() {
       ])
       setPlans(nextPlans)
       setSessions(nextSessions)
+      const completedDates = nextSessions.filter(session => session.completed_at).map(session => session.date).sort()
+      if (completedDates.length > 0) {
+        try {
+          const [earlier, withinRange] = await Promise.all([
+            getLatestWeightLog(completedDates[0]),
+            getWeightLogs(completedDates[0], completedDates[completedDates.length - 1]),
+          ])
+          setWeightLogs(earlier ? [earlier, ...withinRange] : withinRange)
+        } catch {
+          setWeightLogs([])
+        }
+      } else {
+        setWeightLogs([])
+      }
     } catch {
       showToast('Errore caricamento allenamenti palestra')
     } finally {
@@ -135,20 +187,16 @@ export default function GymTraining() {
     </div>}
     {daySessions.length > 0 && <section className="space-y-2">
       <h3 className="text-sm font-semibold text-gray-300">Sessioni del giorno</h3>
-      {daySessions.map(session => <button key={session.id} type="button" onClick={() => navigate(`/fitness/session/${session.id}`)}
-        className="flex w-full justify-between rounded-xl bg-gray-800/70 px-3 py-3 text-left text-sm">
-        <span>{session.plan_name}</span>
-        <span className="text-gray-400">{session.sets.filter(set => set.done).length} serie ›</span>
-      </button>)}
+      {daySessions.map(session => <CompletedSessionRow key={session.id} session={session}
+        weightLogs={weightLogs} fallbackWeightKg={currentWeightKg}
+        onOpen={() => navigate(`/fitness/session/${session.id}`)} />)}
     </section>}
     {recentSessions.length > 0 && <details className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
       <summary className="cursor-pointer font-semibold">Sessioni recenti</summary>
       <div className="mt-3 space-y-2">
-        {recentSessions.map(session => <button key={session.id} type="button" onClick={() => navigate(`/fitness/session/${session.id}`)}
-          className="flex w-full justify-between rounded-xl bg-gray-800/70 px-3 py-3 text-left text-sm">
-          <span>{session.plan_name} <span className="text-gray-500">· {session.date}</span></span>
-          <span className="text-gray-400">{session.sets.filter(set => set.done).length} serie ›</span>
-        </button>)}
+        {recentSessions.map(session => <CompletedSessionRow key={session.id} session={session}
+          weightLogs={weightLogs} fallbackWeightKg={currentWeightKg} showDate
+          onOpen={() => navigate(`/fitness/session/${session.id}`)} />)}
       </div>
     </details>}
     {progress.length > 0 && <details className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">

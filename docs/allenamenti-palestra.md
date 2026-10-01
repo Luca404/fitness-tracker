@@ -23,6 +23,17 @@ esercizio e riprendendo la sessione sullo stesso dispositivo. Puoi terminare
 l'allenamento, anche con serie ancora da completare, oppure eliminare la
 sessione da qualsiasi esercizio.
 
+Le sessioni completate mostrano la **durata totale** tra avvio e termine
+(pause incluse) e le **calorie stimate**. Per il peso corporeo si usa l'ultima
+misurazione disponibile entro il giorno della sessione; se manca, si usa il
+peso corrente disponibile nell'app. Il calcolo considera solo le serie completate,
+l'esercizio e il carico registrato. Parte dai valori MET del
+[Compendio 2024 per l'allenamento di resistenza](https://pacompendium.com/conditioning-exercise/)
+e applica un piccolo correttivo limitato per il carico: i chilogrammi sollevati
+da soli non misurano lo sforzo individuale. La stima segue la convenzione
+`MET × peso corporeo (kg) × durata (ore)` e non è una misura diretta del
+consumo energetico.
+
 ## Esempio: quattro schede Upper/Lower
 
 Questi sono esempi da inserire nell'editor: non vengono creati automaticamente
