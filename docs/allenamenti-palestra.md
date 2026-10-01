@@ -15,6 +15,14 @@ Puoi aggiungere o rimuovere serie, riprendere una sessione iniziata e consultare
 le sessioni recenti. Modificare o eliminare una scheda non riscrive le sessioni
 già registrate.
 
+Durante la sessione viene mostrato un esercizio alla volta. Le frecce portano
+all'esercizio precedente o successivo; il riposo parte dopo ogni serie segnata
+come fatta, anche dopo l'ultima. Puoi scegliere 1, 1½, 2 o 3 minuti per le
+serie successive. Il conto alla rovescia resta visibile passando a un altro
+esercizio e riprendendo la sessione sullo stesso dispositivo. Puoi terminare
+l'allenamento, anche con serie ancora da completare, oppure eliminare la
+sessione da qualsiasi esercizio.
+
 ## Esempio: quattro schede Upper/Lower
 
 Questi sono esempi da inserire nell'editor: non vengono creati automaticamente
