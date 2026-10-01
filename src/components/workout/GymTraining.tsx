@@ -2,11 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
 import { useSettings } from '../../contexts/SettingsContext'
+import { useNavigate } from 'react-router-dom'
 import * as gymApi from '../../services/gymApi'
 import type { GymPlan, GymSession, GymSet } from '../../types'
 import { formatDecimal } from '../../utils/decimal'
 import GymPlanEditor from './GymPlanEditor'
-import GymSessionView from './GymSessionView'
 
 function formatPerformance(set: GymSet): string {
   return `${set.weight_kg == null ? 'Corpo libero' : `${formatDecimal(set.weight_kg)} kg`} × ${set.reps} rip.`
@@ -35,10 +35,10 @@ export default function GymTraining() {
   const { user } = useAuth()
   const { showToast } = useData()
   const { selectedDate } = useSettings()
+  const navigate = useNavigate()
   const [plans, setPlans] = useState<GymPlan[]>([])
   const [sessions, setSessions] = useState<GymSession[]>([])
   const [editingPlan, setEditingPlan] = useState<{ plan: GymPlan | null } | null>(null)
-  const [selectedSession, setSelectedSession] = useState<GymSession | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
 
@@ -83,8 +83,7 @@ export default function GymTraining() {
     setBusy(true)
     try {
       const session = await gymApi.startGymSession(user.id, plan.id, selectedDate)
-      setSelectedSession(session)
-      await refresh()
+      navigate(`/fitness/session/${session.id}`)
     } catch {
       showToast('Errore avvio allenamento')
     } finally {
@@ -94,11 +93,6 @@ export default function GymTraining() {
 
   if (editingPlan) return <GymPlanEditor key={editingPlan.plan?.id ?? 'new'} plan={editingPlan.plan}
     onSave={savePlan} onCancel={() => setEditingPlan(null)} />
-
-  if (selectedSession) return <GymSessionView session={selectedSession}
-    onBack={() => { setSelectedSession(null); void refresh() }}
-    onCompleted={async () => { setSelectedSession(null); await refresh(); showToast('Allenamento completato') }}
-    onDeleted={async () => { setSelectedSession(null); await refresh(); showToast('Sessione eliminata') }} />
 
   const active = sessions.find(session => !session.completed_at)
   const daySessions = sessions.filter(session => session.date === selectedDate && session.completed_at)
@@ -113,7 +107,7 @@ export default function GymTraining() {
       <button type="button" onClick={() => setEditingPlan({ plan: null })}
         className="rounded-xl bg-primary-500 px-3 py-2 text-sm font-semibold">+ Nuova scheda</button>
     </div>
-    {active && <button type="button" onClick={() => setSelectedSession(active)}
+    {active && <button type="button" onClick={() => navigate(`/fitness/session/${active.id}`)}
       className="w-full rounded-2xl border border-primary-600/50 bg-primary-950/30 p-4 text-left">
       <span className="block text-xs font-semibold uppercase text-primary-400">Riprendi allenamento</span>
       <span className="mt-1 block font-semibold">{active.plan_name}</span>
@@ -141,7 +135,7 @@ export default function GymTraining() {
     </div>}
     {daySessions.length > 0 && <section className="space-y-2">
       <h3 className="text-sm font-semibold text-gray-300">Sessioni del giorno</h3>
-      {daySessions.map(session => <button key={session.id} type="button" onClick={() => setSelectedSession(session)}
+      {daySessions.map(session => <button key={session.id} type="button" onClick={() => navigate(`/fitness/session/${session.id}`)}
         className="flex w-full justify-between rounded-xl bg-gray-800/70 px-3 py-3 text-left text-sm">
         <span>{session.plan_name}</span>
         <span className="text-gray-400">{session.sets.filter(set => set.done).length} serie ›</span>
@@ -150,7 +144,7 @@ export default function GymTraining() {
     {recentSessions.length > 0 && <details className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
       <summary className="cursor-pointer font-semibold">Sessioni recenti</summary>
       <div className="mt-3 space-y-2">
-        {recentSessions.map(session => <button key={session.id} type="button" onClick={() => setSelectedSession(session)}
+        {recentSessions.map(session => <button key={session.id} type="button" onClick={() => navigate(`/fitness/session/${session.id}`)}
           className="flex w-full justify-between rounded-xl bg-gray-800/70 px-3 py-3 text-left text-sm">
           <span>{session.plan_name} <span className="text-gray-500">· {session.date}</span></span>
           <span className="text-gray-400">{session.sets.filter(set => set.done).length} serie ›</span>

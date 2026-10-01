@@ -12,6 +12,7 @@ const HistoryPage = lazy(() => import('./pages/HistoryPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const KitchenPage = lazy(() => import('./pages/KitchenPage'))
 const FitnessPage = lazy(() => import('./pages/FitnessPage'))
+const GymSessionPage = lazy(() => import('./pages/GymSessionPage'))
 const WellbeingPage = lazy(() => import('./pages/WellbeingPage'))
 
 function LoadingScreen() {
@@ -61,6 +62,7 @@ function AppRoutes() {
         <Route path="/pantry" element={<Navigate to="/kitchen?tab=pantry" replace />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
+      <Route path="/fitness/session/:sessionId" element={<GymSessionPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route path="*" element={<Navigate to="/meals" replace />} />
     </Routes>

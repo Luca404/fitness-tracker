@@ -253,7 +253,7 @@ export default function GymSessionView({ session, onBack, onCompleted, onDeleted
     <div className="rounded-2xl bg-primary-950/20 p-4 ring-1 ring-primary-800/30">
       <p className="text-xs uppercase tracking-wide text-primary-400">{session.completed_at ? 'Allenamento completato' : 'Allenamento in corso'}</p>
       <h2 className="mt-1 text-xl font-bold">{session.plan_name}</h2>
-      <p className="mt-1 text-sm text-gray-400">{session.date} · {completed}/{sets.length} serie completate</p>
+      <p className="mt-1 text-sm text-gray-400">{completed}/{sets.length} serie completate</p>
     </div>
     {activeGroup && <>
       <nav aria-label="Navigazione esercizi" className="flex items-center gap-3">
