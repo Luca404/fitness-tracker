@@ -12,7 +12,7 @@ import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import { getDishIcon, getFoodIcon } from '../../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
 import { dishMealTypeLabels, dishesForMeal } from '../../data/dishMealTypes'
-import type { Dish, DishItem, DishMealType, PieceSize } from '../../types'
+import type { Dish, DishItem, DishMealType, PieceSize, PreparedBatch } from '../../types'
 import ExtendedNutrition from './ExtendedNutrition'
 import PreparedPortionInput from './PreparedPortionInput'
 import PreparedDishesPanel from './PreparedDishesPanel'
@@ -103,7 +103,7 @@ function beverageToDraft(beverage: BasicFood, volumeMl: number): DishItemDraft {
   }
 }
 
-export type MealHubMode = 'list' | 'ingredient' | 'new' | 'oneoff' | 'edit' | 'pick' | 'prepare'
+export type MealHubMode = 'list' | 'ingredient' | 'new' | 'oneoff' | 'edit' | 'pick' | 'prepare' | 'prepared-pick'
 
 export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beveragesOnly = false, mode, setMode, mealType, date }: Props) {
   const { user } = useAuth()
@@ -124,6 +124,9 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   const [addingIngredient, setAddingIngredient] = useState(false)
   const [loggingDish, setLoggingDish] = useState(false)
   const [preparedCount, setPreparedCount] = useState(0)
+  const [selectedBatch, setSelectedBatch] = useState<PreparedBatch | null>(null)
+  const [preparedGrams, setPreparedGrams] = useState(0)
+  const [consumingPrepared, setConsumingPrepared] = useState(false)
   const [selectedBeverage, setSelectedBeverage] = useState<BasicFood | null>(null)
   const [beverageVolume, setBeverageVolume] = useState(330)
   const [extraItems, setExtraItems] = useState<DishItemDraft[]>([])
@@ -176,6 +179,45 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     setExtraItems([])
     setAddingExtra(false)
     setMode('pick')
+  }
+
+  function startPreparedPick(batch: PreparedBatch) {
+    setSelectedBatch(batch)
+    setPreparedGrams(0)
+    setMode('prepared-pick')
+  }
+
+  async function consumeSelectedBatch() {
+    if (!selectedBatch || consumingPrepared || !Number.isFinite(preparedGrams)
+      || preparedGrams <= 0 || preparedGrams > selectedBatch.remaining_g) return
+    setConsumingPrepared(true)
+    try {
+      await api.consumePreparedBatch(selectedBatch.id, date, mealType, preparedGrams)
+      await onPrepared?.()
+      setSelectedBatch(null)
+      setMode('list')
+      showToast('Porzione registrata')
+    } catch {
+      showToast('Errore registrazione porzione')
+    } finally {
+      setConsumingPrepared(false)
+    }
+  }
+
+  async function closeSelectedBatch() {
+    if (!selectedBatch || consumingPrepared
+      || !window.confirm(`Concludere “${selectedBatch.dish.name}”? Il resto non sarà più tra i piatti pronti.`)) return
+    setConsumingPrepared(true)
+    try {
+      await api.closePreparedBatch(selectedBatch.id)
+      setSelectedBatch(null)
+      setMode('list')
+      showToast('Preparazione conclusa')
+    } catch {
+      showToast('Errore chiusura preparazione')
+    } finally {
+      setConsumingPrepared(false)
+    }
   }
 
   function chooseBeverage(beverage: BasicFood) {
@@ -498,6 +540,48 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     </div>
   }
 
+  if (mode === 'prepared-pick' && selectedBatch) {
+    const ratio = selectedBatch.remaining_g / selectedBatch.total_cooked_g
+    const remainingKcal = selectedBatch.dish.items.reduce((sum, item) => sum + item.calories, 0) * ratio
+    const protein = selectedBatch.dish.items.reduce((sum, item) => sum + item.protein_g, 0) * ratio
+    const carbs = selectedBatch.dish.items.reduce((sum, item) => sum + item.carbs_g, 0) * ratio
+    const fat = selectedBatch.dish.items.reduce((sum, item) => sum + item.fat_g, 0) * ratio
+    return <div className="space-y-5">
+      <div className="rounded-3xl bg-gradient-to-br from-primary-600/25 via-gray-800 to-gray-800 p-5 ring-1 ring-primary-500/20">
+        <div className="flex items-center gap-4">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary-500/15 text-3xl">{getDishIcon(selectedBatch.dish)}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-400">Pronto da mangiare</p>
+            <h3 className="truncate text-xl font-bold">{selectedBatch.dish.name}</h3>
+            <p className="text-sm text-gray-400">Restano {Math.round(selectedBatch.remaining_g)} g</p>
+          </div>
+          <p className="text-xl font-bold text-primary-400">{Math.round(remainingKcal)}<span className="ml-1 text-xs font-normal">kcal</span></p>
+        </div>
+        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+          <MacroPill label="Proteine" value={protein} />
+          <MacroPill label="Carbo tot." value={carbs} />
+          <MacroPill label="Grassi tot." value={fat} />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Composizione</p>
+        {selectedBatch.dish.items.map(item => <div key={item.id} className="flex justify-between rounded-xl bg-gray-900/30 px-3 py-2 text-sm">
+          <span className="text-gray-300">{item.food_name}</span>
+          <span className="text-gray-500">{Math.round(item.quantity_g * ratio)} {item.unit ?? 'g'}</span>
+        </div>)}
+      </div>
+      <PreparedPortionInput totalCookedG={selectedBatch.total_cooked_g} remainingG={selectedBatch.remaining_g}
+        value={preparedGrams} onChange={setPreparedGrams} />
+      <button type="button" onClick={() => void consumeSelectedBatch()}
+        disabled={consumingPrepared || preparedGrams <= 0 || preparedGrams > selectedBatch.remaining_g}
+        className="w-full rounded-2xl bg-primary-500 py-3.5 font-semibold disabled:opacity-40">
+        {consumingPrepared ? 'Registrazione…' : 'Registra porzione'}
+      </button>
+      <button type="button" onClick={() => void closeSelectedBatch()} disabled={consumingPrepared}
+        className="w-full py-2 text-sm text-gray-500 disabled:opacity-40">Concludi preparazione</button>
+    </div>
+  }
+
   if (mode === 'pick' && pickingDish) {
     const ref = referenceWeight(pickingDish)
     const factor = recipeMultiplier
@@ -528,6 +612,16 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
               <p className="text-sm text-gray-400">Ricetta base: {Math.round(ref)} g</p>
             </div>
             <p className="text-xl font-bold text-primary-400">{scaledKcal}<span className="ml-1 text-xs font-normal">kcal</span></p>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => void logPickedDish()} disabled={recipeMultiplier <= 0 || loggingDish}
+              className="rounded-xl bg-primary-500 px-2 py-3 text-sm font-semibold shadow-lg shadow-primary-900/30 transition hover:bg-primary-400 disabled:opacity-40">
+              {loggingDish ? 'Registrazione…' : 'Registra tutto'}
+            </button>
+            <button type="button" onClick={preparePickedDish} disabled={recipeMultiplier <= 0 || loggingDish}
+              className="rounded-xl border border-primary-500/60 bg-primary-950/40 px-2 py-3 text-sm font-semibold text-primary-100 transition hover:bg-primary-950/70 disabled:opacity-40">
+              Prepara e conserva il resto
+            </button>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
             <MacroPill label="Proteine" value={protein} />
@@ -600,14 +694,6 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
             </div>
           ))}
         </div>
-        <button type="button" onClick={() => void logPickedDish()} disabled={recipeMultiplier <= 0 || loggingDish}
-          className="w-full rounded-2xl bg-primary-500 py-4 font-semibold shadow-lg shadow-primary-900/30 transition hover:bg-primary-400 disabled:opacity-40">
-          {loggingDish ? 'Registrazione…' : 'Registra tutto il piatto'}
-        </button>
-        <button type="button" onClick={preparePickedDish} disabled={recipeMultiplier <= 0 || loggingDish}
-          className="w-full rounded-2xl border border-gray-700 py-3 text-sm font-semibold text-gray-300 transition hover:border-primary-500 disabled:opacity-40">
-          Prepara e conserva il resto
-        </button>
         {iconPicker}
       </div>
     )
@@ -615,21 +701,21 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2.5">
         <button type="button" onClick={() => setMode('new')}
-          className="flex min-w-0 flex-col items-center gap-2 rounded-2xl border border-gray-700 bg-gray-900/30 px-1 py-3 text-center transition hover:border-primary-600 hover:bg-primary-950/20">
-          <span className="text-xl">🍳</span>
-          <span className="block text-sm font-semibold">Nuova ricetta</span>
+          className="flex min-h-24 min-w-0 flex-col items-center justify-center gap-2 rounded-2xl border border-amber-400/25 bg-gradient-to-b from-amber-400/10 to-gray-900/60 px-2 py-3 text-center shadow-sm shadow-black/20 transition hover:-translate-y-0.5 hover:border-amber-400/60 hover:bg-amber-400/15 active:translate-y-0">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-400/15 text-xl">🍳</span>
+          <span className="text-xs font-semibold leading-tight sm:text-sm">Nuova ricetta</span>
         </button>
         <button type="button" onClick={() => setMode('oneoff')}
-          className="flex min-w-0 flex-col items-center gap-2 rounded-2xl border border-gray-700 bg-gray-900/30 px-1 py-3 text-center transition hover:border-primary-600 hover:bg-primary-950/20">
-          <span className="text-xl">✨</span>
-          <span className="block text-sm font-semibold">Occasionale</span>
+          className="flex min-h-24 min-w-0 flex-col items-center justify-center gap-2 rounded-2xl border border-violet-400/25 bg-gradient-to-b from-violet-400/10 to-gray-900/60 px-2 py-3 text-center shadow-sm shadow-black/20 transition hover:-translate-y-0.5 hover:border-violet-400/60 hover:bg-violet-400/15 active:translate-y-0">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/15 text-xl">✨</span>
+          <span className="text-xs font-semibold leading-tight sm:text-sm">Occasionale</span>
         </button>
         <button type="button" onClick={() => setMode('ingredient')}
-          className="flex min-w-0 flex-col items-center gap-2 rounded-2xl border border-gray-700 bg-gray-900/30 px-1 py-3 text-center transition hover:border-primary-600 hover:bg-primary-950/20">
-          <span className="text-xl">🍎</span>
-          <span className="block text-sm font-semibold">Ingrediente singolo</span>
+          className="flex min-h-24 min-w-0 flex-col items-center justify-center gap-2 rounded-2xl border border-emerald-400/25 bg-gradient-to-b from-emerald-400/10 to-gray-900/60 px-2 py-3 text-center shadow-sm shadow-black/20 transition hover:-translate-y-0.5 hover:border-emerald-400/60 hover:bg-emerald-400/15 active:translate-y-0">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400/15 text-xl">🍎</span>
+          <span className="text-xs font-semibold leading-tight sm:text-sm">Ingrediente singolo</span>
         </button>
       </div>
 
@@ -642,7 +728,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           <span className="rounded-full bg-gray-700 px-2.5 py-1 text-xs text-gray-400">{visibleDishes.length + preparedCount}</span>
         </div>
         <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-          <PreparedDishesPanel mealType={mealType} onConsumed={onPrepared} compact onCountChange={setPreparedCount} />
+          <PreparedDishesPanel mealType={mealType} compact onCountChange={setPreparedCount} onSelect={startPreparedPick} />
           {loading ? (
             <p className="text-sm text-gray-500 text-center py-4">Caricamento...</p>
           ) : visibleDishes.length === 0 && preparedCount === 0 ? (

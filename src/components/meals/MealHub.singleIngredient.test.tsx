@@ -67,7 +67,7 @@ describe('saved dish meal flow', () => {
     render(<TestHub onAddEntry={onAddEntry} />)
 
     fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Registra tutto il piatto' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Registra tutto' }))
 
     await waitFor(() => expect(onAddEntry).toHaveBeenCalledWith(
       'Pasta al pomodoro', [expect.objectContaining({ dish_item_id: 'item-1', quantity_g: 100 })],

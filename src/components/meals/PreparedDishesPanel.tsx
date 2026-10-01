@@ -6,11 +6,12 @@ import type { DishMealType, PreparedBatch } from '../../types'
 import { DISH_MEAL_TYPES } from '../../data/dishMealTypes'
 import PreparedPortionInput from './PreparedPortionInput'
 
-export default function PreparedDishesPanel({ mealType, onConsumed, compact = false, onCountChange }: {
+export default function PreparedDishesPanel({ mealType, onConsumed, compact = false, onCountChange, onSelect }: {
   mealType?: DishMealType
   onConsumed?: () => Promise<void>
   compact?: boolean
   onCountChange?: (count: number) => void
+  onSelect?: (batch: PreparedBatch) => void
 }) {
   const { selectedDate } = useSettings()
   const { fetchForDate, showToast } = useData()
@@ -24,11 +25,11 @@ export default function PreparedDishesPanel({ mealType, onConsumed, compact = fa
     try {
       const nextBatches = await api.getPreparedBatches()
       setBatches(nextBatches)
-      onCountChange?.(nextBatches.length)
+      onCountChange?.(mealType ? nextBatches.filter(batch => batch.dish.meal_types.includes(mealType)).length : nextBatches.length)
     } catch {
       showToast('Errore caricamento piatti preparati')
     }
-  }, [showToast, onCountChange])
+  }, [showToast, onCountChange, mealType])
 
   useEffect(() => { void refresh() }, [refresh])
 
@@ -62,24 +63,26 @@ export default function PreparedDishesPanel({ mealType, onConsumed, compact = fa
     }
   }
 
-  if (batches.length === 0) return null
+  const visibleBatches = mealType ? batches.filter(batch => batch.dish.meal_types.includes(mealType)) : batches
+  if (visibleBatches.length === 0) return null
 
   return <section className={compact ? 'space-y-2' : 'space-y-3'}>
     {!compact && <div className="px-1">
       <p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Pronti da mangiare</p>
       <p className="text-xs text-gray-500">Preparazioni con una quantità rimasta</p>
     </div>}
-    {batches.map(batch => <div key={batch.id} className={`rounded-2xl border border-primary-700/40 bg-primary-950/20 ${compact ? 'p-2' : 'p-3'}`}>
-      <button type="button" onClick={() => { setSelected(batch); setGrams(0) }}
-        className={`flex w-full items-center text-left ${compact ? 'gap-2' : 'gap-3'}`}>
+    {visibleBatches.map(batch => <div key={batch.id} className={`rounded-2xl border ${compact ? 'border-gray-700/70 bg-gray-900/30 p-2 transition hover:border-primary-600' : 'border-primary-700/40 bg-primary-950/20 p-3'}`}>
+      <button type="button" onClick={() => { if (onSelect) onSelect(batch); else { setSelected(batch); setGrams(0) } }}
+        className={`flex w-full items-center text-left ${compact ? 'gap-3 rounded-xl p-2' : 'gap-3'}`}>
         <span className={compact ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-xl' : 'text-2xl'}>{batch.dish.icon ?? '🍲'}</span>
         <span className="min-w-0 flex-1">
           <span className={`block truncate font-semibold ${compact ? 'text-sm' : ''}`}>{batch.dish.name}</span>
-          <span className="block text-xs text-gray-400">Pronto · Restano {Math.round(batch.remaining_g)} g su {Math.round(batch.total_cooked_g)} g</span>
+          <span className="block text-xs text-gray-400">{Math.round(batch.remaining_g)} g rimasti · {Math.round(batch.dish.items.reduce((sum, item) => sum + item.calories, 0) * batch.remaining_g / batch.total_cooked_g)} kcal</span>
+          {compact && <span className="mt-0.5 block text-[11px] font-medium text-primary-400">Pronto da mangiare</span>}
         </span>
         <span className="text-primary-400">›</span>
       </button>
-      {selected?.id === batch.id && <div className="mt-3 space-y-3 border-t border-gray-700 pt-3">
+      {!onSelect && selected?.id === batch.id && <div className="mt-3 space-y-3 border-t border-gray-700 pt-3">
         {!mealType && <label className="block text-xs text-gray-400">Quando lo mangi?
           <select value={selectedMealType} onChange={event => setSelectedMealType(event.target.value as DishMealType)}
             className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm">
