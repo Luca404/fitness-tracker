@@ -25,7 +25,7 @@ vi.mock('./FoodSearch', () => ({ default: ({ onAdd }: { onAdd: (item: DishItemDr
 
 import MealHub from './MealHub'
 
-afterEach(() => { cleanup(); mocks.getDishes.mockResolvedValue([]) })
+afterEach(() => { cleanup(); vi.clearAllMocks(); mocks.getDishes.mockResolvedValue([]) })
 
 function TestHub({ onAddEntry }: { onAddEntry: (name: string, items: DishItemDraft[]) => Promise<void> }) {
   const [mode, setMode] = useState<MealHubMode>('list')
@@ -78,13 +78,43 @@ describe('saved dish meal flow', () => {
 
   it('opens portion preparation only through the explicit action', async () => {
     mocks.getDishes.mockResolvedValueOnce([dish])
+    mocks.createPreparedBatch.mockResolvedValueOnce(undefined)
     const onAddEntry = vi.fn().mockResolvedValue(undefined)
     render(<TestHub onAddEntry={onAddEntry} />)
 
     fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Grammi di Pasta' }), { target: { value: '80' } })
     fireEvent.click(screen.getByRole('button', { name: 'Prepara e conserva il resto' }))
 
-    expect(screen.getByRole('button', { name: /Salva e registra la porzione/ })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Salva e registra la porzione/ }))
+    await waitFor(() => expect(mocks.createPreparedBatch).toHaveBeenCalledWith(expect.objectContaining({
+      sourceDishId: 'dish-1', items: [expect.objectContaining({ dish_item_id: 'item-1', quantity_g: 80, calories: 280 })],
+    })))
     expect(onAddEntry).not.toHaveBeenCalled()
+  })
+
+  it('changes ingredient quantities only for the current entry', async () => {
+    const twoIngredientDish: Dish = {
+      ...dish,
+      items: [...dish.items, {
+        ...dish.items[0], id: 'item-2', position: 1, food_name: 'Pomodoro',
+        quantity_g: 50, calories: 15, protein_g: 0.5, carbs_g: 3, fat_g: 0,
+      }],
+    }
+    mocks.getDishes.mockResolvedValueOnce([twoIngredientDish])
+    const onAddEntry = vi.fn().mockResolvedValue(undefined)
+    render(<TestHub onAddEntry={onAddEntry} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Grammi di Pasta' }), { target: { value: '80' } })
+    expect((screen.getByRole('spinbutton', { name: 'Grammi di Pomodoro' }) as HTMLInputElement).value).toBe('50')
+    fireEvent.click(screen.getByRole('button', { name: 'Registra tutto' }))
+
+    await waitFor(() => expect(onAddEntry).toHaveBeenCalledWith('Pasta al pomodoro', [
+      expect.objectContaining({ dish_item_id: 'item-1', quantity_g: 80, calories: 280 }),
+      expect.objectContaining({ dish_item_id: 'item-2', quantity_g: 50, calories: 15 }),
+    ], 'dish-1', '🍝'))
+    fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
+    expect((screen.getByRole('spinbutton', { name: 'Grammi di Pasta' }) as HTMLInputElement).value).toBe('100')
   })
 })

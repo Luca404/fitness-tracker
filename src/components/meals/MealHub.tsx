@@ -114,7 +114,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   const [pickingDish, setPickingDish] = useState<Dish | null>(null)
   const [iconDish, setIconDish] = useState<Dish | null>(null)
   const [iconSaving, setIconSaving] = useState(false)
-  const [recipeMultiplier, setRecipeMultiplier] = useState(1)
+  const [itemQuantities, setItemQuantities] = useState<Record<string, string>>({})
   const [pendingPreparation, setPendingPreparation] = useState<{
     name: string; items: DishItemDraft[]; sourceDishId: string | null; icon: string | null
   } | null>(null)
@@ -175,7 +175,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
 
   function startPick(dish: Dish) {
     setPickingDish(dish)
-    setRecipeMultiplier(1)
+    setItemQuantities(Object.fromEntries(dish.items.map(item => [item.id, String(item.quantity_g)])))
     setExtraItems([])
     setAddingExtra(false)
     setMode('pick')
@@ -243,33 +243,45 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
 
   function pickedItems(): DishItemDraft[] {
     if (!pickingDish) return []
-    const factor = recipeMultiplier
-    const dishItems: DishItemDraft[] = pickingDish.items.map(i => ({
-      dish_item_id: i.id,
-      is_customization: false,
-      food_name: i.food_name,
-      quantity_g: Math.round(i.quantity_g * factor * 10) / 10,
-      unit: i.unit ?? 'g',
-      piece_count: i.piece_count == null ? null : Math.round(i.piece_count * factor * 10) / 10,
-      piece_size: i.piece_size ?? null,
-      calories: Math.round(i.calories * factor),
-      protein_g: Math.round(i.protein_g * factor * 10) / 10,
-      carbs_g: Math.round(i.carbs_g * factor * 10) / 10,
-      fat_g: Math.round(i.fat_g * factor * 10) / 10,
-      fiber_g: i.fiber_g == null ? null : Math.round(i.fiber_g * factor * 100) / 100,
-      sugars_g: i.sugars_g == null ? null : Math.round(i.sugars_g * factor * 100) / 100,
-      salt_g: i.salt_g == null ? null : Math.round(i.salt_g * factor * 100) / 100,
-      source: i.source,
-      off_food_id: i.off_food_id,
-      category: i.category,
-      food_key: i.food_key,
-      pantry_item_id: i.pantry_item_id ?? null,
-    }))
+    const dishItems: DishItemDraft[] = pickingDish.items.map(i => {
+      const rawQuantity = Number(itemQuantities[i.id])
+      const quantity = Number.isFinite(rawQuantity) && rawQuantity > 0 ? Math.round(rawQuantity * 10) / 10 : 0
+      const factor = quantity / i.quantity_g
+      const pieceCount = i.piece_count == null ? null : Math.round(i.piece_count * factor * 10) / 10 || null
+      return {
+        dish_item_id: i.id,
+        is_customization: false,
+        food_name: i.food_name,
+        quantity_g: quantity,
+        unit: i.unit ?? 'g',
+        piece_count: pieceCount,
+        piece_size: pieceCount == null ? null : i.piece_size ?? null,
+        calories: Math.round(i.calories * factor),
+        protein_g: Math.round(i.protein_g * factor * 10) / 10,
+        carbs_g: Math.round(i.carbs_g * factor * 10) / 10,
+        fat_g: Math.round(i.fat_g * factor * 10) / 10,
+        fiber_g: i.fiber_g == null ? null : Math.round(i.fiber_g * factor * 100) / 100,
+        sugars_g: i.sugars_g == null ? null : Math.round(i.sugars_g * factor * 100) / 100,
+        salt_g: i.salt_g == null ? null : Math.round(i.salt_g * factor * 100) / 100,
+        source: i.source,
+        off_food_id: i.off_food_id,
+        category: i.category,
+        food_key: i.food_key,
+        pantry_item_id: i.pantry_item_id ?? null,
+      }
+    })
     return [...dishItems, ...extraItems.map(item => ({ ...item, is_customization: true }))]
   }
 
+  function validPickedQuantities(): boolean {
+    return pickingDish?.items.every(item => {
+      const quantity = Number(itemQuantities[item.id])
+      return Number.isFinite(quantity) && Math.round(quantity * 10) / 10 > 0
+    }) ?? false
+  }
+
   async function logPickedDish() {
-    if (!pickingDish || loggingDish || recipeMultiplier <= 0) return
+    if (!pickingDish || loggingDish || !validPickedQuantities()) return
     setLoggingDish(true)
     try {
       await onAddEntry(pickingDish.name, pickedItems(), pickingDish.id, pickingDish.icon)
@@ -284,7 +296,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   }
 
   function preparePickedDish() {
-    if (!pickingDish || recipeMultiplier <= 0) return
+    if (!pickingDish || !validPickedQuantities()) return
     setPendingPreparation({
       name: pickingDish.name,
       items: pickedItems(),
@@ -583,20 +595,13 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   }
 
   if (mode === 'pick' && pickingDish) {
-    const ref = referenceWeight(pickingDish)
-    const factor = recipeMultiplier
-    const scaledKcal = Math.round(totalKcal(pickingDish) * factor) + Math.round(extraItems.reduce((sum, item) => sum + item.calories, 0))
-    const protein = pickingDish.items.reduce((sum, item) => sum + item.protein_g, 0) * factor + extraItems.reduce((sum, item) => sum + item.protein_g, 0)
-    const carbs = pickingDish.items.reduce((sum, item) => sum + item.carbs_g, 0) * factor + extraItems.reduce((sum, item) => sum + item.carbs_g, 0)
-    const fat = pickingDish.items.reduce((sum, item) => sum + item.fat_g, 0) * factor + extraItems.reduce((sum, item) => sum + item.fat_g, 0)
-    const extendedTotals = getExtendedNutritionTotals([
-      ...pickingDish.items.map(item => ({
-        fiber_g: item.fiber_g == null ? null : item.fiber_g * factor,
-        sugars_g: item.sugars_g == null ? null : item.sugars_g * factor,
-        salt_g: item.salt_g == null ? null : item.salt_g * factor,
-      })),
-      ...extraItems,
-    ])
+    const selectedItems = pickedItems()
+    const validQuantities = validPickedQuantities()
+    const scaledKcal = selectedItems.reduce((sum, item) => sum + item.calories, 0)
+    const protein = selectedItems.reduce((sum, item) => sum + item.protein_g, 0)
+    const carbs = selectedItems.reduce((sum, item) => sum + item.carbs_g, 0)
+    const fat = selectedItems.reduce((sum, item) => sum + item.fat_g, 0)
+    const extendedTotals = getExtendedNutritionTotals(selectedItems)
     return (
       <div className="space-y-5">
         <div className="rounded-3xl bg-gradient-to-br from-primary-600/25 via-gray-800 to-gray-800 p-5 ring-1 ring-primary-500/20">
@@ -609,16 +614,16 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-400">Piatto salvato</p>
               <h3 className="truncate text-xl font-bold">{pickingDish.name}</h3>
-              <p className="text-sm text-gray-400">Ricetta base: {Math.round(ref)} g</p>
+              <p className="text-sm text-gray-400">{pickingDish.items.length} ingredienti nella ricetta salvata</p>
             </div>
             <p className="text-xl font-bold text-primary-400">{scaledKcal}<span className="ml-1 text-xs font-normal">kcal</span></p>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => void logPickedDish()} disabled={recipeMultiplier <= 0 || loggingDish}
+            <button type="button" onClick={() => void logPickedDish()} disabled={!validQuantities || loggingDish}
               className="rounded-xl bg-primary-500 px-2 py-3 text-sm font-semibold shadow-lg shadow-primary-900/30 transition hover:bg-primary-400 disabled:opacity-40">
               {loggingDish ? 'Registrazione…' : 'Registra tutto'}
             </button>
-            <button type="button" onClick={preparePickedDish} disabled={recipeMultiplier <= 0 || loggingDish}
+            <button type="button" onClick={preparePickedDish} disabled={!validQuantities || loggingDish}
               className="rounded-xl border border-primary-500/60 bg-primary-950/40 px-2 py-3 text-sm font-semibold text-primary-100 transition hover:bg-primary-950/70 disabled:opacity-40">
               Prepara e conserva il resto
             </button>
@@ -630,45 +635,22 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           </div>
           <ExtendedNutrition totals={extendedTotals} detailedLabels />
         </div>
-        <div className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
-          <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quantità della ricetta</label>
-          <div className="mt-2 flex items-center gap-3">
-            <input type="number" min={0.1} step={0.25} value={recipeMultiplier}
-              onChange={e => setRecipeMultiplier(Number(e.target.value) || 0)}
-              className="min-w-0 flex-1 bg-transparent text-3xl font-bold outline-none" />
-            <span className="text-lg text-gray-500">× ricetta</span>
-          </div>
-        </div>
-        <section className="rounded-2xl border border-gray-700 bg-gray-900/25 p-4">
-          <button type="button" onClick={() => setAddingExtra(open => !open)} className="flex w-full items-center justify-between text-left">
-            <span>
-              <span className="block text-xs font-semibold uppercase tracking-wider text-gray-500">Personalizza</span>
-              <span className="mt-0.5 block text-sm font-medium text-gray-300">Aggiungi un ingrediente</span>
-            </span>
-            <span className="text-xl text-primary-400">{addingExtra ? '−' : '+'}</span>
-          </button>
-          {addingExtra && (
-            <div className="mt-4 border-t border-gray-700 pt-4">
-              <FoodSearch
-                key={extraSearchKey}
-                hideHeader
-                allowManualEntry={false}
-                onClose={() => {}}
-                onAdd={item => {
-                  setExtraItems(items => [...items, item])
-                  setExtraSearchKey(key => key + 1)
-                }}
-              />
-            </div>
-          )}
-        </section>
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Composizione</p>
+          <div className="px-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Ingredienti del piatto</p>
+            <p className="mt-0.5 text-xs text-gray-500">Le quantità valgono solo per questo inserimento.</p>
+          </div>
           {pickingDish.items.map(item => (
-            <div key={item.id} className="flex justify-between rounded-xl bg-gray-900/30 px-3 py-2 text-sm">
-              <span className="text-gray-300">{item.food_name}</span>
-              <span className="text-gray-500">{Math.round(item.quantity_g * factor)} {item.unit ?? 'g'}</span>
-            </div>
+            <label key={item.id} className="flex items-center gap-3 rounded-xl border border-gray-700/70 bg-gray-900/30 px-3 py-2 text-sm focus-within:border-primary-500">
+              <span className="min-w-0 flex-1 truncate text-gray-300">{item.food_name}</span>
+              <input type="number" min="0.1" step="0.1" inputMode="decimal"
+                aria-label={`${item.unit === 'ml' ? 'Millilitri' : 'Grammi'} di ${item.food_name}`}
+                value={itemQuantities[item.id] ?? ''}
+                onChange={event => setItemQuantities(current => ({ ...current, [item.id]: event.target.value }))}
+                onFocus={event => event.currentTarget.select()}
+                className="w-16 rounded-lg border border-gray-600 bg-gray-800 px-2 py-1.5 text-right font-semibold outline-none focus:border-primary-500" />
+              <span className="w-5 text-xs text-gray-500">{item.unit ?? 'g'}</span>
+            </label>
           ))}
           {extraItems.map((item, index) => (
             <div key={`${item.food_name}-${index}`} className="rounded-xl bg-primary-950/20 p-3 text-sm ring-1 ring-primary-500/15">
@@ -694,6 +676,29 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
             </div>
           ))}
         </div>
+        <section className="rounded-2xl border border-gray-700 bg-gray-900/25 p-4">
+          <button type="button" onClick={() => setAddingExtra(open => !open)} className="flex w-full items-center justify-between text-left">
+            <span>
+              <span className="block text-xs font-semibold uppercase tracking-wider text-gray-500">Personalizza</span>
+              <span className="mt-0.5 block text-sm font-medium text-gray-300">Aggiungi un ingrediente</span>
+            </span>
+            <span className="text-xl text-primary-400">{addingExtra ? '−' : '+'}</span>
+          </button>
+          {addingExtra && (
+            <div className="mt-4 border-t border-gray-700 pt-4">
+              <FoodSearch
+                key={extraSearchKey}
+                hideHeader
+                allowManualEntry={false}
+                onClose={() => {}}
+                onAdd={item => {
+                  setExtraItems(items => [...items, item])
+                  setExtraSearchKey(key => key + 1)
+                }}
+              />
+            </div>
+          )}
+        </section>
         {iconPicker}
       </div>
     )
