@@ -6,9 +6,11 @@ import type { DishMealType, PreparedBatch } from '../../types'
 import { DISH_MEAL_TYPES } from '../../data/dishMealTypes'
 import PreparedPortionInput from './PreparedPortionInput'
 
-export default function PreparedDishesPanel({ mealType, onConsumed }: {
+export default function PreparedDishesPanel({ mealType, onConsumed, compact = false, onCountChange }: {
   mealType?: DishMealType
   onConsumed?: () => Promise<void>
+  compact?: boolean
+  onCountChange?: (count: number) => void
 }) {
   const { selectedDate } = useSettings()
   const { fetchForDate, showToast } = useData()
@@ -20,11 +22,13 @@ export default function PreparedDishesPanel({ mealType, onConsumed }: {
 
   const refresh = useCallback(async () => {
     try {
-      setBatches(await api.getPreparedBatches())
+      const nextBatches = await api.getPreparedBatches()
+      setBatches(nextBatches)
+      onCountChange?.(nextBatches.length)
     } catch {
       showToast('Errore caricamento piatti preparati')
     }
-  }, [showToast])
+  }, [showToast, onCountChange])
 
   useEffect(() => { void refresh() }, [refresh])
 
@@ -60,18 +64,18 @@ export default function PreparedDishesPanel({ mealType, onConsumed }: {
 
   if (batches.length === 0) return null
 
-  return <section className="space-y-3">
-    <div className="px-1">
+  return <section className={compact ? 'space-y-2' : 'space-y-3'}>
+    {!compact && <div className="px-1">
       <p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Pronti da mangiare</p>
       <p className="text-xs text-gray-500">Preparazioni con una quantità rimasta</p>
-    </div>
-    {batches.map(batch => <div key={batch.id} className="rounded-2xl border border-primary-700/40 bg-primary-950/20 p-3">
+    </div>}
+    {batches.map(batch => <div key={batch.id} className={`rounded-2xl border border-primary-700/40 bg-primary-950/20 ${compact ? 'p-2' : 'p-3'}`}>
       <button type="button" onClick={() => { setSelected(batch); setGrams(0) }}
-        className="flex w-full items-center gap-3 text-left">
-        <span className="text-2xl">{batch.dish.icon ?? '🍲'}</span>
+        className={`flex w-full items-center text-left ${compact ? 'gap-2' : 'gap-3'}`}>
+        <span className={compact ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-xl' : 'text-2xl'}>{batch.dish.icon ?? '🍲'}</span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-semibold">{batch.dish.name}</span>
-          <span className="text-xs text-gray-400">Restano {Math.round(batch.remaining_g)} g su {Math.round(batch.total_cooked_g)} g stimati</span>
+          <span className={`block truncate font-semibold ${compact ? 'text-sm' : ''}`}>{batch.dish.name}</span>
+          <span className="block text-xs text-gray-400">Pronto · Restano {Math.round(batch.remaining_g)} g su {Math.round(batch.total_cooked_g)} g</span>
         </span>
         <span className="text-primary-400">›</span>
       </button>

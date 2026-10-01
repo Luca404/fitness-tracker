@@ -122,6 +122,8 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   const [firstPortionG, setFirstPortionG] = useState<number | null>(null)
   const [preparing, setPreparing] = useState(false)
   const [addingIngredient, setAddingIngredient] = useState(false)
+  const [loggingDish, setLoggingDish] = useState(false)
+  const [preparedCount, setPreparedCount] = useState(0)
   const [selectedBeverage, setSelectedBeverage] = useState<BasicFood | null>(null)
   const [beverageVolume, setBeverageVolume] = useState(330)
   const [extraItems, setExtraItems] = useState<DishItemDraft[]>([])
@@ -197,8 +199,8 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     }
   }
 
-  async function confirmPick() {
-    if (!pickingDish) return
+  function pickedItems(): DishItemDraft[] {
+    if (!pickingDish) return []
     const factor = recipeMultiplier
     const dishItems: DishItemDraft[] = pickingDish.items.map(i => ({
       dish_item_id: i.id,
@@ -221,9 +223,29 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
       food_key: i.food_key,
       pantry_item_id: i.pantry_item_id ?? null,
     }))
+    return [...dishItems, ...extraItems.map(item => ({ ...item, is_customization: true }))]
+  }
+
+  async function logPickedDish() {
+    if (!pickingDish || loggingDish || recipeMultiplier <= 0) return
+    setLoggingDish(true)
+    try {
+      await onAddEntry(pickingDish.name, pickedItems(), pickingDish.id, pickingDish.icon)
+      setPickingDish(null)
+      setExtraItems([])
+      setMode('list')
+    } catch {
+      // The meal page already reports the failed registration.
+    } finally {
+      setLoggingDish(false)
+    }
+  }
+
+  function preparePickedDish() {
+    if (!pickingDish || recipeMultiplier <= 0) return
     setPendingPreparation({
       name: pickingDish.name,
-      items: [...dishItems, ...extraItems.map(item => ({ ...item, is_customization: true }))],
+      items: pickedItems(),
       sourceDishId: pickingDish.id,
       icon: pickingDish.icon,
     })
@@ -515,7 +537,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           <ExtendedNutrition totals={extendedTotals} detailedLabels />
         </div>
         <div className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
-          <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quante volte prepari la ricetta?</label>
+          <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quantità della ricetta</label>
           <div className="mt-2 flex items-center gap-3">
             <input type="number" min={0.1} step={0.25} value={recipeMultiplier}
               onChange={e => setRecipeMultiplier(Number(e.target.value) || 0)}
@@ -578,9 +600,13 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
             </div>
           ))}
         </div>
-        <button type="button" onClick={confirmPick} disabled={recipeMultiplier <= 0}
+        <button type="button" onClick={() => void logPickedDish()} disabled={recipeMultiplier <= 0 || loggingDish}
           className="w-full rounded-2xl bg-primary-500 py-4 font-semibold shadow-lg shadow-primary-900/30 transition hover:bg-primary-400 disabled:opacity-40">
-          Continua: prepara il piatto
+          {loggingDish ? 'Registrazione…' : 'Registra tutto il piatto'}
+        </button>
+        <button type="button" onClick={preparePickedDish} disabled={recipeMultiplier <= 0 || loggingDish}
+          className="w-full rounded-2xl border border-gray-700 py-3 text-sm font-semibold text-gray-300 transition hover:border-primary-500 disabled:opacity-40">
+          Prepara e conserva il resto
         </button>
         {iconPicker}
       </div>
@@ -588,26 +614,22 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   }
 
   return (
-    <div className="space-y-6">
-      <PreparedDishesPanel mealType={mealType} onConsumed={onPrepared} />
-      <button type="button" onClick={() => setMode('ingredient')}
-        className="flex w-full items-center gap-3 rounded-2xl border border-primary-700/50 bg-primary-950/20 p-4 text-left transition hover:border-primary-500 hover:bg-primary-950/30">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-500/15 text-xl">🍎</span>
-        <span><span className="block text-sm font-semibold">Ingrediente singolo</span>
-          <span className="mt-1 block text-xs text-gray-400">Per una mela, uno yogurt o uno spuntino veloce</span></span>
-      </button>
-      <div className="grid grid-cols-2 gap-3">
+    <div className="space-y-5">
+      <div className="grid grid-cols-3 gap-2">
         <button type="button" onClick={() => setMode('new')}
-          className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4 text-left transition hover:border-primary-600 hover:bg-primary-950/20">
-          <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/10 text-xl">🍳</span>
+          className="flex min-w-0 flex-col items-center gap-2 rounded-2xl border border-gray-700 bg-gray-900/30 px-1 py-3 text-center transition hover:border-primary-600 hover:bg-primary-950/20">
+          <span className="text-xl">🍳</span>
           <span className="block text-sm font-semibold">Nuova ricetta</span>
-          <span className="mt-1 block text-xs leading-snug text-gray-500">Componi, salva e prepara</span>
         </button>
         <button type="button" onClick={() => setMode('oneoff')}
-          className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4 text-left transition hover:border-primary-600 hover:bg-primary-950/20">
-          <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-400/10 text-xl">✨</span>
+          className="flex min-w-0 flex-col items-center gap-2 rounded-2xl border border-gray-700 bg-gray-900/30 px-1 py-3 text-center transition hover:border-primary-600 hover:bg-primary-950/20">
+          <span className="text-xl">✨</span>
           <span className="block text-sm font-semibold">Occasionale</span>
-          <span className="mt-1 block text-xs leading-snug text-gray-500">Prepara senza salvare la ricetta</span>
+        </button>
+        <button type="button" onClick={() => setMode('ingredient')}
+          className="flex min-w-0 flex-col items-center gap-2 rounded-2xl border border-gray-700 bg-gray-900/30 px-1 py-3 text-center transition hover:border-primary-600 hover:bg-primary-950/20">
+          <span className="text-xl">🍎</span>
+          <span className="block text-sm font-semibold">Ingrediente singolo</span>
         </button>
       </div>
 
@@ -615,17 +637,17 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
         <div className="mb-3 flex items-center justify-between px-1">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">La tua cucina</p>
-            <p className="text-sm font-medium text-gray-300">Piatti salvati</p>
+            <p className="text-sm font-medium text-gray-300">Piatti salvati e pronti</p>
           </div>
-          <span className="rounded-full bg-gray-700 px-2.5 py-1 text-xs text-gray-400">{visibleDishes.length}</span>
+          <span className="rounded-full bg-gray-700 px-2.5 py-1 text-xs text-gray-400">{visibleDishes.length + preparedCount}</span>
         </div>
-        {loading ? (
-          <p className="text-sm text-gray-500 text-center py-4">Caricamento...</p>
-        ) : visibleDishes.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-4">Nessun piatto salvato per questo pasto.</p>
-        ) : (
-          <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-            {visibleDishes.map(dish => (
+        <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+          <PreparedDishesPanel mealType={mealType} onConsumed={onPrepared} compact onCountChange={setPreparedCount} />
+          {loading ? (
+            <p className="text-sm text-gray-500 text-center py-4">Caricamento...</p>
+          ) : visibleDishes.length === 0 && preparedCount === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-4">Nessun piatto salvato per questo pasto.</p>
+          ) : visibleDishes.map(dish => (
               <div key={dish.id} className="group flex items-center gap-2 rounded-2xl border border-gray-700/70 bg-gray-900/30 p-2 transition hover:border-gray-600">
                 <button type="button" onClick={() => setIconDish(dish)}
                   aria-label={`Cambia icona di ${dish.name}`}
@@ -646,8 +668,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
                   className="rounded-xl p-2 text-gray-600 hover:bg-red-950/30 hover:text-red-400" aria-label="Elimina piatto">🗑️</button>
               </div>
             ))}
-          </div>
-        )}
+        </div>
       </div>
       {iconPicker}
     </div>
