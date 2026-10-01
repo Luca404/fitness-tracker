@@ -46,6 +46,11 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'fagioli-borlotti-secchi', name: 'Fagioli borlotti secchi', aliases: ['borlotti crudi'], category: 'legume', calories: 335, protein_g: 23, carbs_g: 60, fat_g: 1.2 },
   { id: 'fagioli-cannellini-secchi', name: 'Fagioli cannellini secchi', aliases: ['cannellini crudi'], category: 'legume', calories: 333, protein_g: 23.4, carbs_g: 60.3, fat_g: 0.9 },
   { id: 'lenticchie-secche', name: 'Lenticchie secche', aliases: ['lenticchie crude'], category: 'legume', calories: 352, protein_g: 24.6, carbs_g: 63.4, fat_g: 1.1 },
+  // CREA, valori per 100 g di prodotto in scatola scolato (non peso della lattina).
+  { id: 'ceci-scatola-scolati', name: 'Ceci in scatola, scolati', aliases: ['ceci cotti', 'ceci in lattina'], category: 'legume', calories: 111, protein_g: 6.7, carbs_g: 13.9, fat_g: 2.3 },
+  { id: 'fagioli-borlotti-scatola-scolati', name: 'Fagioli borlotti in scatola, scolati', aliases: ['borlotti cotti', 'borlotti in lattina'], category: 'legume', calories: 102, protein_g: 6.7, carbs_g: 15.9, fat_g: 0.5 },
+  { id: 'fagioli-cannellini-scatola-scolati', name: 'Fagioli cannellini in scatola, scolati', aliases: ['cannellini cotti', 'cannellini in lattina'], category: 'legume', calories: 86, protein_g: 6, carbs_g: 12.5, fat_g: 0.6 },
+  { id: 'lenticchie-scatola-scolate', name: 'Lenticchie in scatola, scolate', aliases: ['lenticchie cotte', 'lenticchie in lattina'], category: 'legume', calories: 91, protein_g: 5, carbs_g: 15.4, fat_g: 0.5 },
   { id: 'piselli', name: 'Piselli', aliases: ['piselli freschi'], category: 'legume', calories: 81, protein_g: 5.4, carbs_g: 14.5, fat_g: 0.4 },
   { id: 'fave', name: 'Fave', aliases: ['fave fresche'], category: 'legume', calories: 88, protein_g: 7.9, carbs_g: 17.6, fat_g: 0.7 },
   { id: 'hummus', name: 'Hummus', category: 'legume', calories: 166, protein_g: 7.9, carbs_g: 14, fat_g: 9.6 },

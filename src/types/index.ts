@@ -282,6 +282,9 @@ export interface Dish {
   meal_types: DishMealType[]
   created_at: string
   updated_at: string
+  cooking_signature?: string | null
+  cooking_methods?: ('raw' | 'boiled' | 'pan')[]
+  measured_yield_ratio?: number | null
   items: DishItem[]  // hydrated client-side
 }
 

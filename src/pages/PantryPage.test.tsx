@@ -73,6 +73,21 @@ describe('PantryPage manual entry', () => {
     })))
   })
 
+  it('keeps fibre, sugars and salt when saving a basic food', async () => {
+    render(<PantryPage />)
+    fireEvent.click(screen.getByRole('button', { name: /Aggiungi ingrediente/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Cerca alimento base/ }))
+    fireEvent.change(screen.getByPlaceholderText('Cerca alimento base...'), { target: { value: 'mela' } })
+    fireEvent.click(screen.getByRole('button', { name: /Mela.*52 kcal\/100g/ }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salva ingrediente' }))
+
+    await waitFor(() => expect(mocks.addPantryItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'Mela', source: 'basic', food_key: 'basic:mela',
+      fiber_100g: 1.4, sugars_100g: 11.5, salt_100g: 0,
+    })))
+  })
+
   it('allows the new values to be corrected on a saved manual product', async () => {
     const item: PantryItem = {
       id: 'item-1', user_id: 'user-1', name: 'Biscotti', nutrition_unit: 'g',

@@ -326,6 +326,17 @@ export async function updateDishIcon(dishId: string, icon: string | null): Promi
   if (error) throw error
 }
 
+export async function updateDishCookingPreference(
+  dishId: string, signature: string, methods: ('raw' | 'boiled' | 'pan')[], measuredYieldRatio: number | null,
+): Promise<void> {
+  const { error } = await supabase.from('dishes').update({
+    cooking_signature: signature,
+    cooking_methods: methods,
+    measured_yield_ratio: measuredYieldRatio,
+  }).eq('id', dishId)
+  if (error) throw error
+}
+
 export async function completeOnboarding(
   profile: Omit<UserHealthProfile, 'created_at' | 'updated_at'>,
   goals: Omit<UserGoals, 'updated_at'>

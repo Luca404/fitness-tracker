@@ -250,6 +250,15 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
               {selected.source === 'openfoodfacts' && (
                 <OpenFoodFactsDetails food={selected} detailedLabels />
               )}
+              {selected.category === 'legume' && selected.source === 'basic' && (
+                <p className="text-xs text-gray-400">
+                  {selected.food_key?.includes('secch') || selected.food_key?.includes('secca')
+                    ? 'Pesa il legume da secco: la cottura aumenterà il peso stimato del piatto.'
+                    : selected.food_key?.includes('scatola')
+                      ? 'Pesa solo il prodotto scolato: è già cotto e non verrà reidratato.'
+                      : 'Inserisci il peso nello stato indicato dal nome dell’alimento.'}
+                </p>
+              )}
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quantità</label>
                 <IngredientQuantityInput

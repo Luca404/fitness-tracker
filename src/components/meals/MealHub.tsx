@@ -16,7 +16,7 @@ import type { Dish, DishItem, DishMealType, PieceSize, PreparedBatch } from '../
 import ExtendedNutrition from './ExtendedNutrition'
 import PreparedPortionInput from './PreparedPortionInput'
 import PreparedDishesPanel from './PreparedDishesPanel'
-import { estimateCookedWeight } from '../../utils/preparedDishes'
+import { defaultCookingMethod, estimateCookedItemWeights, estimateCookedWeight, recipeSignature, type CookingMethod } from '../../utils/preparedDishes'
 import { formatDecimal, roundToTwo } from '../../utils/decimal'
 
 interface Props {
@@ -120,6 +120,8 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     name: string; items: DishItemDraft[]; sourceDishId: string | null; icon: string | null
   } | null>(null)
   const [cookedWeightOverride, setCookedWeightOverride] = useState<number | null>(null)
+  const [cookingMethods, setCookingMethods] = useState<CookingMethod[]>([])
+  const [rememberedYieldRatio, setRememberedYieldRatio] = useState<number | null>(null)
   const [firstPortionG, setFirstPortionG] = useState<number | null>(null)
   const [preparing, setPreparing] = useState(false)
   const [addingIngredient, setAddingIngredient] = useState(false)
@@ -296,19 +298,22 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     }
   }
 
-  function preparePickedDish() {
-    if (!pickingDish || !validPickedQuantities()) return
-    setPendingPreparation({
-      name: pickingDish.name,
-      items: pickedItems(),
-      sourceDishId: pickingDish.id,
-      icon: pickingDish.icon,
-    })
+  function beginPreparation(name: string, items: DishItemDraft[], dish: Dish | null) {
+    const signature = recipeSignature(items)
+    const remembered = dish?.cooking_signature === signature && dish.cooking_methods?.length === items.length
+    setPendingPreparation({ name, items, sourceDishId: dish?.id ?? null, icon: dish?.icon ?? null })
+    setCookingMethods(remembered ? dish.cooking_methods! : items.map(defaultCookingMethod))
+    setRememberedYieldRatio(remembered ? dish.measured_yield_ratio ?? null : null)
     setCookedWeightOverride(null)
     setFirstPortionG(null)
+    setMode('prepare')
+  }
+
+  function preparePickedDish() {
+    if (!pickingDish || !validPickedQuantities()) return
+    beginPreparation(pickingDish.name, pickedItems(), pickingDish)
     setPickingDish(null)
     setExtraItems([])
-    setMode('prepare')
   }
 
   async function confirmBeverage() {
@@ -358,10 +363,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   async function handleSaveNewDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[]) {
     if (!user) return
     const dish = await api.createDish(user.id, name, items, mealTypes)
-    setPendingPreparation({ name, items: dish.items.map(toDraftItem), sourceDishId: dish.id, icon: dish.icon })
-    setCookedWeightOverride(null)
-    setFirstPortionG(null)
-    setMode('prepare')
+    beginPreparation(name, dish.items.map(toDraftItem), dish)
   }
 
   async function handleSaveEditedDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[]) {
@@ -374,20 +376,20 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   }
 
   async function handleSaveOneoff(name: string, items: DishItemDraft[]) {
-    setPendingPreparation({ name, items, sourceDishId: null, icon: null })
-    setCookedWeightOverride(null)
-    setFirstPortionG(null)
-    setMode('prepare')
+    beginPreparation(name, items, null)
   }
 
   async function savePreparation() {
     if (!user || !pendingPreparation || preparing) return
-    const estimated = estimateCookedWeight(pendingPreparation.items)
-    const totalCookedG = cookedWeightOverride ?? estimated
+    const estimated = estimateCookedWeight(pendingPreparation.items, cookingMethods)
+    const rawWeight = pendingPreparation.items.reduce((sum, item) => sum + item.quantity_g, 0)
+    const totalCookedG = cookedWeightOverride ?? (rememberedYieldRatio ? roundToTwo(rawWeight * rememberedYieldRatio) : estimated)
     const portionG = firstPortionG ?? totalCookedG
-    if (totalCookedG <= 0 || portionG < 0 || portionG > totalCookedG) return
+    if (!Number.isFinite(totalCookedG) || !Number.isFinite(portionG)
+      || totalCookedG <= 0 || portionG < 0 || portionG > totalCookedG) return
     setPreparing(true)
     try {
+      let preferenceSaved = true
       await api.createPreparedBatch({
         userId: user.id,
         name: pendingPreparation.name,
@@ -399,11 +401,24 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
         date,
         mealType,
       })
+      if (pendingPreparation.sourceDishId) {
+        try {
+          await api.updateDishCookingPreference(
+            pendingPreparation.sourceDishId,
+            recipeSignature(pendingPreparation.items),
+            cookingMethods,
+            cookedWeightOverride === null ? rememberedYieldRatio : cookedWeightOverride / rawWeight,
+          )
+        } catch {
+          preferenceSaved = false
+        }
+      }
       await onPrepared?.()
       await refresh()
       setPendingPreparation(null)
       setMode('list')
-      showToast(portionG > 0 ? 'Preparazione salvata e porzione registrata' : 'Preparazione salvata')
+      showToast(!preferenceSaved ? 'Preparazione salvata; preferenza di cottura non aggiornata'
+        : portionG > 0 ? 'Preparazione salvata e porzione registrata' : 'Preparazione salvata')
     } catch {
       showToast('Errore salvataggio preparazione')
     } finally {
@@ -523,21 +538,48 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   }
 
   if (mode === 'prepare' && pendingPreparation) {
-    const estimated = estimateCookedWeight(pendingPreparation.items)
-    const totalCookedG = cookedWeightOverride ?? estimated
+    const estimated = estimateCookedWeight(pendingPreparation.items, cookingMethods)
+    const rawWeight = pendingPreparation.items.reduce((sum, item) => sum + item.quantity_g, 0)
+    const rememberedWeight = rememberedYieldRatio ? roundToTwo(rawWeight * rememberedYieldRatio) : null
+    const totalCookedG = cookedWeightOverride ?? rememberedWeight ?? estimated
     const portionG = firstPortionG ?? totalCookedG
     const totalCalories = pendingPreparation.items.reduce((sum, item) => sum + item.calories, 0)
+    const itemWeights = estimateCookedItemWeights(pendingPreparation.items, cookingMethods)
     return <div className="space-y-5">
       <ComposerHeader icon="🍲" eyebrow="Preparazione" title={pendingPreparation.name} />
       <div className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
         <p className="text-sm text-gray-300">Ingredienti: {formatDecimal(totalCalories)} kcal in totale</p>
-        <p className="mt-2 text-sm font-semibold">Peso cotto stimato: {estimated} g</p>
-        <p className="mt-1 text-xs text-gray-500">La stima considera l’acqua assorbita dagli ingredienti secchi riconosciuti. Puoi correggerla senza pesare il piatto ogni volta.</p>
+        <p className="mt-2 text-sm font-semibold">Peso cotto stimato: {formatDecimal(estimated)} g</p>
+        {rememberedWeight !== null && <p className="mt-1 text-sm text-primary-300">Dall’ultima pesata della ricetta: {formatDecimal(rememberedWeight)} g</p>}
+        <p className="mt-1 text-xs text-gray-500">Scegli come hai preparato ogni ingrediente. Il peso finale misurato prevale sulla stima, compreso il sugo rimasto nel piatto.</p>
+        <div className="mt-3 space-y-2">
+          {pendingPreparation.items.map((item, index) => (
+            <div key={`${item.food_name}-${index}`} className="rounded-xl border border-gray-700 bg-gray-800/50 px-3 py-2">
+              <div className="flex items-center justify-between gap-2 text-sm">
+                <span className="min-w-0 truncate">{item.food_name}</span>
+                <span className="shrink-0 text-gray-400">{formatDecimal(item.quantity_g)} → {formatDecimal(itemWeights[index])} g</span>
+              </div>
+              <label className="mt-1 flex items-center justify-between gap-2 text-xs text-gray-400">
+                <span>Cottura</span>
+                <select aria-label={`Cottura ${item.food_name}`} value={cookingMethods[index] ?? defaultCookingMethod(item)}
+                  onChange={event => {
+                    setCookingMethods(current => current.map((method, i) => i === index ? event.target.value as CookingMethod : method))
+                    setRememberedYieldRatio(null)
+                  }}
+                  className="rounded-lg border border-gray-600 bg-gray-800 px-2 py-1 text-white">
+                  <option value="raw">Crudo / già pronto</option>
+                  <option value="boiled">Bollito</option>
+                  <option value="pan">In padella</option>
+                </select>
+              </label>
+            </div>
+          ))}
+        </div>
         <label className="mt-3 block text-xs text-gray-400">Correggi il peso cotto totale (facoltativo)
           <input type="number" min={1} step="0.01" inputMode="decimal"
             value={cookedWeightOverride ?? ''}
             onChange={event => setCookedWeightOverride(event.target.value === '' ? null : roundToTwo(Number(event.target.value)))}
-            placeholder={`${formatDecimal(estimated)} g stimati`}
+            placeholder={`${formatDecimal(rememberedWeight ?? estimated)} g suggeriti`}
             className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm outline-none focus:border-primary-500" />
         </label>
       </div>

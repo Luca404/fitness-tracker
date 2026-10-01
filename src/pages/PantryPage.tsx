@@ -685,6 +685,8 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
                   name: f.name, calories_100g: f.calories_100g, protein_100g: f.protein_100g,
                   carbs_100g: f.carbs_100g, fat_100g: f.fat_100g, category: f.category,
                   food_key: f.food_key, source: 'basic', off_food_id: null,
+                  fiber_100g: f.fiber_100g, sugars_100g: f.sugars_100g,
+                  salt_100g: f.salt_100g,
                 })}
                 className="w-full text-left px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">
                 <span className="font-medium">{f.name}</span>

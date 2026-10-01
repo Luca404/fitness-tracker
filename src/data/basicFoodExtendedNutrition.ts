@@ -32,6 +32,14 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   'fagioli-borlotti-secchi': [22.6, 1.2, 0],
   'fagioli-cannellini-secchi': [22.6, 1.2, 0],
   'lenticchie-secche': [23.2, 1.3, 0],
+  // CREA: https://www.alimentinutrizione.it/tabelle-nutrizionali/004010
+  'ceci-scatola-scolati': [5.7, 1, 0.78],
+  // https://www.alimentinutrizione.it/tabelle-nutrizionali/004130
+  'fagioli-borlotti-scatola-scolati': [5.5, 1, 0.74],
+  // https://www.alimentinutrizione.it/tabelle-nutrizionali/004210
+  'fagioli-cannellini-scatola-scolati': [4.8, 0.3, 1.08],
+  // https://www.alimentinutrizione.it/tabelle-nutrizionali/004510
+  'lenticchie-scatola-scolate': [4.2, 0.7, 0.89],
   piselli: [5.3, 2.3, 0],
   fave: [5.4, 5.7, 0.05],
   hummus: [6.2, 0.8, 1.1],

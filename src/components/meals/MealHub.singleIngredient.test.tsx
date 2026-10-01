@@ -4,10 +4,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { DishItemDraft } from './DishEditor'
 import type { MealHubMode } from './MealHub'
 import type { Dish } from '../../types'
+import { recipeSignature } from '../../utils/preparedDishes'
 
 const mocks = vi.hoisted(() => ({
   getDishes: vi.fn().mockResolvedValue([]),
   createPreparedBatch: vi.fn(),
+  updateDishCookingPreference: vi.fn().mockResolvedValue(undefined),
   showToast: vi.fn(),
 }))
 
@@ -116,5 +118,43 @@ describe('saved dish meal flow', () => {
     ], 'dish-1', '🍝'))
     fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
     expect((screen.getByRole('spinbutton', { name: 'Grammi di Pasta' }) as HTMLInputElement).value).toBe('100')
+  })
+
+  it('remembers a measured yield and scales it when the recipe quantity changes', async () => {
+    const measuredDish: Dish = {
+      ...dish, cooking_signature: recipeSignature(dish.items),
+      cooking_methods: ['boiled'], measured_yield_ratio: 2,
+    }
+    mocks.getDishes.mockResolvedValueOnce([measuredDish])
+    mocks.createPreparedBatch.mockResolvedValueOnce(undefined)
+    render(<TestHub onAddEntry={vi.fn()} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Grammi di Pasta' }), { target: { value: '80' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Prepara e conserva il resto' }))
+    expect(screen.getByText(/Dall’ultima pesata della ricetta: 160 g/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Salva e registra la porzione/ }))
+
+    await waitFor(() => expect(mocks.createPreparedBatch).toHaveBeenCalledWith(expect.objectContaining({ totalCookedG: 160 })))
+    await waitFor(() => expect(mocks.updateDishCookingPreference).toHaveBeenCalledWith(
+      'dish-1', recipeSignature(dish.items), ['boiled'], 2,
+    ))
+  })
+
+  it('stores the full measured ratio when 1200 g of ingredients yield 800 g cooked', async () => {
+    mocks.getDishes.mockResolvedValueOnce([dish])
+    mocks.createPreparedBatch.mockResolvedValueOnce(undefined)
+    render(<TestHub onAddEntry={vi.fn()} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Grammi di Pasta' }), { target: { value: '1200' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Prepara e conserva il resto' }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Correggi il peso cotto totale/ }), { target: { value: '800' } })
+    fireEvent.click(screen.getByRole('button', { name: /Salva e registra la porzione/ }))
+
+    await waitFor(() => expect(mocks.createPreparedBatch).toHaveBeenCalledWith(expect.objectContaining({ totalCookedG: 800 })))
+    await waitFor(() => expect(mocks.updateDishCookingPreference).toHaveBeenCalledWith(
+      'dish-1', recipeSignature(dish.items), ['boiled'], 800 / 1200,
+    ))
   })
 })
