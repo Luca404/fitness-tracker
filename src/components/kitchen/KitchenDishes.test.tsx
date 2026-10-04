@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Dish, PreparedBatch } from '../../types'
 
@@ -28,18 +28,24 @@ describe('Kitchen dish categories', () => {
   it('filters by existing categories, combines search and returns to all dishes', async () => {
     render(<KitchenDishes />)
     await screen.findByText('Yogurt e frutta')
-    expect(screen.getByRole('button', { name: 'Tutti' }).getAttribute('aria-pressed')).toBe('true')
+    const categoryButtons = within(screen.getByRole('group', { name: 'Categoria dei piatti' })).getAllByRole('button')
+    expect(categoryButtons).toHaveLength(4)
+    expect(categoryButtons.every(button => button.getAttribute('aria-pressed') === 'false')).toBe(true)
+    expect(screen.queryByRole('button', { name: 'Tutti' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Pranzo' }))
     expect(screen.getByRole('button', { name: 'Pranzo' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByRole('button', { name: 'Tutti' }).getAttribute('aria-pressed')).toBe('false')
     expect(screen.queryByText('Yogurt e frutta')).toBeNull()
     expect(screen.getByText('Pasta al pesto')).toBeTruthy()
     fireEvent.change(screen.getByPlaceholderText('Cerca un piatto...'), { target: { value: 'yogurt' } })
     expect(screen.getByText('Nessun risultato')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Spuntino' }))
+    expect(screen.getByRole('button', { name: 'Pranzo' }).getAttribute('aria-pressed')).toBe('false')
     expect(screen.getByText('Yogurt e frutta')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Spuntino' }))
+    expect(screen.getByText('Yogurt e frutta')).toBeTruthy()
+    expect(screen.queryByText('Pasta al pesto')).toBeNull()
     fireEvent.change(screen.getByPlaceholderText('Cerca un piatto...'), { target: { value: '' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Tutti' }))
+    expect(categoryButtons.every(button => button.getAttribute('aria-pressed') === 'false')).toBe(true)
     expect(screen.getByText('Yogurt e frutta')).toBeTruthy()
     expect(screen.getByText('Pasta al pesto')).toBeTruthy()
   })
@@ -52,6 +58,8 @@ describe('Kitchen dish categories', () => {
     await screen.findByText('Pasta pronta')
     fireEvent.click(screen.getByRole('button', { name: 'Colazione' }))
     await waitFor(() => expect(screen.queryByText('Pasta pronta')).toBeNull())
+    fireEvent.click(screen.getByRole('button', { name: 'Colazione' }))
+    expect(await screen.findByText('Pasta pronta')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Cena' }))
     expect(await screen.findByText('Pasta pronta')).toBeTruthy()
   })

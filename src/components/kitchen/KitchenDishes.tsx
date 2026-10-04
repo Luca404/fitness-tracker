@@ -135,14 +135,14 @@ export default function KitchenDishes() {
           <div><p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Ricettario</p><h2 className="mt-1 text-lg font-bold">I tuoi piatti</h2></div>
           <span className="rounded-full bg-gray-800 px-2.5 py-1 text-xs text-gray-500">{visibleDishes.length}</span>
         </div>
-        <div role="group" aria-label="Categoria dei piatti" className="mb-3 flex flex-wrap gap-2">
-          {[{ id: 'all' as const, label: 'Tutti', icon: '📖' }, ...DISH_MEAL_TYPES].map(type => (
-            <button key={type.id} type="button" onClick={() => setCategory(type.id)}
+        <div role="group" aria-label="Categoria dei piatti" className="mb-3 grid grid-cols-4 gap-1.5">
+          {DISH_MEAL_TYPES.map(type => (
+            <button key={type.id} type="button" onClick={() => setCategory(current => current === type.id ? 'all' : type.id)}
               aria-pressed={category === type.id}
-              className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${category === type.id
+              className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${category === type.id
                 ? 'border-primary-400/50 bg-primary-500 text-white shadow-md shadow-primary-950/30'
                 : 'border-gray-700/70 bg-gray-800/70 text-gray-400 hover:border-gray-600 hover:bg-gray-700 hover:text-white'}`}>
-              <span aria-hidden="true">{type.icon}</span>
+              <span aria-hidden="true" className="text-lg">{type.icon}</span>
               {type.label}
             </button>
           ))}
