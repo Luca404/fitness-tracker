@@ -58,7 +58,7 @@ function mealItemToDraft(item: MealEntry['items'][number]): DishItemDraft {
 export default function MealsPage() {
   const { user } = useAuth()
   const {
-    meals, workouts, goals, daySummary, loading, fetchForDate,
+    meals, goals, daySummary, loading, fetchForDate,
     addMealEntry, updateMealEntry, removeMealEntry, showToast,
   } = useData()
   const { selectedDate, setSelectedDate } = useSettings()
@@ -76,7 +76,7 @@ export default function MealsPage() {
     fetchForDate(selectedDate)
   }, [selectedDate, fetchForDate])
 
-  const totalBurned = workouts.reduce((s, w) => s + w.calories_burned, 0)
+  const totalBurned = daySummary.calories_burned
   const target = goals?.calorie_target ?? 2000
   // The target already derives from an activity-adjusted TDEE. Workouts remain
   // informational here so exercise is not counted twice in the daily budget.

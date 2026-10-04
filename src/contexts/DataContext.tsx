@@ -4,13 +4,15 @@ import {
 } from 'react'
 import type { ReactNode } from 'react'
 import type {
-  UserHealthProfile, UserGoals, Meal, MealItemInput, MealType, Workout, DaySummary, SuggestedGoals
+  UserHealthProfile, UserGoals, Meal, MealItemInput, MealType, Workout, GymSession, DaySummary, SuggestedGoals
 } from '../types'
 import * as api from '../services/api'
+import { getGymSessionsForDate } from '../services/gymApi'
 import { useAuth } from './AuthContext'
 import { calculateNutritionGoals } from '../utils/bmr'
 import { shouldAutoRecalculateGoals, summarizeRollingWeight } from '../utils/goalRecalculation'
 import { NUTRITION_GOAL_CONFIG } from '../config/nutritionGoals'
+import { estimateGymSessionCalories } from '../utils/gymSessionSummary'
 
 type ProfileStatus = 'idle' | 'loading' | 'missing' | 'ready' | 'error'
 
@@ -86,6 +88,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [rollingWeightSampleCount, setRollingWeightSampleCount] = useState(0)
   const [meals, setMeals] = useState<Meal[]>([])
   const [workouts, setWorkouts] = useState<Workout[]>([])
+  const [gymSessions, setGymSessions] = useState<GymSession[]>([])
+  const [gymWeightKg, setGymWeightKg] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -158,6 +162,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setRollingWeightSampleCount(0)
     setMeals([])
     setWorkouts([])
+    setGymSessions([])
+    setGymWeightKg(null)
     setProfileStatus(userId ? 'loading' : 'idle')
     if (userId) fetchProfile()
   }, [userId, fetchProfile])
@@ -196,13 +202,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const requestId = ++dateRequest.current
     setLoading(true)
     try {
-      const [m, w] = await Promise.all([
+      const [m, w, sessions, latestWeight] = await Promise.all([
         api.getMealsForDate(date),
         api.getWorkoutsForDate(date),
+        getGymSessionsForDate(date),
+        api.getLatestWeightLog(date),
       ])
       if (requestId === dateRequest.current) {
         setMeals(m)
         setWorkouts(w)
+        setGymSessions(sessions)
+        setGymWeightKg(latestWeight?.weight_kg ?? null)
       }
     } catch {
       if (requestId === dateRequest.current) showToast('Errore caricamento dati')
@@ -322,14 +332,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const daySummary = useMemo<DaySummary>(() => {
     const allItems = meals.flatMap(m => m.items)
+    const gymCalories = gymSessions.reduce((sum, session) =>
+      sum + (estimateGymSessionCalories(session, gymWeightKg ?? currentWeightKg) ?? 0), 0)
     return {
       calories:        allItems.reduce((s, i) => s + i.calories, 0),
       protein_g:       allItems.reduce((s, i) => s + i.protein_g, 0),
       carbs_g:         allItems.reduce((s, i) => s + i.carbs_g, 0),
       fat_g:           allItems.reduce((s, i) => s + i.fat_g, 0),
-      calories_burned: workouts.reduce((s, w) => s + w.calories_burned, 0),
+      calories_burned: workouts.reduce((s, w) => s + w.calories_burned, 0) + gymCalories,
     }
-  }, [meals, workouts])
+  }, [meals, workouts, gymSessions, gymWeightKg, currentWeightKg])
 
   return (
     <DataContext.Provider value={{

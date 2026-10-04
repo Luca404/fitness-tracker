@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
-import type { Meal, UserHealthProfile } from '../types'
+import type { GymSession, Meal, UserHealthProfile } from '../types'
 
 const mocks = vi.hoisted(() => ({
   getHealthProfile: vi.fn(),
@@ -13,6 +13,9 @@ const mocks = vi.hoisted(() => ({
   updateMealEntry: vi.fn(),
   deleteMealEntry: vi.fn(),
   completeOnboarding: vi.fn(),
+  getMealsForDate: vi.fn(),
+  getWorkoutsForDate: vi.fn(),
+  getGymSessionsForDate: vi.fn(),
 }))
 
 vi.mock('./AuthContext', () => ({
@@ -20,6 +23,7 @@ vi.mock('./AuthContext', () => ({
 }))
 
 vi.mock('../services/api', () => mocks)
+vi.mock('../services/gymApi', () => ({ getGymSessionsForDate: mocks.getGymSessionsForDate }))
 
 import { DataProvider, useData } from './DataContext'
 
@@ -44,6 +48,17 @@ function Wrapper({ children }: { children: ReactNode }) {
   return <DataProvider>{children}</DataProvider>
 }
 
+const gymSession: GymSession = {
+  id: 'session-1', user_id: 'user-1', plan_id: 'plan-1', plan_name: 'Scheda A',
+  date: '2026-10-01', started_at: '2026-10-01T10:00:00Z', completed_at: '2026-10-01T11:00:00Z',
+  sets: [{
+    id: 'set-1', session_id: 'session-1', exercise_position: 0,
+    exercise_key: 'bench-press', exercise_name: 'Panca piana', equipment: 'Bilanciere',
+    set_number: 1, target_reps: 10, target_reps_max: null, per_side: false,
+    weight_kg: 40, reps: 10, done: true,
+  }],
+}
+
 describe('DataProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -53,6 +68,54 @@ describe('DataProvider', () => {
     mocks.getWeightLogs.mockResolvedValue([])
     mocks.upsertUserGoals.mockResolvedValue(undefined)
     mocks.completeOnboarding.mockResolvedValue(undefined)
+    mocks.getMealsForDate.mockResolvedValue([])
+    mocks.getWorkoutsForDate.mockResolvedValue([])
+    mocks.getGymSessionsForDate.mockResolvedValue([])
+  })
+
+  it('includes completed gym sessions in daily burned calories using the historical body weight', async () => {
+    mocks.getLatestWeightLog.mockResolvedValue({ date: '2026-10-04', weight_kg: 100 })
+    const { result } = renderHook(() => useData(), { wrapper: Wrapper })
+    await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
+    expect(result.current.currentWeightKg).toBe(100)
+
+    mocks.getLatestWeightLog.mockResolvedValue({ date: '2026-09-30', weight_kg: 80 })
+    mocks.getWorkoutsForDate.mockResolvedValue([{
+      id: 'workout-1', user_id: 'user-1', date: gymSession.date, activity: 'walking',
+      duration_min: 30, calories_burned: 100.25, notes: null, created_at: '',
+    }])
+    mocks.getGymSessionsForDate.mockResolvedValue([
+      gymSession,
+      { ...gymSession, id: 'session-2', completed_at: '2026-10-01T10:30:00Z' },
+      { ...gymSession, id: 'active-session', completed_at: null },
+      { ...gymSession, id: 'invalid-session', completed_at: '2026-10-01T09:00:00Z' },
+      { ...gymSession, id: 'empty-session', sets: [] },
+    ])
+
+    await act(async () => { await result.current.fetchForDate(gymSession.date) })
+
+    expect(mocks.getGymSessionsForDate).toHaveBeenCalledWith(gymSession.date)
+    expect(mocks.getLatestWeightLog).toHaveBeenLastCalledWith(gymSession.date)
+    expect(result.current.daySummary.calories_burned).toBe(100.25 + 304 + 152)
+
+    // Refreshing the same date replaces its data, so each session is counted once.
+    await act(async () => { await result.current.fetchForDate(gymSession.date) })
+    expect(result.current.daySummary.calories_burned).toBe(556.25)
+
+    mocks.getWorkoutsForDate.mockResolvedValue([])
+    mocks.getGymSessionsForDate.mockResolvedValue([])
+    await act(async () => { await result.current.fetchForDate('2026-10-02') })
+    expect(result.current.daySummary.calories_burned).toBe(0)
+  })
+
+  it('uses the current body weight when no historical weight is available', async () => {
+    const { result } = renderHook(() => useData(), { wrapper: Wrapper })
+    await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
+    mocks.getGymSessionsForDate.mockResolvedValue([gymSession])
+
+    await act(async () => { await result.current.fetchForDate(gymSession.date) })
+
+    expect(result.current.daySummary.calories_burned).toBe(304)
   })
 
   it('adds, edits and removes one eaten dish as a single diary entry', async () => {
