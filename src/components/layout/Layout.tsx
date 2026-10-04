@@ -1,4 +1,7 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Suspense } from 'react'
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
+import AppErrorBoundary from '../common/AppErrorBoundary'
+import PageLoading from '../common/PageLoading'
 
 const NAV = [
   { to: '/meals',   label: 'Pasti',    icon: '🍽️' },
@@ -10,6 +13,7 @@ const NAV = [
 
 export default function Layout() {
   const navigate = useNavigate()
+  const location = useLocation()
 
   return (
     <div className="flex flex-col bg-gray-900 text-white max-w-md mx-auto" style={{ height: '100dvh' }}>
@@ -36,7 +40,11 @@ export default function Layout() {
       </header>
 
       <main className="flex-1 overflow-y-auto overscroll-none">
-        <Outlet />
+        <AppErrorBoundary key={`${location.pathname}${location.search}`}>
+          <Suspense fallback={<PageLoading />}>
+            <Outlet />
+          </Suspense>
+        </AppErrorBoundary>
       </main>
 
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-gray-900 border-t border-gray-800 z-40 safe-area-pb">

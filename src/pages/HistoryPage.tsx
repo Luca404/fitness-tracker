@@ -1,3 +1,4 @@
+import { mealItems } from '../utils/mealEntries'
 import { useEffect, useState, useMemo } from 'react'
 import { format, subDays, eachDayOfInterval } from 'date-fns'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
@@ -45,7 +46,7 @@ export default function HistoryPage() {
       const dateStr = format(day, 'yyyy-MM-dd')
       const dayMeals = meals.filter(m => m.date === dateStr)
       const dayWorkouts = workouts.filter(w => w.date === dateStr)
-      const consumed = dayMeals.flatMap(m => m.items).reduce((s, i) => s + i.calories, 0)
+      const consumed = dayMeals.flatMap(mealItems).reduce((s, i) => s + i.calories, 0)
       const burned = dayWorkouts.reduce((s, w) => s + w.calories_burned, 0)
       return {
         date: format(day, 'dd/MM'),

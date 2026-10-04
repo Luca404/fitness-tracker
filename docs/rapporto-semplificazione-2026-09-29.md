@@ -1,106 +1,153 @@
 # Rapporto di analisi e semplificazione di fitTrackr
 
-Data: 29 settembre 2026. Ambito: codice frontend, servizi, Edge Functions, schema e migrazioni Supabase, test, configurazione e documentazione. Analisi statica del repository e verifiche locali; database ospitato e servizi esterni non sono stati interrogati.
+Prima analisi: 29 settembre 2026. Revisione e implementazione: 4 ottobre 2026.
+Ambito: frontend, servizi, PWA, test e documentazione. Il database condiviso non
+è stato modificato; questa revisione non aggiunge migrazioni.
 
-## Sintesi
+## Cambiamenti rispetto alla prima analisi
 
-Il progetto funziona e ha una base solida: TypeScript rigoroso, moduli separati per dominio, migrazioni con controlli di accesso e test per molte regole pure. La complessità maggiore è concentrata nei flussi Pasti–Piatti–Dispensa: gli stessi dati vengono trasformati e conservati più volte nel client, mentre parte della logica nutrizionale è ripetuta tra client, funzioni SQL ed Edge Functions. La semplificazione più utile consiste nel ridurre gli stati derivati e le trasformazioni parallele, mantenendo nel database le operazioni atomiche sulle scorte.
+Sono stati aggiunti peso cotto e preferenze di cottura, catalogo nutrizionale
+esteso, flusso palestra, formattazione dei numeri e calorie palestra nella
+panoramica. Il catalogo ingredienti non gestisce più scorte: la proposta sulle
+funzioni SQL di consumo/ripristino della dispensa è superata. Restano atomiche
+nel database le porzioni dei piatti preparati.
 
-Verifiche eseguite: `npm test -- --run` (25 file, 110 test superati), `npm run build` e `npm run lint` superati. Il build produce un chunk `PantryPage` di 474,51 kB (124,76 kB gzip), un chunk dei grafici di 336,56 kB (99,29 kB gzip) e precache PWA di 1.475,44 KiB. Questi valori sono misure del build, non dei tempi reali su rete o dispositivo.
+La revisione comprende due problemi segnalati durante il lavoro: blocco con
+solo sfondo blu nell’app installata sul telefono e icone dei piatti incoerenti
+nella pagina Pasti.
 
-## Priorità 0: correttezza prima del refactor
+## Interventi sui 14 punti originali
 
-### 1. Associare esplicitamente i dati caricati alla loro data
+| Punto | Riscontro prima dell’intervento | Esito della revisione |
+| --- | --- | --- |
+| 1. Dati associati alla data | Vecchi dati visibili durante il cambio data; scritture tardive applicate al giorno aperto | **Implementato.** `useDiary` conserva un giorno unico, svuota la vista quando cambia data e scarta letture superate. Le scritture aggiornano soltanto il giorno e l’utente di origine; se una lettura precede una scrittura, ricarica il risultato salvato. |
+| 2. Zuccheri | Il limite per zuccheri liberi era confrontato con zuccheri totali | **Implementato.** Zuccheri totali informativi, senza target né giudizio; esclusi dal punteggio delle abitudini. Dati mancanti restano sconosciuti. |
+| 3. Refresh abitudini | Chiave basata sul numero di ingredienti | **Implementato.** Revisione delle scritture, cache settimanale condivisa con durata di 60 secondi e invalidazione dopo modifica, aggiunta, eliminazione o refresh del diario. |
+| 4. Copia `Meal.items` | Ingredienti mantenuti sia nel pasto sia nelle entries | **Implementato.** Unica fonte `entries[].items`; appiattimento con `mealItems` nei consumatori. |
+| 5. Scala nutrizionale | Logica ripetuta in editor e bevande | **Implementato.** `scaleNutrition` e `scaleIngredient` condivisi. Conservati nutrienti sconosciuti, metadati e precisione di calcolo a due decimali; visualizzazione a un decimale, panoramiche intere. |
+| 6. PantryPage | 916 righe; form, conversione e revisione mescolati | **Implementato.** `PantryReview`, `PantryNutritionFields` e `pantryDraft`; stato del flusso con revisione e ID di modifica associati. Reset testato per evitare di modificare il prodotto precedente. |
+| 7. Piatti duplicati | Conversioni/totali ripetuti e ramo suggeriti irraggiungibile | **Implementato.** Funzioni pure in `utils/dishes`; rimosso il ramo suggeriti. Totali distinguono grammi e millilitri. |
+| 8. DataContext | Diario e profilo mescolati; ricalcolo peso duplicato; “oggi” fisso | **Implementato.** Diario estratto in `useDiary`, letture peso e ricalcolo in `goalRefresh`. “Oggi” aggiornato a mezzanotte e alla ripresa dell’app, preservando la data scelta. Correzioni di peso aggiornano anche la stima palestra. |
+| 9. Hydration API | Filtri annidati e ricerca legacy ripetuta | **Implementato per i dati correnti.** Raggruppamento per ID per pasti, piatti, schede e sessioni; catalogo indicizzato per nome. Letture settimanali senza query delle icone. Tipi generati dal database rinviati, come descritto sotto. |
+| 10. SQL | Proposta scorte non più aderente al modello corrente | **Superato nella forma originaria.** Mantenuti RPC atomici e propagazione nutrizionale attuali. Nessuna riscrittura di migrazioni applicate. |
+| 11. Scanner e foto | Caricati insieme alla pagina Ingredienti | **Implementato.** Import dinamici dei componenti e del decoder ZXing per le foto; decoder separato dal modulo della pagina. |
+| 12. File inattivi | Asset starter e lookup barcode duplicato | **Implementato.** Rimosse risorse senza riferimenti, `suggestedDishes`, `lookupBarcode` e dipendenza diretta `react-is`; quest’ultima resta una dipendenza peer di Recharts. |
+| 13. Test e CI | Test presenti, CI assente | **Implementato.** Nuovi scenari di concorrenza, cache, refresh, icone, errori di pagina, aggiornamenti PWA e ripresa dell’app. Workflow GitHub Actions con test, build e lint; credenziali fittizie locali per i controlli. |
+| 14. Documentazione | Documenti locali già aggiornati in parte | **Implementato.** Report e README allineati all’architettura e alle verifiche; conservate le modifiche locali precedenti. |
 
-**Evidenza.** `DataContext` memorizza un solo array `meals` e `workouts`; `fetchForDate` conserva i dati precedenti finché la nuova richiesta termina, e le mutazioni aggiornano gli array senza verificare la data della risposta. Le tre pagine Pasti, Allenamenti e Benessere avviano ognuna il caricamento della data selezionata (`src/contexts/DataContext.tsx:87-94,195-212,249-321`; `src/pages/MealsPage.tsx:68-70`; `src/pages/WorkoutPage.tsx:16-18`; `src/pages/WellbeingPage.tsx:11-13`).
+## Blocco con sfondo blu nell’app installata
 
-**Effetto possibile.** Se si cambia data mentre una scrittura è in volo, il risultato di una giornata può essere aggiunto allo stato della giornata nuova. Una vista appena aperta può inoltre usare temporaneamente pasti della data precedente.
+Il repository non aveva una barriera per gli errori di rendering o degli import
+dinamici. In caso di errore, l’interfaccia poteva sparire lasciando il colore di
+sfondo. Inoltre la PWA usava aggiornamenti automatici senza un flusso applicativo
+di ricaricamento. Questi sono problemi concreti del codice; la causa specifica
+segnalata sul telefono non è stata riprodotta e rimane da confermare.
 
-**Intervento.** Tenere un unico stato `{date, meals, workouts, status}` oppure una piccola cache indicizzata per data; applicare una risposta solo alla data a cui appartiene. Durante il cambio data, mostrare stato di caricamento coerente. Le mutazioni aggiornino solo la voce della data corretta o richiedano il ricaricamento di quella data. Aggiungere un test che cambi data prima della risoluzione di una richiesta e un test di mutazione concorrente.
+Interventi applicati:
 
-### 2. Correggere l'indicatore degli zuccheri
+- Barriera globale e barriera per pagina: messaggio leggibile e pulsante di
+  ricaricamento. Il menu rimane disponibile dopo un errore nella pagina.
+- Barriera della pagina reinizializzata al cambio percorso, così è possibile
+  aprire un’altra sezione dopo un errore. Stato di caricamento visibile durante
+  gli import. Dopo 15 secondi di attesa compare anche il pulsante di
+  ricaricamento, compreso il caricamento iniziale del profilo.
+- Gestione `vite:preloadError`: un tentativo automatico di ricaricamento per build
+  e sessione, con protezione dai cicli; nessun tentativo automatico offline o
+  quando la memoria di sessione è bloccata.
+- PWA con avviso **Aggiorna / Più tardi**: il nuovo worker attende l’azione
+  dell’utente e applica l’aggiornamento con ricaricamento.
+- Header `no-cache` per HTML, percorsi dell’app e service worker su Vercel.
 
-**Evidenza.** `GoodHabits` prende una soglia chiamata `free_sugars` e la confronta con la somma di `sugars_g` di tutti gli alimenti (`src/components/meals/GoodHabits.tsx:45-56`; `src/utils/goodHabits.ts:60-90`; `src/data/nutritionGuidelines.ts:63-70`). `sugars_g` rappresenta gli zuccheri totali dell'etichetta, quindi include anche quelli naturalmente presenti.
+Vite documenta il caso in cui un’app aperta tenta di importare file con hash
+precedenti dopo una pubblicazione e consiglia HTML con controllo della cache:
+[Load error handling](https://vite.dev/guide/build.html#load-error-handling).
+Il comportamento degli aggiornamenti automatici del worker è descritto in
+[Automatic reload](https://vite-pwa-org.netlify.app/guide/auto-update.html).
 
-**Intervento.** Eliminare il giudizio di conformità finché non esiste un dato affidabile per gli zuccheri liberi, oppure presentare gli zuccheri totali come dato informativo senza confrontarli con quella soglia. Questa scelta riduce anche codice e ambiguità del modello.
+I test simulano errori di rendering e import rifiutati, controllano che il menu
+resti utilizzabile e che la navigazione verso un’altra pagina recuperi la vista.
+Coprono anche import che non terminano e aggiornamenti rinviati, applicati o falliti e la protezione dai
+ricaricamenti ripetuti. Non sostituiscono una prova sul telefono con due versioni
+pubblicate: quella verifica resta necessaria per confermare il problema originale.
 
-### 3. Rendere affidabile il refresh settimanale di “Buone abitudini”
+## Icone dei piatti nei Pasti
 
-**Evidenza.** Il refresh usa come chiave il numero totale di ingredienti, non il loro contenuto (`src/components/meals/GoodHabits.tsx:18-43`). Una modifica a quantità o nutrienti che lasci invariato il numero di righe non provoca la nuova lettura settimanale. Lo stesso componente è montato sia in Pasti sia in Benessere e carica separatamente lo stesso intervallo.
+Sono stati corretti due percorsi:
 
-**Intervento.** Passare una revisione esplicita incrementata dopo le mutazioni o invalidare una cache per settimana; effettuare una sola lettura per intervallo. Evitare di derivare una chiave di invalidazione da un conteggio che non rappresenta i dati.
+1. Cambiare l’icona in Cucina aggiornava il ricettario, ma non il diario già
+   caricato. Ora aggiorna anche lo stato condiviso.
+2. Le porzioni preparate leggevano l’icona della copia della ricetta creata alla
+   preparazione. Ora risolvono l’icona attuale del piatto originale, anche per
+   preparazioni già chiuse. Nutrizione e quantità della porzione restano quelle
+   dello snapshot. Se il piatto originale è stato eliminato, resta l’icona della
+   copia; rimuovere un’icona personalizzata ripristina invece il comportamento
+   automatico.
 
-## Priorità 1: ridurre i punti in cui vive la stessa logica
+Il collegamento all’icona originale è conservato anche dopo la modifica di una
+entry. Sono coperti lettura del diario, elenco preparazioni, icona rimossa,
+originale eliminato e modifica dell’icona nello stato condiviso.
 
-### 4. Eliminare `Meal.items` come seconda copia di `Meal.entries[].items`
+## Abitudini e aggiornamenti del diario
 
-**Evidenza.** Il tipo `Meal` contiene sia le voci annidate sia un array appiattito; `api.hydrateMeals` e `DataContext` ricostruiscono e aggiornano entrambi (`src/types/index.ts:45-54`; `src/services/api.ts:84-123`; `src/contexts/DataContext.tsx:259-309`). Storico e statistiche consumano la copia piatta.
+Gli zuccheri totali del catalogo comprendono anche quelli naturalmente presenti
+negli alimenti e non permettono di ricavare gli zuccheri liberi. La distinzione è
+coerente con la [definizione OMS](https://www.who.int/news/item/04-03-2015-who-calls-on-countries-to-reduce-sugars-intake-among-adults-and-children).
+Il valore totale rimane visibile e viene escluso dal giudizio sulle abitudini.
 
-**Intervento.** Conservare solo `entries`; esporre una funzione pura `mealItems(meal)` o calcolare i totali dove servono. Questo elimina sincronizzazioni e casi in cui le due rappresentazioni divergono. Migrare i consumatori in un unico passaggio con test sui totali e sulle modifiche dei pasti.
+Il diario è caricato centralmente per data, evitando richieste identiche a ogni
+cambio pagina. Correggere un ingrediente, modificare/eliminare un piatto o
+concludere/eliminare una sessione palestra provoca un refresh esplicito. Le
+modifiche nutrizionali invalidano anche la cache delle abitudini settimanali,
+indipendentemente dal numero di ingredienti.
 
-### 5. Unificare il calcolo nutrizionale delle porzioni
+## Confini delle modifiche al database e lavori successivi
 
-**Evidenza.** La moltiplicazione per quantità e l'arrotondamento ricompaiono in `calcNutrition`, `DishEditor.updateQuantity`, `MealHub.updateExtraQuantity`, `MealHub.confirmPick`, funzioni SQL e trigger (`src/services/nutrition.ts:336-361`; `src/components/meals/DishEditor.tsx:47-63`; `src/components/meals/MealHub.tsx:187-210,223-239`; `supabase/migrations/20260924220000_enforce_ingredient_nutrition.sql:27-119`).
+Questa revisione mantiene il comportamento attuale: correggere un ingrediente
+aggiorna anche i pasti collegati del passato. Congelare lo storico richiede una
+decisione di prodotto. Non serve una migrazione per le modifiche implementate.
 
-**Intervento.** Nel client usare una sola funzione pura di scala per anteprima e modifica, con una regola di arrotondamento documentata. Nel database mantenere l'autorità sul valore persistito e sulle scorte; confrontare con pochi casi condivisi g/ml/pezzi/null. Non tentare di condividere codice TypeScript con PL/pgSQL tramite un nuovo livello infrastrutturale.
+Restano interventi separati:
 
-### 6. Spezzare `PantryPage` secondo le fasi già presenti
+- Generare tipi Supabase dallo schema effettivo e verificare le risposte RPC
+  senza cast manuali. Il progetto ospitato è condiviso: l’eventuale generazione
+  deve essere limitata alle tabelle e funzioni di fitTrackr.
+- Verificare su Supabase locale gli RPC, la concorrenza sulle porzioni e i vincoli
+  di accesso. In questa sessione non è stato avviato un database locale.
+- Rimuovere il fallback degli alimenti legacy soltanto dopo aver verificato e
+  migrato i record esistenti.
+- Confermare sul telefono la navigazione tra pagine, la ripresa dopo sospensione
+  e l’aggiornamento fra due versioni pubblicate.
 
-**Evidenza.** La pagina è lunga 943 righe e contiene lista, filtri, scansione, foto, ricerca, form manuale, revisione AI, modifica e salvataggio. Mantiene molti `useState` paralleli e un `PendingFood` molto ampio (`src/pages/PantryPage.tsx:15-59,218-247,262-313,427-524`).
+Non riscrivere le migrazioni applicate e non resettare il database collegato
+condiviso.
 
-**Intervento.** Estrarre una funzione di conversione verso `PantryItem` e una di validazione, poi componenti per lista, scelta sorgente e revisione/quantità. Usare uno stato di flusso discriminato (`step` con i dati pertinenti) o un reducer locale: un solo punto di reset e transizioni esplicite. Fermarsi a 3–4 unità comprensibili; evitare un sistema generale di form.
+Verifica del database ospitato del 4 ottobre 2026: `supabase db push --dry-run`
+e `supabase db push` completati con esito “Remote database is up to date”.
+Non risultano migrazioni pendenti; nessuna migrazione è stata applicata.
 
-### 7. Ridurre la duplicazione fra Cucina e selezione pasti
+## Verifica finale
 
-**Evidenza.** `KitchenDishes` e `MealHub` duplicano `DishItem` → `DishItemDraft`, calcolo dei totali, caricamento dei piatti, scelta dell'icona e operazioni di salvataggio (`src/components/kitchen/KitchenDishes.tsx:15-45,61-107`; `src/components/meals/MealHub.tsx:27-55,119-145`).
+- `npm test -- --run`: **194 test superati in 44 file**, rispetto ai 166 della baseline.
+- `npm run build`: TypeScript e build Vite/PWA superati.
+- `npm run lint`: superato, senza errori o avvisi.
+- `git diff --check`: superato.
+- La suite è stata verificata anche con URL e chiave Supabase fittizi locali,
+  come nel workflow CI; nessun test richiede il database ospitato.
 
-**Intervento.** Condividere soltanto le funzioni pure di conversione e dei totali, e un piccolo servizio per le operazioni sul piatto. Mantenere le due interfacce distinte: i loro flussi utente sono diversi. Eliminare inoltre il ramo “piatto suggerito” inattivo in Cucina dopo verifica di prodotto (`src/components/kitchen/KitchenDishes.tsx:150-161,237-240`; `src/data/suggestedDishes.ts`).
+| Artefatto | Prima | Dopo |
+| --- | ---: | ---: |
+| Modulo PantryPage | 473,53 kB | 28,53 kB |
+| Modulo PantryPage gzip | 124,50 kB | 7,04 kB |
+| Decoder ZXing separato | Incluso in PantryPage | 412,38 kB / 110,05 kB gzip |
+| Grafici Recharts | 336,56 kB / 99,29 kB gzip | 336,56 kB / 99,29 kB gzip |
+| Precache PWA complessivo | 1.536,10 KiB | 1.552,25 KiB |
+| Righe PantryPage | 916 | 539 |
+| Righe DataContext | 365 | 219, più il diario estratto |
 
-### 8. Semplificare `DataContext` senza moltiplicare i provider
-
-**Evidenza.** Un provider di 353 righe concentra profilo, obiettivi, media peso, diario, allenamenti, toast e scritture. Il ricalcolo automatico è duplicato fra caricamento profilo e aggiornamento peso (`src/contexts/DataContext.tsx:105-193`). `SettingsContext` contiene solo data selezionata e “oggi”, calcolato a ogni render ma senza timer per il cambio di giorno (`src/contexts/SettingsContext.tsx:14-21`).
-
-**Intervento.** Estrarre prima la funzione asincrona condivisa “carica peso → valuta ricalcolo → salva obiettivi”; rendere `today` un valore aggiornabile al cambio giorno o calcolato al momento dell'uso. Poi separare lo stato del diario da quello del profilo solo se questo riduce davvero gli aggiornamenti incrociati. Evitare di introdurre una libreria di state management per un'app di queste dimensioni.
-
-### 9. Rendere `api.ts` un adattatore semplice e tipizzato
-
-**Evidenza.** Le query `getMealsForDate` e `getMealsForRange` usano lo stesso hydrator, che esegue fino a quattro query e filtra tutti gli item per ogni pasto/voce (`src/services/api.ts:72-123,254-264`). Numerose risposte vengono forzate con `as` anziché essere tipizzate dal database. L'arricchimento degli alimenti legacy per nome avviene a ogni lettura (`src/services/api.ts:10-32`).
-
-**Intervento.** Generare i tipi Supabase dallo schema, creare mappe per ID durante l'hydration e usare selezioni più strette. Per lo storico leggere solo i valori necessari ai grafici; per l'arricchimento legacy fare una migrazione dati verificata e poi rimuovere il fallback applicativo. Conservare le RPC che rendono atomiche le scritture.
-
-### 10. Limitare la duplicazione SQL solo con nuove migrazioni
-
-**Evidenza.** Le funzioni `add_meal_entry`, `update_meal_entry`, `create_dish_with_items` e `update_dish_with_items` sono state ridefinite molte volte nelle migrazioni; le ultime funzioni contengono grandi blocchi simili per inserimento, ripristino e consumo delle scorte (`supabase/migrations/20260924210000_meal_customizations.sql:11-233`). Esistono anche wrapper per le categorie dei piatti (`supabase/migrations/20260924200000_dish_meal_categories.sql:7-55`) e trigger per la propagazione nutrizionale (`supabase/migrations/20260924160000_sync_pantry_nutrition.sql:35-101`; `supabase/migrations/20260924220000_enforce_ingredient_nutrition.sql:27-119`).
-
-**Intervento.** Disegnare una funzione interna per il consumo delle scorte e una per il ripristino, richiamate dalle RPC pubbliche. Consolidare la versione corrente in `schema.sql` come riferimento e documentare la responsabilità di ogni trigger. Le migrazioni già applicate restano immutabili: eventuali sostituzioni devono essere nuove migrazioni, dopo test su database locale e revisione del `db push --dry-run` del progetto condiviso.
-
-**Decisione di prodotto richiesta prima di cambiare il comportamento.** Oggi la modifica di un ingrediente in dispensa o di una ricetta aggiorna anche pasti registrati in passato (`supabase/migrations/20260924160000_sync_pantry_nutrition.sql:59-82`; `supabase/migrations/20260924190000_piece_portions.sql:360-372`). Se il diario deve essere una fotografia storica, congelare i nutrienti al momento della registrazione semplificherebbe il sistema ed eliminerebbe molta propagazione; richiede però migrazione e scelta esplicita sul significato dei dati esistenti.
-
-## Priorità 2: performance, pulizia e manutenzione
-
-### 11. Caricare scanner e foto quando si aprono
-
-`PantryPage` importa direttamente `BarcodeScanner` e `NutritionLabelPhoto` (`src/pages/PantryPage.tsx:9-10`) pur mostrandoli solo in due modalità. Caricarli dinamicamente con `React.lazy`; misurare nuovamente il build e il caricamento reale. La PWA precache attualmente include 31 file: se si vuole risparmiare anche spazio e traffico di installazione, rivedere separatamente la strategia di precache. Il chunk Recharts è grande, ma le pagine che lo usano sono già caricate per percorso: intervenire solo dopo misura su dispositivo.
-
-### 12. Rimuovere codice e asset davvero inattivi
-
-`src/data/suggestedDishes.ts` non ha import applicativi; `lookupBarcode` in `src/services/nutrition.ts:325` non ha chiamanti; `src/App.css`, `src/assets/hero.png`, `react.svg`, `vite.svg`, `public/app-icon.svg`, `public/favicon.svg` e `public/icons.svg` non risultano referenziati nel codice attivo. Eliminare dopo una ricerca finale dei riferimenti di deploy e documentazione. Verificare se `react-is` serve come dipendenza diretta: il lockfile mostra che è anche dipendenza transitiva di Recharts. Rimuovere le voci inutili dal README insieme ai file.
-
-### 13. Testare i confini che possono rompere dati reali
-
-I 110 test coprono soprattutto utility e componenti; non ci sono test delle Edge Functions né prove end-to-end delle RPC/trigger SQL nel repository. Aggiungere pochi scenari di integrazione su Supabase locale: aggiunta → consumo scorte, modifica → ripristino/nuovo consumo, eliminazione → ripristino, unità in pezzi, archiviazione/riattivazione, aggiornamento nutrizionale, isolamento fra utenti. Per il frontend aggiungere i due casi di concorrenza sulle date e il refresh delle abitudini. Collegare `test`, `build` e `lint` a CI. Non aggiungere test che ripetono semplicemente l'implementazione.
-
-### 14. Allineare documentazione e responsabilità dei file
-
-Il README descrive `suggestedDishes.ts` come template riservati e `PantryPage` come vista autonoma legacy, mentre il percorso attuale passa da Cucina (`src/App.tsx:60-62`; `src/pages/KitchenPage.tsx:5-33`). La documentazione storica dei piani può restare archivio, ma il README dovrebbe descrivere solo il comportamento attuale e riportare una mappa breve delle regole che vivono nel database.
-
-## Sequenza consigliata
-
-1. Correggere data/stato concorrente e indicatori nutrizionali; aggiungere i relativi test.
-2. Togliere la copia `Meal.items` e unificare scala nutrizionale e conversioni dei piatti.
-3. Scomporre `PantryPage` e ridurre il ricalcolo duplicato del profilo.
-4. Tipizzare e snellire l'adattatore API; misurare lazy loading di scanner e foto.
-5. Testare le RPC su database locale, poi semplificare le funzioni SQL con nuove migrazioni.
-6. Eliminare file inattivi e aggiornare README e CI.
-
-La scelta sulla storicità dei valori nutrizionali va fatta prima del punto 5: determina quanta logica di sincronizzazione SQL sia effettivamente necessaria.
+Il modulo della pagina Ingredienti si riduce di circa il 94%; il decoder viene
+caricato come modulo soltanto quando serve. Il service worker continua a
+precaricare gli artefatti, quindi questa separazione riduce il codice da
+analizzare/eseguire all’apertura della pagina e non elimina il download del
+decoder durante l’installazione PWA. Il precache totale cresce di 16,15 KiB con
+le funzioni di recupero e aggiornamento. Non sono state misurate latenze reali
+su telefono e non si attribuisce questa riduzione all’intera applicazione.

@@ -10,7 +10,7 @@ function meal(type: MealType, ...entries: MealEntry[]): Meal {
   return {
     id: `meal-${type}`, user_id: 'user-1', date: '2026-09-23',
     meal_type: type, name: null, created_at: entries[0]?.created_at ?? '',
-    entries, items: [],
+    entries,
   }
 }
 

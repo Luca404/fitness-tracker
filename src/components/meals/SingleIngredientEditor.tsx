@@ -3,6 +3,7 @@ import type { PieceSize } from '../../types'
 import type { DishItemDraft } from './DishEditor'
 import IngredientQuantityInput from './IngredientQuantityInput'
 import { formatDecimal, roundToTwo } from '../../utils/decimal'
+import { scaleIngredient } from '../../utils/nutrition'
 
 export default function SingleIngredientEditor({ item, onSave, onCancel }: {
   item: DishItemDraft
@@ -23,17 +24,9 @@ export default function SingleIngredientEditor({ item, onSave, onCancel }: {
     setError(false)
     try {
       await onSave({
-        ...item,
-        quantity_g: roundToTwo(quantity),
+        ...scaleIngredient(item, quantity),
         piece_count: piece == null ? null : roundToTwo(piece.count),
         piece_size: piece?.size ?? null,
-        calories: roundToTwo(item.calories * factor),
-        protein_g: roundToTwo(item.protein_g * factor),
-        carbs_g: roundToTwo(item.carbs_g * factor),
-        fat_g: roundToTwo(item.fat_g * factor),
-        fiber_g: item.fiber_g == null ? null : roundToTwo(item.fiber_g * factor),
-        sugars_g: item.sugars_g == null ? null : roundToTwo(item.sugars_g * factor),
-        salt_g: item.salt_g == null ? null : roundToTwo(item.salt_g * factor),
       })
     } catch {
       setError(true)

@@ -10,7 +10,7 @@ function meal(date: string, items: Array<Partial<MealItem> & Pick<MealItem, 'cat
     meal_type: 'lunch',
     name: null,
     created_at: '',
-    entries: [],
+    entries: [{ id: 'entry-1', meal_id: `meal-${date}`, name: 'Pasto', created_at: '',
     items: items.map((item, index) => ({
       id: `item-${index}`,
       meal_id: `meal-${date}`,
@@ -27,12 +27,27 @@ function meal(date: string, items: Array<Partial<MealItem> & Pick<MealItem, 'cat
       created_at: '',
       ...item,
     })),
+    }],
   }
 }
 
-const targets = { vegetables: 400, fruit: 360, legumes: 450, fish: 300, fiber: 25, sugars: 75, salt: 5 }
+const targets = { vegetables: 400, fruit: 360, legumes: 450, fish: 300, fiber: 25, salt: 5 }
 
 describe('good habits calculations', () => {
+  it('reports total sugars without applying the free-sugars target or affecting the summary', () => {
+    const low = calculateHabitRows('2026-09-21', [meal('2026-09-21', [
+      { category: 'fruit', quantity_g: 360, sugars_g: 2 },
+    ])], [], targets)
+    const high = calculateHabitRows('2026-09-21', [meal('2026-09-21', [
+      { category: 'fruit', quantity_g: 360, sugars_g: 200 },
+    ])], [], targets)
+    const sugarRow = high.find(row => row.label === 'Zuccheri totali')!
+    expect(sugarRow).toMatchObject({ value: 200, direction: 'info', target: null })
+    expect(habitStatus(sugarRow)).toBe('informative')
+    expect(habitTileFill(sugarRow)).toBe(0)
+    expect(summarizeHabitRows(high)).toEqual(summarizeHabitRows(low))
+  })
+
   it('combines daily nutrient totals with weekly food categories', () => {
     const current = meal('2026-09-21', [
       { category: 'vegetable', quantity_g: 200, fiber_g: 5, sugars_g: 4, salt_g: 0.3 },
@@ -55,7 +70,7 @@ describe('good habits calculations', () => {
     const rows = calculateHabitRows('2026-09-21', [current], [], targets)
 
     expect(rows.find(row => row.label === 'Fibre')).toMatchObject({ value: 3, partial: true })
-    expect(rows.find(row => row.label === 'Zuccheri')).toMatchObject({ value: null, partial: false })
+    expect(rows.find(row => row.label === 'Zuccheri totali')).toMatchObject({ value: null, partial: false })
     expect(rows.find(row => row.label === 'Sale')).toMatchObject({ value: null, partial: false })
   })
 
@@ -67,7 +82,7 @@ describe('good habits calculations', () => {
     expect(summarizeHabitRows(rows)).toEqual({
       ok: 1,
       needsAttention: 4,
-      incomplete: 2,
+      incomplete: 1,
     })
   })
 

@@ -6,6 +6,7 @@ import Layout from './components/layout/Layout'
 import LoginPage from './pages/LoginPage'
 import OnboardingPage from './pages/OnboardingPage'
 import Toast from './components/common/Toast'
+import PageLoading from './components/common/PageLoading'
 
 const MealsPage = lazy(() => import('./pages/MealsPage'))
 const HistoryPage = lazy(() => import('./pages/HistoryPage'))
@@ -18,7 +19,7 @@ const WellbeingPage = lazy(() => import('./pages/WellbeingPage'))
 function LoadingScreen() {
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="text-primary-400 text-2xl" aria-label="Caricamento">⏳</div>
+      <PageLoading />
     </div>
   )
 }

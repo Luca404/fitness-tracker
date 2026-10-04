@@ -15,10 +15,12 @@ Puoi aggiungere o rimuovere serie, riprendere una sessione iniziata e consultare
 le sessioni recenti. Modificare o eliminare una scheda non riscrive le sessioni
 già registrate.
 
-Durante la sessione viene mostrato un esercizio alla volta. Le frecce portano
-all'esercizio precedente o successivo; il riposo parte dopo ogni serie segnata
-come fatta, anche dopo l'ultima. Puoi scegliere 1, 1½, 2 o 3 minuti per le
-serie successive. Il conto alla rovescia resta visibile passando a un altro
+La sessione si apre in una schermata dedicata all'allenamento: durante
+l'esecuzione non compaiono le schede Allenamenti/Peso, il selettore del giorno
+e l'elenco delle altre attività. Viene mostrato un esercizio alla volta. Le
+frecce portano all'esercizio precedente o successivo; il riposo parte dopo
+ogni serie segnata come fatta, anche dopo l'ultima. Puoi scegliere 1, 1½, 2 o 3
+minuti per le serie successive. Il conto alla rovescia resta visibile passando a un altro
 esercizio e riprendendo la sessione sullo stesso dispositivo. Puoi terminare
 l'allenamento, anche con serie ancora da completare, oppure eliminare la
 sessione da qualsiasi esercizio.
@@ -26,8 +28,9 @@ sessione da qualsiasi esercizio.
 Le sessioni completate mostrano la **durata totale** tra avvio e termine
 (pause incluse) e le **calorie stimate**. Per il peso corporeo si usa l'ultima
 misurazione disponibile entro il giorno della sessione; se manca, si usa il
-peso corrente disponibile nell'app. Il calcolo considera solo le serie completate,
-l'esercizio e il carico registrato. Parte dai valori MET del
+peso corrente disponibile nell'app. Il calcolo ricava un MET medio dalle sole
+serie completate, considerando esercizi e carichi registrati, e lo applica
+all'intera durata della sessione, pause incluse. Parte dai valori MET del
 [Compendio 2024 per l'allenamento di resistenza](https://pacompendium.com/conditioning-exercise/)
 e applica un piccolo correttivo limitato per il carico: i chilogrammi sollevati
 da soli non misurano lo sforzo individuale. La stima segue la convenzione
@@ -90,5 +93,5 @@ Per **Back Squat** di Lower B usa lo stesso esercizio della scheda A e imposta
 un obiettivo di ripetizioni diverso: il carico effettivo si inserisce durante
 l'allenamento. Per **Shoulder Press** e **Triceps Extension** scegli la variante
 di attrezzo che usi. Le sessioni palestra tengono traccia delle serie e dei
-carichi, senza stimare calorie; le altre attività registrano durata e calorie
-stimate separatamente.
+carichi e mostrano durata totale e calorie stimate dopo la chiusura; le altre
+attività registrano durata e calorie stimate separatamente.

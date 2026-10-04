@@ -1,5 +1,3 @@
-import { BrowserMultiFormatReader } from '@zxing/browser'
-import { BarcodeFormat, DecodeHintType } from '@zxing/library'
 import { supabase } from './supabase'
 import type { BarcodeProduct } from '../types'
 
@@ -13,7 +11,10 @@ export function normalizeBarcode(value: string | null | undefined): string | nul
 }
 
 export async function detectBarcodeInImage(file: File): Promise<string | null> {
-  const hints = new Map<DecodeHintType, unknown>([[DecodeHintType.TRY_HARDER, true]])
+  const [{ BrowserMultiFormatReader }, { BarcodeFormat, DecodeHintType }] = await Promise.all([
+    import('@zxing/browser'), import('@zxing/library'),
+  ])
+  const hints = new Map([[DecodeHintType.TRY_HARDER, true]])
   const reader = new BrowserMultiFormatReader(hints)
   reader.possibleFormats = [
     BarcodeFormat.EAN_13,

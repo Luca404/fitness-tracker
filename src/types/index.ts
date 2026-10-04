@@ -50,7 +50,6 @@ export interface Meal {
   name: string | null
   created_at: string
   entries: MealEntry[] // hydrated client-side: dishes actually eaten
-  items: MealItem[]    // flattened from entries for daily/history totals
 }
 
 export interface MealEntry {
@@ -58,6 +57,7 @@ export interface MealEntry {
   meal_id: string
   dish_id?: string | null
   dish_icon?: string | null
+  dish_icon_source_id?: string | null
   prepared_batch_id?: string | null
   cooked_portion_g?: number | null
   name: string
@@ -322,4 +322,11 @@ export interface DishItem {
   source: FoodSource
   off_food_id: string | null
   created_at: string
+}
+
+export type DishItemDraft = Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'> & {
+  id?: string
+  dish_item_id?: string | null
+  is_customization?: boolean
+  unit?: MealItemUnit
 }

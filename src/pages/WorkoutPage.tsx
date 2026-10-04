@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { formatDecimal } from '../utils/decimal'
@@ -11,13 +11,9 @@ import GymTraining from '../components/workout/GymTraining'
 
 export default function WorkoutPage({ embedded = false }: { embedded?: boolean }) {
   const { user } = useAuth()
-  const { workouts, currentWeightKg, fetchForDate, addWorkout, removeWorkout, showToast } = useData()
+  const { workouts, currentWeightKg, addWorkout, removeWorkout, showToast } = useData()
   const { selectedDate, setSelectedDate } = useSettings()
   const [selectedActivity, setSelectedActivity] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetchForDate(selectedDate)
-  }, [selectedDate, fetchForDate])
 
   const totalBurned = workouts.reduce((s, w) => s + w.calories_burned, 0)
 

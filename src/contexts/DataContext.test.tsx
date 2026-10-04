@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
-import type { GymSession, Meal, UserHealthProfile } from '../types'
+import type { GymSession, MealItem, UserHealthProfile } from '../types'
 
 const mocks = vi.hoisted(() => ({
   getHealthProfile: vi.fn(),
@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   getMealsForDate: vi.fn(),
   getWorkoutsForDate: vi.fn(),
   getGymSessionsForDate: vi.fn(),
+  getMealsForRange: vi.fn(),
 }))
 
 vi.mock('./AuthContext', () => ({
@@ -26,6 +27,8 @@ vi.mock('../services/api', () => mocks)
 vi.mock('../services/gymApi', () => ({ getGymSessionsForDate: mocks.getGymSessionsForDate }))
 
 import { DataProvider, useData } from './DataContext'
+import { SettingsProvider, useSettings } from './SettingsContext'
+import { mealItems } from '../utils/mealEntries'
 
 const profile: UserHealthProfile = {
   user_id: 'user-1',
@@ -44,8 +47,10 @@ const profile: UserHealthProfile = {
   updated_at: '',
 }
 
+function useTestData() { return { ...useData(), ...useSettings() } }
+
 function Wrapper({ children }: { children: ReactNode }) {
-  return <DataProvider>{children}</DataProvider>
+  return <SettingsProvider><DataProvider>{children}</DataProvider></SettingsProvider>
 }
 
 const gymSession: GymSession = {
@@ -69,13 +74,14 @@ describe('DataProvider', () => {
     mocks.upsertUserGoals.mockResolvedValue(undefined)
     mocks.completeOnboarding.mockResolvedValue(undefined)
     mocks.getMealsForDate.mockResolvedValue([])
+    mocks.getMealsForRange.mockResolvedValue([])
     mocks.getWorkoutsForDate.mockResolvedValue([])
     mocks.getGymSessionsForDate.mockResolvedValue([])
   })
 
   it('includes completed gym sessions in daily burned calories using the historical body weight', async () => {
     mocks.getLatestWeightLog.mockResolvedValue({ date: '2026-10-04', weight_kg: 100 })
-    const { result } = renderHook(() => useData(), { wrapper: Wrapper })
+    const { result } = renderHook(() => useTestData(), { wrapper: Wrapper })
     await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
     expect(result.current.currentWeightKg).toBe(100)
 
@@ -92,6 +98,8 @@ describe('DataProvider', () => {
       { ...gymSession, id: 'empty-session', sets: [] },
     ])
 
+    act(() => result.current.setSelectedDate(gymSession.date))
+    await waitFor(() => expect(result.current.loading).toBe(false))
     await act(async () => { await result.current.fetchForDate(gymSession.date) })
 
     expect(mocks.getGymSessionsForDate).toHaveBeenCalledWith(gymSession.date)
@@ -104,30 +112,37 @@ describe('DataProvider', () => {
 
     mocks.getWorkoutsForDate.mockResolvedValue([])
     mocks.getGymSessionsForDate.mockResolvedValue([])
-    await act(async () => { await result.current.fetchForDate('2026-10-02') })
+    act(() => result.current.setSelectedDate('2026-10-02'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.daySummary.calories_burned).toBe(0)
   })
 
+  it('refreshes gym calorie estimates after a correction to the recorded body weight', async () => {
+    mocks.getLatestWeightLog.mockResolvedValue({ weight_kg: 80 })
+    mocks.getGymSessionsForDate.mockResolvedValue([gymSession])
+    const { result } = renderHook(() => useTestData(), { wrapper: Wrapper })
+    await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.daySummary.calories_burned).toBe(304)
+    mocks.getLatestWeightLog.mockResolvedValue({ weight_kg: 90 })
+    await act(async () => { await result.current.refreshCurrentWeight() })
+    expect(result.current.currentWeightKg).toBe(90)
+    expect(result.current.daySummary.calories_burned).toBe(339)
+  })
+
   it('uses the current body weight when no historical weight is available', async () => {
-    const { result } = renderHook(() => useData(), { wrapper: Wrapper })
+    const { result } = renderHook(() => useTestData(), { wrapper: Wrapper })
     await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
     mocks.getGymSessionsForDate.mockResolvedValue([gymSession])
 
-    await act(async () => { await result.current.fetchForDate(gymSession.date) })
+    act(() => result.current.setSelectedDate(gymSession.date))
+    await waitFor(() => expect(result.current.loading).toBe(false))
 
     expect(result.current.daySummary.calories_burned).toBe(304)
   })
 
   it('adds, edits and removes one eaten dish as a single diary entry', async () => {
-    const meal: Meal = {
-      id: 'meal-1',
-      user_id: 'user-1',
-      date: '2026-09-14',
-      meal_type: 'lunch',
-      name: null,
-      created_at: '',
-      entries: [],
-      items: [
+    const items: MealItem[] = [
         {
           id: 'item-1', meal_id: 'meal-1', entry_id: 'entry-1', food_name: 'Riso', quantity_g: 100, unit: 'g',
           calories: 130, protein_g: 2.7, carbs_g: 28, fat_g: 0.3,
@@ -138,10 +153,11 @@ describe('DataProvider', () => {
           calories: 248, protein_g: 46, carbs_g: 0, fat_g: 5.4,
           source: 'basic', off_food_id: null, category: 'meat', food_key: 'basic:petto-pollo-cotto', created_at: '',
         },
-      ],
-    }
+      ]
+    const meal = { id: 'meal-1', user_id: 'user-1', date: '2026-09-14',
+      meal_type: 'lunch' as const, name: null, created_at: '', entries: [] }
     const entry = {
-      id: 'entry-1', meal_id: meal.id, dish_id: 'dish-1', name: 'Riso con pollo', created_at: '', items: meal.items,
+      id: 'entry-1', meal_id: meal.id, dish_id: 'dish-1', name: 'Riso con pollo', created_at: '', items,
     }
     mocks.addMealEntry.mockResolvedValue({
       meal: {
@@ -151,10 +167,13 @@ describe('DataProvider', () => {
       entry,
     })
 
-    const { result } = renderHook(() => useData(), { wrapper: Wrapper })
+    const { result } = renderHook(() => useTestData(), { wrapper: Wrapper })
     await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
 
-    const drafts = meal.items.map(item => ({
+    act(() => result.current.setSelectedDate(meal.date))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    const drafts = items.map(item => ({
       food_name: item.food_name,
       quantity_g: item.quantity_g,
       calories: item.calories,
@@ -174,7 +193,7 @@ describe('DataProvider', () => {
     expect(mocks.addMealEntry).toHaveBeenCalledWith('user-1', meal.date, 'lunch', entry.name, drafts, 'dish-1')
     expect(result.current.meals).toHaveLength(1)
     expect(result.current.meals[0].entries).toEqual([{ ...entry, dish_icon: '🍚' }])
-    expect(result.current.meals[0].items).toHaveLength(2)
+    expect(mealItems(result.current.meals[0])).toHaveLength(2)
 
     act(() => result.current.setDishIcon('dish-1', '🍝'))
     expect(result.current.meals[0].entries[0].dish_icon).toBe('🍝')
@@ -191,7 +210,7 @@ describe('DataProvider', () => {
     })
 
     expect(result.current.meals[0].entries[0]).toEqual({ ...updatedEntry, dish_icon: '🍝' })
-    expect(result.current.meals[0].items).toEqual(updatedEntry.items)
+    expect(mealItems(result.current.meals[0])).toEqual(updatedEntry.items)
 
     mocks.deleteMealEntry.mockResolvedValue(undefined)
     await act(async () => {
@@ -204,7 +223,7 @@ describe('DataProvider', () => {
 
   it('marks an atomically completed onboarding as owned by the current user', async () => {
     mocks.getHealthProfile.mockResolvedValue(null)
-    const { result } = renderHook(() => useData(), { wrapper: Wrapper })
+    const { result } = renderHook(() => useTestData(), { wrapper: Wrapper })
     await waitFor(() => expect(result.current.profileStatus).toBe('missing'))
 
     await act(async () => {
@@ -221,7 +240,7 @@ describe('DataProvider', () => {
   })
 
   it('saves profile changes and recalculates the complete goal pipeline', async () => {
-    const { result } = renderHook(() => useData(), { wrapper: Wrapper })
+    const { result } = renderHook(() => useTestData(), { wrapper: Wrapper })
     await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
 
     await act(async () => {
@@ -257,7 +276,7 @@ describe('DataProvider', () => {
       { weight_kg: 78.5 }, { weight_kg: 78.3 }, { weight_kg: 78.4 },
     ])
 
-    const { result } = renderHook(() => useData(), { wrapper: Wrapper })
+    const { result } = renderHook(() => useTestData(), { wrapper: Wrapper })
     await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
 
     expect(mocks.upsertUserGoals).toHaveBeenCalledWith(expect.objectContaining({

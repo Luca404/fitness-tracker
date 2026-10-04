@@ -3,10 +3,9 @@ import { endOfWeek, format, startOfWeek } from 'date-fns'
 import { Link } from 'react-router-dom'
 import { useData } from '../../contexts/DataContext'
 import { getGuideline } from '../../data/nutritionGuidelines'
-import { getMealsForRange } from '../../services/api'
 import { calculateHabitRows, habitStatus, habitTileFill, summarizeHabitRows } from '../../utils/goodHabits'
 import type { Meal } from '../../types'
-import { formatDecimal, roundToTwo } from '../../utils/decimal'
+import { formatDecimal } from '../../utils/decimal'
 
 interface Props {
   selectedDate: string
@@ -15,48 +14,34 @@ interface Props {
 }
 
 export default function GoodHabits({ selectedDate, currentMeals, compact = false }: Props) {
-  const { profile, goals } = useData()
-  const [weeklyMeals, setWeeklyMeals] = useState<Meal[]>([])
-  const [loadedKey, setLoadedKey] = useState<string | null>(null)
-  const refreshKey = currentMeals.reduce((count, meal) => count + meal.items.length, 0)
-  const requestKey = `${selectedDate}:${refreshKey}`
-  const loading = loadedKey !== requestKey
+  const { profile, mealRevision, getWeeklyMeals } = useData()
+  const date = new Date(`${selectedDate}T12:00:00`)
+  const from = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd')
+  const to = format(endOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd')
+  const requestKey = `${from}:${mealRevision}`
+  const [week, setWeek] = useState<{ key: string; meals: Meal[] }>({ key: '', meals: [] })
+  const loading = week.key !== requestKey
 
   useEffect(() => {
     let cancelled = false
-    const date = new Date(`${selectedDate}T12:00:00`)
-    const from = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd')
-    const to = format(endOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd')
-
-    getMealsForRange(from, to)
-      .then(meals => {
-        if (cancelled) return
-        setWeeklyMeals(meals)
-        setLoadedKey(requestKey)
-      })
-      .catch(() => {
-        if (cancelled) return
-        setWeeklyMeals([])
-        setLoadedKey(requestKey)
-      })
-
+    getWeeklyMeals(from, to)
+      .then(meals => { if (!cancelled) setWeek({ key: requestKey, meals }) })
+      .catch(() => { if (!cancelled) setWeek({ key: requestKey, meals: [] }) })
     return () => { cancelled = true }
-  }, [requestKey, selectedDate])
+  }, [from, to, requestKey, getWeeklyMeals])
 
   const rows = useMemo(() => {
     const sex = profile?.sex ?? 'female'
     const age = profile?.age ?? 18
-    const sugarsPercent = getGuideline('free_sugars', sex, age)?.limitValue ?? 15
-    return calculateHabitRows(selectedDate, currentMeals, weeklyMeals, {
+    return calculateHabitRows(selectedDate, currentMeals, loading ? [] : week.meals, {
       vegetables: getGuideline('vegetables', sex, age)?.limitValue ?? 400,
       fruit: getGuideline('fruit', sex, age)?.limitValue ?? 360,
       legumes: getGuideline('legumes', sex, age)?.limitValue ?? 450,
       fish: getGuideline('fish', sex, age)?.limitValue ?? 300,
       fiber: getGuideline('fiber', sex, age)?.limitValue ?? 25,
-      sugars: roundToTwo((goals?.calorie_target ?? 2000) * sugarsPercent / 100 / 4),
       salt: getGuideline('salt', sex, age)?.limitValue ?? 5,
     })
-  }, [currentMeals, goals?.calorie_target, profile, selectedDate, weeklyMeals])
+  }, [currentMeals, profile, selectedDate, loading, week.meals])
 
   if (compact) {
     const summary = summarizeHabitRows(rows)
@@ -72,16 +57,16 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
           <span className="ml-auto truncate text-[11px] text-gray-500">
             {loading
               ? 'Aggiorno…'
-              : `${summary.ok} su ${rows.length} in linea`}
+              : `${summary.ok} su ${rows.filter(row => row.direction !== 'info').length} in linea`}
           </span>
         </span>
         <span className="mt-2 grid grid-cols-7 gap-1.5">
           {rows.map(row => {
             const status = loading ? 'incomplete' : habitStatus(row)
-            const statusLabel = status === 'ok' ? 'in linea' : status === 'attention' ? 'da migliorare' : 'dato incompleto'
+            const statusLabel = status === 'ok' ? 'in linea' : status === 'attention' ? 'da migliorare' : status === 'informative' ? 'informativo' : 'dato incompleto'
             const fill = loading ? 0 : habitTileFill(row)
-            const overMaximum = row.direction === 'max' && row.value != null && row.value > row.target
-            const progressLabel = loading || row.value == null ? '' : row.direction === 'min'
+            const overMaximum = row.direction === 'max' && row.value != null && row.value > (row.target ?? Infinity)
+            const progressLabel = loading || row.value == null || row.target == null ? '' : row.direction === 'min'
               ? `, ${Math.round(row.value / row.target * 100)}% dell'obiettivo`
               : overMaximum ? `, limite superato del ${Math.round((row.value - row.target) / row.target * 100)}%` : ', entro il limite'
             const tileLabel = `${row.label}: ${statusLabel}${progressLabel}`
@@ -99,7 +84,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
                 <span className="relative text-base leading-none" aria-hidden="true">{row.icon}</span>
                 <span className={`relative mt-0.5 text-xs font-bold leading-none ${
                   status === 'ok' ? 'text-emerald-400' : status === 'attention' ? 'text-amber-400' : 'text-gray-500'
-                }`} aria-hidden="true">{status === 'ok' ? '✓' : status === 'attention' ? '×' : '–'}</span>
+                }`} aria-hidden="true">{status === 'ok' ? '✓' : status === 'attention' ? '×' : status === 'informative' ? 'i' : '–'}</span>
               </span>
             )
           })}
@@ -113,8 +98,8 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
 
   function renderRows(habitRows: typeof rows) {
     return habitRows.map(row => {
-      const progress = row.value == null ? 0 : Math.min(100, Math.round((row.value / row.target) * 100))
-      const overMaximum = row.direction === 'max' && row.value != null && row.value > row.target
+      const progress = row.value == null || row.target == null ? 0 : Math.min(100, Math.round((row.value / row.target) * 100))
+      const overMaximum = row.direction === 'max' && row.value != null && row.value > (row.target ?? Infinity)
       const displayValue = row.value == null ? null : formatDecimal(row.value)
       return (
         <div key={row.label} className="rounded-2xl border border-gray-800 bg-gray-800/55 p-3">
@@ -128,14 +113,14 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
             ) : (
               <>
                 <span className={`font-semibold ${overMaximum ? 'text-orange-400' : 'text-gray-300'}`}>{row.partial ? '≈ ' : ''}{displayValue} g</span>
-                {' '}{row.direction === 'max' ? '≤' : '≥'} {formatDecimal(row.target)} g
+                {row.target != null && <> {row.direction === 'max' ? '≤' : '≥'} {formatDecimal(row.target)} g</>}
                 {row.partial && <span className="text-amber-500/80"> · parziale</span>}
               </>
             )}
           </p>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-700">
+          {row.direction === 'info' ? <p className="mt-2 text-[11px] text-gray-500">Gli zuccheri totali non distinguono quelli liberi o aggiunti.</p> : <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-700">
             <div className={`h-full rounded-full transition-all ${overMaximum ? 'bg-orange-500' : 'bg-primary-500'}`} style={{ width: `${progress}%` }} />
-          </div>
+          </div>}
         </div>
       )
     })

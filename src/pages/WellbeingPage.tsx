@@ -1,16 +1,11 @@
-import { useEffect } from 'react'
 import DaySelector from '../components/common/DaySelector'
 import GoodHabits from '../components/meals/GoodHabits'
 import { useData } from '../contexts/DataContext'
 import { useSettings } from '../contexts/SettingsContext'
 
 export default function WellbeingPage() {
-  const { meals, loading, fetchForDate } = useData()
+  const { meals, loading } = useData()
   const { selectedDate, setSelectedDate } = useSettings()
-
-  useEffect(() => {
-    fetchForDate(selectedDate)
-  }, [fetchForDate, selectedDate])
 
   return (
     <div className="space-y-5 p-4 pb-24">

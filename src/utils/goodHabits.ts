@@ -1,12 +1,13 @@
+import { mealItems } from './mealEntries'
 import type { FoodCategory, Meal } from '../types'
 
 export interface HabitRow {
   label: string
   icon: string
   value: number | null
-  target: number
+  target: number | null
   period: 'oggi' | 'settimana'
-  direction: 'min' | 'max'
+  direction: 'min' | 'max' | 'info'
   partial?: boolean
 }
 
@@ -16,14 +17,14 @@ export interface HabitTargets {
   legumes: number
   fish: number
   fiber: number
-  sugars: number
   salt: number
 }
 
-export type HabitStatus = 'ok' | 'attention' | 'incomplete'
+export type HabitStatus = 'ok' | 'attention' | 'incomplete' | 'informative'
 
 export function habitStatus(row: HabitRow): HabitStatus {
   if (row.value == null) return 'incomplete'
+  if (row.direction === 'info' || row.target == null) return 'informative'
   const meetsTarget = row.direction === 'min' ? row.value >= row.target : row.value <= row.target
   if (row.partial && !(
     (row.direction === 'min' && meetsTarget)
@@ -33,7 +34,7 @@ export function habitStatus(row: HabitRow): HabitStatus {
 }
 
 export function habitTileFill(row: HabitRow): number {
-  if (row.value == null || row.target <= 0) return 0
+  if (row.value == null || row.target == null || row.target <= 0 || row.direction === 'info') return 0
   const ratio = row.direction === 'min'
     ? row.value / row.target
     : (row.value - row.target) / row.target
@@ -42,6 +43,7 @@ export function habitTileFill(row: HabitRow): number {
 
 export function summarizeHabitRows(rows: HabitRow[]) {
   return rows.reduce((summary, row) => {
+    if (row.direction === 'info') return summary
     const status = habitStatus(row)
     if (status === 'incomplete') summary.incomplete += 1
     else if (status === 'ok') summary.ok += 1
@@ -52,7 +54,7 @@ export function summarizeHabitRows(rows: HabitRow[]) {
 
 function gramsForCategories(meals: Meal[], categories: FoodCategory[]) {
   return meals
-    .flatMap(meal => meal.items)
+    .flatMap(mealItems)
     .filter(item => item.unit === 'g' && categories.includes(item.category))
     .reduce((sum, item) => sum + item.quantity_g, 0)
 }
@@ -60,7 +62,7 @@ function gramsForCategories(meals: Meal[], categories: FoodCategory[]) {
 type TrackedNutrient = 'fiber_g' | 'sugars_g' | 'salt_g'
 
 function nutrientTotal(meals: Meal[], nutrient: TrackedNutrient) {
-  const items = meals.flatMap(meal => meal.items)
+  const items = meals.flatMap(mealItems)
   const known = items.filter(item => item[nutrient] != null)
   return {
     value: known.length === 0 ? null : known.reduce((sum, item) => sum + (item[nutrient] ?? 0), 0),
@@ -87,7 +89,7 @@ export function calculateHabitRows(
     { label: 'Legumi', icon: '🫘', value: gramsForCategories(mergedWeek, ['legume']), target: targets.legumes, period: 'settimana', direction: 'min' },
     { label: 'Pesce', icon: '🐟', value: gramsForCategories(mergedWeek, ['fish']), target: targets.fish, period: 'settimana', direction: 'min' },
     { label: 'Fibre', icon: '🌾', ...fiber, target: targets.fiber, period: 'oggi', direction: 'min' },
-    { label: 'Zuccheri', icon: '🍬', ...sugars, target: targets.sugars, period: 'oggi', direction: 'max' },
+    { label: 'Zuccheri totali', icon: '🍬', ...sugars, target: null, period: 'oggi', direction: 'info' },
     { label: 'Sale', icon: '🧂', ...salt, target: targets.salt, period: 'oggi', direction: 'max' },
   ]
 }

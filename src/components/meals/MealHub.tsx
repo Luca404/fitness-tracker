@@ -12,12 +12,14 @@ import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import { getDishIcon, getFoodIcon } from '../../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
 import { dishMealTypeLabels, dishesForMeal } from '../../data/dishMealTypes'
-import type { Dish, DishItem, DishMealType, PieceSize, PreparedBatch } from '../../types'
+import type { Dish, DishMealType, PieceSize, PreparedBatch } from '../../types'
 import ExtendedNutrition from './ExtendedNutrition'
 import PreparedPortionInput from './PreparedPortionInput'
 import PreparedDishesPanel from './PreparedDishesPanel'
 import { defaultCookingMethod, estimateCookedItemWeights, estimateCookedWeight, recipeSignature, type CookingMethod } from '../../utils/preparedDishes'
 import { formatDecimal, roundToTwo } from '../../utils/decimal'
+import { dishItemToDraft, dishTotals } from '../../utils/dishes'
+import { scaleIngredient, scaleNutrition } from '../../utils/nutrition'
 
 interface Props {
   onAddEntry: (name: string, items: DishItemDraft[], dishId?: string, dishIcon?: string | null) => Promise<void>
@@ -31,35 +33,11 @@ interface Props {
 }
 
 function referenceWeight(dish: Dish): number {
-  return dish.items.reduce((s, i) => s + i.quantity_g, 0)
+  const totals = dishTotals(dish)
+  return totals.weight + totals.volumeMl
 }
 
-function totalKcal(dish: Dish): number {
-  return dish.items.reduce((s, i) => s + i.calories, 0)
-}
-
-function toDraftItem(i: DishItem): DishItemDraft {
-  return {
-    id: i.id,
-    food_name: i.food_name,
-    quantity_g: i.quantity_g,
-    unit: i.unit ?? 'g',
-    piece_count: i.piece_count ?? null,
-    piece_size: i.piece_size ?? null,
-    calories: i.calories,
-    protein_g: i.protein_g,
-    carbs_g: i.carbs_g,
-    fat_g: i.fat_g,
-    fiber_g: i.fiber_g ?? null,
-    sugars_g: i.sugars_g ?? null,
-    salt_g: i.salt_g ?? null,
-    source: i.source,
-    off_food_id: i.off_food_id,
-    category: i.category,
-    food_key: i.food_key,
-    pantry_item_id: i.pantry_item_id ?? null,
-  }
-}
+function totalKcal(dish: Dish): number { return dishTotals(dish).calories }
 
 const QUICK_BEVERAGE_IDS = new Set([
   'acqua-naturale', 'acqua-frizzante', 'coca-cola', 'coca-cola-zero',
@@ -89,13 +67,7 @@ function beverageToDraft(beverage: BasicFood, volumeMl: number): DishItemDraft {
     food_name: beverage.name,
     quantity_g: volumeMl,
     unit: 'ml',
-    calories: roundToTwo(beverage.calories * factor),
-    protein_g: roundToTwo(beverage.protein_g * factor),
-    carbs_g: roundToTwo(beverage.carbs_g * factor),
-    fat_g: roundToTwo(beverage.fat_g * factor),
-    fiber_g: beverage.fiber_g == null ? null : roundToTwo(beverage.fiber_g * factor),
-    sugars_g: beverage.sugars_g == null ? null : roundToTwo(beverage.sugars_g * factor),
-    salt_g: beverage.salt_g == null ? null : roundToTwo(beverage.salt_g * factor),
+    ...scaleNutrition(beverage, factor),
     source: 'basic',
     off_food_id: null,
     category: beverage.category,
@@ -238,6 +210,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     if (!window.confirm(`Eliminare “${dish?.name ?? 'questo piatto'}” dai piatti salvati?`)) return
     try {
       await api.deleteDish(id)
+      await onDishUpdated?.()
       await refresh()
     } catch {
       showToast('Errore eliminazione piatto')
@@ -259,13 +232,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
         unit: i.unit ?? 'g',
         piece_count: pieceCount,
         piece_size: pieceCount == null ? null : i.piece_size ?? null,
-        calories: roundToTwo(i.calories * factor),
-        protein_g: roundToTwo(i.protein_g * factor),
-        carbs_g: roundToTwo(i.carbs_g * factor),
-        fat_g: roundToTwo(i.fat_g * factor),
-        fiber_g: i.fiber_g == null ? null : roundToTwo(i.fiber_g * factor),
-        sugars_g: i.sugars_g == null ? null : roundToTwo(i.sugars_g * factor),
-        salt_g: i.salt_g == null ? null : roundToTwo(i.salt_g * factor),
+        ...scaleNutrition(i, factor),
         source: i.source,
         off_food_id: i.off_food_id,
         category: i.category,
@@ -339,18 +306,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     if (!Number.isFinite(quantity) || quantity <= 0) return
     setExtraItems(items => items.map((item, itemIndex) => {
       if (itemIndex !== index) return item
-      const factor = item.quantity_g > 0 ? quantity / item.quantity_g : 0
-      return {
-        ...item,
-        quantity_g: quantity,
-        calories: roundToTwo(item.calories * factor),
-        protein_g: roundToTwo(item.protein_g * factor),
-        carbs_g: roundToTwo(item.carbs_g * factor),
-        fat_g: roundToTwo(item.fat_g * factor),
-        fiber_g: item.fiber_g == null ? null : roundToTwo(item.fiber_g * factor),
-        sugars_g: item.sugars_g == null ? null : roundToTwo(item.sugars_g * factor),
-        salt_g: item.salt_g == null ? null : roundToTwo(item.salt_g * factor),
-      }
+      return scaleIngredient(item, quantity)
     }))
   }
 
@@ -363,7 +319,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   async function handleSaveNewDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[]) {
     if (!user) return
     const dish = await api.createDish(user.id, name, items, mealTypes)
-    beginPreparation(name, dish.items.map(toDraftItem), dish)
+    beginPreparation(name, dish.items.map(dishItemToDraft), dish)
   }
 
   async function handleSaveEditedDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[]) {
@@ -508,7 +464,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
         <ComposerHeader icon="⚙️" eyebrow="Piatto salvato" title="Modifica la ricetta" />
         <DishEditor
           initialName={editingDish.name}
-          initialItems={editingDish.items.map(toDraftItem)}
+          initialItems={editingDish.items.map(dishItemToDraft)}
           initialMealTypes={editingDish.meal_types}
           editing
           requireName

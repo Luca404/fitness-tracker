@@ -1,18 +1,17 @@
 // src/contexts/DataContext.tsx
 import {
-  createContext, useContext, useState, useCallback, useMemo, useEffect, useRef
+  createContext, useContext, useState, useCallback, useEffect, useRef
 } from 'react'
 import type { ReactNode } from 'react'
 import type {
-  UserHealthProfile, UserGoals, Meal, MealItemInput, MealType, Workout, GymSession, DaySummary, SuggestedGoals
+  UserHealthProfile, UserGoals, Meal, MealItemInput, MealType, Workout, DaySummary, SuggestedGoals
 } from '../types'
 import * as api from '../services/api'
-import { getGymSessionsForDate } from '../services/gymApi'
 import { useAuth } from './AuthContext'
-import { calculateNutritionGoals } from '../utils/bmr'
-import { shouldAutoRecalculateGoals, summarizeRollingWeight } from '../utils/goalRecalculation'
+import { calculatedGoals, loadWeightState, recalculateGoalsForWeight } from '../services/goalRefresh'
 import { NUTRITION_GOAL_CONFIG } from '../config/nutritionGoals'
-import { estimateGymSessionCalories } from '../utils/gymSessionSummary'
+import { useDiary } from '../hooks/useDiary'
+import { useSettings } from './SettingsContext'
 
 type ProfileStatus = 'idle' | 'loading' | 'missing' | 'ready' | 'error'
 
@@ -29,6 +28,7 @@ interface DataContextType {
   loading: boolean
   toast: string | null
   fetchForDate: (date: string) => Promise<void>
+  refreshDiary: () => Promise<void>
   fetchProfile: () => Promise<void>
   refreshCurrentWeight: () => Promise<void>
   completeOnboarding: (
@@ -56,28 +56,16 @@ interface DataContextType {
   addWorkout: (w: Omit<Workout, 'id' | 'created_at'>) => Promise<void>
   removeWorkout: (id: string) => Promise<void>
   daySummary: DaySummary
+  mealRevision: number
+  getWeeklyMeals: (from: string, to: string) => Promise<Meal[]>
   showToast: (msg: string) => void
 }
 
 const DataContext = createContext<DataContextType | null>(null)
 
-function localISODateWithOffset(dayOffset: number) {
-  const date = new Date()
-  date.setDate(date.getDate() + dayOffset)
-  return date.toLocaleDateString('sv-SE')
-}
-
-function calculatedGoals(profile: UserHealthProfile, calculationWeightKg: number): Omit<UserGoals, 'updated_at'> {
-  const recommendation = calculateNutritionGoals({ ...profile, weight_kg: calculationWeightKg })
-  return {
-    user_id: profile.user_id,
-    ...recommendation.goals,
-    calculation_weight_kg: calculationWeightKg,
-  }
-}
-
 export function DataProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
+  const { selectedDate } = useSettings()
   const userId = user?.id
   const [profile, setProfile] = useState<UserHealthProfile | null>(null)
   const [profileStatus, setProfileStatus] = useState<ProfileStatus>('idle')
@@ -86,21 +74,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [currentWeightKg, setCurrentWeightKg] = useState<number | null>(null)
   const [rollingWeightKg, setRollingWeightKg] = useState<number | null>(null)
   const [rollingWeightSampleCount, setRollingWeightSampleCount] = useState(0)
-  const [meals, setMeals] = useState<Meal[]>([])
-  const [workouts, setWorkouts] = useState<Workout[]>([])
-  const [gymSessions, setGymSessions] = useState<GymSession[]>([])
-  const [gymWeightKg, setGymWeightKg] = useState<number | null>(null)
-  const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const profileRequest = useRef(0)
-  const dateRequest = useRef(0)
 
   const showToast = useCallback((msg: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current)
     setToast(msg)
     toastTimer.current = setTimeout(() => setToast(null), 3000)
   }, [])
+
+  const diary = useDiary(userId, selectedDate, currentWeightKg, showToast)
+  const { refreshDiary } = diary
 
   useEffect(() => () => {
     if (toastTimer.current) clearTimeout(toastTimer.current)
@@ -111,34 +96,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const requestId = ++profileRequest.current
     setProfileStatus('loading')
     try {
-      const today = localISODateWithOffset(0)
-      const from = localISODateWithOffset(-(NUTRITION_GOAL_CONFIG.weightRecalculation.windowDays - 1))
-      const [p, g, latestWeight, recentWeights] = await Promise.all([
-        api.getHealthProfile(),
-        api.getUserGoals(),
-        api.getLatestWeightLog(today),
-        api.getWeightLogs(from, today),
+      const [p, g, weightState] = await Promise.all([
+        api.getHealthProfile(), api.getUserGoals(), loadWeightState(),
       ])
       if (requestId !== profileRequest.current) return
-      const rollingSummary = summarizeRollingWeight(recentWeights)
+      const rollingSummary = weightState.summary
       let resolvedGoals = g
-      if (p && g && shouldAutoRecalculateGoals(
-        rollingSummary,
-        g.calculation_weight_kg ?? p.weight_kg,
-      )) {
-        const recalculated = calculatedGoals(p, rollingSummary.averageKg as number)
-        try {
-          await api.upsertUserGoals(recalculated)
-          resolvedGoals = { ...recalculated, updated_at: new Date().toISOString() }
+      try {
+        resolvedGoals = await recalculateGoalsForWeight(p, g, rollingSummary)
+        if (resolvedGoals !== g && requestId === profileRequest.current) {
           showToast(`Target aggiornati sul peso medio di ${rollingSummary.averageKg} kg`)
-        } catch {
-          showToast('Ricalcolo automatico dei target non riuscito')
         }
-      }
+      } catch { showToast('Ricalcolo automatico dei target non riuscito') }
       if (requestId !== profileRequest.current) return
       setProfile(p)
       setGoals(resolvedGoals)
-      setCurrentWeightKg(latestWeight?.weight_kg ?? p?.weight_kg ?? null)
+      setCurrentWeightKg(weightState.latestWeightKg ?? p?.weight_kg ?? null)
       setRollingWeightKg(rollingSummary.averageKg)
       setRollingWeightSampleCount(rollingSummary.sampleCount)
       setProfileUserId(userId)
@@ -151,75 +124,43 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [showToast, userId])
 
-  useEffect(() => {
-    profileRequest.current += 1
-    dateRequest.current += 1
+  const resetProfile = useCallback(() => {
     setProfile(null)
     setProfileUserId(null)
     setGoals(null)
     setCurrentWeightKg(null)
     setRollingWeightKg(null)
     setRollingWeightSampleCount(0)
-    setMeals([])
-    setWorkouts([])
-    setGymSessions([])
-    setGymWeightKg(null)
     setProfileStatus(userId ? 'loading' : 'idle')
+  }, [userId])
+
+  useEffect(() => {
+    profileRequest.current += 1
+    // Clear the previous account's private data before loading the next account.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    resetProfile()
     if (userId) fetchProfile()
-  }, [userId, fetchProfile])
+  }, [userId, fetchProfile, resetProfile])
 
   const refreshCurrentWeight = useCallback(async () => {
     const requestId = profileRequest.current
-    const today = localISODateWithOffset(0)
-    const from = localISODateWithOffset(-(NUTRITION_GOAL_CONFIG.weightRecalculation.windowDays - 1))
-    const [latest, recentWeights] = await Promise.all([
-      api.getLatestWeightLog(today),
-      api.getWeightLogs(from, today),
-    ])
+    const { latestWeightKg, summary: rollingSummary } = await loadWeightState()
     if (requestId !== profileRequest.current) return
-    const rollingSummary = summarizeRollingWeight(recentWeights)
-    setCurrentWeightKg(latest?.weight_kg ?? profile?.weight_kg ?? null)
+    setCurrentWeightKg(latestWeightKg ?? profile?.weight_kg ?? null)
     setRollingWeightKg(rollingSummary.averageKg)
     setRollingWeightSampleCount(rollingSummary.sampleCount)
+    await refreshDiary()
+    if (requestId !== profileRequest.current) return
 
-    if (profile && goals && shouldAutoRecalculateGoals(
-      rollingSummary,
-      goals.calculation_weight_kg ?? profile.weight_kg,
-    )) {
-      const recalculated = calculatedGoals(profile, rollingSummary.averageKg as number)
-      try {
-        await api.upsertUserGoals(recalculated)
-        if (requestId !== profileRequest.current) return
-        setGoals({ ...recalculated, updated_at: new Date().toISOString() })
-        showToast(`Target aggiornati sul peso medio di ${rollingSummary.averageKg} kg`)
-      } catch {
-        showToast('Peso salvato, ma il ricalcolo automatico dei target non è riuscito')
-      }
-    }
-  }, [goals, profile, showToast])
-
-  const fetchForDate = useCallback(async (date: string) => {
-    const requestId = ++dateRequest.current
-    setLoading(true)
     try {
-      const [m, w, sessions, latestWeight] = await Promise.all([
-        api.getMealsForDate(date),
-        api.getWorkoutsForDate(date),
-        getGymSessionsForDate(date),
-        api.getLatestWeightLog(date),
-      ])
-      if (requestId === dateRequest.current) {
-        setMeals(m)
-        setWorkouts(w)
-        setGymSessions(sessions)
-        setGymWeightKg(latestWeight?.weight_kg ?? null)
+      const recalculated = await recalculateGoalsForWeight(profile, goals, rollingSummary)
+      if (requestId !== profileRequest.current) return
+      if (recalculated !== goals) {
+        setGoals(recalculated)
+        showToast(`Target aggiornati sul peso medio di ${rollingSummary.averageKg} kg`)
       }
-    } catch {
-      if (requestId === dateRequest.current) showToast('Errore caricamento dati')
-    } finally {
-      if (requestId === dateRequest.current) setLoading(false)
-    }
-  }, [showToast])
+    } catch { showToast('Peso salvato, ma il ricalcolo automatico dei target non è riuscito') }
+  }, [goals, profile, showToast, refreshDiary])
 
   const saveGoals = useCallback(async (g: Omit<UserGoals, 'updated_at'>) => {
     await api.upsertUserGoals(g)
@@ -256,101 +197,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setProfileStatus('ready')
   }, [])
 
-  const addMealEntry = useCallback(async (
-    mealType: MealType,
-    name: string,
-    items: MealItemInput[],
-    date: string,
-    userId: string,
-    dishId: string | null = null,
-    dishIcon: string | null = null
-  ) => {
-    if (items.length === 0) return
-    const result = await api.addMealEntry(userId, date, mealType, name, items, dishId)
-    const entry = { ...result.entry, dish_icon: dishIcon }
-    setMeals(prev => {
-      const existing = prev.find(m => m.id === result.meal.id)
-      if (!existing) {
-        return [...prev, {
-          ...result.meal,
-          entries: [entry],
-          items: entry.items,
-        }]
-      }
-      return prev.map(m => m.id === result.meal.id
-        ? {
-            ...m,
-            entries: [...m.entries, entry],
-            items: [...m.items, ...entry.items],
-          }
-        : m)
-    })
-  }, [])
-
-  const setDishIcon = useCallback((dishId: string, icon: string | null) => {
-    setMeals(current => current.map(meal => ({
-      ...meal,
-      entries: meal.entries.map(entry => entry.dish_id === dishId ? { ...entry, dish_icon: icon } : entry),
-    })))
-  }, [])
-
-  const updateMealEntry = useCallback(async (
-    entryId: string,
-    name: string,
-    items: MealItemInput[]
-  ) => {
-    const updated = await api.updateMealEntry(entryId, name, items)
-    setMeals(prev => prev.map(meal => {
-      if (!meal.entries.some(entry => entry.id === entryId)) return meal
-      const entries = meal.entries.map(entry => entry.id === entryId
-        ? { ...updated, dish_icon: updated.dish_id === entry.dish_id ? entry.dish_icon : null }
-        : entry)
-      return { ...meal, entries, items: entries.flatMap(entry => entry.items) }
-    }))
-  }, [])
-
-  const removeMealEntry = useCallback(async (entryId: string) => {
-    await api.deleteMealEntry(entryId)
-    setMeals(prev => prev.flatMap(meal => {
-      if (!meal.entries.some(entry => entry.id === entryId)) return [meal]
-      const entries = meal.entries.filter(entry => entry.id !== entryId)
-      return entries.length > 0
-        ? [{ ...meal, entries, items: entries.flatMap(entry => entry.items) }]
-        : []
-    }))
-  }, [])
-
-  const addWorkout = useCallback(async (w: Omit<Workout, 'id' | 'created_at'>) => {
-    const newW = await api.addWorkout(w)
-    setWorkouts(prev => [...prev, newW])
-  }, [])
-
-  const removeWorkout = useCallback(async (id: string) => {
-    await api.deleteWorkout(id)
-    setWorkouts(prev => prev.filter(w => w.id !== id))
-  }, [])
-
-  const daySummary = useMemo<DaySummary>(() => {
-    const allItems = meals.flatMap(m => m.items)
-    const gymCalories = gymSessions.reduce((sum, session) =>
-      sum + (estimateGymSessionCalories(session, gymWeightKg ?? currentWeightKg) ?? 0), 0)
-    return {
-      calories:        allItems.reduce((s, i) => s + i.calories, 0),
-      protein_g:       allItems.reduce((s, i) => s + i.protein_g, 0),
-      carbs_g:         allItems.reduce((s, i) => s + i.carbs_g, 0),
-      fat_g:           allItems.reduce((s, i) => s + i.fat_g, 0),
-      calories_burned: workouts.reduce((s, w) => s + w.calories_burned, 0) + gymCalories,
-    }
-  }, [meals, workouts, gymSessions, gymWeightKg, currentWeightKg])
 
   return (
     <DataContext.Provider value={{
       profile, profileStatus, profileUserId, goals, currentWeightKg, rollingWeightKg,
-      rollingWeightSampleCount, meals, workouts, loading, toast,
-      fetchForDate, fetchProfile, refreshCurrentWeight, completeOnboarding, saveGoals,
+      rollingWeightSampleCount, ...diary, toast,
+      fetchProfile, refreshCurrentWeight, completeOnboarding, saveGoals,
       saveProfileAndRecalculate,
-      addMealEntry, updateMealEntry, removeMealEntry, setDishIcon, addWorkout, removeWorkout,
-      daySummary, showToast,
+      showToast,
     }}>
       {children}
     </DataContext.Provider>

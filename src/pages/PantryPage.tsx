@@ -1,218 +1,24 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import * as api from '../services/api'
 import { searchBasicFoods } from '../services/nutrition'
 import { normalizeBarcode, resolveBarcodeProduct } from '../services/barcodeProducts'
 import { analysisToPantryDraft, barcodeProductToAnalysis, confirmBarcodeProduct } from '../services/nutritionLabel'
-import type { NutritionLabelAnalysis, NutritionBasis, AnalysisConfidence } from '../services/nutritionLabel'
-import BarcodeScanner from '../components/pantry/BarcodeScanner'
-import NutritionLabelPhoto from '../components/pantry/NutritionLabelPhoto'
-import OpenFoodFactsDetails from '../components/common/OpenFoodFactsDetails'
+import type { NutritionLabelAnalysis } from '../services/nutritionLabel'
+import PantryReview from '../components/pantry/PantryReview'
+import { NutrientNumberInput } from '../components/pantry/PantryNutritionFields'
+import { manualNutritionError, pantryValues, storedAiPhotoFields, openFoodFactsMetadata } from '../utils/pantryDraft'
+import type { PendingFood } from '../utils/pantryDraft'
+
+const BarcodeScanner = lazy(() => import('../components/pantry/BarcodeScanner'))
+const NutritionLabelPhoto = lazy(() => import('../components/pantry/NutritionLabelPhoto'))
 import { FOOD_CATEGORIES, FOOD_CATEGORY_BY_ID } from '../data/foodCategories'
-import type { PantryItem, PantryUnit, FoodSource, FoodCategory } from '../types'
-import { formatDecimal, roundToTwo } from '../utils/decimal'
+import type { PantryItem, FoodCategory } from '../types'
+import { formatDecimal } from '../utils/decimal'
 
-interface PendingFood {
-  barcode?: string | null
-  name: string
-  brand?: string | null
-  quantity?: string | null
-  quantity_value?: number | null
-  quantity_unit?: PantryUnit | null
-  package_piece_count?: number | null
-  package_net_quantity_value?: number | null
-  package_net_quantity_unit?: 'g' | 'ml' | null
-  serving_size?: string | null
-  image_url?: string | null
-  ingredients?: string | null
-  allergens?: string | null
-  traces?: string | null
-  labels?: string[]
-  categories?: string[]
-  calories_100g: number
-  protein_100g: number
-  carbs_100g: number
-  fat_100g: number
-  category: FoodCategory
-  food_key: string | null
-  source: FoodSource
-  off_food_id: string | null
-  off_data?: Record<string, unknown> | null
-  fiber_100g?: number | null
-  sugars_100g?: number | null
-  saturated_fat_100g?: number | null
-  unsaturated_fat_100g?: number | null
-  salt_100g?: number | null
-  nutrition_score?: number | null
-  nutrition_grade?: string | null
-  nova_group?: number | null
-  ecoscore_grade?: string | null
-  nutrition_basis?: NutritionBasis
-  analysis_confidence?: AnalysisConfidence
-  analysis_warnings?: string[]
-  analysis_validation_errors?: string[]
-  analysis_requires_review?: boolean
-  analysis_confirmation_token?: string | null
-  analysis_raw_extraction?: Record<string, unknown> | null
-}
-
-type Mode = 'list' | 'choose' | 'scan' | 'photo' | 'search' | 'manual' | 'quantity'
-
-const PHOTO_NUTRIENT_FIELDS = [
-  { key: 'calories_100g', label: 'Calorie', unit: 'kcal' },
-  { key: 'protein_100g', label: 'Proteine', unit: 'g' },
-  { key: 'carbs_100g', label: 'Carboidrati', unit: 'g' },
-  { key: 'sugars_100g', label: 'Zuccheri', unit: 'g' },
-  { key: 'fat_100g', label: 'Grassi', unit: 'g' },
-  { key: 'saturated_fat_100g', label: 'di cui grassi saturi', unit: 'g' },
-  { key: 'fiber_100g', label: 'Fibre', unit: 'g' },
-  { key: 'salt_100g', label: 'Sale', unit: 'g' },
-] as const
-
-type NutrientFieldKey = (typeof PHOTO_NUTRIENT_FIELDS)[number]['key']
-const CORE_NUTRIENT_KEYS = new Set<NutrientFieldKey>([
-  'calories_100g', 'protein_100g', 'carbs_100g', 'fat_100g',
-])
-
-function NutrientNumberInput({ label, value, onChange, optional = false }: {
-  label: string
-  value: number | null
-  onChange: (value: number | null) => void
-  optional?: boolean
-}) {
-  return (
-    <label className="block min-w-0 text-xs text-gray-400">
-      {label}
-      <input type="number" min={0} step="0.1" inputMode="decimal"
-        value={value === 0 && !optional ? '' : value == null ? '' : formatDecimal(value)}
-        onChange={event => onChange(event.target.value === '' ? (optional ? null : 0) : roundToTwo(Number(event.target.value)))}
-        className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />
-    </label>
-  )
-}
-
-function PendingNutritionFields({ food, onChange }: {
-  food: PendingFood
-  onChange: (key: NutrientFieldKey, value: number | null) => void
-}) {
-  function field(key: NutrientFieldKey) {
-    const definition = PHOTO_NUTRIENT_FIELDS.find(item => item.key === key)!
-    return <NutrientNumberInput key={key} label={`${definition.label} (${definition.unit})`}
-      value={food[key] ?? null} optional={!CORE_NUTRIENT_KEYS.has(key)}
-      onChange={value => onChange(key, value)} />
-  }
-
-  return (
-    <div className="mt-2 space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        {field('calories_100g')}
-        {field('protein_100g')}
-      </div>
-      <fieldset aria-label="Carboidrati" className="rounded-xl border border-gray-700 p-3">
-        {field('carbs_100g')}
-        <div className="mt-2 border-l-2 border-gray-600 pl-3">{field('sugars_100g')}</div>
-      </fieldset>
-      <fieldset aria-label="Grassi" className="rounded-xl border border-gray-700 p-3">
-        {field('fat_100g')}
-        <div className="mt-2 border-l-2 border-gray-600 pl-3">{field('saturated_fat_100g')}</div>
-      </fieldset>
-      <div className="grid grid-cols-2 gap-3">
-        {field('fiber_100g')}
-        {field('salt_100g')}
-      </div>
-    </div>
-  )
-}
-
-function manualNutritionError(food: Pick<PendingFood,
-  'calories_100g' | 'protein_100g' | 'carbs_100g' | 'fat_100g'
-  | 'fiber_100g' | 'sugars_100g' | 'saturated_fat_100g' | 'salt_100g'>): string | null {
-  if (PHOTO_NUTRIENT_FIELDS.some(({ key }) => {
-    const value = food[key]
-    return value != null && (!Number.isFinite(value) || value < 0)
-  })) return 'I valori nutrizionali devono essere numeri non negativi'
-  if ((food.saturated_fat_100g != null && food.saturated_fat_100g > food.fat_100g)
-    || (food.sugars_100g != null && food.sugars_100g > food.carbs_100g)) {
-    return 'Grassi saturi e zuccheri non possono superare i rispettivi totali'
-  }
-  return null
-}
-
-function aiPhotoMetadata(food: PendingFood): Record<string, unknown> {
-  return {
-    source: 'openai_nutrition_label',
-    confirmed_by_user: true,
-    barcode: normalizeBarcode(food.barcode),
-    brand: food.brand ?? null,
-    package_quantity: food.quantity ?? null,
-    package_piece_count: food.package_piece_count ?? null,
-    package_net_quantity_value: food.package_net_quantity_value ?? null,
-    package_net_quantity_unit: food.package_net_quantity_unit ?? null,
-    serving_size: food.serving_size ?? null,
-    ingredients: food.ingredients ?? null,
-    allergens: food.allergens ?? null,
-    nutrition_basis: food.nutrition_basis ?? 'unavailable',
-    confidence: food.analysis_confidence ?? 'low',
-    warnings: food.analysis_warnings ?? [],
-    validation_errors: food.analysis_validation_errors ?? [],
-    raw_extraction: food.analysis_raw_extraction ?? null,
-  }
-}
-
-function storedAiPhotoFields(item: PantryItem): Partial<PendingFood> {
-  if (item.source !== 'ai_photo' || !item.off_data) return {}
-  const data = item.off_data
-  const nutritionBasis = ['per_100g', 'per_100ml', 'normalized_from_serving', 'unavailable']
-    .includes(String(data.nutrition_basis)) ? data.nutrition_basis as NutritionBasis : undefined
-  const confidence = ['high', 'medium', 'low'].includes(String(data.confidence))
-    ? data.confidence as AnalysisConfidence : undefined
-  return {
-    brand: typeof data.brand === 'string' ? data.brand : null,
-    quantity: typeof data.package_quantity === 'string' ? data.package_quantity : null,
-    package_piece_count: typeof data.package_piece_count === 'number' ? data.package_piece_count : null,
-    package_net_quantity_value: typeof data.package_net_quantity_value === 'number' ? data.package_net_quantity_value : null,
-    package_net_quantity_unit: data.package_net_quantity_unit === 'g' || data.package_net_quantity_unit === 'ml'
-      ? data.package_net_quantity_unit
-      : null,
-    serving_size: typeof data.serving_size === 'string' ? data.serving_size : null,
-    ingredients: typeof data.ingredients === 'string' ? data.ingredients : null,
-    allergens: typeof data.allergens === 'string' ? data.allergens : null,
-    nutrition_basis: nutritionBasis,
-    analysis_confidence: confidence,
-    analysis_warnings: Array.isArray(data.warnings)
-      ? data.warnings.filter((warning): warning is string => typeof warning === 'string')
-      : [],
-  }
-}
-
-function openFoodFactsMetadata(metadata: Record<string, unknown> | null): Partial<PendingFood> {
-  if (!metadata) return {}
-  const stringValue = (key: string): string | null => {
-    const value = metadata[key]
-    return typeof value === 'string' && value.trim() ? value.trim() : null
-  }
-  const numberValue = (key: string): number | null => {
-    const value = metadata[key]
-    return typeof value === 'number' && Number.isFinite(value) ? value : null
-  }
-  const tagValues = (key: string): string[] => {
-    const value = metadata[key]
-    return Array.isArray(value)
-      ? value.filter((tag): tag is string => typeof tag === 'string').map(tag => tag.replace(/^[a-z]{2}:/i, ''))
-      : []
-  }
-  return {
-    image_url: stringValue('image_front_url'),
-    traces: stringValue('traces'),
-    labels: tagValues('labels_tags'),
-    categories: tagValues('categories_tags'),
-    nutrition_score: numberValue('nutriscore_score'),
-    nutrition_grade: stringValue('nutriscore_grade') ?? stringValue('nutrition_grade_fr'),
-    nova_group: numberValue('nova_group'),
-    ecoscore_grade: stringValue('ecoscore_grade'),
-  }
-}
+type Mode = 'list' | 'choose' | 'scan' | 'photo' | 'search' | 'manual'
+type Flow = { mode: Mode } | { mode: 'quantity'; pending: PendingFood; editingItemId: string | null }
 
 export default function PantryPage({ embedded = false, onSaved, initialMode = 'list' }: {
   embedded?: boolean
@@ -220,12 +26,17 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
   initialMode?: Mode
 }) {
   const { user } = useAuth()
-  const { showToast } = useData()
+  const { showToast, refreshDiary } = useData()
   const [items, setItems] = useState<PantryItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [mode, setMode] = useState<Mode>(initialMode)
-  const [pending, setPending] = useState<PendingFood | null>(null)
-  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [flow, setFlow] = useState<Flow>({ mode: initialMode })
+  const mode = flow.mode
+  const pending = flow.mode === 'quantity' ? flow.pending : null
+  const editingItemId = flow.mode === 'quantity' ? flow.editingItemId : null
+  function setMode(mode: Mode) { setFlow({ mode }) }
+  function setPending(pending: PendingFood) {
+    setFlow(previous => previous.mode === 'quantity' ? { ...previous, pending } : previous)
+  }
   const [scanError, setScanError] = useState<string | null>(null)
   const [scanLoading, setScanLoading] = useState(false)
   const [scannedBarcode, setScannedBarcode] = useState<string | null>(null)
@@ -262,8 +73,6 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
 
   function resetAddFlow() {
     setMode('list')
-    setPending(null)
-    setEditingItemId(null)
     setQuery('')
     setScanError(null)
     setScannedBarcode(null)
@@ -274,15 +83,12 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
   }
 
   function goToReview(food: PendingFood) {
-    setEditingItemId(null)
-    setPending(food)
-    setMode('quantity')
+    setFlow({ mode: 'quantity', pending: food, editingItemId: null })
   }
 
   function editPantryItem(item: PantryItem) {
     const category = FOOD_CATEGORY_BY_ID[item.category] ? item.category : 'other'
-    setEditingItemId(item.id)
-    setPending({
+    setFlow({ mode: 'quantity', editingItemId: item.id, pending: {
       name: item.name,
       calories_100g: item.calories_100g,
       protein_100g: item.protein_100g,
@@ -305,9 +111,8 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
       ecoscore_grade: item.ecoscore_grade,
       nutrition_basis: item.nutrition_unit === 'ml' ? 'per_100ml' : 'per_100g',
       ...storedAiPhotoFields(item),
-    })
+    } })
     setAnalysisReviewAcknowledged(true)
-    setMode('quantity')
   }
 
   async function handleScan(code: string) {
@@ -432,38 +237,15 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
     addInProgressRef.current = true
     setSavingItem(true)
     try {
-      const pantryValues: Omit<PantryItem, 'id' | 'user_id' | 'created_at'> = {
-        name: pending.name.trim(),
-        nutrition_unit: pending.nutrition_basis === 'per_100ml'
-          || (pending.category === 'beverage' || pending.category === 'alcohol') ? 'ml' : 'g',
-        calories_100g: pending.calories_100g,
-        protein_100g: pending.protein_100g,
-        carbs_100g: pending.carbs_100g,
-        fat_100g: pending.fat_100g,
-        category: pending.category,
-        food_key: pending.food_key,
-        source: pending.source,
-        off_food_id: pending.off_food_id,
-        barcode: normalizeBarcode(pending.barcode),
-        off_data: pending.source === 'ai_photo' ? aiPhotoMetadata(pending) : pending.off_data ?? null,
-        fiber_100g: pending.fiber_100g ?? null,
-        sugars_100g: pending.sugars_100g ?? null,
-        saturated_fat_100g: pending.saturated_fat_100g ?? null,
-        unsaturated_fat_100g: pending.unsaturated_fat_100g ?? null,
-        salt_100g: pending.salt_100g ?? null,
-        nutrition_score: pending.nutrition_score ?? null,
-        nutrition_grade: pending.nutrition_grade ?? null,
-        nova_group: pending.nova_group ?? null,
-        ecoscore_grade: pending.ecoscore_grade ?? null,
-      }
+      const values = pantryValues(pending)
       let savedItem: PantryItem
       try {
         if (editingItemId) {
-          savedItem = await api.updatePantryItem(editingItemId, pantryValues)
+          savedItem = await api.updatePantryItem(editingItemId, values)
         } else {
           savedItem = await api.addPantryItem({
             user_id: user.id,
-            ...pantryValues,
+            ...values,
           })
         }
       } catch {
@@ -474,14 +256,14 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
       let catalogSaveFailed = false
       if (
         pending.source === 'ai_photo'
-        && pantryValues.barcode
+        && values.barcode
         && pending.analysis_confirmation_token
       ) {
         try {
           await confirmBarcodeProduct({
             confirmation_token: pending.analysis_confirmation_token,
-            barcode: pantryValues.barcode,
-            name: pantryValues.name,
+            barcode: values.barcode,
+            name: values.name,
             brand: pending.brand?.trim() || null,
             package_quantity: pending.quantity?.trim() || null,
             package_piece_count: pending.package_piece_count ?? null,
@@ -490,16 +272,16 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
             serving_size: pending.serving_size?.trim() || null,
             ingredients: pending.ingredients?.trim() || null,
             allergens: pending.allergens?.trim() || null,
-            calories_100g: pantryValues.calories_100g,
-            protein_100g: pantryValues.protein_100g,
-            carbs_100g: pantryValues.carbs_100g,
-            fat_100g: pantryValues.fat_100g,
-            fiber_100g: pantryValues.fiber_100g ?? null,
-            sugars_100g: pantryValues.sugars_100g ?? null,
-            saturated_fat_100g: pantryValues.saturated_fat_100g ?? null,
-            unsaturated_fat_100g: pantryValues.unsaturated_fat_100g ?? null,
-            salt_100g: pantryValues.salt_100g ?? null,
-            category: pantryValues.category,
+            calories_100g: values.calories_100g,
+            protein_100g: values.protein_100g,
+            carbs_100g: values.carbs_100g,
+            fat_100g: values.fat_100g,
+            fiber_100g: values.fiber_100g ?? null,
+            sugars_100g: values.sugars_100g ?? null,
+            saturated_fat_100g: values.saturated_fat_100g ?? null,
+            unsaturated_fat_100g: values.unsaturated_fat_100g ?? null,
+            salt_100g: values.salt_100g ?? null,
+            category: values.category,
             nutrition_basis: pending.nutrition_basis ?? 'unavailable',
             confidence: pending.analysis_confidence ?? 'low',
             warnings: pending.analysis_warnings ?? [],
@@ -509,6 +291,7 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
           catalogSaveFailed = true
         }
       }
+      if (editingItemId) await refreshDiary()
       showToast(catalogSaveFailed
         ? 'Ingrediente salvato, ma il catalogo condiviso non è stato aggiornato'
         : editingItemId ? 'Ingrediente aggiornato' : 'Ingrediente salvato')
@@ -642,7 +425,7 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
           {scanLoading ? (
             <p className="text-sm text-gray-500 text-center py-6">Cerco il prodotto...</p>
           ) : (
-            <BarcodeScanner onScan={handleScan} onCancel={() => setMode('choose')} />
+            <Suspense fallback={<p role="status">Caricamento fotocamera…</p>}><BarcodeScanner onScan={handleScan} onCancel={() => setMode('choose')} /></Suspense>
           )}
           {scanError && (
             <div className="space-y-2">
@@ -663,11 +446,11 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
       )}
 
       {mode === 'photo' && (
-        <NutritionLabelPhoto
+        <Suspense fallback={<p role="status">Caricamento foto…</p>}><NutritionLabelPhoto
           knownBarcode={scannedBarcode}
           onAnalysis={handlePhotoAnalysis}
           onCancel={() => setMode('choose')}
-        />
+        /></Suspense>
       )}
 
       {mode === 'search' && (
@@ -747,170 +530,10 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
         </div>
       )}
 
-      {mode === 'quantity' && pending && (
-        <div className="space-y-4">
-          <div className="rounded-2xl bg-gray-800 p-4">
-            <p className="text-xs text-gray-500">{FOOD_CATEGORY_BY_ID[pending.category]?.icon ?? FOOD_CATEGORY_BY_ID.other.icon} {FOOD_CATEGORY_BY_ID[pending.category]?.label ?? FOOD_CATEGORY_BY_ID.other.label}</p>
-            <label className="mt-2 block text-sm text-gray-400" htmlFor="pending-food-name">Nome alimento</label>
-            <input
-              id="pending-food-name"
-              value={pending.name}
-              onChange={event => setPending({ ...pending, name: event.target.value })}
-              className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 outline-none focus:border-primary-500"
-            />
-            {pending.off_data && pending.source !== 'ai_photo' && <div className="mt-3"><OpenFoodFactsDetails food={pending} /></div>}
-          </div>
-          {pending.source === 'ai_photo' && (
-            <div className="space-y-4 rounded-2xl border border-primary-900/70 bg-primary-950/15 p-4">
-              <div>
-                <p className="text-sm font-semibold text-primary-300">Controlla i dati letti dalla foto</p>
-                <p className="mt-1 text-xs text-gray-400">
-                  L’AI può sbagliare: confronta soprattutto calorie e valori per 100 {pending.nutrition_basis === 'per_100ml' ? 'ml' : 'g'} con l’etichetta.
-                </p>
-              </div>
-              {pending.analysis_requires_review && (
-                <div className="rounded-xl border border-red-800/70 bg-red-950/30 p-3 text-xs text-red-200">
-                  <p className="font-semibold">Controlli automatici non superati</p>
-                  <p className="mt-1">Correggi i campi confrontandoli con l’etichetta, poi conferma la revisione.</p>
-                  {pending.analysis_validation_errors && pending.analysis_validation_errors.length > 0 && (
-                    <ul className="mt-2 space-y-1">
-                      {pending.analysis_validation_errors.map((error, index) => <li key={`${error}-${index}`}>• {error}</li>)}
-                    </ul>
-                  )}
-                </div>
-              )}
-              {pending.analysis_warnings && pending.analysis_warnings.length > 0 && (
-                <ul className="space-y-1 rounded-xl bg-orange-950/30 p-3 text-xs text-orange-300">
-                  {pending.analysis_warnings.map((warning, index) => <li key={`${warning}-${index}`}>• {warning}</li>)}
-                </ul>
-              )}
-              <div>
-                <label className="text-sm text-gray-400" htmlFor="pending-brand">Marca</label>
-                <input id="pending-brand" value={pending.brand ?? ''}
-                  onChange={event => setPending({ ...pending, brand: event.target.value || null })}
-                  className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 outline-none focus:border-primary-500" />
-              </div>
-              <div>
-                <label className="text-sm text-gray-400" htmlFor="pending-package-label">Confezione indicata</label>
-                <input id="pending-package-label" value={pending.quantity ?? ''}
-                  onChange={event => setPending({ ...pending, quantity: event.target.value || null })}
-                  placeholder="es. 10 uova oppure 500 g"
-                  className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 outline-none focus:border-primary-500" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <label className="text-xs text-gray-400">
-                  Pezzi per confezione
-                  <input type="number" min={1} step={1} value={pending.package_piece_count ?? ''}
-                    onChange={event => {
-                      const value = event.target.value ? Math.max(1, Math.round(Number(event.target.value))) : null
-                      setPending({ ...pending, package_piece_count: value })
-                    }}
-                    className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />
-                </label>
-                <label className="text-xs text-gray-400">
-                  Peso/volume netto
-                  <input type="number" min={0} step="0.1" value={pending.package_net_quantity_value == null ? '' : formatDecimal(pending.package_net_quantity_value)}
-                    onChange={event => {
-                      const value = event.target.value ? Math.max(0, roundToTwo(Number(event.target.value))) : null
-                      setPending({ ...pending, package_net_quantity_value: value })
-                    }}
-                    className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />
-                </label>
-              </div>
-              <div>
-                <label className="text-xs text-gray-400" htmlFor="pending-net-unit">Unità peso/volume netto</label>
-                <select id="pending-net-unit" value={pending.package_net_quantity_unit ?? ''}
-                  onChange={event => {
-                    const value = event.target.value === 'g' || event.target.value === 'ml' ? event.target.value : null
-                    setPending({ ...pending, package_net_quantity_unit: value })
-                  }}
-                  className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 outline-none focus:border-primary-500">
-                  <option value="">Non indicata</option>
-                  <option value="g">grammi</option>
-                  <option value="ml">millilitri</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm text-gray-400" htmlFor="pending-serving">Porzione indicata</label>
-                <input id="pending-serving" value={pending.serving_size ?? ''}
-                  onChange={event => setPending({ ...pending, serving_size: event.target.value || null })}
-                  placeholder="es. 30 g"
-                  className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 outline-none focus:border-primary-500" />
-              </div>
-              <div>
-                <label className="text-sm text-gray-400" htmlFor="pending-ingredients">Ingredienti</label>
-                <textarea id="pending-ingredients" value={pending.ingredients ?? ''} rows={3}
-                  onChange={event => setPending({ ...pending, ingredients: event.target.value || null })}
-                  className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 outline-none focus:border-primary-500" />
-              </div>
-              <div>
-                <label className="text-sm text-gray-400" htmlFor="pending-allergens">Allergeni</label>
-                <input id="pending-allergens" value={pending.allergens ?? ''}
-                  onChange={event => setPending({ ...pending, allergens: event.target.value || null })}
-                  className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 outline-none focus:border-primary-500" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Valori nutrizionali per 100 {pending.nutrition_basis === 'per_100ml' ? 'ml' : 'g'}</p>
-                <PendingNutritionFields food={pending}
-                  onChange={(key, value) => setPending({ ...pending, [key]: value === null ? null : Math.max(0, value) })} />
-              </div>
-              {pending.analysis_requires_review && (
-                <label className="flex items-start gap-2 rounded-xl border border-gray-700 bg-gray-900/50 p-3 text-xs text-gray-300">
-                  <input type="checkbox" checked={analysisReviewAcknowledged}
-                    onChange={event => setAnalysisReviewAcknowledged(event.target.checked)}
-                    className="mt-0.5 h-4 w-4 accent-primary-500" />
-                  Ho confrontato e corretto i valori segnalati usando la confezione.
-                </label>
-              )}
-            </div>
-          )}
-          {editingItemId && pending.source !== 'ai_photo' && (
-            <div className="rounded-2xl bg-gray-800 p-4">
-              <p className="text-sm text-gray-400">Valori nutrizionali per 100 {pending.nutrition_basis === 'per_100ml' ? 'ml' : 'g'}</p>
-              <PendingNutritionFields food={pending}
-                onChange={(key, value) => setPending({ ...pending, [key]: value })} />
-            </div>
-          )}
-          <div>
-            <label className="text-sm text-gray-400" htmlFor="pending-barcode">Codice a barre</label>
-            <input
-              id="pending-barcode"
-              inputMode="numeric"
-              value={pending.barcode ?? ''}
-              onChange={event => setPending({ ...pending, barcode: event.target.value || null })}
-              placeholder="EAN / UPC (facoltativo)"
-              className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 outline-none focus:border-primary-500"
-            />
-            {pending.barcode && !normalizeBarcode(pending.barcode) && (
-              <p className="mt-1 text-xs text-orange-400">Inserisci un codice numerico di 8, 12, 13 o 14 cifre.</p>
-            )}
-          </div>
-          <div>
-            <label className="text-sm text-gray-400">Categoria</label>
-            <select
-              value={pending.category}
-              onChange={event => setPending({ ...pending, category: event.target.value as FoodCategory })}
-              className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2.5 outline-none focus:border-primary-500"
-            >
-              {FOOD_CATEGORIES.map(category => (
-                <option key={category.id} value={category.id}>{category.icon} {category.label}</option>
-              ))}
-            </select>
-          </div>
-          <button type="button" onClick={handleAddToPantry}
-            disabled={savingItem
-              || !pending.name.trim()
-              || Boolean(pending.barcode && !normalizeBarcode(pending.barcode))
-              || Boolean(pending.analysis_requires_review && !analysisReviewAcknowledged)}
-            className="w-full py-3 bg-primary-600 rounded-lg font-semibold disabled:opacity-40">
-            {savingItem ? 'Salvataggio…' : editingItemId ? 'Salva modifiche' : 'Salva ingrediente'}
-          </button>
-          <button type="button" onClick={resetAddFlow} disabled={savingItem}
-            className="text-sm text-gray-500 text-center w-full disabled:opacity-40">
-            Annulla
-          </button>
-        </div>
-      )}
+      {mode === 'quantity' && pending && <PantryReview pending={pending} setPending={setPending}
+        editingItemId={editingItemId} analysisReviewAcknowledged={analysisReviewAcknowledged}
+        setAnalysisReviewAcknowledged={setAnalysisReviewAcknowledged} savingItem={savingItem}
+        handleAddToPantry={handleAddToPantry} resetAddFlow={resetAddFlow} />}
     </div>
   )
 }

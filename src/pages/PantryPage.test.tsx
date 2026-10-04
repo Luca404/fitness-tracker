@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   addPantryItem: vi.fn(),
   updatePantryItem: vi.fn(),
   showToast: vi.fn(),
+  refreshDiary: vi.fn(),
 }))
 
 vi.mock('../contexts/AuthContext', () => ({
@@ -14,7 +15,7 @@ vi.mock('../contexts/AuthContext', () => ({
 }))
 
 vi.mock('../contexts/DataContext', () => ({
-  useData: () => ({ showToast: mocks.showToast }),
+  useData: () => ({ showToast: mocks.showToast, refreshDiary: mocks.refreshDiary }),
 }))
 
 vi.mock('../services/api', () => mocks)
@@ -24,6 +25,15 @@ import PantryPage from './PantryPage'
 function openManualForm() {
   fireEvent.click(screen.getByRole('button', { name: /Aggiungi ingrediente/ }))
   fireEvent.click(screen.getByRole('button', { name: /Inserisci a mano/ }))
+}
+
+function click(name: string) { fireEvent.click(screen.getByRole('button', { name })) }
+function enterManual(name = 'Lenticchie') {
+  click('+ Aggiungi ingrediente')
+  click('✏️ Inserisci a mano')
+  fireEvent.change(screen.getByLabelText('Nome alimento'), { target: { value: name } })
+  fireEvent.change(screen.getByLabelText('Calorie (kcal/100g)'), { target: { value: '120.5' } })
+  click('Continua')
 }
 
 describe('PantryPage manual entry', () => {
@@ -139,5 +149,50 @@ describe('PantryPage manual entry', () => {
 
     expect(mocks.showToast).toHaveBeenCalledWith('Grassi saturi e zuccheri non possono superare i rispettivi totali')
     expect(screen.queryByRole('button', { name: 'Aggiungi alla dispensa' })).toBeNull()
+  })
+  it('saves manual ingredients with unknown optional nutrients and resets the flow after cancellation', async () => {
+    render(<PantryPage />)
+    await screen.findByText(/Nessun ingrediente salvato/)
+    enterManual('Da annullare')
+    click('Annulla')
+    click('+ Aggiungi ingrediente')
+    click('✏️ Inserisci a mano')
+    expect((screen.getByLabelText('Nome alimento') as HTMLInputElement).value).toBe('')
+    fireEvent.change(screen.getByLabelText('Nome alimento'), { target: { value: 'Lenticchie' } })
+    fireEvent.change(screen.getByLabelText('Calorie (kcal/100g)'), { target: { value: '120.5' } })
+    click('Continua')
+    click('Salva ingrediente')
+    await waitFor(() => expect(mocks.addPantryItem).toHaveBeenCalledWith(expect.objectContaining({
+      user_id: 'user-1', name: 'Lenticchie', calories_100g: 120.5, nutrition_unit: 'g',
+      fiber_100g: null, sugars_100g: null, salt_100g: null,
+    })))
+    await screen.findByRole('button', { name: '+ Aggiungi ingrediente' })
+  })
+  it('does not retain the editing ID when starting a new ingredient after cancelling an edit', async () => {
+    mocks.getPantryItems.mockResolvedValue([{ id: 'existing', user_id: 'user-1', name: 'Latte',
+      category: 'beverage', source: 'manual', nutrition_unit: 'ml', calories_100g: 50,
+      protein_100g: 3, carbs_100g: 5, fat_100g: 2, food_key: null, off_food_id: null }])
+    render(<PantryPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Modifica Latte' }))
+    expect((screen.getByLabelText('Nome alimento') as HTMLInputElement).value).toBe('Latte')
+    click('Annulla')
+    enterManual()
+    click('Salva ingrediente')
+    await waitFor(() => expect(mocks.addPantryItem).toHaveBeenCalledTimes(1))
+    expect(mocks.updatePantryItem).not.toHaveBeenCalled()
+    await screen.findByRole('button', { name: '+ Aggiungi ingrediente' })
+  })
+
+  it('refreshes the diary after correcting a saved ingredient', async () => {
+    mocks.getPantryItems.mockResolvedValue([{ id: 'existing', user_id: 'user-1', name: 'Latte',
+      category: 'beverage', source: 'manual', nutrition_unit: 'ml', calories_100g: 50,
+      protein_100g: 3, carbs_100g: 5, fat_100g: 2, food_key: null, off_food_id: null }])
+    mocks.updatePantryItem.mockResolvedValue({ id: 'existing', name: 'Latte' })
+    render(<PantryPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Modifica Latte' }))
+    click('Salva modifiche')
+    await waitFor(() => expect(mocks.refreshDiary).toHaveBeenCalledTimes(1))
+    expect(mocks.updatePantryItem).toHaveBeenCalledWith('existing', expect.objectContaining({ nutrition_unit: 'ml' }))
+    await screen.findByRole('button', { name: '+ Aggiungi ingrediente' })
   })
 })

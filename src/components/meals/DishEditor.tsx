@@ -1,16 +1,12 @@
 import { Fragment, useState } from 'react'
 import FoodSearch from './FoodSearch'
-import type { DishItem, DishMealType, MealItemUnit, PieceSize } from '../../types'
+import type { DishItemDraft, DishMealType, PieceSize } from '../../types'
 import { DISH_MEAL_TYPES } from '../../data/dishMealTypes'
 import IngredientQuantityInput from './IngredientQuantityInput'
-import { formatDecimal, roundToTwo } from '../../utils/decimal'
+import { formatDecimal } from '../../utils/decimal'
 
-export type DishItemDraft = Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'> & {
-  id?: string
-  dish_item_id?: string | null
-  is_customization?: boolean
-  unit?: MealItemUnit
-}
+export type { DishItemDraft } from '../../types'
+import { nutritionTotals, scaleIngredient } from '../../utils/nutrition'
 
 interface Props {
   initialName: string
@@ -36,12 +32,7 @@ export default function DishEditor({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const totalWeight = items.reduce((s, i) => s + (i.unit === 'ml' ? 0 : i.quantity_g), 0)
-  const totalVolume = items.reduce((s, i) => s + (i.unit === 'ml' ? i.quantity_g : 0), 0)
-  const totalKcal = items.reduce((s, i) => s + i.calories, 0)
-  const totalProtein = items.reduce((s, i) => s + i.protein_g, 0)
-  const totalCarbs = items.reduce((s, i) => s + i.carbs_g, 0)
-  const totalFat = items.reduce((s, i) => s + i.fat_g, 0)
+  const { weight: totalWeight, volumeMl: totalVolume, calories: totalKcal, protein: totalProtein, carbs: totalCarbs, fat: totalFat } = nutritionTotals(items)
   const orderedItems = items.map((item, index) => ({ item, index }))
   if (separateCustomizations) orderedItems.sort((a, b) => Number(Boolean(a.item.is_customization)) - Number(Boolean(b.item.is_customization)))
 
@@ -49,18 +40,7 @@ export default function DishEditor({
     if (!Number.isFinite(quantity_g) || quantity_g <= 0) return
     setItems(prev => prev.map((it, i) => {
       if (i !== index) return it
-      const factor = it.quantity_g > 0 ? quantity_g / it.quantity_g : 0
-      return {
-        ...it,
-        quantity_g: roundToTwo(quantity_g),
-        calories: roundToTwo(it.calories * factor),
-        protein_g: roundToTwo(it.protein_g * factor),
-        carbs_g: roundToTwo(it.carbs_g * factor),
-        fat_g: roundToTwo(it.fat_g * factor),
-        fiber_g: it.fiber_g == null ? null : roundToTwo(it.fiber_g * factor),
-        sugars_g: it.sugars_g == null ? null : roundToTwo(it.sugars_g * factor),
-        salt_g: it.salt_g == null ? null : roundToTwo(it.salt_g * factor),
-      }
+      return scaleIngredient(it, quantity_g)
     }))
   }
 

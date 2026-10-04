@@ -1,9 +1,8 @@
 import type { FoodResult, PantryUnit } from '../types'
 import { BASIC_FOODS } from '../data/basicFoods'
-import { roundToTwo } from '../utils/decimal'
+import { scaleNutrition } from '../utils/nutrition'
 
 const OFF_SEARCH_URL = 'https://world.openfoodfacts.org/api/v2/search'
-const OFF_PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product'
 
 type OpenFoodFactsProduct = {
   [key: string]: unknown
@@ -323,17 +322,6 @@ export async function searchFood(query: string): Promise<FoodResult[]> {
     .filter((product: FoodResult | null): product is FoodResult => product !== null)
 }
 
-export async function lookupBarcode(barcode: string): Promise<FoodResult | null> {
-  // Omitting `fields` intentionally keeps the complete OFF product payload
-  // available to the normalizer, including localized names and product data.
-  const res = await fetch(`${OFF_PRODUCT_URL}/${encodeURIComponent(barcode)}.json`)
-  if (!res.ok) throw new Error('OFF unreachable')
-
-  const json = await res.json()
-  if (json.status !== 1 || !json.product) return null
-  return toFoodResult(json.product as OpenFoodFactsProduct)
-}
-
 export function calcNutrition(
   food: FoodResult,
   quantityG: number
@@ -346,17 +334,9 @@ export function calcNutrition(
   sugars_g: number | null
   salt_g: number | null
 } {
-  const factor = quantityG / 100
-  const scaledOptional = (value: number | null | undefined) => value == null
-    ? null
-    : roundToTwo(value * factor)
-  return {
-    calories: roundToTwo(food.calories_100g * factor),
-    protein_g: roundToTwo(food.protein_100g * factor),
-    carbs_g: roundToTwo(food.carbs_100g * factor),
-    fat_g: roundToTwo(food.fat_100g * factor),
-    fiber_g: scaledOptional(food.fiber_100g),
-    sugars_g: scaledOptional(food.sugars_100g),
-    salt_g: scaledOptional(food.salt_100g),
-  }
+  return scaleNutrition({
+    calories: food.calories_100g, protein_g: food.protein_100g,
+    carbs_g: food.carbs_100g, fat_g: food.fat_100g,
+    fiber_g: food.fiber_100g, sugars_g: food.sugars_100g, salt_g: food.salt_100g,
+  }, quantityG / 100)
 }

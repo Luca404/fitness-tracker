@@ -8,7 +8,7 @@ import type { GymSession } from '../types'
 export default function GymSessionPage() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
-  const { showToast } = useData()
+  const { showToast, refreshDiary } = useData()
   const [session, setSession] = useState<GymSession | null>(null)
   const [error, setError] = useState(false)
 
@@ -33,8 +33,8 @@ export default function GymSessionPage() {
         <p className="text-sm text-gray-300">Impossibile caricare la sessione.</p>
         <button type="button" onClick={back} className="text-sm font-semibold text-primary-400">← Allenamenti</button>
       </div> : session ? <GymSessionView session={session} onBack={back}
-        onCompleted={async () => { showToast('Allenamento completato'); back() }}
-        onDeleted={async () => { showToast('Sessione eliminata'); back() }} />
+        onCompleted={async () => { await refreshDiary(); showToast('Allenamento completato'); back() }}
+        onDeleted={async () => { await refreshDiary(); showToast('Sessione eliminata'); back() }} />
         : <div className="h-32 animate-pulse rounded-2xl bg-gray-800" aria-label="Caricamento allenamento" />}
     </main>
   </div>

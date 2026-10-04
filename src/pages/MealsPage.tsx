@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { useSettings } from '../contexts/SettingsContext'
@@ -71,10 +71,6 @@ export default function MealsPage() {
   const [preparedAmounts, setPreparedAmounts] = useState<{ total_cooked_g: number; remaining_g: number } | null>(null)
   const [preparedEditG, setPreparedEditG] = useState(0)
   const [savingPreparedEdit, setSavingPreparedEdit] = useState(false)
-
-  useEffect(() => {
-    fetchForDate(selectedDate)
-  }, [selectedDate, fetchForDate])
 
   const totalBurned = daySummary.calories_burned
   const target = goals?.calorie_target ?? 2000

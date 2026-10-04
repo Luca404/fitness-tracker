@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { groupBy } from '../utils/groupBy'
 import type { GymPlan, GymPlanExercise, GymSession, GymSet } from '../types'
 
 export type GymPlanExerciseInput = Pick<GymPlanExercise,
@@ -11,9 +12,10 @@ export async function getGymPlans(): Promise<GymPlan[]> {
   const { data: exercises, error: exerciseError } = await supabase.from('gym_plan_exercises')
     .select('*').in('plan_id', plans.map(plan => plan.id)).order('position')
   if (exerciseError) throw exerciseError
+  const exercisesByPlan = groupBy(exercises ?? [], exercise => exercise.plan_id)
   return plans.map(plan => ({
     ...plan,
-    exercises: (exercises ?? []).filter(exercise => exercise.plan_id === plan.id),
+    exercises: exercisesByPlan.get(plan.id) ?? [],
   })) as GymPlan[]
 }
 
@@ -37,9 +39,10 @@ async function hydrateGymSessions(rows: Omit<GymSession, 'sets'>[]): Promise<Gym
     .in('session_id', rows.map(row => row.id))
     .order('exercise_position').order('set_number')
   if (error) throw error
+  const setsBySession = groupBy(sets ?? [], set => set.session_id)
   return rows.map(row => ({
     ...row,
-    sets: (sets ?? []).filter(set => set.session_id === row.id),
+    sets: setsBySession.get(row.id) ?? [],
   })) as GymSession[]
 }
 

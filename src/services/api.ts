@@ -6,10 +6,18 @@ import type {
 import { orderDishItems } from '../utils/dishOrder'
 import { BASIC_FOODS } from '../data/basicFoods'
 import { normalizeIngredientName } from '../utils/ingredientMatching'
+import { groupBy } from '../utils/groupBy'
+
+const catalogByName = new Map<string, (typeof BASIC_FOODS)[number]>()
+for (const food of BASIC_FOODS) {
+  const name = normalizeIngredientName(food.name)
+  // Preserve the first match used by the legacy lookup when names collide.
+  if (!catalogByName.has(name)) catalogByName.set(name, food)
+}
 
 function catalogFoodForName(name: string) {
   const normalized = normalizeIngredientName(name)
-  return BASIC_FOODS.find(food => normalizeIngredientName(food.name) === normalized)
+  return catalogByName.get(normalized)
 }
 
 function enrichLegacyFoodItem<T extends { food_name: string; category?: string | null; food_key?: string | null }>(item: T) {
@@ -81,7 +89,7 @@ export async function getMealsForDate(date: string): Promise<Meal[]> {
   return hydrateMeals(meals)
 }
 
-async function hydrateMeals(meals: Omit<Meal, 'entries' | 'items'>[]): Promise<Meal[]> {
+async function hydrateMeals(meals: Omit<Meal, 'entries'>[], includeDishIcons = true): Promise<Meal[]> {
   const mealIds = meals.map(m => m.id)
   const { data: entries, error: eError } = await supabase
     .from('meal_entries')
@@ -91,7 +99,7 @@ async function hydrateMeals(meals: Omit<Meal, 'entries' | 'items'>[]): Promise<M
   if (eError) throw eError
 
   if (!entries || entries.length === 0) {
-    return meals.map(m => ({ ...m, entries: [], items: [] })) as Meal[]
+    return meals.map(m => ({ ...m, entries: [] }))
   }
 
   const { data: items, error: iError } = await supabase
@@ -101,26 +109,35 @@ async function hydrateMeals(meals: Omit<Meal, 'entries' | 'items'>[]): Promise<M
     .order('created_at')
   if (iError) throw iError
 
-  const dishIds = [...new Set(entries.map(e => e.dish_id).filter((id): id is string => Boolean(id)))]
+  const iconSourceByBatch = new Map<string, string | null>()
   let dishIcons = new Map<string, string | null>()
-  if (dishIds.length > 0) {
-    const { data: dishes, error: dError } = await supabase
-      .from('dishes')
-      .select('id, icon')
-      .in('id', dishIds)
-    if (dError) throw dError
-    dishIcons = new Map((dishes ?? []).map(dish => [dish.id, dish.icon]))
+  if (includeDishIcons) {
+    const batchIds = [...new Set(entries.map(entry => entry.prepared_batch_id)
+      .filter((id): id is string => Boolean(id)))]
+    if (batchIds.length) {
+      const { data: batches, error } = await supabase.from('prepared_batches')
+        .select('id, source_dish_id').in('id', batchIds)
+      if (error) throw error
+      for (const batch of batches ?? []) iconSourceByBatch.set(batch.id, batch.source_dish_id)
+    }
+    const dishIds = [...new Set([
+      ...entries.map(entry => entry.dish_id), ...iconSourceByBatch.values(),
+    ].filter((id): id is string => Boolean(id)))]
+    if (dishIds.length) {
+      const { data: dishes, error } = await supabase.from('dishes').select('id, icon').in('id', dishIds)
+      if (error) throw error
+      dishIcons = new Map((dishes ?? []).map(dish => [dish.id, dish.icon]))
+    }
   }
 
-  return meals.map(m => ({
-    ...m,
-    entries: entries.filter(e => e.meal_id === m.id).map(e => ({
-      ...e,
-      dish_icon: e.dish_id ? dishIcons.get(e.dish_id) ?? null : null,
-      items: (items ?? []).filter(i => i.entry_id === e.id).map(enrichLegacyFoodItem),
-    })),
-    items: (items ?? []).filter(i => i.meal_id === m.id).map(enrichLegacyFoodItem),
-  })) as Meal[]
+  const itemsByEntry = groupBy((items ?? []).map(enrichLegacyFoodItem), item => item.entry_id)
+  const entriesByMeal = groupBy(entries.map(entry => {
+    const sourceId = entry.prepared_batch_id ? iconSourceByBatch.get(entry.prepared_batch_id) : null
+    const iconId = sourceId && dishIcons.has(sourceId) ? sourceId : entry.dish_id
+    return { ...entry, dish_icon: iconId ? dishIcons.get(iconId) ?? null : null,
+      dish_icon_source_id: iconId ?? null, items: itemsByEntry.get(entry.id) ?? [] }
+  }), entry => entry.meal_id)
+  return meals.map(meal => ({ ...meal, entries: entriesByMeal.get(meal.id) ?? [] })) as Meal[]
 }
 
 export async function addMealEntry(
@@ -130,7 +147,7 @@ export async function addMealEntry(
   name: string,
   items: MealItemInput[],
   dishId: string | null = null,
-): Promise<{ meal: Omit<Meal, 'entries' | 'items'>; entry: MealEntry }> {
+): Promise<{ meal: Omit<Meal, 'entries'>; entry: MealEntry }> {
   const { data, error } = await supabase.rpc('add_meal_entry', {
     p_user_id: userId,
     p_date: date,
@@ -140,7 +157,7 @@ export async function addMealEntry(
     p_dish_id: dishId,
   })
   if (error) throw error
-  return data as { meal: Omit<Meal, 'entries' | 'items'>; entry: MealEntry }
+  return data as { meal: Omit<Meal, 'entries'>; entry: MealEntry }
 }
 
 export async function updateMealEntry(
@@ -260,7 +277,7 @@ export async function getMealsForRange(from: string, to: string): Promise<Meal[]
   if (mError) throw mError
   if (!meals || meals.length === 0) return []
 
-  return hydrateMeals(meals)
+  return hydrateMeals(meals, false)
 }
 
 // --- Dishes (piatti salvati) ---
@@ -283,9 +300,10 @@ export async function getDishes(): Promise<Dish[]> {
     .order('id', { ascending: true })
   if (iError) throw iError
 
+  const itemsByDish = groupBy((items ?? []).map(enrichLegacyFoodItem), item => item.dish_id)
   return dishes.map(d => ({
     ...d,
-    items: orderDishItems((items ?? []).filter(i => i.dish_id === d.id).map(enrichLegacyFoodItem)),
+    items: orderDishItems(itemsByDish.get(d.id) ?? []),
   })) as Dish[]
 }
 
@@ -396,19 +414,24 @@ export async function getPreparedBatches(): Promise<PreparedBatch[]> {
     .order('created_at', { ascending: false })
   if (error) throw error
   if (!batches?.length) return []
-  const dishIds = batches.map(batch => batch.snapshot_dish_id as string)
+  const snapshotIds = batches.map(batch => batch.snapshot_dish_id as string)
+  const dishIds = [...new Set([...snapshotIds, ...batches.map(batch => batch.source_dish_id)
+    .filter((id): id is string => Boolean(id))])]
   const [{ data: dishes, error: dishesError }, { data: items, error: itemsError }] = await Promise.all([
     supabase.from('dishes').select('*').in('id', dishIds),
-    supabase.from('dish_items').select('*').in('dish_id', dishIds).order('position'),
+    supabase.from('dish_items').select('*').in('dish_id', snapshotIds).order('position'),
   ])
   if (dishesError) throw dishesError
   if (itemsError) throw itemsError
+  const itemsByDish = groupBy((items ?? []).map(enrichLegacyFoodItem), item => item.dish_id)
+  const sourceDishes = new Map((dishes ?? []).map(dish => [dish.id, dish]))
   const dishById = new Map((dishes ?? []).map(dish => [dish.id, {
-    ...dish, items: orderDishItems((items ?? []).filter(item => item.dish_id === dish.id).map(enrichLegacyFoodItem)),
+    ...dish, items: orderDishItems(itemsByDish.get(dish.id) ?? []),
   } as Dish]))
   return batches.flatMap(batch => {
     const dish = dishById.get(batch.snapshot_dish_id)
-    return dish ? [{ ...batch, dish } as PreparedBatch] : []
+    const source = batch.source_dish_id ? sourceDishes.get(batch.source_dish_id) : undefined
+    return dish ? [{ ...batch, dish: { ...dish, icon: source ? source.icon : dish.icon } } as PreparedBatch] : []
   })
 }
 

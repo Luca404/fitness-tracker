@@ -1,5 +1,5 @@
 // src/contexts/SettingsContext.tsx
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { format } from 'date-fns'
 
@@ -12,8 +12,27 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | null>(null)
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const today = format(new Date(), 'yyyy-MM-dd')
+  const [today, setToday] = useState(() => format(new Date(), 'yyyy-MM-dd'))
   const [selectedDate, setSelectedDate] = useState(today)
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
+    function updateToday() {
+      const now = new Date()
+      const nextDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      setToday(format(now, 'yyyy-MM-dd'))
+      clearTimeout(timer)
+      timer = setTimeout(updateToday, nextDay.getTime() - now.getTime() + 100)
+    }
+    updateToday()
+    window.addEventListener('focus', updateToday)
+    document.addEventListener('visibilitychange', updateToday)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('focus', updateToday)
+      document.removeEventListener('visibilitychange', updateToday)
+    }
+  }, [])
 
   return (
     <SettingsContext.Provider value={{ selectedDate, setSelectedDate, today }}>

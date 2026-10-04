@@ -8,19 +8,23 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 
 - **Meal logging** — log meals by time slot (breakfast, lunch, dinner, snack, drinks); calorie and macro breakdown per meal and per day. Snacks appear where they were registered relative to other entries, while the usual breakfast → lunch → dinner order stays fixed ([ordering details](docs/meal-diary-order.md))
 - **Dish-centric entry** — opening a meal slot shows saved dishes assigned to that slot; a dish can belong to breakfast, lunch, dinner and/or snack. Personalization ingredients remain separate from the saved recipe when the diary entry is reopened for editing or removal. New and one-off dishes are also supported; drinks stay in their own flow
-- **Kitchen** — one area with saved dishes and personal ingredients. Recipes retain ingredient order, meal categories and optional custom icons. The dish editor shows quantities and read-only nutrition values; prepared batches track remaining cooked portions
-- **Personal ingredients** — save reusable foods by category through barcode scan, nutrition-label photo or manual/basic-food entry. Nutrition values are stored per 100 g/ml and corrections update linked dishes and diary entries; ingredients do not have a stock counter
+- **Kitchen** — one area with saved dishes and personal ingredients. Recipes retain ingredient order, meal categories and optional custom icons. The dish editor shows quantities and read-only nutrition values; prepared batches track remaining cooked portions. Cooking method and food-specific weight yields provide a cooked-weight estimate that can be replaced by a measured weight ([guide](docs/peso-piatti-preparati.md))
+- **Personal ingredients** — save reusable foods by category through barcode scan, nutrition-label photo or manual/basic-food entry. Nutrition values, including fibre, sugars and salt for every basic food, are stored per 100 g/ml; corrections update linked dishes and diary entries. Ingredients do not have a stock counter
 - **Nutrition-label photo import** — take or choose a package photo, extract product and per-100 nutrition data through an authenticated OpenAI-backed Edge Function, review every field, then save it among personal ingredients
 - **Macros** — visual progress bars for protein, total carbohydrates, and total fat against daily targets; sugars and saturated fat are subsets of their respective totals, not extra grams to add
 - **Calorie ring** — at-a-glance daily calorie budget vs. consumed
-- **Gym training** — create reusable plans, search exercises in Italian or English, set fixed or ranged repetition goals, record weight and performed reps for each set, then review recent sessions and progress ([guide](docs/allenamenti-palestra.md))
+- **Gym training** — create reusable plans, search exercises in Italian or English, set fixed or ranged repetition goals, record weight and performed reps for each set in a focused, one-exercise-at-a-time view. Completed sessions show elapsed time and estimated calories, included in the daily burned overview ([guide](docs/allenamenti-palestra.md))
 - **Other activities** — log Pesi, Camminata, Corsa, Ciclismo, Nuoto, Tapis roulant or Vogatore by duration with a MET-based calorie estimate; older activity types remain readable
 - **Weight log** — record body weight over time with history view; calorie and macro targets use a 7-day rolling average and are recalculated only after a significant (at least 2%) change from the last calculation weight
 - **Wellbeing** — dedicated daily/weekly healthy-habits dashboard, with a compact status summary on the Meals page: minimum goals fill toward their target, while maximum limits fill orange only when exceeded
 - **BMR / TDEE** — personalized pipeline from BMR and activity-adjusted TDEE through calorie target, weight-based protein/fat targets, and residual carbohydrates; supports maintenance, muscle gain, weight loss and body recomposition, with prudent loss-rate and calorie limits
 - **Onboarding** — 5-step wizard (physical stats → objective → lifestyle → resistance training → confirm) to set up goals; the same calculation inputs can later be edited from Settings
 - **History** — 7/30-day calorie and workout trends
-- **Installable PWA** — installable shell for Android, iOS, and desktop; data operations require connectivity
+- **Installable PWA** — installable shell for Android, iOS, and desktop; data operations require connectivity. New versions are applied through an update prompt; failed page loads show recovery controls
+
+Daily overview values use whole numbers; details use at most one decimal. Nutrition
+calculations keep their stored precision. Total sugars are informational because
+meal data does not distinguish free sugars; they do not affect the habits score.
 
 ## Stack
 
@@ -28,7 +32,7 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 - Tailwind CSS (mobile-first, dark mode)
 - Supabase (PostgreSQL + Auth — email/password + RLS)
 - Italian interface
-- `@zxing/browser` for client-side barcode scanning, including rotated/vertical 1D barcodes
+- `@zxing/browser` for client-side barcode scanning, including rotated/vertical 1D barcodes (loaded on demand)
 
 ## Getting Started
 
@@ -73,23 +77,25 @@ not modify Trackr's finance tables or functions.
 ```
 src/
 ├── components/
-│   ├── common/          # Modal, Toast, DaySelector
+│   ├── common/          # Modal, Toast, DaySelector, error recovery and PWA updates
 │   ├── layout/          # Layout shell with bottom nav
 │   ├── kitchen/         # Saved dishes and prepared batches
 │   ├── meals/           # Meal cards/details, calorie/macros, ingredient search and dish composer
 │   ├── onboarding/      # Physical, objective, lifestyle, resistance-training and confirmation steps
-│   ├── pantry/          # BarcodeScanner, NutritionLabelPhoto
+│   ├── pantry/          # Lazy scanner/photo tools, nutrition fields and product review
 │   ├── settings/        # Profile inputs that affect calorie/macro calculations
 │   └── workout/         # Gym plans/sessions and simple activity logging
 ├── contexts/
 │   ├── AuthContext.tsx  # Supabase Auth, session management
-│   ├── DataContext.tsx  # Daily meals, workouts, weight logs, goals
+│   ├── DataContext.tsx  # Profile, weight and goals; exposes the diary hook
 │   └── SettingsContext.tsx
+├── hooks/useDiary.ts    # Date-scoped meals/activities, mutation guards and weekly cache
 ├── pages/
 │   ├── LoginPage.tsx
 │   ├── OnboardingPage.tsx
 │   ├── MealsPage.tsx
 │   ├── FitnessPage.tsx # Allenamenti + Peso tabs
+│   ├── GymSessionPage.tsx # Focused full-screen gym session
 │   ├── WellbeingPage.tsx
 │   ├── WorkoutPage.tsx
 │   ├── WeightPage.tsx
@@ -100,7 +106,8 @@ src/
 ├── services/
 │   ├── api.ts           # Meals, dishes, ingredients and weight API
 │   ├── gymApi.ts        # Gym plans, sessions and sets
-│   ├── nutrition.ts     # Basic-foods search, Open Food Facts search + barcode lookup
+│   ├── goalRefresh.ts   # Shared weight reads and goal recalculation
+│   ├── nutrition.ts     # Basic-foods and Open Food Facts search
 │   ├── barcodeProducts.ts # Shared barcode catalog client and photo barcode detection
 │   ├── nutritionLabel.ts # Photo preparation + nutrition-label Edge Function client
 │   └── supabase.ts      # Supabase client
@@ -112,15 +119,21 @@ src/
 │   └── nutritionGuidelines.ts # Reference targets for healthy-habits indicators
 ├── utils/
 │   ├── bmr.ts           # Full BMR → TDEE → calorie/macro target pipeline
+│   ├── nutrition.ts     # Shared scaling and totals; preserves unknown nutrients
+│   ├── dishes.ts        # Shared saved-dish conversion and totals
+│   ├── pantryDraft.ts   # Ingredient validation and persistence conversion
 │   ├── goalRecalculation.ts # 7-day average and 2% automatic-recalculation trigger
+│   ├── gymSessionSummary.ts # Gym duration and estimated calories
 │   ├── mealTimeline.ts  # Position snack entries by registration time in the daily diary
+│   ├── preparedDishes.ts # Cooked-weight yields and prepared portion shortcuts
 │   └── met.ts           # MET-based calorie burn for activities
 └── types/index.ts
 ```
 
 ## Data model
 
-Supabase tables (health schema only, not shared with Trackr/pfTrackr):
+Supabase tables used by fitTrackr (health data stays separate from the other
+Trackrs applications; the barcode product catalog is shared):
 
 | Table | Description |
 |---|---|
@@ -133,17 +146,23 @@ Supabase tables (health schema only, not shared with Trackr/pfTrackr):
 | `gym_plans`, `gym_plan_exercises` | Reusable gym plans with ordered exercises, set counts, repetition goals and per-side flags |
 | `gym_sessions`, `gym_sets` | Session snapshots and each set's weight, performed reps and completion state; later plan edits do not change history |
 | `weight_logs` | Daily weight entries |
-| `dishes` | Saved reusable recipes and separate snapshots of prepared batches |
+| `dishes` | Saved reusable recipes, their cooking choices and measured weight yield, plus separate snapshots of prepared batches |
 | `dish_items` | Ingredients within a saved recipe or preparation snapshot, including order, g/ml unit and optional personal ingredient reference |
 | `pantry_items` | Permanent personal ingredient catalog, with nutritional values per 100 g/ml; legacy stock columns remain temporarily for compatibility |
-| `prepared_batches` | Independently prepared dishes, with estimated total cooked grams and remaining cooked grams |
+| `prepared_batches` | Independently prepared dishes, with estimated or manually entered total cooked grams and remaining cooked grams |
 | `barcode_products` | Shared product catalog keyed by barcode; authenticated clients can read it and trusted Edge Functions populate it from Open Food Facts or from label values reviewed and explicitly confirmed by a user |
 
 The personal ingredient catalog does not track stock or decrease quantities.
 Scan a barcode or photograph a label while composing a dish, or edit a saved
 ingredient in Cucina → Ingredienti. Preparing a dish creates a snapshot of its
 ingredients; editing the saved recipe later leaves that batch intact. Its cooked
-weight is estimated from the ingredient amounts, with an optional correction.
+weight is estimated from the ingredient amounts and each ingredient's cooking
+method, with an optional measured correction. A saved recipe remembers the
+measured yield for later preparations with the same ingredients and proportions.
+Dry legumes are weighed dry; canned legumes are weighed cooked and drained, with
+separate basic-food entries and nutrition values. See the
+[prepared-dish weight guide](docs/peso-piatti-preparati.md) for the calculation,
+controls and limits of the estimate.
 Eating a portion records cooked grams and decreases the remaining batch amount.
 Deleting or editing that diary portion adjusts the remaining amount accordingly.
 The quarter, half and three-quarter shortcuts refer to the original cooked total.
@@ -157,10 +176,14 @@ or English name or by equipment, with a custom exercise option. Plans support
 fixed or ranged repetition goals, per-side work and sets with free repetitions.
 Starting a plan creates a session with one row per planned set; previous performed
 weight and reps are suggested.
-Sessions can be resumed, completed, reviewed and compared by exercise. The
-simple activity picker is kept for Pesi, Camminata, Corsa, Ciclismo, Nuoto,
+The active session occupies a dedicated screen with one exercise at a time,
+navigation arrows, a rest timer after each completed set, and finish/delete
+actions available throughout. Completed sessions show total elapsed time,
+including rests, and estimated calories based on completed exercises, loads and
+body weight. Sessions can be resumed, completed, reviewed and compared by
+exercise. The simple activity picker is kept for Pesi, Camminata, Corsa, Ciclismo, Nuoto,
 Tapis roulant and Vogatore; older activity types remain readable in history.
-Gym sets do not receive an estimated calorie value. See the
+Individual gym sets do not receive an estimated calorie value. See the
 [gym training guide](docs/allenamenti-palestra.md) for the exact flow and sample plans.
 
 Changing calories, protein, carbohydrates, fat, fibre, sugars or salt in a
@@ -194,7 +217,10 @@ legumes, fish and fibre. The Pasti page uses these references for the “Buone
 abitudini” indicators. Fibre, sugars and salt are persisted as nullable values from
 the pantry, Open Food Facts or manual entry; incomplete days are marked as partial
 instead of treating missing nutrition data as zero. The local basic-food catalog
-also provides indicative fibre, sugars and salt values for every ingredient.
+provides indicative fibre, sugars and salt values for every ingredient, and
+selecting a basic food for the personal catalog preserves all three. A migration
+filled missing values in previously saved basic-food ingredients and their
+standalone dish/diary entries, while preserving existing standalone values.
 Manual ingredient entry keeps omitted optional values as unknown, distinct from an
 explicit zero. Across the UI, total carbohydrates already include sugars and
 total fat already includes saturated fat (and unsaturated fat when shown).
@@ -302,3 +328,22 @@ the Supabase Auth Site URL and add the required preview URL patterns.
   in an authenticated Edge Function.
 - Open Food Facts coverage is incomplete, especially for regional products;
   missing products still require manual entry.
+
+## Verification and architecture notes
+
+```bash
+npm test -- --run
+npm run build
+npm run lint
+```
+
+GitHub Actions runs these checks on pushes and pull requests. The diary is loaded
+centrally for the selected date; switching pages reuses it. Switching dates clears
+the previous day, and late reads or writes cannot replace another day's data.
+Successful ingredient/recipe corrections refresh the diary and weekly habits.
+Meals retain one ingredient source (`entries[].items`); weekly reads share a short
+cache that is invalidated after meal mutations. Prepared portions keep snapshot
+nutrition and resolve their custom icon from the original saved dish when available.
+
+The [updated simplification report](docs/rapporto-semplificazione-2026-09-29.md)
+records completed changes, build measurements and database work still deferred.

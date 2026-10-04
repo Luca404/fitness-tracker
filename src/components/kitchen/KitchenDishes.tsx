@@ -13,44 +13,13 @@ import ExtendedNutrition from '../meals/ExtendedNutrition'
 import PreparedDishesPanel from '../meals/PreparedDishesPanel'
 import { formatDecimal } from '../../utils/decimal'
 
-function dishTotals(dish: Dish) {
-  return dish.items.reduce((total, item) => ({
-    weight: total.weight + item.quantity_g,
-    calories: total.calories + item.calories,
-    protein: total.protein + item.protein_g,
-    carbs: total.carbs + item.carbs_g,
-    fat: total.fat + item.fat_g,
-  }), { weight: 0, calories: 0, protein: 0, carbs: 0, fat: 0 })
-}
-
-function toDraft(item: Dish['items'][number]): DishItemDraft {
-  return {
-    id: item.id,
-    food_name: item.food_name,
-    quantity_g: item.quantity_g,
-    unit: item.unit ?? 'g',
-    piece_count: item.piece_count ?? null,
-    piece_size: item.piece_size ?? null,
-    calories: item.calories,
-    protein_g: item.protein_g,
-    carbs_g: item.carbs_g,
-    fat_g: item.fat_g,
-    fiber_g: item.fiber_g ?? null,
-    sugars_g: item.sugars_g ?? null,
-    salt_g: item.salt_g ?? null,
-    source: item.source,
-    off_food_id: item.off_food_id,
-    category: item.category,
-    food_key: item.food_key,
-    pantry_item_id: item.pantry_item_id ?? null,
-  }
-}
+import { dishTotals, dishItemToDraft } from '../../utils/dishes'
 
 type EditorMode = 'closed' | 'create' | 'detail' | 'edit' | 'icon'
 
 export default function KitchenDishes() {
   const { user } = useAuth()
-  const { showToast } = useData()
+  const { showToast, setDishIcon, refreshDiary } = useData()
   const [dishes, setDishes] = useState<Dish[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
@@ -95,6 +64,7 @@ export default function KitchenDishes() {
     setIconSaving(true)
     try {
       await api.updateDishIcon(selectedDish.id, icon)
+      setDishIcon(selectedDish.id, icon)
       setDishes(current => current.map(dish => dish.id === selectedDish.id ? { ...dish, icon } : dish))
       setSelectedDish({ ...selectedDish, icon })
       closeIconPicker()
@@ -123,6 +93,7 @@ export default function KitchenDishes() {
     if (!selectedDish) return
     try {
       await api.updateDish(selectedDish.id, name, items, mealTypes)
+      await refreshDiary()
       await refresh()
       setSelectedDish(null)
       setMode('closed')
@@ -137,6 +108,7 @@ export default function KitchenDishes() {
     if (!selectedDish || !window.confirm(`Eliminare “${selectedDish.name}” dai piatti salvati?`)) return
     try {
       await api.deleteDish(selectedDish.id)
+      await refreshDiary()
       await refresh()
       setSelectedDish(null)
       setMode('closed')
@@ -146,18 +118,6 @@ export default function KitchenDishes() {
     }
   }
 
-  async function saveSuggestedDish() {
-    if (!selectedDish || !user) return
-    try {
-      await api.createDish(user.id, selectedDish.name, selectedDish.items.map(toDraft), selectedDish.meal_types ?? ['lunch'])
-      await refresh()
-      setSelectedDish(null)
-      setMode('closed')
-      showToast('Idea salvata nei tuoi piatti')
-    } catch {
-      showToast('Errore salvataggio piatto')
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -194,7 +154,7 @@ export default function KitchenDishes() {
                     {getDishIcon(dish)}<span aria-hidden="true" className="absolute -bottom-1 -right-1 rounded-full bg-gray-700 px-1 text-[10px]">✎</span>
                   </button>
                   <button type="button" onClick={() => openDetail(dish)} className="flex min-w-0 flex-1 items-center gap-2 py-1 pr-1 text-left">
-                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{dish.name}</span><span className="text-xs text-gray-500">{dish.items.length} ingredienti · {formatDecimal(totals.weight)} g</span><span className="block truncate text-[11px] text-primary-400/80">{dishMealTypeLabels(dish.meal_types)}</span></span>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{dish.name}</span><span className="text-xs text-gray-500">{dish.items.length} ingredienti · {formatDecimal(totals.weight)} g{totals.volumeMl > 0 && <> + {formatDecimal(totals.volumeMl)} ml</>}</span><span className="block truncate text-[11px] text-primary-400/80">{dishMealTypeLabels(dish.meal_types)}</span></span>
                     <span className="text-sm font-semibold text-primary-400">{formatDecimal(totals.calories)}<small className="ml-1 text-[9px]">kcal</small></span>
                     <span className="text-gray-600">›</span>
                   </button>
@@ -228,15 +188,14 @@ export default function KitchenDishes() {
         ) : mode === 'edit' && selectedDish ? (
           <div className="space-y-5">
             <div className="pr-12 lg:pr-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Modifica ricetta</p><h2 className="text-xl font-bold">{selectedDish.name}</h2></div>
-            <DishEditor initialName={selectedDish.name} initialItems={selectedDish.items.map(toDraft)} initialMealTypes={selectedDish.meal_types} onSave={updateDish} onCancel={() => setMode('detail')} saveLabel="Salva modifiche" editing />
+            <DishEditor initialName={selectedDish.name} initialItems={selectedDish.items.map(dishItemToDraft)} initialMealTypes={selectedDish.meal_types} onSave={updateDish} onCancel={() => setMode('detail')} saveLabel="Salva modifiche" editing />
           </div>
         ) : selectedDish ? (
           <DishDetail
             dish={selectedDish}
-            onEdit={selectedDish.id.startsWith('suggested:') ? undefined : () => setMode('edit')}
-            onChangeIcon={selectedDish.id.startsWith('suggested:') ? undefined : () => openIconPicker(selectedDish, 'detail')}
-            onDelete={selectedDish.id.startsWith('suggested:') ? undefined : deleteDish}
-            onSave={selectedDish.id.startsWith('suggested:') ? saveSuggestedDish : undefined}
+            onEdit={() => setMode('edit')}
+            onChangeIcon={() => openIconPicker(selectedDish, 'detail')}
+            onDelete={deleteDish}
           />
         ) : null}
       </Modal>
@@ -244,12 +203,11 @@ export default function KitchenDishes() {
   )
 }
 
-function DishDetail({ dish, onEdit, onChangeIcon, onDelete, onSave }: {
+function DishDetail({ dish, onEdit, onChangeIcon, onDelete }: {
   dish: Dish
   onEdit?: () => void
   onChangeIcon?: () => void
   onDelete?: () => void
-  onSave?: () => void
 }) {
   const totals = dishTotals(dish)
   const extendedTotals = getExtendedNutritionTotals(dish.items)
@@ -264,7 +222,7 @@ function DishDetail({ dish, onEdit, onChangeIcon, onDelete, onSave }: {
         ) : <span className="text-3xl">{getDishIcon(dish)}</span>}
         <h2 className="mt-3 text-2xl font-bold">{dish.name}</h2>
         <p className="mt-1 text-xs text-primary-400">{dishMealTypeLabels(dish.meal_types ?? ['lunch'])}</p>
-        <p className="mt-1 text-sm text-gray-400">{formatDecimal(totals.weight)} g · {formatDecimal(totals.calories)} kcal</p>
+        <p className="mt-1 text-sm text-gray-400">{formatDecimal(totals.weight)} g{totals.volumeMl > 0 && <> + {formatDecimal(totals.volumeMl)} ml</>} · {formatDecimal(totals.calories)} kcal</p>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
           <span className="rounded-xl bg-black/15 py-2">P <b>{formatDecimal(totals.protein)}g</b></span>
           <span className="rounded-xl bg-black/15 py-2">C <b>{formatDecimal(totals.carbs)}g</b></span>
@@ -285,14 +243,10 @@ function DishDetail({ dish, onEdit, onChangeIcon, onDelete, onSave }: {
           })}
         </div>
       </div>
-      {onSave ? (
-        <button type="button" onClick={onSave} className="w-full rounded-2xl bg-primary-500 py-3.5 font-semibold hover:bg-primary-400">Salva nei miei piatti</button>
-      ) : (
-        <div className="grid grid-cols-[1fr_auto] gap-3">
-          <button type="button" onClick={onEdit} className="rounded-2xl bg-primary-500 py-3.5 font-semibold hover:bg-primary-400">Modifica piatto</button>
-          <button type="button" onClick={onDelete} className="rounded-2xl border border-red-900 px-4 text-red-400 hover:bg-red-950/30" aria-label="Elimina piatto">🗑️</button>
-        </div>
-      )}
+      <div className="grid grid-cols-[1fr_auto] gap-3">
+        <button type="button" onClick={onEdit} className="rounded-2xl bg-primary-500 py-3.5 font-semibold hover:bg-primary-400">Modifica piatto</button>
+        <button type="button" onClick={onDelete} className="rounded-2xl border border-red-900 px-4 text-red-400 hover:bg-red-950/30" aria-label="Elimina piatto">🗑️</button>
+      </div>
     </div>
   )
 }
