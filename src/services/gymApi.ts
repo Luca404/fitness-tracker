@@ -6,7 +6,7 @@ export type GymPlanExerciseInput = Pick<GymPlanExercise,
   'exercise_key' | 'exercise_name' | 'equipment' | 'target_sets' | 'target_reps' | 'target_reps_max' | 'per_side'>
 
 export async function getGymPlans(): Promise<GymPlan[]> {
-  const { data: plans, error } = await supabase.from('gym_plans').select('*').order('created_at')
+  const { data: plans, error } = await supabase.from('gym_plans').select('*').order('position').order('created_at').order('id')
   if (error) throw error
   if (!plans?.length) return []
   const { data: exercises, error: exerciseError } = await supabase.from('gym_plan_exercises')
@@ -26,6 +26,11 @@ export async function saveGymPlan(userId: string, planId: string | null, name: s
   })
   if (error) throw error
   return data as string
+}
+
+export async function reorderGymPlans(planIds: string[]): Promise<void> {
+  const { error } = await supabase.rpc('reorder_gym_plans', { p_plan_ids: planIds })
+  if (error) throw error
 }
 
 export async function deleteGymPlan(id: string): Promise<void> {

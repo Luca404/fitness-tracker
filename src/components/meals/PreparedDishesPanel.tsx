@@ -5,6 +5,7 @@ import { useSettings } from '../../contexts/SettingsContext'
 import type { DishMealType, PreparedBatch } from '../../types'
 import { DISH_MEAL_TYPES } from '../../data/dishMealTypes'
 import PreparedPortionInput from './PreparedPortionInput'
+import { getDishIcon } from '../../utils/foodIcons'
 import { formatDecimal } from '../../utils/decimal'
 
 export default function PreparedDishesPanel({ mealType, onConsumed, compact = false, onCountChange, onSelect }: {
@@ -75,7 +76,7 @@ export default function PreparedDishesPanel({ mealType, onConsumed, compact = fa
     {visibleBatches.map(batch => <div key={batch.id} className={`rounded-2xl border ${compact ? 'border-gray-700/70 bg-gray-900/30 p-2 transition hover:border-primary-600' : 'border-primary-700/40 bg-primary-950/20 p-3'}`}>
       <button type="button" onClick={() => { if (onSelect) onSelect(batch); else { setSelected(batch); setGrams(0) } }}
         className={`flex w-full items-center text-left ${compact ? 'gap-3 rounded-xl p-2' : 'gap-3'}`}>
-        <span className={compact ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-xl' : 'text-2xl'}>{batch.dish.icon ?? '🍲'}</span>
+        <span className={compact ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-xl' : 'text-2xl'}>{getDishIcon(batch.dish)}</span>
         <span className="min-w-0 flex-1">
           <span className={`block truncate font-semibold ${compact ? 'text-sm' : ''}`}>{batch.dish.name}</span>
           <span className="block text-xs text-gray-400">{formatDecimal(batch.remaining_g)} g rimasti · {formatDecimal(batch.dish.items.reduce((sum, item) => sum + item.calories, 0) * batch.remaining_g / batch.total_cooked_g)} kcal</span>

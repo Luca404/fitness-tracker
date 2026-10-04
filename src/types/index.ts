@@ -69,6 +69,7 @@ export interface MealItem {
   id: string
   meal_id: string
   entry_id: string
+  position?: number // Stored diary order; older in-memory drafts may omit it.
   dish_item_id?: string | null
   is_customization?: boolean
   food_name: string
@@ -123,6 +124,7 @@ export interface GymPlanExercise {
 
 export interface GymPlan {
   id: string
+  position: number
   user_id: string
   name: string
   created_at: string

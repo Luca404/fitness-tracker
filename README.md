@@ -8,12 +8,12 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 
 - **Meal logging** — log meals by time slot (breakfast, lunch, dinner, snack, drinks); calorie and macro breakdown per meal and per day. Snacks appear where they were registered relative to other entries, while the usual breakfast → lunch → dinner order stays fixed ([ordering details](docs/meal-diary-order.md))
 - **Dish-centric entry** — opening a meal slot shows saved dishes assigned to that slot; a dish can belong to breakfast, lunch, dinner and/or snack. Personalization ingredients remain separate from the saved recipe when the diary entry is reopened for editing or removal. New and one-off dishes are also supported; drinks stay in their own flow
-- **Kitchen** — one area with saved dishes and personal ingredients. Recipes retain ingredient order, meal categories and optional custom icons. The dish editor shows quantities and read-only nutrition values; prepared batches track remaining cooked portions. Cooking method and food-specific weight yields provide a cooked-weight estimate that can be replaced by a measured weight ([guide](docs/peso-piatti-preparati.md))
+- **Kitchen** — one area with saved dishes and personal ingredients. Recipes retain ingredient order, meal categories and optional custom icons. A category selector filters saved recipes and prepared batches together. The dish editor shows quantities and read-only nutrition values; prepared batches track remaining cooked portions. Cooking method and food-specific weight yields provide a cooked-weight estimate that can be replaced by a measured weight ([guide](docs/peso-piatti-preparati.md))
 - **Personal ingredients** — save reusable foods by category through barcode scan, nutrition-label photo or manual/basic-food entry. Nutrition values, including fibre, sugars and salt for every basic food, are stored per 100 g/ml; corrections update linked dishes and diary entries. Ingredients do not have a stock counter
 - **Nutrition-label photo import** — take or choose a package photo, extract product and per-100 nutrition data through an authenticated OpenAI-backed Edge Function, review every field, then save it among personal ingredients
 - **Macros** — visual progress bars for protein, total carbohydrates, and total fat against daily targets; sugars and saturated fat are subsets of their respective totals, not extra grams to add
 - **Calorie ring** — at-a-glance daily calorie budget vs. consumed
-- **Gym training** — create reusable plans, search exercises in Italian or English, set fixed or ranged repetition goals, record weight and performed reps for each set in a focused, one-exercise-at-a-time view. Completed sessions show elapsed time and estimated calories, included in the daily burned overview ([guide](docs/allenamenti-palestra.md))
+- **Gym training** — create reusable plans, reorder them with up/down controls (saved per account), search exercises in Italian or English, set fixed or ranged repetition goals, record weight and performed reps for each set in a focused, one-exercise-at-a-time view. Completed sessions show elapsed time and estimated calories, included in the daily burned overview ([guide](docs/allenamenti-palestra.md))
 - **Other activities** — log Pesi, Camminata, Corsa, Ciclismo, Nuoto, Tapis roulant or Vogatore by duration with a MET-based calorie estimate; older activity types remain readable
 - **Weight log** — record body weight over time with history view; calorie and macro targets use a 7-day rolling average and are recalculated only after a significant (at least 2%) change from the last calculation weight
 - **Wellbeing** — dedicated daily/weekly healthy-habits dashboard, with a compact status summary on the Meals page: minimum goals fill toward their target, while maximum limits fill orange only when exceeded
@@ -371,3 +371,22 @@ nutrition and resolve their custom icon from the original saved dish when availa
 
 The [updated simplification report](docs/rapporto-semplificazione-2026-09-29.md)
 records completed changes, build measurements and database work still deferred.
+
+### Persistent ingredient and gym plan order
+
+Diary ingredients have an explicit `meal_items.position`, preserved by both meal
+RPCs and used when hydrating entries. The migration restores recipe order for
+historical linked items, which also stabilizes the icon derived from their first
+ingredient. The original order of unlinked historical items was not stored;
+those receive a best-effort order instead. Custom icons keep priority.
+
+Gym plans have a per-user position. Reordering uses one authenticated RPC,
+validates the complete set of owned plan IDs, and saves atomically. New plans
+append to the end; editing a plan retains its place and exercise ordering.
+An unsuccessful move restores the previous visible order. Plan refreshes cannot
+overwrite an order being saved when the selected date changes.
+
+`supabase/tests/ordering.sql` must run only in an isolated database migrated
+through `20261004140000`. It creates historical fixtures, applies the two order
+migrations inside a transaction, checks backfill, meal writes/updates, prepared
+portions, plan changes, invalid requests and user isolation, then rolls back.

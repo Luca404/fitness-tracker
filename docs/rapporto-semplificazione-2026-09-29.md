@@ -99,8 +99,7 @@ fra zuccheri liberi e aggiunti.
 Aggiunto il totale giornaliero in **unità alcoliche** (1 UA = 12 g di etanolo),
 calcolato da ml e gradazione. Le soglie orientative seguono ISS/PASSI e il
 profilo: 2 UA uomini adulti, 1 UA donne e persone da 65 anni, zero minorenni.
-Il messaggio «meno è meglio» evita di presentare la soglia come un obiettivo
-positivo. I dati sconosciuti restano incompleti.
+Le soglie sono riferimenti orientativi. I dati sconosciuti restano incompleti.
 
 Il catalogo include 21 cocktail distinti e altre varietà di vino/birra, con
 quantità e gradazione modificabili e valori indicativi dichiarati. La migration
@@ -181,3 +180,40 @@ su telefono e non si attribuisce questa riduzione all’intera applicazione.
 La build con i cocktail misura PantryPage a 28,95 kB (7,14 kB gzip) e il
 precache PWA a 1.559,02 KiB. Le stime di volume, gradazione e nutrienti dei
 cocktail restano indicative; quantità e gradazione si possono correggere.
+
+
+## Aggiornamento: categorie, icone automatiche e schede palestra
+
+- Cucina → Piatti: selettore Tutti / Colazione / Pranzo / Cena / Spuntino,
+  combinato con la ricerca. Filtra anche i piatti preparati; un nuovo piatto
+  parte dalla categoria selezionata.
+- Corretto il caso delle icone automatiche: gli ingredienti del diario avevano
+  timestamp identici e venivano ordinati tramite UUID, cambiando il primo
+  ingrediente. `meal_items.position` registra ora l’ordine dell’array sia in
+  inserimento sia in modifica. Le letture del diario usano tale posizione.
+  La migration riallinea i record storici collegati alle ricette; per quelli
+  senza riferimenti l’ordine originario non è recuperabile con certezza.
+  Anche l’elenco dei piatti pronti usa l’icona del primo ingrediente quando
+  non è stata scelta un’icona personalizzata.
+- Le schede palestra si spostano con ↑/↓. `gym_plans.position` e l’RPC
+  `reorder_gym_plans` mantengono l’ordine per account. Lo spostamento è atomico,
+  rifiuta ID estranei, duplicati o elenchi incompleti, e conserva l’ordine degli
+  esercizi. La creazione appende; una modifica mantiene la posizione.
+  Gli errori ripristinano l’elenco precedente e i refresh durante il salvataggio
+  non sovrascrivono l’ordine appena scelto.
+- Testo e pulsanti del popup PWA centrati orizzontalmente.
+- Rimossa la nota esplicativa sotto le unità alcoliche, come richiesto.
+
+Verifiche: **215 test in 47 file**, lint e build superati. Su PostgreSQL 17
+isolato sono stati verificati il backfill storico, le scritture del diario, le
+porzioni preparate, il riordino delle schede, l’inserimento in coda, i vincoli,
+le richieste invalide e l’isolamento fra utenti. Superata anche la suite SQL
+sulla gradazione alcolica dopo le nuove migration.
+
+Il dry-run sul database condiviso elenca esclusivamente le migration
+`20261004153000_preserve_diary_ingredient_order.sql` e
+`20261004154000_gym_plan_order.sql` di questo repository.
+
+Entrambe le migration sono state applicate al database condiviso con
+`supabase db push`, dopo la verifica locale. Il container temporaneo è stato
+rimosso. La build finale e il test del pannello dei piatti pronti sono superati.

@@ -120,7 +120,6 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
               </>
             )}
           </p>
-          {row.note && <p className="mt-2 text-[11px] text-gray-500">{row.note}</p>}
           {row.direction !== 'info' && <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-700">
             <div className={`h-full rounded-full transition-all ${overMaximum ? 'bg-orange-500' : 'bg-primary-500'}`} style={{ width: `${progress}%` }} />
           </div>}

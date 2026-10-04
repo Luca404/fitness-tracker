@@ -11,7 +11,6 @@ export interface HabitRow {
   direction: 'min' | 'max' | 'info'
   partial?: boolean
   unit?: 'g' | 'UA'
-  note?: string
 }
 
 export interface HabitTargets {
@@ -96,7 +95,7 @@ export function calculateHabitRows(
     { label: 'Pesce', icon: '🐟', value: gramsForCategories(mergedWeek, ['fish']), target: targets.fish, period: 'settimana', direction: 'min' },
     { label: 'Fibre', icon: '🌾', ...fiber, target: targets.fiber, period: 'oggi', direction: 'min' },
     { label: 'Zuccheri totali', icon: '🍬', ...sugars, target: targets.sugars, period: 'oggi', direction: 'max' },
-    { label: 'Unità alcoliche', icon: '🍷', ...alcoholTotal(currentMeals.flatMap(mealItems)), target: targets.alcohol, period: 'oggi', direction: 'max', unit: 'UA', note: '1 UA = 12 g di alcol. Soglia orientativa: meno è meglio.' },
+    { label: 'Unità alcoliche', icon: '🍷', ...alcoholTotal(currentMeals.flatMap(mealItems)), target: targets.alcohol, period: 'oggi', direction: 'max', unit: 'UA' },
     { label: 'Sale', icon: '🧂', ...salt, target: targets.salt, period: 'oggi', direction: 'max' },
   ]
 }

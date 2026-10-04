@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-const mock = vi.hoisted(() => ({ from: vi.fn() }))
-vi.mock('./supabase', () => ({ supabase: { from: mock.from } }))
-import { getMealsForDate, getMealsForRange, getPreparedBatches } from './api'
+const mock = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn() }))
+vi.mock('./supabase', () => ({ supabase: { from: mock.from, rpc: mock.rpc } }))
+import { getFoodIcon } from '../utils/foodIcons'
+import { getMealsForDate, getMealsForRange, getPreparedBatches, addMealEntry, updateMealEntry } from './api'
 
 const baseMeal = { id: 'meal', date: '2026-10-04', meal_type: 'lunch', user_id: 'user', name: null, created_at: '' }
 const batch = { id: 'batch', source_dish_id: 'original', snapshot_dish_id: 'snapshot', remaining_g: 200 }
@@ -62,5 +63,26 @@ describe('diary dish icons', () => {
     const meals = await getMealsForRange('2026-09-28', '2026-10-04')
     expect(meals[0].entries[0].items).toHaveLength(1)
     expect(mock.from.mock.calls.map(([table]) => table)).toEqual(['meals', 'meal_entries', 'meal_items'])
+  })
+})
+
+describe('diary ingredient order', () => {
+  const fruit = { id: 'zz-fruit', entry_id: 'prepared-entry', food_name: 'Mela', category: 'fruit', position: 0, created_at: '2026-10-04' }
+  const grain = { id: 'aa-grain', entry_id: 'prepared-entry', food_name: 'Avena', category: 'grain', position: 1, created_at: '2026-10-04' }
+  it('keeps the first recipe ingredient and automatic icon despite equal timestamps and reverse UUIDs', async () => {
+    tables.dishes = [{ id: 'original', icon: null }, { id: 'snapshot', icon: null }]
+    tables.meal_items = [grain, fruit]
+    const entry = (await getMealsForDate('2026-10-04'))[0].entries[0]
+    expect(entry.items.map(item => item.food_name)).toEqual(['Mela', 'Avena'])
+    expect(getFoodIcon(entry.items)).toBe('🍎')
+    expect(queries.meal_items.order).toHaveBeenCalledWith('position', { ascending: true })
+  })
+  it('normalizes immediate create and update results before they enter diary state', async () => {
+    const entry = { id: 'entry', items: [grain, fruit] }
+    mock.rpc.mockResolvedValueOnce({ data: { meal: baseMeal, entry }, error: null })
+    const result = await addMealEntry('user','2026-10-04','lunch','Recipe',[])
+    expect(result.entry.items.map(item => item.food_name)).toEqual(['Mela','Avena'])
+    mock.rpc.mockResolvedValueOnce({ data: entry, error: null })
+    expect((await updateMealEntry('entry','Recipe',[])).items.map(item => item.food_name)).toEqual(['Mela','Avena'])
   })
 })

@@ -7,7 +7,7 @@ import DishEditor, { type DishItemDraft } from '../meals/DishEditor'
 import DishIconChoices from './DishIconChoices'
 import { getDishIcon, getFoodIcon } from '../../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
-import { dishMealTypeLabels } from '../../data/dishMealTypes'
+import { DISH_MEAL_TYPES, dishMealTypeLabels } from '../../data/dishMealTypes'
 import type { Dish, DishMealType } from '../../types'
 import ExtendedNutrition from '../meals/ExtendedNutrition'
 import PreparedDishesPanel from '../meals/PreparedDishesPanel'
@@ -23,6 +23,7 @@ export default function KitchenDishes() {
   const [dishes, setDishes] = useState<Dish[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
+  const [category, setCategory] = useState<DishMealType | 'all'>('all')
   const [mode, setMode] = useState<EditorMode>('closed')
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null)
   const [iconReturnMode, setIconReturnMode] = useState<'closed' | 'detail'>('closed')
@@ -41,7 +42,8 @@ export default function KitchenDishes() {
 
   useEffect(() => { refresh() }, [refresh])
 
-  const visibleDishes = dishes.filter(dish => dish.name.toLowerCase().includes(query.trim().toLowerCase()))
+  const visibleDishes = dishes.filter(dish => (category === 'all' || dish.meal_types.includes(category))
+    && dish.name.toLowerCase().includes(query.trim().toLowerCase()))
 
   function openDetail(dish: Dish) {
     setSelectedDish(dish)
@@ -121,7 +123,14 @@ export default function KitchenDishes() {
 
   return (
     <div className="space-y-6">
-      <PreparedDishesPanel />
+      <label className="block text-xs font-semibold text-gray-400">Categoria dei piatti
+        <select value={category} onChange={event => setCategory(event.target.value as DishMealType | 'all')}
+          className="mt-1.5 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-3 text-sm text-white outline-none focus:border-primary-500">
+          <option value="all">Tutti i piatti</option>
+          {DISH_MEAL_TYPES.map(type => <option key={type.id} value={type.id}>{type.label}</option>)}
+        </select>
+      </label>
+      <PreparedDishesPanel mealType={category === 'all' ? undefined : category} />
       <button type="button" onClick={() => { setSelectedDish(null); setMode('create') }}
         className="flex w-full items-center gap-3 rounded-2xl bg-primary-500 px-4 py-3.5 text-left font-semibold shadow-lg shadow-primary-950/30 hover:bg-primary-400">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-xl">+</span>
@@ -131,7 +140,7 @@ export default function KitchenDishes() {
       <section>
         <div className="mb-3 flex items-end justify-between px-1">
           <div><p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Ricettario</p><h2 className="mt-1 text-lg font-bold">I tuoi piatti</h2></div>
-          <span className="rounded-full bg-gray-800 px-2.5 py-1 text-xs text-gray-500">{dishes.length}</span>
+          <span className="rounded-full bg-gray-800 px-2.5 py-1 text-xs text-gray-500">{visibleDishes.length}</span>
         </div>
         <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Cerca un piatto..."
           className="mb-3 w-full rounded-2xl border border-gray-700 bg-gray-800/70 px-4 py-3 text-sm outline-none focus:border-primary-500" />
@@ -140,7 +149,7 @@ export default function KitchenDishes() {
         ) : visibleDishes.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-gray-700 py-8 text-center">
             <span className="text-3xl">📖</span>
-            <p className="mt-2 text-sm text-gray-500">{dishes.length === 0 ? 'Nessun piatto salvato' : 'Nessun risultato'}</p>
+            <p className="mt-2 text-sm text-gray-500">{dishes.length === 0 ? 'Nessun piatto salvato' : query.trim() ? 'Nessun risultato' : 'Nessun piatto in questa categoria'}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -183,7 +192,7 @@ export default function KitchenDishes() {
         ) : mode === 'create' ? (
           <div className="space-y-5">
             <div className="pr-12 lg:pr-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Nuova ricetta</p><h2 className="text-xl font-bold">Crea il tuo piatto</h2></div>
-            <DishEditor initialName="" initialItems={[]} initialMealTypes={[]} onSave={createDish} onCancel={() => setMode('closed')} saveLabel="Salva piatto" />
+            <DishEditor initialName="" initialItems={[]} initialMealTypes={category === 'all' ? [] : [category]} onSave={createDish} onCancel={() => setMode('closed')} saveLabel="Salva piatto" />
           </div>
         ) : mode === 'edit' && selectedDish ? (
           <div className="space-y-5">

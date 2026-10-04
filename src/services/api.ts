@@ -3,6 +3,7 @@ import { supabase } from './supabase'
 import type {
   UserHealthProfile, UserGoals, Meal, MealEntry, MealItemInput, Workout, WeightLog, Dish, DishItem, PantryItem, DishMealType, PreparedBatch
 } from '../types'
+import { orderMealItems } from '../utils/mealItemOrder'
 import { orderDishItems } from '../utils/dishOrder'
 import { BASIC_FOODS } from '../data/basicFoods'
 import { normalizeIngredientName } from '../utils/ingredientMatching'
@@ -106,6 +107,7 @@ async function hydrateMeals(meals: Omit<Meal, 'entries'>[], includeDishIcons = t
     .from('meal_items')
     .select('*')
     .in('entry_id', entries.map(e => e.id))
+    .order('position', { ascending: true })
     .order('created_at')
   if (iError) throw iError
 
@@ -135,7 +137,7 @@ async function hydrateMeals(meals: Omit<Meal, 'entries'>[], includeDishIcons = t
     const sourceId = entry.prepared_batch_id ? iconSourceByBatch.get(entry.prepared_batch_id) : null
     const iconId = sourceId && dishIcons.has(sourceId) ? sourceId : entry.dish_id
     return { ...entry, dish_icon: iconId ? dishIcons.get(iconId) ?? null : null,
-      dish_icon_source_id: iconId ?? null, items: itemsByEntry.get(entry.id) ?? [] }
+      dish_icon_source_id: iconId ?? null, items: orderMealItems(itemsByEntry.get(entry.id) ?? []) }
   }), entry => entry.meal_id)
   return meals.map(meal => ({ ...meal, entries: entriesByMeal.get(meal.id) ?? [] })) as Meal[]
 }
@@ -157,7 +159,8 @@ export async function addMealEntry(
     p_dish_id: dishId,
   })
   if (error) throw error
-  return data as { meal: Omit<Meal, 'entries'>; entry: MealEntry }
+  const result = data as { meal: Omit<Meal, 'entries'>; entry: MealEntry }
+  return { ...result, entry: { ...result.entry, items: orderMealItems(result.entry.items) } }
 }
 
 export async function updateMealEntry(
@@ -171,7 +174,8 @@ export async function updateMealEntry(
     p_items: items,
   })
   if (error) throw error
-  return data as MealEntry
+  const entry = data as MealEntry
+  return { ...entry, items: orderMealItems(entry.items) }
 }
 
 export async function deleteMealEntry(id: string): Promise<void> {

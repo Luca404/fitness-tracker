@@ -30,6 +30,7 @@ function batch(id: string, name: string, mealType: 'breakfast' | 'lunch'): Prepa
 
 it('shows only prepared dishes for the selected meal and opens their detail', async () => {
   const lunch = batch('lunch', 'Risotto pronto', 'lunch')
+  lunch.dish.icon = null
   mocks.getPreparedBatches.mockResolvedValue([batch('breakfast', 'Porridge pronto', 'breakfast'), lunch])
   const onSelect = vi.fn()
   const onCountChange = vi.fn()
@@ -37,6 +38,7 @@ it('shows only prepared dishes for the selected meal and opens their detail', as
 
   const button = await screen.findByRole('button', { name: /Risotto pronto/ })
   expect(screen.queryByText('Porridge pronto')).toBeNull()
+  expect(screen.getByText('🍚')).toBeTruthy()
   expect(onCountChange).toHaveBeenCalledWith(1)
   fireEvent.click(button)
   expect(onSelect).toHaveBeenCalledWith(lunch)
