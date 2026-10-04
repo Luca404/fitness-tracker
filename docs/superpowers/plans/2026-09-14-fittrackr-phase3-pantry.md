@@ -1,10 +1,8 @@
 # fitTrackr Phase 3 — Barcode + Dispensa
 
-> Stato: implementata e poi rifinita nella pagina **Cucina**. La dispensa è oggi il
-> tab `/kitchen?tab=pantry`; `/pantry` resta solo un redirect compatibile. Le ricette
-> suggerite in base alle scorte, inizialmente rimandate, sono ora disponibili nel tab
-> Piatti insieme al ricettario curato. Dal 20 settembre 2026, l'inserimento di un
-> piatto nel diario aggiorna anche le scorte in modo transazionale.
+> Documento storico: conserva il piano e le verifiche alla data originale. Per setup, UI, schema e stato attuali usare [l’indice della documentazione](../../README.md), il README del progetto e le migrazioni versionate. Le vecchie istruzioni di scaffold/SQL non vanno rieseguite.
+
+> Stato attuale al 4 ottobre 2026: la pagina Cucina contiene un catalogo di ingredienti e piatti preparati. Suggerimenti di ricette e consumo/ripristino automatico delle scorte descritti nel piano sono stati superati; restano atomiche le porzioni dei piatti preparati. L’ambiente corrente usa Node 22. Vedere il [rapporto di revisione](../../rapporto-semplificazione-2026-09-29.md).
 
 **Goal:** tracciare gli alimenti acquistati (dispensa), popolabili via scansione barcode o inserimento manuale, e farli emergere per primi nella ricerca ingredienti quando si compone un pasto.
 

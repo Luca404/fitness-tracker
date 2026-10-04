@@ -1,5 +1,7 @@
 # fitTrackr Phase 2 — Piatti salvati + Dataset alimenti base
 
+> Documento storico: conserva il piano e le verifiche alla data originale. Per setup, UI, schema e stato attuali usare [l’indice della documentazione](../../README.md), il README del progetto e le migrazioni versionate. Le vecchie istruzioni di scaffold/SQL non vanno rieseguite.
+
 **Goal:** risolvere la ricerca alimenti "casuale" introducendo un dataset locale di alimenti base, e permettere di salvare piatti composti per riutilizzarli scalando solo il peso totale.
 
 **Contesto:** `nutrition.ts` interroga solo Open Food Facts (`search.pl`, legacy, nessun ordinamento per rilevanza), che è un database di prodotti confezionati con barcode — scarsamente utile per alimenti generici (riso, petto di pollo, banana). Questo verrà mantenuto come fallback per prodotti confezionati, non più come unica fonte.

@@ -219,7 +219,7 @@ porzioni preparate, il riordino delle schede, l’inserimento in coda, i vincoli
 le richieste invalide e l’isolamento fra utenti. Superata anche la suite SQL
 sulla gradazione alcolica dopo le nuove migration.
 
-Il dry-run sul database condiviso elenca esclusivamente le migration
+Durante l'intervento sull'ordine, il dry-run sul database condiviso elencava esclusivamente le migration
 `20261004153000_preserve_diary_ingredient_order.sql` e
 `20261004154000_gym_plan_order.sql` di questo repository.
 
@@ -232,3 +232,9 @@ KitchenDishes**: filtro e ricerca, cambio/deselezione della categoria, piatti
 preparati e categoria iniziale delle nuove ricette. Superati anche build
 TypeScript/Vite/PWA e `git diff --check`. Questa rifinitura non richiede altre
 migrazioni.
+
+## Aggiornamento della sicurezza del database condiviso — 4 ottobre 2026
+
+Dopo gli interventi descritti sopra, Trackr ha applicato altre sette migrazioni al Supabase condiviso. FitTrackr conserva la propria correzione RLS/FK per `meal_items` e sei marker delle versioni finanziarie già applicate; lo storico è pubblicato nel commit `9462f84`. I nuovi controlli impediscono di associare un ingrediente a un pasto diverso da quello della sua entry. Le funzioni fitness esistenti sono mantenute, mentre le nuove RPC richiedono grant espliciti.
+
+I test SQL isolati di Trackr hanno verificato la RPC pasto esistente, il rifiuto delle associazioni incoerenti e la foreign key composta. La verifica remota in sola lettura ha restituito zero associazioni pasto/entry incoerenti. Non sono stati cancellati dati fitness. Questo intervento non è un audit completo del frontend o delle Edge Functions FitTrackr. Stato e procedura: [database condiviso](../supabase/README.md) e [storico della sicurezza](../supabase/README-trackr-security-sync.md).

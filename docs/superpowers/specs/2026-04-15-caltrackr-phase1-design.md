@@ -1,4 +1,6 @@
 # calTrackr — Phase 1 Design Spec
+
+> Documento storico: conserva il piano e le verifiche alla data originale. Per setup, UI, schema e stato attuali usare [l’indice della documentazione](../../README.md), il README del progetto e le migrazioni versionate. Le vecchie istruzioni di scaffold/SQL non vanno rieseguite.
 **Date:** 2026-04-15 (updated 2026-04-16)
 **Scope:** Fase 1 — Log pasti manuale + obiettivo + goal calorico + workout manuale + storico/grafici
 **App name:** calTrackr

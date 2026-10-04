@@ -1,5 +1,7 @@
 # calTrackr Phase 1 Implementation Plan
 
+> Documento storico: conserva il piano e le verifiche alla data originale. Per setup, UI, schema e stato attuali usare [l’indice della documentazione](../../README.md), il README del progetto e le migrazioni versionate. Le vecchie istruzioni di scaffold/SQL non vanno rieseguite.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build calTrackr — a mobile-first PWA for calorie/macro tracking and manual workout logging, backed by Supabase.

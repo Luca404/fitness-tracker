@@ -2,7 +2,7 @@
 
 An installable app for tracking meals, nutrition, workouts and weight, with an Italian interface and Supabase sync across devices.
 
-Part of the **Trackrs ecosystem**, alongside [Trackr](../trackr) and [pfTrackr](../portfolio-tracker). The apps share authentication and a Supabase project; fitTrackr uses separate health tables and a shared barcode catalog.
+Part of the **Trackrs ecosystem**, alongside [Trackr](https://github.com/Luca404/trackr) and [pfTrackr](https://github.com/Luca404/portfolio-tracker). The apps share authentication and a Supabase project; fitTrackr uses separate health tables and a shared barcode catalog.
 
 ## Features
 
@@ -22,7 +22,7 @@ Overview values use whole numbers; details use at most one decimal. Calculations
 
 ## Stack
 
-React 19, TypeScript, Vite, Tailwind CSS, Supabase Auth/PostgreSQL, Recharts, ZXing and Workbox.
+React 19, TypeScript 6, Vite 8, Tailwind CSS 3, React Router 7, Supabase Auth/PostgreSQL, Recharts, ZXing and Workbox. Node.js 22 is used for development and CI.
 
 ## Local setup
 
@@ -55,6 +55,8 @@ supabase functions deploy confirm-barcode-product
 ```
 
 The hosted database is shared. Review the dry-run and apply only this repository's pending migrations. **Never run `supabase db reset --linked`.**
+
+The seven Trackr security versions `20261004165900`–`20261004170500` are already applied to the hosted project. FitTrackr records the actual meal-item correction and six finance ledger markers; do not replay them. [The database workflow](supabase/README.md) explains grants for future RPCs and the distinction between hosted and local databases. Local `.env.local` URLs at `127.0.0.1:54321` target a separate instance; the existing local instance has older fitness migrations and is not claimed to mirror the complete hosted schema.
 
 Keep the OpenAI key in Edge Function secrets, never in a `VITE_` variable. The optional `OPENAI_VISION_MODEL` secret overrides the default `gpt-4.1-mini`.
 
@@ -94,7 +96,7 @@ Ingredient corrections update linked recipes and historical diary entries. Prepa
 
 ## Documentation
 
-Detailed guides are currently in Italian:
+Use [the documentation index](docs/README.md) for current guides, shared security status and historical plans. Detailed feature guides are in Italian:
 
 - [Diary and ingredient ordering](docs/meal-diary-order.md)
 - [Prepared dishes and cooked weight](docs/peso-piatti-preparati.md)

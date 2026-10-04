@@ -1,5 +1,7 @@
 # fitTrackr — Goal calorici adattivi
 
+> Documento storico: conserva il piano e le verifiche alla data originale. Per setup, UI, schema e stato attuali usare [l’indice della documentazione](../../README.md), il README del progetto e le migrazioni versionate. Le vecchie istruzioni di scaffold/SQL non vanno rieseguite.
+
 > Stato: implementato, testato, migrazioni applicate al database remoto e codice
 > pubblicato su `main`; aggiornato il 23 settembre 2026.
 
