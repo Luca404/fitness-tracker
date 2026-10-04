@@ -279,6 +279,7 @@ export function searchBasicFoods(query: string): FoodResult[] {
   const q = normalizeSearchText(query)
   if (!q) return []
   return BASIC_FOODS
+    .filter(food => food.id !== 'spritz') // Retained only for historical records; choose an explicit variant.
     .filter(food => [food.name, ...(food.aliases ?? [])]
       .some(label => normalizeSearchText(label).includes(q)))
     .sort((left, right) => {
@@ -295,6 +296,8 @@ export function searchBasicFoods(query: string): FoodResult[] {
       source: 'basic' as const,
       category: f.category,
       food_key: `basic:${f.id}`,
+      alcohol_abv: f.alcohol_abv ?? null,
+      quantity_unit: f.category === 'alcohol' || f.category === 'beverage' ? 'ml' as const : 'g' as const,
       calories_100g: f.calories,
       protein_100g: f.protein_g,
       carbs_100g: f.carbs_g,

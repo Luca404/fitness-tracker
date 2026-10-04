@@ -89,10 +89,24 @@ originale eliminato e modifica dell’icona nello stato condiviso.
 
 ## Abitudini e aggiornamenti del diario
 
-Gli zuccheri totali del catalogo comprendono anche quelli naturalmente presenti
-negli alimenti e non permettono di ricavare gli zuccheri liberi. La distinzione è
-coerente con la [definizione OMS](https://www.who.int/news/item/04-03-2015-who-calls-on-countries-to-reduce-sugars-intake-among-adults-and-children).
-Il valore totale rimane visibile e viene escluso dal giudizio sulle abitudini.
+Revisione del 4 ottobre: ripristinati gli **zuccheri totali** nel giudizio delle
+abitudini, correggendo il precedente riferimento agli zuccheri liberi. Il
+[riferimento LARN per gli zuccheri totali](https://sinu.it/2019/07/09/carboidrati-e-fibra-alimentare/)
+comprende anche gli zuccheri naturalmente presenti in latte e frutta. L’app usa
+il 15% del target calorico, convertito in grammi; non richiede una distinzione
+fra zuccheri liberi e aggiunti.
+
+Aggiunto il totale giornaliero in **unità alcoliche** (1 UA = 12 g di etanolo),
+calcolato da ml e gradazione. Le soglie orientative seguono ISS/PASSI e il
+profilo: 2 UA uomini adulti, 1 UA donne e persone da 65 anni, zero minorenni.
+Il messaggio «meno è meglio» evita di presentare la soglia come un obiettivo
+positivo. I dati sconosciuti restano incompleti.
+
+Il catalogo include 21 cocktail distinti e altre varietà di vino/birra, con
+quantità e gradazione modificabili e valori indicativi dichiarati. La migration
+`20261004140000_alcohol_strength.sql` conserva la gradazione nei salvataggi,
+negli aggiornamenti e negli snapshot, senza scalarla con le porzioni. Anche i
+trigger delle calorie tengono conto della gradazione effettivamente registrata.
 
 Il diario è caricato centralmente per data, evitando richieste identiche a ogni
 cambio pagina. Correggere un ingrediente, modificare/eliminare un piatto o
@@ -104,15 +118,17 @@ indipendentemente dal numero di ingredienti.
 
 Questa revisione mantiene il comportamento attuale: correggere un ingrediente
 aggiorna anche i pasti collegati del passato. Congelare lo storico richiede una
-decisione di prodotto. Non serve una migrazione per le modifiche implementate.
+decisione di prodotto. Le correzioni iniziali non richiedevano migrazioni;
+l’aggiunta della gradazione alcolica richiede la migration dedicata indicata sopra.
 
 Restano interventi separati:
 
 - Generare tipi Supabase dallo schema effettivo e verificare le risposte RPC
   senza cast manuali. Il progetto ospitato è condiviso: l’eventuale generazione
   deve essere limitata alle tabelle e funzioni di fitTrackr.
-- Verificare su Supabase locale gli RPC, la concorrenza sulle porzioni e i vincoli
-  di accesso. In questa sessione non è stato avviato un database locale.
+- Estendere i test SQL alla concorrenza sulle porzioni. Gli RPC modificati per
+  l’alcol sono stati verificati su PostgreSQL isolato, inclusi vincoli e accesso
+  fra utenti; il container di prova è stato rimosso dopo la verifica.
 - Rimuovere il fallback degli alimenti legacy soltanto dopo aver verificato e
   migrato i record esistenti.
 - Confermare sul telefono la navigazione tra pagine, la ripresa dopo sospensione
@@ -121,18 +137,28 @@ Restano interventi separati:
 Non riscrivere le migrazioni applicate e non resettare il database collegato
 condiviso.
 
-Verifica del database ospitato del 4 ottobre 2026: `supabase db push --dry-run`
+Verifica del database ospitato del 4 ottobre 2026, prima della funzione alcol: `supabase db push --dry-run`
 e `supabase db push` completati con esito “Remote database is up to date”.
-Non risultano migrazioni pendenti; nessuna migrazione è stata applicata.
+In quel momento non risultavano migrazioni pendenti; nessuna era stata applicata.
+
+Dopo l’implementazione dell’alcol, il nuovo dry-run ha elencato soltanto
+`20261004140000_alcohol_strength.sql`. La migration è stata applicata con
+`supabase db push`, dopo i test locali, senza reset del database condiviso.
 
 ## Verifica finale
 
-- `npm test -- --run`: **194 test superati in 44 file**, rispetto ai 166 della baseline.
+- `npm test -- --run`: **207 test superati in 46 file** (194/44 prima della funzione alcol), rispetto ai 166 della baseline.
 - `npm run build`: TypeScript e build Vite/PWA superati.
 - `npm run lint`: superato, senza errori o avvisi.
 - `git diff --check`: superato.
+- `supabase/tests/alcohol_strength.sql`: superato su PostgreSQL 17 isolato,
+  dopo il replay di tutte le migrazioni del repository. Verificati salvataggio,
+  modifica, snapshot/porzioni, calorie, zero, vincoli, rollback e RLS.
+- Ultima verifica mirata dopo la rifinitura: 43 test superati in 4 file.
 - La suite è stata verificata anche con URL e chiave Supabase fittizi locali,
   come nel workflow CI; nessun test richiede il database ospitato.
+
+Misure del refactoring iniziale, prima dell’aggiunta delle bevande:
 
 | Artefatto | Prima | Dopo |
 | --- | ---: | ---: |
@@ -151,3 +177,7 @@ analizzare/eseguire all’apertura della pagina e non elimina il download del
 decoder durante l’installazione PWA. Il precache totale cresce di 16,15 KiB con
 le funzioni di recupero e aggiornamento. Non sono state misurate latenze reali
 su telefono e non si attribuisce questa riduzione all’intera applicazione.
+
+La build con i cocktail misura PantryPage a 28,95 kB (7,14 kB gzip) e il
+precache PWA a 1.559,02 KiB. Le stime di volume, gradazione e nutrienti dei
+cocktail restano indicative; quantità e gradazione si possono correggere.

@@ -14,7 +14,7 @@ interface Props {
 }
 
 export default function GoodHabits({ selectedDate, currentMeals, compact = false }: Props) {
-  const { profile, mealRevision, getWeeklyMeals } = useData()
+  const { profile, goals, mealRevision, getWeeklyMeals } = useData()
   const date = new Date(`${selectedDate}T12:00:00`)
   const from = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd')
   const to = format(endOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd')
@@ -40,8 +40,10 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
       fish: getGuideline('fish', sex, age)?.limitValue ?? 300,
       fiber: getGuideline('fiber', sex, age)?.limitValue ?? 25,
       salt: getGuideline('salt', sex, age)?.limitValue ?? 5,
+      sugars: (goals?.calorie_target ?? 2000) * (getGuideline('total_sugars', sex, age)?.limitValue ?? 15) / 100 / 4,
+      alcohol: age < 18 ? 0 : (getGuideline('alcohol', sex, age)?.limitValue ?? 12) / 12,
     })
-  }, [currentMeals, profile, selectedDate, loading, week.meals])
+  }, [currentMeals, profile, goals, selectedDate, loading, week.meals])
 
   if (compact) {
     const summary = summarizeHabitRows(rows)
@@ -60,7 +62,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
               : `${summary.ok} su ${rows.filter(row => row.direction !== 'info').length} in linea`}
           </span>
         </span>
-        <span className="mt-2 grid grid-cols-7 gap-1.5">
+        <span className="mt-2 grid grid-cols-8 gap-1.5">
           {rows.map(row => {
             const status = loading ? 'incomplete' : habitStatus(row)
             const statusLabel = status === 'ok' ? 'in linea' : status === 'attention' ? 'da migliorare' : status === 'informative' ? 'informativo' : 'dato incompleto'
@@ -68,7 +70,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
             const overMaximum = row.direction === 'max' && row.value != null && row.value > (row.target ?? Infinity)
             const progressLabel = loading || row.value == null || row.target == null ? '' : row.direction === 'min'
               ? `, ${Math.round(row.value / row.target * 100)}% dell'obiettivo`
-              : overMaximum ? `, limite superato del ${Math.round((row.value - row.target) / row.target * 100)}%` : ', entro il limite'
+              : overMaximum ? row.target > 0 ? `, soglia superata del ${Math.round((row.value - row.target) / row.target * 100)}%` : ', soglia superata' : ', entro la soglia'
             const tileLabel = `${row.label}: ${statusLabel}${progressLabel}`
             return (
               <span key={row.label}
@@ -98,7 +100,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
 
   function renderRows(habitRows: typeof rows) {
     return habitRows.map(row => {
-      const progress = row.value == null || row.target == null ? 0 : Math.min(100, Math.round((row.value / row.target) * 100))
+      const progress = row.value == null || row.target == null ? 0 : row.target <= 0 ? (row.value > 0 ? 100 : 0) : Math.min(100, Math.round((row.value / row.target) * 100))
       const overMaximum = row.direction === 'max' && row.value != null && row.value > (row.target ?? Infinity)
       const displayValue = row.value == null ? null : formatDecimal(row.value)
       return (
@@ -112,13 +114,14 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
               <span className="text-gray-600">Dato non disponibile</span>
             ) : (
               <>
-                <span className={`font-semibold ${overMaximum ? 'text-orange-400' : 'text-gray-300'}`}>{row.partial ? '≈ ' : ''}{displayValue} g</span>
-                {row.target != null && <> {row.direction === 'max' ? '≤' : '≥'} {formatDecimal(row.target)} g</>}
+                <span className={`font-semibold ${overMaximum ? 'text-orange-400' : 'text-gray-300'}`}>{row.partial ? '≈ ' : ''}{displayValue} {row.unit ?? 'g'}</span>
+                {row.target != null && <> {row.direction === 'max' ? '≤' : '≥'} {formatDecimal(row.target)} {row.unit ?? 'g'}</>}
                 {row.partial && <span className="text-amber-500/80"> · parziale</span>}
               </>
             )}
           </p>
-          {row.direction === 'info' ? <p className="mt-2 text-[11px] text-gray-500">Gli zuccheri totali non distinguono quelli liberi o aggiunti.</p> : <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-700">
+          {row.note && <p className="mt-2 text-[11px] text-gray-500">{row.note}</p>}
+          {row.direction !== 'info' && <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-700">
             <div className={`h-full rounded-full transition-all ${overMaximum ? 'bg-orange-500' : 'bg-primary-500'}`} style={{ width: `${progress}%` }} />
           </div>}
         </div>

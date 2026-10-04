@@ -5,6 +5,8 @@ import { useData } from '../../contexts/DataContext'
 import { FOOD_CATEGORIES } from '../../data/foodCategories'
 import type { FoodResult, FoodSource, PantryItem, FoodCategory, PieceSize } from '../../types'
 import OpenFoodFactsDetails from '../common/OpenFoodFactsDetails'
+import AlcoholStrengthInput from './AlcoholStrengthInput'
+import { alcoholStrength, validAlcoholStrength, withAlcoholStrength } from '../../utils/alcohol'
 import IngredientQuantityInput from './IngredientQuantityInput'
 import { formatDecimal, roundToTwo } from '../../utils/decimal'
 
@@ -18,6 +20,7 @@ function pantryItemToFoodResult(p: PantryItem): FoodResult {
     source: 'pantry',
     quantity_unit: p.nutrition_unit ?? 'g',
     category: p.category,
+    alcohol_abv: p.alcohol_abv ?? null,
     food_key: p.food_key,
     calories_100g: p.calories_100g,
     protein_100g: p.protein_100g,
@@ -35,6 +38,7 @@ interface Props {
   onAdd: (item: {
     food_name: string; quantity_g: number; calories: number
     unit?: 'g' | 'ml'
+    alcohol_abv?: number | null
     protein_g: number; carbs_g: number; fat_g: number
     fiber_g: number | null; sugars_g: number | null; salt_g: number | null
     source: FoodSource; off_food_id: string | null
@@ -54,6 +58,13 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
   const [offResults, setOffResults] = useState<FoodResult[]>([])
   const [offSearched, setOffSearched] = useState(false)
   const [selected, setSelected] = useState<FoodResult | null>(null)
+  const [selectedAbv, setSelectedAbv] = useState<number | null | undefined>(undefined)
+  function selectFood(food: FoodResult) { setSelected(food); setSelectedAbv(undefined); setPiece(null) }
+  function selectedNutrition(food: FoodResult, amount: number) {
+    return withAlcoholStrength({ ...calcNutrition(food, amount), quantity_g: amount,
+      unit: food.quantity_unit === 'ml' ? 'ml' as const : 'g' as const, food_key: food.food_key,
+      alcohol_abv: alcoholStrength(food) }, selectedAbv === undefined ? alcoholStrength(food) : selectedAbv)
+  }
   const [qty, setQty] = useState(100)
   const [piece, setPiece] = useState<{ size: PieceSize; count: number } | null>(null)
   const [loading, setLoading] = useState(false)
@@ -67,6 +78,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
   const [manualFiber, setManualFiber] = useState<number | null>(null)
   const [manualSugars, setManualSugars] = useState<number | null>(null)
   const [manualSalt, setManualSalt] = useState<number | null>(null)
+  const [manualAbv, setManualAbv] = useState<number | null>(null)
   const [manualCategory, setManualCategory] = useState<FoodCategory>('other')
   const [pantryItems, setPantryItems] = useState<PantryItem[]>([])
   const [importMode, setImportMode] = useState<'scan' | 'photo' | null>(null)
@@ -103,6 +115,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
   function handleAdd() {
     if (saving) return
     if (manualMode) {
+      if (manualAbv != null && !validAlcoholStrength(manualAbv)) return
       if (!manualName.trim() || qty <= 0 || [manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0)) return
       if ([manualFiber, manualSugars, manualSalt].some(v => v !== null && v < 0)
         || (manualSugars !== null && manualSugars > manualCarbs)) return
@@ -113,15 +126,18 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
         fiber_g: manualFiber, sugars_g: manualSugars, salt_g: manualSalt,
         source: 'manual', off_food_id: null, category: manualCategory, food_key: null,
         pantry_item_id: null,
+        unit: manualCategory === 'alcohol' || manualCategory === 'beverage' ? 'ml' : 'g',
+        alcohol_abv: manualCategory === 'alcohol' ? manualAbv : null,
         piece_count: piece?.count ?? null, piece_size: piece?.size ?? null,
       })
       return
     }
-    if (!selected) return
-    const nutrition = calcNutrition(selected, qty)
+    if (!selected || !Number.isFinite(qty) || qty <= 0
+      || (selected.alcohol_abv != null && !validAlcoholStrength(selected.alcohol_abv))) return
+    if (selectedAbv != null && !validAlcoholStrength(selectedAbv)) return
+    const nutrition = selectedNutrition(selected, qty)
     onAdd({
       food_name: selected.name,
-      quantity_g: qty,
       ...nutrition,
       unit: selected.quantity_unit === 'ml' ? 'ml' : 'g',
       source: selected.source,
@@ -141,7 +157,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
           <Suspense fallback={<p className="text-sm text-gray-500">Caricamento…</p>}>
             <IngredientCatalog embedded initialMode={importMode} onSaved={item => {
               setPantryItems(current => [...current.filter(existing => existing.id !== item.id), item])
-              setSelected(pantryItemToFoodResult(item))
+              selectFood(pantryItemToFoodResult(item))
               setQty(100)
               setImportMode(null)
             }} />
@@ -178,7 +194,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
             <div className="max-h-40 overflow-y-auto space-y-1">
               <p className="text-xs uppercase tracking-wide text-gray-500 px-1">I tuoi ingredienti</p>
               {pantryResults.map(f => (
-                <button key={f.id} type="button" onClick={() => { setSelected(f); setPiece(null) }}
+                <button key={f.id} type="button" onClick={() => { selectFood(f) }}
                   className="w-full rounded-xl bg-gray-800 px-3 py-2.5 text-left text-sm hover:bg-gray-700">
                   <span className="font-medium">🧺 {f.name}</span>
                   <span className="text-gray-500 ml-2">{formatDecimal(f.calories_100g)} kcal/100{f.quantity_unit === 'ml' ? 'ml' : 'g'}</span>
@@ -191,10 +207,10 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
             <div className="max-h-40 overflow-y-auto space-y-1">
               <p className="text-xs uppercase tracking-wide text-gray-500 px-1">Alimenti base</p>
               {basicResults.map(f => (
-                <button key={f.id} type="button" onClick={() => { setSelected(f); setPiece(null) }}
+                <button key={f.id} type="button" onClick={() => { selectFood(f) }}
                   className="w-full rounded-xl bg-gray-800 px-3 py-2.5 text-left text-sm hover:bg-gray-700">
                   <span className="font-medium">{f.name}</span>
-                  <span className="text-gray-500 ml-2">{formatDecimal(f.calories_100g)} kcal/100g</span>
+                  <span className="text-gray-500 ml-2">{formatDecimal(f.calories_100g)} kcal/100{f.quantity_unit === 'ml' ? 'ml' : 'g'}</span>
                 </button>
               ))}
             </div>
@@ -231,11 +247,11 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
                 <p className="text-sm text-gray-500 px-1">Nessun risultato.</p>
               )}
               {offResults.map(p => (
-                <button key={p.id} type="button" onClick={() => { setSelected(p); setPiece(null) }}
+                <button key={p.id} type="button" onClick={() => { selectFood(p) }}
                   className="w-full rounded-xl bg-gray-800 px-3 py-2.5 text-left text-sm hover:bg-gray-700">
                   <span className="font-medium">{p.name}</span>
                   {p.brand && <span className="text-gray-400 ml-2">· {p.brand}</span>}
-                  <span className="text-gray-500 ml-2">{formatDecimal(p.calories_100g)} kcal/100g</span>
+                  <span className="text-gray-500 ml-2">{formatDecimal(p.calories_100g)} kcal/100{p.quantity_unit === 'ml' ? 'ml' : 'g'}</span>
                 </button>
               ))}
             </div>
@@ -285,8 +301,10 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
                   ))}
                 </select>
               </label>
+              {selected.category === 'alcohol' && <AlcoholStrengthInput value={selectedAbv === undefined ? alcoholStrength(selected) : selectedAbv}
+                onChange={setSelectedAbv} volumeMl={selected.quantity_unit === 'ml' ? qty : undefined} disabled={saving} />}
               {(() => {
-                const n = calcNutrition(selected, qty)
+                const n = selectedNutrition(selected, qty)
                 const extraNutrients = [
                   selected.fiber_100g == null ? null : `fibre ${formatDecimal(selected.fiber_100g)} g`,
                   selected.sugars_100g == null ? null : `di cui zuccheri ${formatDecimal(selected.sugars_100g)} g`,
@@ -304,7 +322,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
                     </div>
                     {selected.source !== 'openfoodfacts' && extraNutrients.length > 0 && (
                       <p className="text-[11px] text-gray-500">
-                        Per 100 g: {extraNutrients.join(' · ')}
+                        Per 100 {selected.quantity_unit === 'ml' ? 'ml' : 'g'}: {extraNutrients.join(' · ')}
                       </p>
                     )}
                     {(selected.nutrition_grade || (selected.nutrition_score !== null && selected.nutrition_score !== undefined) || selected.nova_group || selected.ecoscore_grade) && (
@@ -325,7 +343,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
                   </>
                 )
               })()}
-              <button type="button" onClick={handleAdd} disabled={qty <= 0 || saving}
+              <button type="button" onClick={handleAdd} disabled={!Number.isFinite(qty) || qty <= 0 || saving || (selectedAbv != null && !validAlcoholStrength(selectedAbv))}
                 className="w-full rounded-xl bg-primary-500 py-3 font-semibold hover:bg-primary-400 disabled:opacity-40">
                 {saving ? 'Registrazione…' : addLabel}
               </button>
@@ -368,7 +386,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
           <div>
             <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">Quantità</span>
             <IngredientQuantityInput
-              foodName={manualName}
+              foodName={manualName} unit={manualCategory === 'alcohol' || manualCategory === 'beverage' ? 'ml' : 'g'}
               category={manualCategory}
               grams={qty}
               onChange={setQty}
@@ -377,6 +395,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
               onPieceChange={setPiece}
             />
           </div>
+          {manualCategory === 'alcohol' && <AlcoholStrengthInput value={manualAbv} onChange={setManualAbv} volumeMl={qty} />}
           <div className="grid grid-cols-2 gap-2">
             {[
               { label: 'Calorie', unit: 'kcal', val: manualCal, set: (v: number) => setManualCal(v), min: 0 },

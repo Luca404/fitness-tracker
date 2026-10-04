@@ -4,12 +4,16 @@
 // (o secco, nel caso di cereali e legumi), salvo diversa indicazione nel nome.
 // Fonte: valori medi indicativi (uso da tracker personale, non clinico).
 import type { FoodCategory } from '../types'
+import { ALCOHOLIC_DRINKS } from './alcoholicDrinks'
 import { BASIC_FOOD_EXTENDED_NUTRITION } from './basicFoodExtendedNutrition'
 
 export interface BasicFood {
   id: string
   name: string
   aliases?: string[]
+  alcohol_abv?: number
+  serving_ml?: number
+  cocktail?: boolean
   category: FoodCategory
   calories: number
   protein_g: number
@@ -285,10 +289,10 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   // Bevande e alcolici
   { id: 'acqua-naturale', name: 'Acqua naturale', category: 'beverage', calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 },
   { id: 'acqua-frizzante', name: 'Acqua frizzante', category: 'beverage', calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 },
-  { id: 'birra-chiara', name: 'Birra chiara', category: 'alcohol', calories: 43, protein_g: 0.5, carbs_g: 3.6, fat_g: 0 },
-  { id: 'vino-rosso', name: 'Vino rosso', category: 'alcohol', calories: 85, protein_g: 0.1, carbs_g: 2.6, fat_g: 0 },
-  { id: 'vino-bianco', name: 'Vino bianco', category: 'alcohol', calories: 82, protein_g: 0.1, carbs_g: 2.6, fat_g: 0 },
-  { id: 'spritz', name: 'Spritz', category: 'alcohol', calories: 90, protein_g: 0, carbs_g: 6.0, fat_g: 0 },
+  { id: 'birra-chiara', alcohol_abv: 5, serving_ml: 330, name: 'Birra chiara', category: 'alcohol', calories: 43, protein_g: 0.5, carbs_g: 3.6, fat_g: 0 },
+  { id: 'vino-rosso', alcohol_abv: 13, serving_ml: 125, name: 'Vino rosso', category: 'alcohol', calories: 85, protein_g: 0.1, carbs_g: 2.6, fat_g: 0 },
+  { id: 'vino-bianco', alcohol_abv: 12, serving_ml: 125, name: 'Vino bianco', category: 'alcohol', calories: 82, protein_g: 0.1, carbs_g: 2.6, fat_g: 0 },
+  { id: 'spritz', alcohol_abv: 9.17, serving_ml: 180, name: 'Spritz', category: 'alcohol', calories: 90, protein_g: 0, carbs_g: 6.0, fat_g: 0 },
   { id: 'coca-cola', name: 'Coca Cola', category: 'beverage', calories: 42, protein_g: 0, carbs_g: 10.6, fat_g: 0 },
   { id: 'coca-cola-zero', name: 'Coca Cola Zero', category: 'beverage', calories: 0.2, protein_g: 0, carbs_g: 0, fat_g: 0 },
   { id: 'succo-arancia', name: 'Succo d\'arancia', category: 'beverage', calories: 45, protein_g: 0.7, carbs_g: 10, fat_g: 0.2 },
@@ -296,7 +300,7 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'caffe-nero', name: 'Caffè (nero)', category: 'beverage', calories: 1, protein_g: 0.1, carbs_g: 0, fat_g: 0 },
 ]
 
-export const BASIC_FOODS: BasicFood[] = BASIC_FOODS_BASE.map((food) => {
+export const BASIC_FOODS: BasicFood[] = [...BASIC_FOODS_BASE, ...ALCOHOLIC_DRINKS].map((food) => {
   const nutrients = BASIC_FOOD_EXTENDED_NUTRITION[food.id]
   if (!nutrients) throw new Error(`Valori nutrizionali estesi mancanti per ${food.id}`)
   const [fiber_g, sugars_g, salt_g] = nutrients

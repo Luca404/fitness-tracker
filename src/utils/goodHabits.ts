@@ -1,3 +1,4 @@
+import { alcoholTotal } from './alcohol'
 import { mealItems } from './mealEntries'
 import type { FoodCategory, Meal } from '../types'
 
@@ -9,6 +10,8 @@ export interface HabitRow {
   period: 'oggi' | 'settimana'
   direction: 'min' | 'max' | 'info'
   partial?: boolean
+  unit?: 'g' | 'UA'
+  note?: string
 }
 
 export interface HabitTargets {
@@ -18,6 +21,8 @@ export interface HabitTargets {
   fish: number
   fiber: number
   salt: number
+  sugars: number
+  alcohol: number
 }
 
 export type HabitStatus = 'ok' | 'attention' | 'incomplete' | 'informative'
@@ -34,7 +39,8 @@ export function habitStatus(row: HabitRow): HabitStatus {
 }
 
 export function habitTileFill(row: HabitRow): number {
-  if (row.value == null || row.target == null || row.target <= 0 || row.direction === 'info') return 0
+  if (row.value == null || row.target == null || row.direction === 'info') return 0
+  if (row.target <= 0) return row.value > 0 && row.direction === 'max' ? 100 : 0
   const ratio = row.direction === 'min'
     ? row.value / row.target
     : (row.value - row.target) / row.target
@@ -89,7 +95,8 @@ export function calculateHabitRows(
     { label: 'Legumi', icon: '🫘', value: gramsForCategories(mergedWeek, ['legume']), target: targets.legumes, period: 'settimana', direction: 'min' },
     { label: 'Pesce', icon: '🐟', value: gramsForCategories(mergedWeek, ['fish']), target: targets.fish, period: 'settimana', direction: 'min' },
     { label: 'Fibre', icon: '🌾', ...fiber, target: targets.fiber, period: 'oggi', direction: 'min' },
-    { label: 'Zuccheri totali', icon: '🍬', ...sugars, target: null, period: 'oggi', direction: 'info' },
+    { label: 'Zuccheri totali', icon: '🍬', ...sugars, target: targets.sugars, period: 'oggi', direction: 'max' },
+    { label: 'Unità alcoliche', icon: '🍷', ...alcoholTotal(currentMeals.flatMap(mealItems)), target: targets.alcohol, period: 'oggi', direction: 'max', unit: 'UA', note: '1 UA = 12 g di alcol. Soglia orientativa: meno è meglio.' },
     { label: 'Sale', icon: '🧂', ...salt, target: targets.salt, period: 'oggi', direction: 'max' },
   ]
 }

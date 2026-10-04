@@ -23,6 +23,7 @@ export interface PendingFood {
   protein_100g: number
   carbs_100g: number
   fat_100g: number
+  alcohol_abv?: number | null
   category: FoodCategory
   food_key: string | null
   source: FoodSource
@@ -157,6 +158,7 @@ export function pantryValues(food: PendingFood): Omit<PantryItem, 'id' | 'user_i
     carbs_100g: food.carbs_100g,
     fat_100g: food.fat_100g,
     category: food.category,
+    alcohol_abv: food.alcohol_abv ?? null,
     food_key: food.food_key,
     source: food.source,
     off_food_id: food.off_food_id,

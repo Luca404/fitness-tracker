@@ -76,6 +76,7 @@ export interface MealItem {
   piece_count?: number | null
   piece_size?: PieceSize | null
   unit: MealItemUnit
+  alcohol_abv?: number | null // Alcohol by volume (%), never scaled with quantity
   category: FoodCategory
   food_key: string | null
   pantry_item_id?: string | null
@@ -186,6 +187,7 @@ export interface FoodResult {
   name: string
   brand: string | null
   source: 'pantry' | 'basic' | 'openfoodfacts'
+  alcohol_abv?: number | null // Alcohol by volume (%), never scaled with quantity
   category: FoodCategory
   food_key: string | null
   calories_100g: number
@@ -223,6 +225,7 @@ export interface PantryItem {
   protein_100g: number
   carbs_100g: number
   fat_100g: number
+  alcohol_abv?: number | null // Alcohol by volume (%), never scaled with quantity
   category: FoodCategory
   food_key: string | null
   source: FoodSource
@@ -309,6 +312,7 @@ export interface DishItem {
   unit?: MealItemUnit
   piece_count?: number | null
   piece_size?: PieceSize | null
+  alcohol_abv?: number | null // Alcohol by volume (%), never scaled with quantity
   category: FoodCategory
   food_key: string | null
   pantry_item_id?: string | null

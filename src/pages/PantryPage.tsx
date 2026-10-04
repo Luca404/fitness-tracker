@@ -15,6 +15,7 @@ const BarcodeScanner = lazy(() => import('../components/pantry/BarcodeScanner'))
 const NutritionLabelPhoto = lazy(() => import('../components/pantry/NutritionLabelPhoto'))
 import { FOOD_CATEGORIES, FOOD_CATEGORY_BY_ID } from '../data/foodCategories'
 import type { PantryItem, FoodCategory } from '../types'
+import { validAlcoholStrength } from '../utils/alcohol'
 import { formatDecimal } from '../utils/decimal'
 
 type Mode = 'list' | 'choose' | 'scan' | 'photo' | 'search' | 'manual'
@@ -95,6 +96,7 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
       carbs_100g: item.carbs_100g,
       fat_100g: item.fat_100g,
       category,
+      alcohol_abv: item.alcohol_abv ?? null,
       food_key: item.food_key,
       source: item.source,
       off_food_id: item.off_food_id,
@@ -227,6 +229,10 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
 
   async function handleAddToPantry() {
     if (!pending || !user || !pending.name.trim() || addInProgressRef.current) return
+    if (pending.alcohol_abv != null && !validAlcoholStrength(pending.alcohol_abv)) {
+      showToast('Inserisci una gradazione tra 0 e 100')
+      return
+    }
     if (pending.source === 'manual') {
       const nutritionError = manualNutritionError(pending)
       if (nutritionError) {
@@ -467,13 +473,14 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
                 onClick={() => goToReview({
                   name: f.name, calories_100g: f.calories_100g, protein_100g: f.protein_100g,
                   carbs_100g: f.carbs_100g, fat_100g: f.fat_100g, category: f.category,
+                  alcohol_abv: f.alcohol_abv ?? null,
                   food_key: f.food_key, source: 'basic', off_food_id: null,
                   fiber_100g: f.fiber_100g, sugars_100g: f.sugars_100g,
                   salt_100g: f.salt_100g,
                 })}
                 className="w-full text-left px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">
                 <span className="font-medium">{f.name}</span>
-                <span className="text-gray-500 ml-2">{formatDecimal(f.calories_100g)} kcal/100g</span>
+                <span className="text-gray-500 ml-2">{formatDecimal(f.calories_100g)} kcal/100{f.quantity_unit === 'ml' ? 'ml' : 'g'}</span>
               </button>
             ))}
           </div>

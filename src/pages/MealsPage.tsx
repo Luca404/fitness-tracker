@@ -47,6 +47,7 @@ function mealItemToDraft(item: MealEntry['items'][number]): DishItemDraft {
     fiber_g: item.fiber_g ?? null,
     sugars_g: item.sugars_g ?? null,
     salt_g: item.salt_g ?? null,
+    alcohol_abv: item.alcohol_abv ?? null,
     source: item.source,
     off_food_id: item.off_food_id,
     category: item.category,

@@ -31,10 +31,10 @@ function meal(date: string, items: Array<Partial<MealItem> & Pick<MealItem, 'cat
   }
 }
 
-const targets = { vegetables: 400, fruit: 360, legumes: 450, fish: 300, fiber: 25, salt: 5 }
+const targets = { vegetables: 400, fruit: 360, legumes: 450, fish: 300, fiber: 25, salt: 5, sugars: 75, alcohol: 1 }
 
 describe('good habits calculations', () => {
-  it('reports total sugars without applying the free-sugars target or affecting the summary', () => {
+  it('compares total sugars with the total-sugars target and includes them in the summary', () => {
     const low = calculateHabitRows('2026-09-21', [meal('2026-09-21', [
       { category: 'fruit', quantity_g: 360, sugars_g: 2 },
     ])], [], targets)
@@ -42,10 +42,10 @@ describe('good habits calculations', () => {
       { category: 'fruit', quantity_g: 360, sugars_g: 200 },
     ])], [], targets)
     const sugarRow = high.find(row => row.label === 'Zuccheri totali')!
-    expect(sugarRow).toMatchObject({ value: 200, direction: 'info', target: null })
-    expect(habitStatus(sugarRow)).toBe('informative')
-    expect(habitTileFill(sugarRow)).toBe(0)
-    expect(summarizeHabitRows(high)).toEqual(summarizeHabitRows(low))
+    expect(sugarRow).toMatchObject({ value: 200, direction: 'max', target: 75 })
+    expect(habitStatus(sugarRow)).toBe('attention')
+    expect(habitTileFill(sugarRow)).toBe(100)
+    expect(summarizeHabitRows(high).needsAttention).toBe(summarizeHabitRows(low).needsAttention + 1)
   })
 
   it('combines daily nutrient totals with weekly food categories', () => {
@@ -80,9 +80,9 @@ describe('good habits calculations', () => {
     ])], [], targets)
 
     expect(summarizeHabitRows(rows)).toEqual({
-      ok: 1,
+      ok: 2,
       needsAttention: 4,
-      incomplete: 1,
+      incomplete: 2,
     })
   })
 

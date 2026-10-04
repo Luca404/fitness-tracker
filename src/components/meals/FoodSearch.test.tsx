@@ -8,8 +8,9 @@ vi.mock('../../contexts/DataContext', () => ({ useData: () => ({ showToast: mock
 
 import FoodSearch from './FoodSearch'
 
+afterEach(cleanup)
+
 describe('FoodSearch manual entry', () => {
-  afterEach(cleanup)
 
   it('places sugars below total carbohydrates', () => {
     render(<FoodSearch onAdd={vi.fn()} onClose={vi.fn()} />)
@@ -39,4 +40,17 @@ describe('FoodSearch manual entry', () => {
       pantry_item_id: 'pantry-1', fiber_g: 2.4, sugars_g: 10, salt_g: 0.01,
     })))
   })
+})
+
+it('registers a catalog beer in ml with edited strength and matching energy', async () => {
+  const onAdd = vi.fn()
+  render(<FoodSearch onAdd={onAdd} onClose={vi.fn()} />)
+  fireEvent.change(screen.getByPlaceholderText('Cerca un ingrediente...'), { target: { value: 'Birra chiara' } })
+  fireEvent.click(await screen.findByRole('button', { name: /Birra chiara/ }))
+  fireEvent.change(screen.getByLabelText('Quantità di Birra chiara'), { target: { value: '500' } })
+  fireEvent.change(screen.getByLabelText('Gradazione (% vol)'), { target: { value: '6' } })
+  fireEvent.click(screen.getByRole('button', { name: '+ Aggiungi ingrediente' }))
+  expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({
+    unit: 'ml', quantity_g: 500, alcohol_abv: 6, calories: 242.62, food_key: 'basic:birra-chiara',
+  }))
 })

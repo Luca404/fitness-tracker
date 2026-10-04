@@ -1,6 +1,7 @@
 import type { MealEntry } from '../../types'
 import { getMealEntryTotals } from '../../utils/mealEntries'
 import { getFoodIcon } from '../../utils/foodIcons'
+import { alcoholStrength } from '../../utils/alcohol'
 import { formatDecimal } from '../../utils/decimal'
 
 interface Props {
@@ -10,6 +11,11 @@ interface Props {
 
 export default function MealEntryCard({ entry, onOpen }: Props) {
   const totals = getMealEntryTotals(entry)
+  const strength = entry.items.length === 1 ? alcoholStrength(entry.items[0]) : null
+  const quantityLabel = entry.cooked_portion_g != null
+    ? `${formatDecimal(entry.cooked_portion_g)} g da cotto`
+    : [totals.weight > 0 || totals.volumeMl === 0 ? `${formatDecimal(totals.weight)} g` : null,
+      totals.volumeMl > 0 ? `${formatDecimal(totals.volumeMl)} ml` : null].filter(Boolean).join(' + ')
 
   return (
     <button
@@ -27,9 +33,7 @@ export default function MealEntryCard({ entry, onOpen }: Props) {
             <span className="shrink-0 font-semibold text-primary-400">{formatDecimal(totals.calories)} kcal</span>
           </div>
           <p className="mt-1 text-xs text-gray-500">
-            {entry.cooked_portion_g != null
-              ? `${formatDecimal(entry.cooked_portion_g)} g da cotto`
-              : `${formatDecimal(totals.weight)} g${totals.volumeMl > 0 ? ` + ${formatDecimal(totals.volumeMl)} ml` : ''}`} · P {formatDecimal(totals.protein)}g · C {formatDecimal(totals.carbs)}g · G {formatDecimal(totals.fat)}g
+            {quantityLabel}{strength != null && <> · {formatDecimal(strength)}% vol</>} · P {formatDecimal(totals.protein)}g · C {formatDecimal(totals.carbs)}g · G {formatDecimal(totals.fat)}g
           </p>
         </div>
         <svg className="h-4 w-4 shrink-0 text-gray-600 transition group-hover:translate-x-0.5 group-hover:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

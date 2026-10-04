@@ -6,7 +6,10 @@
 // affine; per i prodotti composti è una media, non un'etichetta di marca.
 // https://naehrwertdaten.ch/it/downloads/
 // https://fdc.nal.usda.gov/download-datasets/
+import { ALCOHOLIC_DRINKS } from './alcoholicDrinks'
+
 export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: number, sugars: number, salt: number]> = {
+  ...Object.fromEntries(ALCOHOLIC_DRINKS.map(food => [food.id, [food.fiber_g, food.sugars_g, food.salt_g] as const])),
   // Cereali e derivati
   'riso-bianco': [1, 0.2, 0],
   'riso-basmati': [1.3, 0.1, 0.01],

@@ -23,8 +23,8 @@ Part of the **Trackrs ecosystem** alongside [Trackr](../trackr) (personal financ
 - **Installable PWA** — installable shell for Android, iOS, and desktop; data operations require connectivity. New versions are applied through an update prompt; failed page loads show recovery controls
 
 Daily overview values use whole numbers; details use at most one decimal. Nutrition
-calculations keep their stored precision. Total sugars are informational because
-meal data does not distinguish free sugars; they do not affect the habits score.
+calculations keep their stored precision. Total sugars count toward the habits
+score, using the LARN total-sugars reference (15% of the calorie target / 4 kcal/g).
 
 ## Stack
 
@@ -224,6 +224,30 @@ standalone dish/diary entries, while preserving existing standalone values.
 Manual ingredient entry keeps omitted optional values as unknown, distinct from an
 explicit zero. Across the UI, total carbohydrates already include sugars and
 total fat already includes saturated fat (and unsaturated fat when shown).
+
+### Alcoholic drinks
+
+The diary beverage picker includes editable volume in ml and alcohol by volume
+(% vol), plus 21 popular cocktail estimates. Aperol Spritz, Campari Spritz,
+Negroni and Negroni Sbagliato are separate entries. Cocktail volumes exclude ice;
+recipes, dilution and brands can change the estimates. Alcohol contributes energy
+in addition to the macros; editing strength adjusts ethanol energy only.
+
+Daily habits also show alcohol units: `ml × ABV / 100 × 0.789 / 12`.
+[ISS defines 1 UA as 12 g of ethanol](https://www.epicentro.iss.it/passi/indicatori/alcol).
+The profile reference is 2 UA for men aged 18–64, 1 UA for women and adults aged
+65+, and zero for minors. These are orientation thresholds, not safe allowances
+or consumption goals. Unknown custom strength or quantities in grams produce
+an unavailable/partial total; older basic drinks use indicative catalog strength.
+A recorded zero remains zero. The `alcohol_abv` field persists in pantry, recipe,
+prepared snapshots and diary items, independently of quantity.
+
+Migration `20261004140000_alcohol_strength.sql` extends the existing atomic RPCs
+and source-nutrition triggers. Source corrections propagate to linked records;
+a deliberately different logged strength is retained when the pantry is corrected.
+Run `supabase/tests/alcohol_strength.sql` only in an isolated test database after
+replaying the migrations. It checks saves, edits, portions, energy adjustments,
+constraints, rollback and isolation between users in a rolled-back transaction.
 
 ### Adaptive calorie and macro targets
 

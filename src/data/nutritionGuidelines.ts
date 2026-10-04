@@ -1,10 +1,12 @@
-// Linee guida nutrizionali di riferimento (sale, zuccheri liberi, alcol, prodotti
+// Linee guida nutrizionali di riferimento (sale, zuccheri totali, alcol, prodotti
 // ultra-processati, carne, verdura, frutta, legumi, pesce, fibra) da enti
 // europei/sovranazionali, per adulti.
 //
 // Fonti:
 // - LARN (Livelli di Assunzione di Riferimento di Nutrienti ed energia), SINU/CREA,
-//   IV Revisione 2014, valori confermati nella V Revisione 2024.
+//   IV Revisione 2014 (riferimento per gli zuccheri totali).
+// - ISS, indicatori PASSI / PASSI d’Argento per le unità alcoliche.
+//   https://www.epicentro.iss.it/passi/indicatori/alcol
 // - EFSA (European Food Safety Authority), Dietary Reference Values for sodium
 //   and chloride, EFSA Journal 2019;17(9):5778.
 // - CREA, Linee guida per una sana alimentazione, edizione 2018 (piramide
@@ -21,7 +23,7 @@
 import type { Sex } from '../types'
 
 export type GuidelineNutrient =
-  | 'salt' | 'free_sugars' | 'alcohol' | 'ultra_processed_food'
+  | 'salt' | 'total_sugars' | 'alcohol' | 'ultra_processed_food'
   | 'red_meat' | 'processed_meat' | 'vegetables' | 'fruit' | 'legumes' | 'fish' | 'fiber'
 export type GuidelineUnit = 'g' | 'g_ethanol' | 'percent_energy' | null
 export type GuidelineDirection = 'max' | 'min'
@@ -59,9 +61,9 @@ export const NUTRITION_GUIDELINES: NutritionGuideline[] = [
     notes: 'Soglia massima di sicurezza LARN (SDT) = 5g sale/die (2g sodio/die); AI di riferimento LARN più prudente = 3.75g sale/die (1500mg sodio). EFSA 2019 converge sullo stesso valore pratico: AI = 2.0g sodio/die (~5g sale) + 3.1g cloruro/die. Nessuna distinzione per sesso negli adulti.',
   },
   {
-    nutrient: 'free_sugars',
-    label: 'Zuccheri liberi',
-    source: 'LARN (IV Rev. 2014, confermato V Rev. 2024)',
+    nutrient: 'total_sugars',
+    label: 'Zuccheri totali',
+    source: 'LARN IV Revisione 2014, SINU',
     sex: 'all',
     ageMin: 18,
     ageMax: null,
@@ -69,38 +71,38 @@ export const NUTRITION_GUIDELINES: NutritionGuideline[] = [
     period: 'day',
     limitValue: 15,
     limitUnit: 'percent_energy',
-    notes: 'Obiettivo nutrizionale: zuccheri semplici (inclusi quelli naturalmente presenti in latte e frutta, oltre a quelli aggiunti) non oltre il 15% dell\'energia totale giornaliera. Nota: l\'OMS raccomanda un valore più stringente (<10%, idealmente <5%), non usato qui perché la fonte scelta per questo dataset è LARN/EFSA.',
+    notes: 'Riferimento LARN per gli zuccheri totali, inclusi quelli naturalmente presenti in latte e frutta: meno del 15% dell’energia. Il tracker usa il 15% del target calorico come riferimento giornaliero, non come limite di sicurezza.',
   },
   {
     nutrient: 'alcohol',
     label: 'Alcol (uomo adulto)',
-    source: 'LARN / Ministero della Salute',
+    source: 'ISS, sorveglianza PASSI / PASSI d’Argento',
     sex: 'male',
-    ageMin: 18,
-    ageMax: 64,
-    direction: 'max',
-    period: 'day',
-    limitValue: 36,
-    limitUnit: 'g_ethanol',
-    notes: 'Consumo moderato: fino a 2-3 Unità Alcoliche/die (1 UA ≈ 12g etanolo, es. un bicchiere piccolo di vino da 125ml o una birra da 330ml a media gradazione).',
-  },
-  {
-    nutrient: 'alcohol',
-    label: 'Alcol (donna adulta)',
-    source: 'LARN / Ministero della Salute',
-    sex: 'female',
     ageMin: 18,
     ageMax: 64,
     direction: 'max',
     period: 'day',
     limitValue: 24,
     limitUnit: 'g_ethanol',
-    notes: 'Consumo moderato: fino a 1-2 Unità Alcoliche/die (1 UA ≈ 12g etanolo).',
+    notes: 'Soglia orientativa ISS: 2 Unità Alcoliche/die (1 UA ≈ 12g etanolo, es. un bicchiere piccolo di vino da 125ml o una birra da 330ml a media gradazione).',
+  },
+  {
+    nutrient: 'alcohol',
+    label: 'Alcol (donna adulta)',
+    source: 'ISS, sorveglianza PASSI / PASSI d’Argento',
+    sex: 'female',
+    ageMin: 18,
+    ageMax: 64,
+    direction: 'max',
+    period: 'day',
+    limitValue: 12,
+    limitUnit: 'g_ethanol',
+    notes: 'Soglia orientativa ISS: 1 Unità Alcolica/die (1 UA ≈ 12g etanolo).',
   },
   {
     nutrient: 'alcohol',
     label: 'Alcol (anziano, 65+)',
-    source: 'LARN / Ministero della Salute',
+    source: 'ISS, sorveglianza PASSI / PASSI d’Argento',
     sex: 'all',
     ageMin: 65,
     ageMax: null,
@@ -108,7 +110,7 @@ export const NUTRITION_GUIDELINES: NutritionGuideline[] = [
     period: 'day',
     limitValue: 12,
     limitUnit: 'g_ethanol',
-    notes: 'Consumo moderato: fino a 1 Unità Alcolica/die (1 UA ≈ 12g etanolo), stesso limite per entrambi i sessi dopo i 65 anni.',
+    notes: 'Soglia orientativa ISS: 1 Unità Alcolica/die (1 UA ≈ 12g etanolo), stesso limite per entrambi i sessi dopo i 65 anni.',
   },
   {
     nutrient: 'ultra_processed_food',

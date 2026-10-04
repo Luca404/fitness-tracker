@@ -1,3 +1,5 @@
+import AlcoholStrengthInput from '../meals/AlcoholStrengthInput'
+import { validAlcoholStrength } from '../../utils/alcohol'
 import OpenFoodFactsDetails from '../common/OpenFoodFactsDetails'
 import { FOOD_CATEGORIES, FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import { normalizeBarcode } from '../../services/barcodeProducts'
@@ -167,8 +169,11 @@ export default function PantryReview({ pending, setPending, editingItemId, analy
           ))}
         </select>
       </div>
+      {pending.category === 'alcohol' && <AlcoholStrengthInput value={pending.alcohol_abv ?? null}
+        onChange={value => setPending({ ...pending, alcohol_abv: value })} disabled={savingItem} />}
       <button type="button" onClick={handleAddToPantry}
         disabled={savingItem
+          || (pending.alcohol_abv != null && !validAlcoholStrength(pending.alcohol_abv))
           || !pending.name.trim()
           || Boolean(pending.barcode && !normalizeBarcode(pending.barcode))
           || Boolean(pending.analysis_requires_review && !analysisReviewAcknowledged)}

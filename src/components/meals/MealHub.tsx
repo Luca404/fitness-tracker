@@ -7,7 +7,7 @@ import DishIconChoices from '../kitchen/DishIconChoices'
 import Modal from '../common/Modal'
 import FoodSearch from './FoodSearch'
 import IngredientQuantityInput from './IngredientQuantityInput'
-import { BASIC_FOODS, type BasicFood } from '../../data/basicFoods'
+import BeveragePicker from './BeveragePicker'
 import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import { getDishIcon, getFoodIcon } from '../../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
@@ -39,43 +39,6 @@ function referenceWeight(dish: Dish): number {
 
 function totalKcal(dish: Dish): number { return dishTotals(dish).calories }
 
-const QUICK_BEVERAGE_IDS = new Set([
-  'acqua-naturale', 'acqua-frizzante', 'coca-cola', 'coca-cola-zero',
-  'succo-arancia', 'te-freddo', 'caffe-nero', 'birra-chiara', 'vino-rosso', 'vino-bianco', 'spritz',
-])
-const QUICK_BEVERAGES = BASIC_FOODS.filter(food => QUICK_BEVERAGE_IDS.has(food.id))
-
-function defaultBeverageVolume(beverage: BasicFood) {
-  if (beverage.id.startsWith('vino') || beverage.id === 'spritz') return 150
-  if (beverage.id === 'caffe-nero') return 40
-  if (beverage.id.includes('acqua')) return 500
-  return 330
-}
-
-function beverageEmoji(beverage: BasicFood) {
-  if (beverage.id.includes('acqua')) return '💧'
-  if (beverage.id === 'birra-chiara') return '🍺'
-  if (beverage.id.startsWith('vino')) return '🍷'
-  if (beverage.id === 'spritz') return '🍹'
-  if (beverage.id === 'caffe-nero') return '☕'
-  return '🥤'
-}
-
-function beverageToDraft(beverage: BasicFood, volumeMl: number): DishItemDraft {
-  const factor = volumeMl / 100
-  return {
-    food_name: beverage.name,
-    quantity_g: volumeMl,
-    unit: 'ml',
-    ...scaleNutrition(beverage, factor),
-    source: 'basic',
-    off_food_id: null,
-    category: beverage.category,
-    food_key: `basic:${beverage.id}`,
-    pantry_item_id: null,
-  }
-}
-
 export type MealHubMode = 'list' | 'ingredient' | 'new' | 'oneoff' | 'edit' | 'pick' | 'prepare' | 'prepared-pick'
 
 export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beveragesOnly = false, mode, setMode, mealType, date }: Props) {
@@ -102,8 +65,6 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   const [selectedBatch, setSelectedBatch] = useState<PreparedBatch | null>(null)
   const [preparedGrams, setPreparedGrams] = useState(0)
   const [consumingPrepared, setConsumingPrepared] = useState(false)
-  const [selectedBeverage, setSelectedBeverage] = useState<BasicFood | null>(null)
-  const [beverageVolume, setBeverageVolume] = useState(330)
   const [extraItems, setExtraItems] = useState<DishItemDraft[]>([])
   const [extraSearchKey, setExtraSearchKey] = useState(0)
   const [addingExtra, setAddingExtra] = useState(false)
@@ -195,11 +156,6 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     }
   }
 
-  function chooseBeverage(beverage: BasicFood) {
-    setSelectedBeverage(beverage)
-    setBeverageVolume(defaultBeverageVolume(beverage))
-  }
-
   function startEdit(dish: Dish) {
     setEditingDish(dish)
     setMode('edit')
@@ -230,6 +186,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
         food_name: i.food_name,
         quantity_g: quantity,
         unit: i.unit ?? 'g',
+        alcohol_abv: i.alcohol_abv ?? null,
         piece_count: pieceCount,
         piece_size: pieceCount == null ? null : i.piece_size ?? null,
         ...scaleNutrition(i, factor),
@@ -283,11 +240,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     setExtraItems([])
   }
 
-  async function confirmBeverage() {
-    if (!selectedBeverage || beverageVolume <= 0) return
-    await onAddEntry(selectedBeverage.name, [beverageToDraft(selectedBeverage, beverageVolume)])
-    setSelectedBeverage(null)
-  }
+
 
   async function addSingleIngredient(item: DishItemDraft) {
     if (addingIngredient) return
@@ -382,55 +335,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     }
   }
 
-  if (beveragesOnly) {
-    const beverageItem = selectedBeverage && beverageVolume > 0
-      ? beverageToDraft(selectedBeverage, beverageVolume)
-      : null
-    return (
-      <div className="space-y-5">
-        <div className="flex items-center justify-between px-1">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Bevande</p>
-            <h3 className="mt-0.5 text-lg font-bold">Cosa hai bevuto?</h3>
-          </div>
-          <span className="text-2xl">🥤</span>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {QUICK_BEVERAGES.map(beverage => (
-            <button
-              key={beverage.id}
-              type="button"
-              onClick={() => chooseBeverage(beverage)}
-              className={`flex items-center gap-2 rounded-xl border px-3 py-3 text-left text-xs transition ${selectedBeverage?.id === beverage.id ? 'border-primary-500 bg-primary-950/30 text-white' : 'border-gray-700/80 bg-gray-800/60 hover:border-primary-600'}`}
-            >
-              <span className="text-lg">{beverageEmoji(beverage)}</span>
-              <span className="truncate">{beverage.name}</span>
-            </button>
-          ))}
-        </div>
-        {selectedBeverage && (
-          <div className="space-y-3 rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
-            <label className="flex items-center rounded-xl border border-gray-700 bg-gray-800/70 px-3 focus-within:border-primary-500">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Quantità</span>
-              <input
-                type="number"
-                min={1}
-                value={beverageVolume === 0 ? '' : beverageVolume}
-                onChange={event => setBeverageVolume(parseInt(event.target.value) || 0)}
-                onFocus={event => event.currentTarget.select()}
-                className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-right text-xl font-bold outline-none"
-              />
-              <span className="text-sm text-gray-500">ml</span>
-            </label>
-            <button type="button" onClick={confirmBeverage} disabled={!beverageItem}
-              className="w-full rounded-xl bg-primary-500 py-3 font-semibold hover:bg-primary-400 disabled:opacity-40">
-              Registra {beverageItem?.calories ?? 0} kcal
-            </button>
-          </div>
-        )}
-      </div>
-    )
-  }
+  if (beveragesOnly) return <BeveragePicker onAddEntry={onAddEntry} />
 
   if (mode === 'new') {
     return (
