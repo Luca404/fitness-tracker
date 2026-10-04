@@ -1,0 +1,3 @@
+-- Shared ledger marker: applied from ../trackr/ to the hosted database on 2026-10-04.
+-- Finance-owned SQL is maintained in ../trackr/supabase/migrations/20261004170000_finance_security.sql
+-- This marker prevents replaying finance changes from the fitness repository.
