@@ -123,13 +123,6 @@ export default function KitchenDishes() {
 
   return (
     <div className="space-y-6">
-      <label className="block text-xs font-semibold text-gray-400">Categoria dei piatti
-        <select value={category} onChange={event => setCategory(event.target.value as DishMealType | 'all')}
-          className="mt-1.5 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-3 text-sm text-white outline-none focus:border-primary-500">
-          <option value="all">Tutti i piatti</option>
-          {DISH_MEAL_TYPES.map(type => <option key={type.id} value={type.id}>{type.label}</option>)}
-        </select>
-      </label>
       <PreparedDishesPanel mealType={category === 'all' ? undefined : category} />
       <button type="button" onClick={() => { setSelectedDish(null); setMode('create') }}
         className="flex w-full items-center gap-3 rounded-2xl bg-primary-500 px-4 py-3.5 text-left font-semibold shadow-lg shadow-primary-950/30 hover:bg-primary-400">
@@ -141,6 +134,18 @@ export default function KitchenDishes() {
         <div className="mb-3 flex items-end justify-between px-1">
           <div><p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Ricettario</p><h2 className="mt-1 text-lg font-bold">I tuoi piatti</h2></div>
           <span className="rounded-full bg-gray-800 px-2.5 py-1 text-xs text-gray-500">{visibleDishes.length}</span>
+        </div>
+        <div role="group" aria-label="Categoria dei piatti" className="mb-3 flex flex-wrap gap-2">
+          {[{ id: 'all' as const, label: 'Tutti', icon: '📖' }, ...DISH_MEAL_TYPES].map(type => (
+            <button key={type.id} type="button" onClick={() => setCategory(type.id)}
+              aria-pressed={category === type.id}
+              className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${category === type.id
+                ? 'border-primary-400/50 bg-primary-500 text-white shadow-md shadow-primary-950/30'
+                : 'border-gray-700/70 bg-gray-800/70 text-gray-400 hover:border-gray-600 hover:bg-gray-700 hover:text-white'}`}>
+              <span aria-hidden="true">{type.icon}</span>
+              {type.label}
+            </button>
+          ))}
         </div>
         <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Cerca un piatto..."
           className="mb-3 w-full rounded-2xl border border-gray-700 bg-gray-800/70 px-4 py-3 text-sm outline-none focus:border-primary-500" />
