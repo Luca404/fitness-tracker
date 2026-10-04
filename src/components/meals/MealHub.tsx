@@ -178,7 +178,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
 
   function startPick(dish: Dish) {
     setPickingDish(dish)
-    setItemQuantities(Object.fromEntries(dish.items.map(item => [item.id, formatDecimal(item.quantity_g)])))
+    setItemQuantities({})
     setExtraItems([])
     setAddingExtra(false)
     setMode('pick')
@@ -247,7 +247,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   function pickedItems(): DishItemDraft[] {
     if (!pickingDish) return []
     const dishItems: DishItemDraft[] = pickingDish.items.map(i => {
-      const rawQuantity = Number(itemQuantities[i.id])
+      const rawQuantity = Number(itemQuantities[i.id] ?? i.quantity_g)
       const quantity = Number.isFinite(rawQuantity) && rawQuantity > 0 ? roundToTwo(rawQuantity) : 0
       const factor = quantity / i.quantity_g
       const pieceCount = i.piece_count == null ? null : roundToTwo(i.piece_count * factor) || null
@@ -278,7 +278,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
 
   function validPickedQuantities(): boolean {
     return pickingDish?.items.every(item => {
-      const quantity = Number(itemQuantities[item.id])
+      const quantity = Number(itemQuantities[item.id] ?? item.quantity_g)
       return Number.isFinite(quantity) && roundToTwo(quantity) > 0
     }) ?? false
   }
@@ -576,8 +576,8 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           ))}
         </div>
         <label className="mt-3 block text-xs text-gray-400">Correggi il peso cotto totale (facoltativo)
-          <input type="number" min={1} step="0.01" inputMode="decimal"
-            value={cookedWeightOverride ?? ''}
+          <input type="number" min={1} step="0.1" inputMode="decimal"
+            value={cookedWeightOverride == null ? '' : formatDecimal(cookedWeightOverride)}
             onChange={event => setCookedWeightOverride(event.target.value === '' ? null : roundToTwo(Number(event.target.value)))}
             placeholder={`${formatDecimal(rememberedWeight ?? estimated)} g suggeriti`}
             className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm outline-none focus:border-primary-500" />
@@ -686,13 +686,14 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           {pickingDish.items.map(item => (
             <label key={item.id} className="flex items-center gap-3 rounded-xl border border-gray-700/70 bg-gray-900/30 px-3 py-2 text-sm focus-within:border-primary-500">
               <span className="min-w-0 flex-1 truncate text-gray-300">{item.food_name}</span>
-              <input type="number" min="0.01" step="0.01" inputMode="decimal"
+              <input type="number" min="0.1" step="0.1" inputMode="decimal"
                 aria-label={`${item.unit === 'ml' ? 'Millilitri' : 'Grammi'} di ${item.food_name}`}
-                value={itemQuantities[item.id] ?? ''}
+                value={itemQuantities[item.id] ?? formatDecimal(item.quantity_g)}
                 onChange={event => setItemQuantities(current => ({ ...current, [item.id]: event.target.value }))}
                 onBlur={event => {
+                  if (itemQuantities[item.id] === undefined) return
                   const quantity = Number(event.target.value)
-                  if (Number.isFinite(quantity) && quantity > 0) setItemQuantities(current => ({ ...current, [item.id]: String(roundToTwo(quantity)) }))
+                  if (Number.isFinite(quantity) && quantity > 0) setItemQuantities(current => ({ ...current, [item.id]: formatDecimal(quantity) }))
                 }}
                 onFocus={event => event.currentTarget.select()}
                 className="w-16 rounded-lg border border-gray-600 bg-gray-800 px-2 py-1.5 text-right font-semibold outline-none focus:border-primary-500" />

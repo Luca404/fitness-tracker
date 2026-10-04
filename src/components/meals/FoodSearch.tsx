@@ -385,7 +385,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
               <label key={label} className="rounded-xl border border-gray-700 bg-gray-800/80 p-3 focus-within:border-primary-500">
                 <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">{label}</span>
                 <span className="mt-1 flex items-center gap-2">
-                  <input type="number" min={min} step="0.01" inputMode="decimal" value={val || ''}
+                  <input type="number" min={min} step="0.1" inputMode="decimal" value={val ? formatDecimal(val) : ''}
                     onChange={e => set(roundToTwo(parseFloat(e.target.value) || 0))}
                     className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none" />
                   <span aria-hidden="true" className="text-xs text-gray-600">{unit}</span>
@@ -397,7 +397,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
             <label className="block">
               <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">Carboidrati totali</span>
               <span className="mt-1 flex items-center gap-2">
-                <input type="number" min={0} step="0.01" inputMode="decimal" value={manualCarbs || ''}
+                <input type="number" min={0} step="0.1" inputMode="decimal" value={manualCarbs ? formatDecimal(manualCarbs) : ''}
                   onChange={event => setManualCarbs(roundToTwo(parseFloat(event.target.value) || 0))}
                   className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none" />
                 <span aria-hidden="true" className="text-xs text-gray-600">g</span>
@@ -406,7 +406,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
             <label className="mt-3 block border-l-2 border-gray-600 pl-3">
               <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">di cui zuccheri (facoltativo)</span>
               <span className="mt-1 flex items-center gap-2">
-                <input type="number" min={0} step="0.01" inputMode="decimal" value={manualSugars ?? ''}
+                <input type="number" min={0} step="0.1" inputMode="decimal" value={manualSugars == null ? '' : formatDecimal(manualSugars)}
                   onChange={event => setManualSugars(event.target.value === '' ? null : roundToTwo(Number(event.target.value)))}
                   className="min-w-0 flex-1 bg-transparent text-base font-semibold outline-none" />
                 <span aria-hidden="true" className="text-xs text-gray-600">g</span>
@@ -416,7 +416,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
           <label className="block rounded-xl border border-gray-700 bg-gray-800/80 p-3 focus-within:border-primary-500">
             <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">Grassi totali</span>
             <span className="mt-1 flex items-center gap-2">
-              <input type="number" min={0} step="0.01" inputMode="decimal" value={manualFat || ''}
+              <input type="number" min={0} step="0.1" inputMode="decimal" value={manualFat ? formatDecimal(manualFat) : ''}
                 onChange={event => setManualFat(roundToTwo(parseFloat(event.target.value) || 0))}
                 className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none" />
               <span aria-hidden="true" className="text-xs text-gray-600">g</span>
@@ -435,8 +435,8 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
                     <input
                       type="number"
                       min={0}
-                      step="0.01"
-                      value={val ?? ''}
+                      step="0.1"
+                      value={val == null ? '' : formatDecimal(val)}
                       onChange={event => set(event.target.value === '' ? null : roundToTwo(Number(event.target.value)))}
                       className="min-w-0 flex-1 bg-transparent text-base font-semibold outline-none"
                     />

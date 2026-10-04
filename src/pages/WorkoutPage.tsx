@@ -67,7 +67,7 @@ export default function WorkoutPage({ embedded = false }: { embedded?: boolean }
         <div>
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-semibold text-gray-300">Altre attività del giorno</h3>
-            <span className="text-sm text-orange-400">🔥 {formatDecimal(totalBurned)} kcal</span>
+            <span className="text-sm text-orange-400">🔥 {formatDecimal(totalBurned, 0)} kcal</span>
           </div>
           {workouts.map(w => (
             <WorkoutRow key={w.id} workout={w} onDelete={() => handleDelete(w.id)} />

@@ -4,7 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } f
 import { useData } from '../contexts/DataContext'
 import { getMealsForRange, getWorkoutsForRange } from '../services/api'
 import type { Meal, Workout } from '../types'
-import { formatDecimal, roundToTwo } from '../utils/decimal'
+import { formatDecimal } from '../utils/decimal'
 
 type Range = 7 | 30
 
@@ -49,8 +49,8 @@ export default function HistoryPage() {
       const burned = dayWorkouts.reduce((s, w) => s + w.calories_burned, 0)
       return {
         date: format(day, 'dd/MM'),
-        Mangiato: roundToTwo(consumed),
-        Bruciato: roundToTwo(burned),
+        Mangiato: consumed,
+        Bruciato: burned,
       }
     })
   }, [meals, workouts, range])
@@ -82,10 +82,11 @@ export default function HistoryPage() {
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={chartData}>
               <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} tickFormatter={value => formatDecimal(Number(value), 0)} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: 8 }}
                 labelStyle={{ color: '#f3f4f6' }}
+                formatter={(value: unknown) => `${formatDecimal(Number(value), 0)} kcal`}
               />
               <Legend />
               {goals && (
@@ -108,11 +109,11 @@ export default function HistoryPage() {
       <div className="grid grid-cols-2 gap-3">
         <div className="card">
           <p className="text-xs text-gray-400 mb-1">Media kcal/giorno</p>
-          <p className="text-2xl font-bold text-primary-400">{formatDecimal(avgConsumed)}</p>
+          <p className="text-2xl font-bold text-primary-400">{formatDecimal(avgConsumed, 0)}</p>
         </div>
         <div className="card">
           <p className="text-xs text-gray-400 mb-1">Media bruciate/giorno</p>
-          <p className="text-2xl font-bold text-orange-400">{formatDecimal(avgBurned)}</p>
+          <p className="text-2xl font-bold text-orange-400">{formatDecimal(avgBurned, 0)}</p>
         </div>
       </div>
     </div>

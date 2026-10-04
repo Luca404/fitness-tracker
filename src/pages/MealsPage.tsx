@@ -172,22 +172,22 @@ export default function MealsPage() {
         <div className="flex-1 space-y-2.5 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-400">Consumate</span>
-            <span className="font-semibold">{formatDecimal(daySummary.calories)} kcal</span>
+            <span className="font-semibold">{formatDecimal(daySummary.calories, 0)} kcal</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-400">Obiettivo</span>
-            <span className="font-semibold">{target} kcal</span>
+            <span className="font-semibold">{formatDecimal(target, 0)} kcal</span>
           </div>
           {totalBurned > 0 && (
             <div className="flex justify-between">
               <span className="text-gray-400">🔥 Bruciate</span>
-              <span className="text-orange-400 font-semibold">{formatDecimal(totalBurned)} kcal</span>
+              <span className="text-orange-400 font-semibold">{formatDecimal(totalBurned, 0)} kcal</span>
             </div>
           )}
           <div className="flex justify-between border-t border-gray-700 pt-2">
             <span className="text-gray-400">Rimanenti</span>
             <span className={`font-bold ${isOver ? 'text-orange-400' : 'text-primary-400'}`}>
-              {isOver ? `+${formatDecimal(Math.abs(remaining))}` : formatDecimal(remaining)} kcal
+              {isOver ? `+${formatDecimal(Math.abs(remaining), 0)}` : formatDecimal(remaining, 0)} kcal
             </span>
           </div>
         </div>
@@ -242,7 +242,7 @@ export default function MealsPage() {
                   <div key={entries[0].id}>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-semibold text-gray-400">{label}</span>
-                      <span className="text-xs text-gray-600">{formatDecimal(total)} kcal</span>
+                      <span className="text-xs text-gray-600">{formatDecimal(total, 0)} kcal</span>
                     </div>
                     <div className="space-y-2">
                       {entries.map(entry => (

@@ -106,7 +106,7 @@ function GymSetRow({ set, draft, onDraftChange, onSaved, onDeleted, canDelete }:
     </div>
     <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
       <label className="text-xs text-gray-400">Peso (kg)
-        <input type="number" min={0} step="0.01" inputMode="decimal" value={weight}
+        <input type="number" min={0} step="0.1" inputMode="decimal" value={weight}
           onChange={event => {
             setWeight(event.target.value)
             onDraftChange({ weight: event.target.value, reps })

@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { Objective } from '../../types'
 import { differenceInDays, format, addMonths } from 'date-fns'
 import { NUTRITION_GOAL_CONFIG } from '../../config/nutritionGoals'
-import { roundToTwo } from '../../utils/decimal'
+import { formatDecimal, roundToTwo } from '../../utils/decimal'
 
 interface ObjectiveData {
   objective: Objective
@@ -36,12 +36,12 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
     if (days <= 0) return null
     const weeks = days / 7
     const deltaKg = currentWeightKg - data.target_weight_kg
-    return (deltaKg / weeks).toFixed(2)
+    return deltaKg / weeks
   }, [data, currentWeightKg])
 
   const weeklyRatePercent = rateKgPerWeek === null
     ? null
-    : (parseFloat(rateKgPerWeek) / currentWeightKg) * 100
+    : (rateKgPerWeek / currentWeightKg) * 100
   const isAggressive = weeklyRatePercent !== null
     && weeklyRatePercent > NUTRITION_GOAL_CONFIG.loss.maxWeeklyRate * 100
   const invalidLossTarget = data.objective === 'lose_weight' &&
@@ -90,8 +90,8 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
             type="number"
             min={30}
             max={300}
-            step={0.01}
-            value={data.target_weight_kg ?? ''}
+            step={0.1}
+            value={data.target_weight_kg == null ? '' : formatDecimal(data.target_weight_kg)}
             onChange={e => set('target_weight_kg', e.target.value ? roundToTwo(parseFloat(e.target.value)) : null)}
             className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
           />
@@ -111,10 +111,10 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
             onChange={e => set('target_date', e.target.value)}
             className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
           />
-          {rateKgPerWeek && (
+          {rateKgPerWeek !== null && (
             <p className={`text-sm mt-2 ${isAggressive ? 'text-orange-400' : 'text-primary-400'}`}>
-              {isAggressive && '⚠️ '}Ritmo stimato: {rateKgPerWeek} kg/settimana
-              {weeklyRatePercent !== null && ` (${weeklyRatePercent.toFixed(2)}% del peso)`}
+              {isAggressive && '⚠️ '}Ritmo stimato: {formatDecimal(rateKgPerWeek)} kg/settimana
+              {weeklyRatePercent !== null && ` (${formatDecimal(weeklyRatePercent)}% del peso)`}
               {isAggressive && ' — la data è troppo aggressiva e verrà applicato un limite prudenziale'}
             </p>
           )}

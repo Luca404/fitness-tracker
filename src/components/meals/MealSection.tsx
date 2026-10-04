@@ -22,7 +22,7 @@ export default function MealSection({ meal, onDeleteItem, onAddItem }: Props) {
     <div className="mb-4">
       <div className="flex justify-between items-center mb-2">
         <h3 className="font-semibold text-gray-300">{LABELS[meal.meal_type] ?? meal.meal_type}</h3>
-        <span className="text-sm text-gray-500">{formatDecimal(total)} kcal</span>
+        <span className="text-sm text-gray-500">{formatDecimal(total, 0)} kcal</span>
       </div>
       {meal.items.map(item => (
         <MealItemRow key={item.id} item={item} onDelete={() => onDeleteItem(item.id)} />

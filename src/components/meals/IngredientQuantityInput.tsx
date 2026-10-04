@@ -64,8 +64,8 @@ export default function IngredientQuantityInput({ foodName, category, grams, onC
         <input
           type="number"
           min={activeEstimate ? 0.5 : 1}
-          step={activeEstimate ? 0.5 : 0.01}
-          value={draftValue ?? (displayedQuantity > 0 ? displayedQuantity : '')}
+          step={activeEstimate ? 0.5 : 0.1}
+          value={draftValue ?? (displayedQuantity > 0 ? formatDecimal(displayedQuantity) : '')}
           onChange={event => changeQuantity(event.target.value)}
           onBlur={() => setDraftValue(null)}
           onFocus={event => event.currentTarget.select()}

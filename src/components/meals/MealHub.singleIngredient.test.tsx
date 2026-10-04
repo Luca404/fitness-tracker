@@ -95,6 +95,27 @@ describe('saved dish meal flow', () => {
     expect(onAddEntry).not.toHaveBeenCalled()
   })
 
+  it('displays rounded quantities without changing an untouched saved recipe', async () => {
+    mocks.getDishes.mockResolvedValueOnce([{
+      ...dish,
+      items: [{ ...dish.items[0], quantity_g: 80.13, calories: 280.46 }],
+    }])
+    const onAddEntry = vi.fn().mockResolvedValue(undefined)
+    render(<TestHub onAddEntry={onAddEntry} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
+    const quantity = screen.getByRole('spinbutton', { name: 'Grammi di Pasta' })
+    expect((quantity as HTMLInputElement).value).toBe('80.1')
+    fireEvent.focus(quantity)
+    fireEvent.blur(quantity)
+    fireEvent.click(screen.getByRole('button', { name: 'Registra tutto' }))
+
+    await waitFor(() => expect(onAddEntry).toHaveBeenCalledWith(
+      'Pasta al pomodoro', [expect.objectContaining({ quantity_g: 80.13, calories: 280.46 })],
+      'dish-1', '🍝',
+    ))
+  })
+
   it('changes ingredient quantities only for the current entry', async () => {
     const twoIngredientDish: Dish = {
       ...dish,

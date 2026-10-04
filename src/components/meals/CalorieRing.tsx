@@ -28,8 +28,8 @@ export default function CalorieRing({ consumed, target }: Props) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold">{formatDecimal(consumed)}</span>
-        <span className="text-gray-400 text-sm">/ {formatDecimal(target)} kcal</span>
+        <span className="text-3xl font-bold">{formatDecimal(consumed, 0)}</span>
+        <span className="text-gray-400 text-sm">/ {formatDecimal(target, 0)} kcal</span>
       </div>
     </div>
   )

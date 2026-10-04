@@ -2,6 +2,7 @@
 import { differenceInCalendarDays } from 'date-fns'
 import type { UserHealthProfile, ActivityLevel, SuggestedGoals } from '../types'
 import { NUTRITION_GOAL_CONFIG as CONFIG, RECOMPOSITION_TRAINING_ADVICE } from '../config/nutritionGoals'
+import { formatDecimal } from './decimal'
 
 export type NutritionGoalWarningCode =
   | 'aggressive_target_date'
@@ -113,7 +114,7 @@ export function calculateNutritionGoals(
     if (requestedWeeklyLossRate !== null && requestedWeeklyLossRate > CONFIG.loss.maxWeeklyRate) {
       warnings.push({
         code: 'aggressive_target_date',
-        message: `La data obiettivo richiederebbe circa ${(requestedWeeklyLossRate * 100).toFixed(2)}% del peso a settimana. Il calcolo usa il limite prudenziale dello ${(CONFIG.loss.maxWeeklyRate * 100).toFixed(2)}%: valuta una data più lontana.`,
+        message: `La data obiettivo richiederebbe circa ${formatDecimal(requestedWeeklyLossRate * 100)}% del peso a settimana. Il calcolo usa il limite prudenziale dello ${formatDecimal(CONFIG.loss.maxWeeklyRate * 100)}%: valuta una data più lontana.`,
       })
     }
 
@@ -159,7 +160,7 @@ export function calculateNutritionGoals(
   if (carbsPerKg < lowCarbThreshold) {
     warnings.push({
       code: 'low_carbs',
-      message: `I carboidrati risultano bassi (${carbsPerKg.toFixed(2)} g/kg) rispetto al livello di attività indicato. Valuta energia, recupero e volume di allenamento.`,
+      message: `I carboidrati risultano bassi (${formatDecimal(carbsPerKg)} g/kg) rispetto al livello di attività indicato. Valuta energia, recupero e volume di allenamento.`,
     })
   }
 

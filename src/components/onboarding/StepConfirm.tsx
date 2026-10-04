@@ -71,7 +71,7 @@ export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
           <input
             type="number"
             min={label.startsWith('Calorie') ? 1 : 0}
-            step={label.startsWith('Calorie') ? 1 : 0.01}
+            step={label.startsWith('Calorie') ? 1 : 0.1}
             value={val === 0 ? '' : formatDecimal(val)}
             onChange={e => set(label.startsWith('Calorie') ? parseInt(e.target.value) || 0 : roundToTwo(Number(e.target.value) || 0))}
             className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"

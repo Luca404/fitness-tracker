@@ -146,7 +146,7 @@ export default function SettingsPage() {
         ].map(({ label, val, set }) => (
           <div key={label}>
             <label className="text-sm text-gray-400 mb-1 block">{label}</label>
-            <input type="number" min={label.startsWith('Calorie') ? 1 : 0} step={label.startsWith('Calorie') ? 1 : 0.01} value={val === 0 ? '' : formatDecimal(val)}
+            <input type="number" min={label.startsWith('Calorie') ? 1 : 0} step={label.startsWith('Calorie') ? 1 : 0.1} value={val === 0 ? '' : formatDecimal(val)}
               onChange={e => set(label.startsWith('Calorie') ? parseInt(e.target.value) || 0 : roundToTwo(Number(e.target.value) || 0))}
               className="input-field py-3" />
           </div>

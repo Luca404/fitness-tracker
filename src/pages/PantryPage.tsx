@@ -84,7 +84,7 @@ function NutrientNumberInput({ label, value, onChange, optional = false }: {
   return (
     <label className="block min-w-0 text-xs text-gray-400">
       {label}
-      <input type="number" min={0} step="0.01" inputMode="decimal"
+      <input type="number" min={0} step="0.1" inputMode="decimal"
         value={value === 0 && !optional ? '' : value == null ? '' : formatDecimal(value)}
         onChange={event => onChange(event.target.value === '' ? (optional ? null : 0) : roundToTwo(Number(event.target.value)))}
         className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />
@@ -809,7 +809,7 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
                 </label>
                 <label className="text-xs text-gray-400">
                   Peso/volume netto
-                  <input type="number" min={0} step="0.01" value={pending.package_net_quantity_value ?? ''}
+                  <input type="number" min={0} step="0.1" value={pending.package_net_quantity_value == null ? '' : formatDecimal(pending.package_net_quantity_value)}
                     onChange={event => {
                       const value = event.target.value ? Math.max(0, roundToTwo(Number(event.target.value))) : null
                       setPending({ ...pending, package_net_quantity_value: value })

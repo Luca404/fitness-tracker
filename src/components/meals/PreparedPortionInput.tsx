@@ -39,7 +39,7 @@ export default function PreparedPortionInput({ totalCookedG, remainingG, value, 
         </button>
       </div>
       <label className="block text-xs text-gray-400">Grammi mangiati
-        <input type="number" min={allowZero ? 0 : 0.01} max={remainingG} step="0.01" inputMode="decimal"
+        <input type="number" min={allowZero ? 0 : 0.1} max={remainingG} step="0.1" inputMode="decimal"
           value={draftValue ?? (value === 0 ? '' : formatDecimal(value))}
           onChange={event => {
             const raw = event.target.value
