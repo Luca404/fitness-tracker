@@ -7,6 +7,13 @@ esercizio ha un numero di serie, una ripetizione minima, un massimo facoltativo
 e l'opzione **Ripetizioni per lato/gamba**. Lascia vuote entrambe le ripetizioni
 per una serie con obiettivo libero.
 
+Nell’elenco delle schede, le frecce **↑ / ↓** spostano una scheda di una
+posizione. L’ordine viene salvato per account e mantenuto tornando alla pagina
+o accedendo da un altro dispositivo. Le nuove schede vengono aggiunte in fondo;
+modificare una scheda ne conserva la posizione. Con una sola scheda le frecce
+non compaiono. Durante il salvataggio i controlli sono disabilitati; se il
+salvataggio fallisce, viene ripristinato l’ordine precedente.
+
 Avviando una scheda, l'app crea le serie da registrare. Per ciascuna puoi
 modificare peso e ripetizioni effettive e premere **Fatto**. Il peso può restare
 vuoto per gli esercizi a corpo libero. L'ultimo peso e le ultime ripetizioni
@@ -36,6 +43,9 @@ e applica un piccolo correttivo limitato per il carico: i chilogrammi sollevati
 da soli non misurano lo sforzo individuale. La stima segue la convenzione
 `MET × peso corporeo (kg) × durata (ore)` e non è una misura diretta del
 consumo energetico.
+
+Le calorie delle sessioni completate rientrano nella voce **Bruciate** della
+panoramica del giorno, insieme a quelle delle altre attività registrate.
 
 ## Esempio: quattro schede Upper/Lower
 

@@ -1,8 +1,10 @@
 # Rapporto di analisi e semplificazione di fitTrackr
 
 Prima analisi: 29 settembre 2026. Revisione e implementazione: 4 ottobre 2026.
-Ambito: frontend, servizi, PWA, test e documentazione. Il database condiviso non
-è stato modificato; questa revisione non aggiunge migrazioni.
+Ambito: frontend, servizi, PWA, test e documentazione. Il refactoring iniziale
+non richiedeva migrazioni. Gli interventi successivi su gradazione alcolica,
+ordine degli ingredienti e schede palestra includono tre migrazioni applicate
+al database condiviso, descritte sotto.
 
 ## Cambiamenti rispetto alla prima analisi
 
@@ -21,7 +23,7 @@ nella pagina Pasti.
 | Punto | Riscontro prima dell’intervento | Esito della revisione |
 | --- | --- | --- |
 | 1. Dati associati alla data | Vecchi dati visibili durante il cambio data; scritture tardive applicate al giorno aperto | **Implementato.** `useDiary` conserva un giorno unico, svuota la vista quando cambia data e scarta letture superate. Le scritture aggiornano soltanto il giorno e l’utente di origine; se una lettura precede una scrittura, ricarica il risultato salvato. |
-| 2. Zuccheri | Il limite per zuccheri liberi era confrontato con zuccheri totali | **Implementato.** Zuccheri totali informativi, senza target né giudizio; esclusi dal punteggio delle abitudini. Dati mancanti restano sconosciuti. |
+| 2. Zuccheri | Il limite per zuccheri liberi era confrontato con zuccheri totali | **Aggiornato su richiesta.** Zuccheri totali inclusi nel punteggio delle abitudini con il riferimento LARN del 15% del target calorico, convertito in grammi. Nessuna distinzione richiesta tra zuccheri liberi e aggiunti; dati mancanti restano sconosciuti. |
 | 3. Refresh abitudini | Chiave basata sul numero di ingredienti | **Implementato.** Revisione delle scritture, cache settimanale condivisa con durata di 60 secondi e invalidazione dopo modifica, aggiunta, eliminazione o refresh del diario. |
 | 4. Copia `Meal.items` | Ingredienti mantenuti sia nel pasto sia nelle entries | **Implementato.** Unica fonte `entries[].items`; appiattimento con `mealItems` nei consumatori. |
 | 5. Scala nutrizionale | Logica ripetuta in editor e bevande | **Implementato.** `scaleNutrition` e `scaleIngredient` condivisi. Conservati nutrienti sconosciuti, metadati e precisione di calcolo a due decimali; visualizzazione a un decimale, panoramiche intere. |
@@ -118,7 +120,9 @@ indipendentemente dal numero di ingredienti.
 Questa revisione mantiene il comportamento attuale: correggere un ingrediente
 aggiorna anche i pasti collegati del passato. Congelare lo storico richiede una
 decisione di prodotto. Le correzioni iniziali non richiedevano migrazioni;
-l’aggiunta della gradazione alcolica richiede la migration dedicata indicata sopra.
+l’aggiunta della gradazione alcolica usa la migration dedicata indicata sopra.
+Le successive migrazioni per l’ordine degli ingredienti e delle schede palestra
+sono descritte nell’aggiornamento in fondo al rapporto.
 
 Restano interventi separati:
 
@@ -144,7 +148,7 @@ Dopo l’implementazione dell’alcol, il nuovo dry-run ha elencato soltanto
 `20261004140000_alcohol_strength.sql`. La migration è stata applicata con
 `supabase db push`, dopo i test locali, senza reset del database condiviso.
 
-## Verifica finale
+## Verifiche del refactoring e della funzione alcol
 
 - `npm test -- --run`: **207 test superati in 46 file** (194/44 prima della funzione alcol), rispetto ai 166 della baseline.
 - `npm run build`: TypeScript e build Vite/PWA superati.
@@ -184,9 +188,14 @@ cocktail restano indicative; quantità e gradazione si possono correggere.
 
 ## Aggiornamento: categorie, icone automatiche e schede palestra
 
-- Cucina → Piatti: selettore Tutti / Colazione / Pranzo / Cena / Spuntino,
-  combinato con la ricerca. Filtra anche i piatti preparati; un nuovo piatto
-  parte dalla categoria selezionata.
+- Cucina → Piatti: quattro pulsanti Colazione / Pranzo / Cena / Spuntino su
+  una sola riga sopra **Cerca un piatto...**, con icona e stato attivo evidenziato.
+  Nessun pulsante è selezionato all’apertura e non esiste il pulsante “Tutti”.
+  Toccare una categoria sostituisce la selezione precedente; toccare di nuovo
+  quella attiva la deseleziona e mostra tutti i piatti. La ricerca resta attiva
+  durante questi cambiamenti. La categoria filtra anche i piatti preparati;
+  un nuovo piatto parte dalla categoria selezionata, oppure senza categorie
+  preselezionate quando il filtro è disattivato.
 - Corretto il caso delle icone automatiche: gli ingredienti del diario avevano
   timestamp identici e venivano ordinati tramite UUID, cambiando il primo
   ingrediente. `meal_items.position` registra ora l’ordine dell’array sia in
@@ -217,3 +226,9 @@ Il dry-run sul database condiviso elenca esclusivamente le migration
 Entrambe le migration sono state applicate al database condiviso con
 `supabase db push`, dopo la verifica locale. Il container temporaneo è stato
 rimosso. La build finale e il test del pannello dei piatti pronti sono superati.
+
+Dopo la rifinitura dei pulsanti sono stati aggiornati e superati i **3 test di
+KitchenDishes**: filtro e ricerca, cambio/deselezione della categoria, piatti
+preparati e categoria iniziale delle nuove ricette. Superati anche build
+TypeScript/Vite/PWA e `git diff --check`. Questa rifinitura non richiede altre
+migrazioni.

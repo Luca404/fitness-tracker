@@ -18,3 +18,20 @@ posizione; aggiunta ed eliminazione aggiornano la lista immediatamente.
 
 La logica è in `src/utils/mealTimeline.ts` ed è coperta da
 `src/utils/mealTimeline.test.ts`.
+
+## Ordine degli ingredienti e icona automatica
+
+L’ordine delle registrazioni descritto sopra è distinto da quello degli
+ingredienti all’interno di un piatto. Gli ingredienti del diario usano
+`meal_items.position`, introdotta dalla migration
+`20261004153000_preserve_diary_ingredient_order.sql`. Gli RPC di inserimento e
+modifica conservano l’ordine dell’array ricevuto; le letture usano la posizione
+registrata, anche quando gli ingredienti hanno lo stesso timestamp.
+
+Questo mantiene coerente l’icona automatica basata sul primo ingrediente tra
+Cucina e Pasti. Un’icona personalizzata ha la precedenza su quella automatica.
+La migration riallinea gli ingredienti storici collegati a una ricetta al suo
+ordine; per i record senza riferimenti l’ordine originario non è recuperabile
+con certezza.
+
+I controlli sono in `src/services/api.test.ts` e `supabase/tests/ordering.sql`.
