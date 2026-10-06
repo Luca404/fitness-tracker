@@ -20,7 +20,7 @@ Diary ingredients retain their order, keeping automatic icons based on the first
 
 Overview values use whole numbers; details use at most one decimal. Calculations retain stored precision. Completed gym sessions contribute to the daily burned total; exercise calories are not added back to the calorie budget.
 
-The meal-page habit recap shows current amounts for maximum limits (sugars, alcohol and salt), plus the multiple of the limit when exceeded, such as `1.2x`, `2x` or `3x`. Legumes and fish use the seven calendar days ending on the selected date, with a daily average and the existing weekly target; their progress no longer resets on Monday. The average always divides by seven, including days without diary entries. Unavailable history remains unknown.
+The meal-page habit recap uses compact square tiles with icons and status marks. Their color fills in proportion to the target for both minimum goals and maximum limits; exceeding a maximum turns the full tile orange. Amounts and limit multiples appear in the dedicated detail page. Legumes and fish use the seven calendar days ending on the selected date, with a daily average and the existing weekly target; their progress no longer resets on Monday. The average always divides by seven, including days without diary entries. Unavailable history remains unknown.
 
 ## Stack
 

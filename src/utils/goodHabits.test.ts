@@ -123,15 +123,17 @@ describe('good habits calculations', () => {
     expect(habitStatus({ label: 'Sale', icon: '🧂', value: 6, target: 5, period: 'oggi', direction: 'max', partial: true })).toBe('attention')
   })
 
-  it('fills minimum goals toward the target and maximum goals only after exceeding it', () => {
+  it('fills both minimum and maximum goals toward the target, capped at a full tile', () => {
     const row = { label: 'Verdura', icon: '🥬', value: 200, target: 400, period: 'oggi' as const, direction: 'min' as const }
     expect(habitTileFill(row)).toBe(50)
     expect(habitTileFill({ ...row, value: 500 })).toBe(100)
     expect(habitTileFill({ ...row, value: null })).toBe(0)
 
     const maximum = { ...row, label: 'Sale', target: 5, direction: 'max' as const }
-    expect(habitTileFill({ ...maximum, value: 4 })).toBe(0)
-    expect(habitTileFill({ ...maximum, value: 6 })).toBe(20)
+    expect(habitTileFill({ ...maximum, value: 0 })).toBe(0)
+    expect(habitTileFill({ ...maximum, value: 4 })).toBe(80)
+    expect(habitTileFill({ ...maximum, value: 5 })).toBe(100)
+    expect(habitTileFill({ ...maximum, value: 6 })).toBe(100)
     expect(habitTileFill({ ...maximum, value: 11 })).toBe(100)
   })
 })

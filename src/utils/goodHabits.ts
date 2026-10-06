@@ -42,9 +42,7 @@ export function habitStatus(row: HabitRow): HabitStatus {
 export function habitTileFill(row: HabitRow): number {
   if (row.value == null || row.target == null || row.direction === 'info') return 0
   if (row.target <= 0) return row.value > 0 && row.direction === 'max' ? 100 : 0
-  const ratio = row.direction === 'min'
-    ? row.value / row.target
-    : (row.value - row.target) / row.target
+  const ratio = row.value / row.target
   return Math.min(100, Math.max(0, Math.round(ratio * 100)))
 }
 

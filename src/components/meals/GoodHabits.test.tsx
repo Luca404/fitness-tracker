@@ -58,18 +58,22 @@ it('uses the profile alcohol threshold and renders a finite zero threshold for m
   expect(document.body.innerHTML).not.toMatch(/Infinity|NaN/)
 })
 
-it('shows current amounts under maximum limits and multiples when exceeded in the meal recap', async () => {
+it('shows progress through tile fill without visible numbers in the meal recap', async () => {
   state.getWeeklyMeals.mockResolvedValue([])
   const current = weeklyMeal(100)
   current.date = '2026-10-04'
   Object.assign(current.entries[0].items[0], { sugars_g: 20, salt_g: 10 })
   render(<MemoryRouter><GoodHabits selectedDate="2026-10-04" currentMeals={[current]} compact /></MemoryRouter>)
-  expect(await screen.findByLabelText(/Zuccheri totali: in linea, 20 g, limite 75 g/)).toBeTruthy()
-  expect(screen.getByText('20g')).toBeTruthy()
-  expect(screen.getByText('10g')).toBeTruthy()
-  expect(screen.getByText('0UA')).toBeTruthy()
-  expect(screen.getByText('2x')).toBeTruthy()
-  expect(screen.getByLabelText(/Sale: da migliorare, 10 g, limite 5 g.*2x del limite/)).toBeTruthy()
+  const sugarTile = await screen.findByLabelText(/Zuccheri totali: in linea, 20 g, limite 75 g/)
+  const saltTile = screen.getByLabelText(/Sale: da migliorare, 10 g, limite 5 g.*2x del limite/)
+  expect((sugarTile.firstElementChild as HTMLElement).style.height).toBe('27%')
+  expect((saltTile.firstElementChild as HTMLElement).style.height).toBe('100%')
+  expect(saltTile.firstElementChild?.className).toContain('bg-orange-500')
+  for (const tile of sugarTile.parentElement!.children) expect(tile.textContent).not.toMatch(/\d/)
+  expect(screen.queryByText('20g')).toBeNull()
+  expect(screen.queryByText('10g')).toBeNull()
+  expect(screen.queryByText('0UA')).toBeNull()
+  expect(screen.queryByText('2x')).toBeNull()
 })
 
 it('keeps previous-week food on Monday, shows a daily average, and refetches when the selected date changes', async () => {
@@ -84,7 +88,7 @@ it('keeps previous-week food on Monday, shows a daily average, and refetches whe
   expect(screen.getByText(/≥ 450 g/)).toBeTruthy()
   rerender(<MemoryRouter><GoodHabits selectedDate="2026-10-05" currentMeals={[]} compact /></MemoryRouter>)
   expect(await screen.findByLabelText(/Legumi: da migliorare, 150 g negli ultimi 7 giorni, media 21.4 g al giorno, obiettivo 450 g su 7 giorni/)).toBeTruthy()
-  expect(screen.getByText('21g/d')).toBeTruthy()
+  expect(screen.queryByText('21g/d')).toBeNull()
 })
 
 it('keeps daily amounts available while rolling history loads and does not turn a failed fetch into zero', async () => {

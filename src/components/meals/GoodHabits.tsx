@@ -60,7 +60,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
               : `${summary.ok} su ${rows.filter(row => row.direction !== 'info').length} in linea`}
           </span>
         </span>
-        <span className="mt-2 grid grid-cols-8 gap-1.5">
+        <span className="mt-2 grid grid-cols-8 gap-1 sm:gap-1.5">
           {rows.map(row => {
             const weekly = row.period === 'ultimi 7 giorni'
             const status = habitStatus(row)
@@ -77,7 +77,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
             const tileLabel = `${row.label}: ${statusLabel}${row.direction === 'max' ? `, ${valueLabel}${limitLabel}` : weeklyLabel}${progressLabel}${excessLabel && row.target! > 0 ? `, ${excessLabel} del limite` : ''}`
             return (
               <span key={row.label}
-                className={`relative flex min-w-0 flex-col items-center overflow-hidden rounded-lg border px-0.5 py-1 ${
+                className={`relative flex aspect-square min-w-0 flex-col items-center justify-center overflow-hidden rounded-lg border ${
                   status === 'ok' ? 'border-emerald-700/50 bg-emerald-500/10' :
                     status === 'attention' ? 'border-amber-700/50 bg-amber-500/10' : 'border-gray-700 bg-gray-900/40'
                 }`}
@@ -86,16 +86,10 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
               >
                 {fill > 0 && <span className={`absolute inset-x-0 bottom-0 transition-all ${overMaximum ? 'bg-orange-500/35' : 'bg-primary-500/25'}`}
                   style={{ height: `${fill}%` }} aria-hidden="true" />}
-                <span className="relative text-base leading-none" aria-hidden="true">{row.icon}</span>
-                {row.direction === 'max' && <span className="relative mt-1 whitespace-nowrap text-[10px] font-medium leading-none text-gray-300" aria-hidden="true">
-                  {row.value == null ? '–' : `${row.partial ? '≈' : ''}${formatDecimal(row.value)}${row.unit ?? 'g'}`}
-                </span>}
-                {weekly && <span className="relative mt-1 whitespace-nowrap text-[9px] font-medium leading-none text-gray-300" aria-hidden="true">
-                  {row.value == null ? '–' : `${formatDecimal(row.value / 7, 0)}g/d`}
-                </span>}
-                <span className={`relative mt-0.5 text-xs font-bold leading-none ${
+                <span className="relative text-sm leading-none sm:text-base" aria-hidden="true">{row.icon}</span>
+                <span className={`relative mt-0.5 text-[10px] font-bold leading-none sm:text-xs ${
                   status === 'ok' ? 'text-emerald-400' : status === 'attention' ? 'text-amber-400' : 'text-gray-500'
-                }`} aria-hidden="true">{excessLabel ?? (status === 'ok' ? '✓' : status === 'attention' ? '×' : status === 'informative' ? 'i' : '–')}</span>
+                }`} aria-hidden="true">{status === 'ok' ? '✓' : status === 'attention' ? '×' : status === 'informative' ? 'i' : '–'}</span>
               </span>
             )
           })}
