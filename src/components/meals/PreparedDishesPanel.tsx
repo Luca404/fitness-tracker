@@ -5,6 +5,7 @@ import { useSettings } from '../../contexts/SettingsContext'
 import type { DishMealType, PreparedBatch } from '../../types'
 import { DISH_MEAL_TYPES } from '../../data/dishMealTypes'
 import PreparedPortionInput from './PreparedPortionInput'
+import PreparedWeightCorrection from './PreparedWeightCorrection'
 import { getDishIcon } from '../../utils/foodIcons'
 import { formatDecimal } from '../../utils/decimal'
 
@@ -54,6 +55,7 @@ export default function PreparedDishesPanel({ mealType, onConsumed, compact = fa
   }
 
   async function closeBatch(batch: PreparedBatch) {
+    if (busy) return
     if (!window.confirm(`Concludere “${batch.dish.name}”? Il resto non sarà più tra i piatti pronti.`)) return
     try {
       await api.closePreparedBatch(batch.id)
@@ -85,6 +87,11 @@ export default function PreparedDishesPanel({ mealType, onConsumed, compact = fa
         <span className="text-primary-400">›</span>
       </button>
       {!onSelect && selected?.id === batch.id && <div className="mt-3 space-y-3 border-t border-gray-700 pt-3">
+        <PreparedWeightCorrection key={batch.id} batch={batch} disabled={busy} onBusyChange={setBusy}
+          onCorrected={async corrected => {
+            setSelected(corrected.remaining_g > 0 ? corrected : null)
+            await refresh()
+          }} />
         {!mealType && <label className="block text-xs text-gray-400">Quando lo mangi?
           <select value={selectedMealType} onChange={event => setSelectedMealType(event.target.value as DishMealType)}
             className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm">

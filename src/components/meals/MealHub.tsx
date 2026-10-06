@@ -15,6 +15,7 @@ import { dishMealTypeLabels, dishesForMeal } from '../../data/dishMealTypes'
 import type { Dish, DishMealType, PieceSize, PreparedBatch } from '../../types'
 import ExtendedNutrition from './ExtendedNutrition'
 import PreparedPortionInput from './PreparedPortionInput'
+import PreparedWeightCorrection from './PreparedWeightCorrection'
 import PreparedDishesPanel from './PreparedDishesPanel'
 import { defaultCookingMethod, estimateCookedItemWeights, estimateCookedWeight, recipeSignature, type CookingMethod } from '../../utils/preparedDishes'
 import { formatDecimal, roundToTwo } from '../../utils/decimal'
@@ -486,6 +487,11 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           <span className="text-gray-500">{formatDecimal(item.quantity_g * ratio)} {item.unit ?? 'g'}</span>
         </div>)}
       </div>
+      <PreparedWeightCorrection key={selectedBatch.id} batch={selectedBatch} disabled={consumingPrepared}
+        onBusyChange={setConsumingPrepared} onCorrected={corrected => {
+          setSelectedBatch(corrected)
+          if (corrected.remaining_g === 0) setMode('list')
+        }} />
       <PreparedPortionInput totalCookedG={selectedBatch.total_cooked_g} remainingG={selectedBatch.remaining_g}
         value={preparedGrams} onChange={setPreparedGrams} />
       <button type="button" onClick={() => void consumeSelectedBatch()}

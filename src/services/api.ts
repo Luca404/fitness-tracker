@@ -483,3 +483,15 @@ export async function closePreparedBatch(batchId: string): Promise<void> {
   const { error } = await supabase.rpc('close_prepared_batch', { p_batch_id: batchId })
   if (error) throw error
 }
+
+export async function correctPreparedBatchWeight(
+  batch: PreparedBatch, remainingG: number,
+): Promise<Pick<PreparedBatch, 'total_cooked_g' | 'remaining_g'>> {
+  const { data, error } = await supabase.rpc('correct_prepared_batch_weight', {
+    p_batch_id: batch.id, p_remaining_g: remainingG,
+    p_expected_remaining_g: batch.remaining_g,
+    p_expected_total_cooked_g: batch.total_cooked_g,
+  })
+  if (error) throw error
+  return data
+}

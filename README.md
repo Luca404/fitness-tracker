@@ -73,6 +73,7 @@ GitHub Actions runs all three checks on pushes and pull requests. Frontend tests
 SQL tests require an isolated PostgreSQL database:
 
 - `supabase/tests/alcohol_strength.sql`: run after replaying all migrations; checks alcohol persistence, energy calculations, portions and user isolation.
+- `supabase/tests/prepared_weight_correction.sql`: run after all migrations; checks remainder corrections, historical nutrition, unchanged weighed portions, validation and user isolation.
 - `supabase/tests/ordering.sql`: run after migrations through `20261004140000` only. The test creates historical fixtures, applies both ordering migrations inside a transaction, verifies diary and plan ordering, then rolls back.
 
 ## Deployment

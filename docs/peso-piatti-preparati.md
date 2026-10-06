@@ -59,6 +59,20 @@ molto con taglio, durata, coperchio e quantità di liquido rimasta nel piatto.
 
 ## Peso misurato e preparazioni successive
 
+Per una preparazione già conservata, apri il piatto in **Pasti** o **Cucina**
+e scegli **Correggi il peso rimasto**. Pesa tutto quello che resta, senza il
+contenitore e prima di prelevare la prossima porzione, poi premi **Salva peso
+e ricalcola**. Il nuovo peso cotto totale è la somma del peso reale rimasto
+e delle porzioni già registrate. Puoi inserire anche 0 se non resta nulla.
+
+Per esempio, con 700 g già mangiati e 506 g rimasti secondo l'app, una pesata
+reale di 400 g corregge il totale da 1206 a 1100 g. Le calorie e i nutrienti
+delle porzioni passate aumentano in proporzione, mentre i grammi mangiati
+restano invariati. La correzione riguarda solo quella preparazione, compresi
+i pasti nei giorni precedenti. Le altre preparazioni e la ricetta salvata
+mantengono i propri valori. Questa funzione corregge una stima iniziale:
+non usarla per registrare cibo buttato o mangiato senza averlo segnato.
+
 Il peso finale che inserisci manualmente sostituisce la stima. Per esempio,
 se gli ingredienti pesavano 1200 g e il piatto completo, con poco sugo, pesa
 800 g, registra **800 g**. Le calorie e i nutrienti totali restano quelli
