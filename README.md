@@ -11,7 +11,7 @@ Part of the **Trackrs ecosystem**, alongside [Trackr](https://github.com/Luca404
 - **Food import:** basic-food search, Open Food Facts, barcode scanning, nutrition-label photos and manual entry.
 - **Fitness:** reusable gym plans with saved ordering, exercise search, set logging, rest timers and estimated session calories; duration-based logging for other activities.
 - **Goals and weight:** personalized calorie and macro targets, a weight history and automatic recalculation from a seven-day average after a change of at least 2%.
-- **Wellbeing:** daily and weekly habits, including total sugars and alcohol units; drinks support editable volume and alcohol strength.
+- **Wellbeing:** daily habits, including total sugars and alcohol units, plus rolling seven-day totals and daily averages for legumes and fish; drinks support editable volume and alcohol strength.
 - **History and PWA:** calorie/workout trends, installation on mobile or desktop, an update prompt and page-load recovery.
 
 The Kitchen category buttons appear in one row above search. Select breakfast, lunch, dinner or snack to filter recipes and prepared batches; tap the active category again to clear it. With no selection, all categories are shown. Text search continues to filter recipes.
@@ -20,7 +20,7 @@ Diary ingredients retain their order, keeping automatic icons based on the first
 
 Overview values use whole numbers; details use at most one decimal. Calculations retain stored precision. Completed gym sessions contribute to the daily burned total; exercise calories are not added back to the calorie budget.
 
-The meal-page habit recap uses compact square tiles with icons and status marks. Their color fills in proportion to the target for both minimum goals and maximum limits; exceeding a maximum turns the full tile orange. Amounts and limit multiples appear in the dedicated detail page. Legumes and fish use the seven calendar days ending on the selected date, with a daily average and the existing weekly target; their progress no longer resets on Monday. The average always divides by seven, including days without diary entries. Unavailable history remains unknown.
+The meal-page habit recap uses compact square tiles with icons and status marks, without numbers inside. Their color fills in proportion to the target for both minimum goals and maximum limits, including amounts below a maximum; exceeding a maximum turns the full tile orange. Amounts and limit multiples appear in the dedicated detail page. Legumes and fish use the seven calendar days ending on the selected date, with a daily average and the existing weekly target; their progress no longer resets on Monday. The average always divides by seven, including days without diary entries. Unavailable history remains unknown. See [the habit guide](docs/buone-abitudini.md).
 
 ## Stack
 
@@ -102,6 +102,7 @@ Ingredient corrections update linked recipes and historical diary entries. Prepa
 Use [the documentation index](docs/README.md) for current guides, shared security status and historical plans. Detailed feature guides are in Italian:
 
 - [Diary and ingredient ordering](docs/meal-diary-order.md)
+- [Habit recap and rolling seven-day averages](docs/buone-abitudini.md)
 - [Prepared dishes and cooked weight](docs/peso-piatti-preparati.md)
 - [Gym training and sample plans](docs/allenamenti-palestra.md)
 - [Simplification report and verification results](docs/rapporto-semplificazione-2026-09-29.md)

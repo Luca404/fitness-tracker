@@ -10,6 +10,8 @@ React 19, TypeScript 6, Vite 8 + vite-plugin-pwa, Tailwind CSS 3, React Router 7
 
 The mobile navigation contains Pasti, Cucina, Fitness, Benessere and Storico. Cucina groups the saved-dishes and pantry tabs; Fitness groups workout and weight tabs; an active gym session uses a dedicated full-screen route. Benessere contains the detailed healthy-habits dashboard.
 
+`GoodHabits` uses square tiles with only icons/status marks in the Pasti recap. `habitTileFill` fills both minimum and maximum targets using value/target, capped at 100%; exceeded maximums turn orange. Keep amounts, daily averages and limit multiples in the Benessere detail, without adding numeric text inside recap tiles. Legumes and fish use `habitWindow(selectedDate)` from the selected date minus six days through the selected date, preserving weekly targets and dividing the total by seven for the daily average. `getWeeklyMeals` accepts these rolling ranges; diary revisions invalidate its cache. Missing history stays unknown while daily rows remain available. See [the current habit guide](docs/buone-abitudini.md).
+
 ## Commands
 
 ```bash
@@ -35,6 +37,8 @@ Inspect `supabase migration list --linked` and `supabase db push --linked --dry-
 `meal_items` RLS binds both entry and meal to the same owner; the composite FK `(entry_id, meal_id)` references `meal_entries(id, meal_id)`. New postgres-owned public RPCs must explicitly grant `EXECUTE` to the intended roles because future default grants were revoked. Existing fitness CRUD/RPC grants remain.
 
 The ingredient catalog retains quantities for package/nutrition metadata, not consumable stock. Historical pantry SQL and earlier plans do not describe current stock UX. Prepared batches retain snapshots and update portions atomically.
+
+`correct_prepared_batch_weight` corrects a measured remainder atomically: total cooked weight becomes the sum of registered cooked portions and the new remainder. Historical weighed `cooked_portion_g` values stay unchanged; derived raw ingredient shares and their nutrition are recalculated for that batch. The RPC requires the previously read total/remainder, rejects stale or closed batches, and grants execution explicitly to `authenticated`. Migration `20261006120000` is already applied to the hosted database. See [prepared-dish weights](docs/peso-piatti-preparati.md).
 
 ## Docs
 

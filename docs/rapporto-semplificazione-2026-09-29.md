@@ -115,6 +115,15 @@ concludere/eliminare una sessione palestra provoca un refresh esplicito. Le
 modifiche nutrizionali invalidano anche la cache delle abitudini settimanali,
 indipendentemente dal numero di ingredienti.
 
+Aggiornamento del 6 ottobre: il recap in **Pasti** usa quadratini compatti con
+icone e stato, senza numeri all’interno. Il riempimento rappresenta il rapporto
+tra valore e target anche sotto i limiti `≤`; oltre un limite il quadratino è
+pieno e arancione. Quantità e moltiplicatori del limite restano nel dettaglio
+**Benessere**. Legumi e pesce usano gli ultimi sette giorni fino alla data
+selezionata, mantenendo il target settimanale e mostrando nel dettaglio la
+media giornaliera. Il conteggio non si azzera il lunedì. Vedi la
+[guida alle buone abitudini](buone-abitudini.md).
+
 ## Confini delle modifiche al database e lavori successivi
 
 Questa revisione mantiene il comportamento attuale: correggere un ingrediente
