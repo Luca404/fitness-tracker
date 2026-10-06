@@ -1,13 +1,15 @@
 import { alcoholTotal } from './alcohol'
 import { mealItems } from './mealEntries'
 import type { FoodCategory, Meal } from '../types'
+import { formatDecimal } from './decimal'
+import { format, subDays } from 'date-fns'
 
 export interface HabitRow {
   label: string
   icon: string
   value: number | null
   target: number | null
-  period: 'oggi' | 'settimana'
+  period: 'oggi' | 'ultimi 7 giorni'
   direction: 'min' | 'max' | 'info'
   partial?: boolean
   unit?: 'g' | 'UA'
@@ -46,6 +48,22 @@ export function habitTileFill(row: HabitRow): number {
   return Math.min(100, Math.max(0, Math.round(ratio * 100)))
 }
 
+/** Multiple of the limit, rather than the percentage above it. */
+export function habitExcessLabel(row: HabitRow): string | null {
+  if (row.direction !== 'max' || row.value == null || row.target == null || row.value <= row.target) return null
+  if (row.target <= 0) return '↑'
+  const ratio = formatDecimal(row.value / row.target)
+  // A small excess must not round to "1x", which would imply no excess.
+  return ratio === '1' ? '>1x' : `${row.partial ? '≥' : ''}${ratio}x`
+}
+
+export function habitWindow(selectedDate: string): { from: string; to: string } {
+  return {
+    from: format(subDays(new Date(`${selectedDate}T12:00:00`), 6), 'yyyy-MM-dd'),
+    to: selectedDate,
+  }
+}
+
 export function summarizeHabitRows(rows: HabitRow[]) {
   return rows.reduce((summary, row) => {
     if (row.direction === 'info') return summary
@@ -81,8 +99,9 @@ export function calculateHabitRows(
   weeklyMeals: Meal[],
   targets: HabitTargets,
 ): HabitRow[] {
+  const { from, to } = habitWindow(selectedDate)
   const mergedWeek = [
-    ...weeklyMeals.filter(meal => meal.date !== selectedDate),
+    ...weeklyMeals.filter(meal => meal.date >= from && meal.date <= to && meal.date !== selectedDate),
     ...currentMeals,
   ]
   const fiber = nutrientTotal(currentMeals, 'fiber_g')
@@ -91,8 +110,8 @@ export function calculateHabitRows(
   return [
     { label: 'Verdura', icon: '🥬', value: gramsForCategories(currentMeals, ['vegetable']), target: targets.vegetables, period: 'oggi', direction: 'min' },
     { label: 'Frutta', icon: '🍎', value: gramsForCategories(currentMeals, ['fruit']), target: targets.fruit, period: 'oggi', direction: 'min' },
-    { label: 'Legumi', icon: '🫘', value: gramsForCategories(mergedWeek, ['legume']), target: targets.legumes, period: 'settimana', direction: 'min' },
-    { label: 'Pesce', icon: '🐟', value: gramsForCategories(mergedWeek, ['fish']), target: targets.fish, period: 'settimana', direction: 'min' },
+    { label: 'Legumi', icon: '🫘', value: gramsForCategories(mergedWeek, ['legume']), target: targets.legumes, period: 'ultimi 7 giorni', direction: 'min' },
+    { label: 'Pesce', icon: '🐟', value: gramsForCategories(mergedWeek, ['fish']), target: targets.fish, period: 'ultimi 7 giorni', direction: 'min' },
     { label: 'Fibre', icon: '🌾', ...fiber, target: targets.fiber, period: 'oggi', direction: 'min' },
     { label: 'Zuccheri totali', icon: '🍬', ...sugars, target: targets.sugars, period: 'oggi', direction: 'max' },
     { label: 'Unità alcoliche', icon: '🍷', ...alcoholTotal(currentMeals.flatMap(mealItems)), target: targets.alcohol, period: 'oggi', direction: 'max', unit: 'UA' },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Meal, MealItem } from '../types'
-import { calculateHabitRows, habitStatus, habitTileFill, summarizeHabitRows } from './goodHabits'
+import { calculateHabitRows, habitExcessLabel, habitStatus, habitTileFill, habitWindow, summarizeHabitRows } from './goodHabits'
 
 function meal(date: string, items: Array<Partial<MealItem> & Pick<MealItem, 'category' | 'quantity_g'>>): Meal {
   return {
@@ -34,6 +34,37 @@ function meal(date: string, items: Array<Partial<MealItem> & Pick<MealItem, 'cat
 const targets = { vegetables: 400, fruit: 360, legumes: 450, fish: 300, fiber: 25, salt: 5, sugars: 75, alcohol: 1 }
 
 describe('good habits calculations', () => {
+  it('uses seven calendar days ending on the selected date across month and year boundaries', () => {
+    expect(habitWindow('2026-10-05')).toEqual({ from: '2026-09-29', to: '2026-10-05' })
+    expect(habitWindow('2027-01-03')).toEqual({ from: '2026-12-28', to: '2027-01-03' })
+    expect(habitWindow('2026-03-30')).toEqual({ from: '2026-03-24', to: '2026-03-30' })
+  })
+
+  it('retains previous-week food, excludes older and future meals, and replaces the selected-day snapshot', () => {
+    const weekly = [
+      meal('2026-09-28', [{ category: 'legume', quantity_g: 999 }]),
+      meal('2026-09-29', [{ category: 'legume', quantity_g: 150 }]),
+      meal('2026-10-04', [{ category: 'fish', quantity_g: 300 }]),
+      meal('2026-10-05', [{ category: 'legume', quantity_g: 999 }]),
+      meal('2026-10-06', [{ category: 'fish', quantity_g: 999 }]),
+    ]
+    const rows = calculateHabitRows('2026-10-05', [meal('2026-10-05', [{ category: 'legume', quantity_g: 300 }])], weekly, targets)
+    expect(rows.find(row => row.label === 'Legumi')).toMatchObject({ value: 450, target: 450, period: 'ultimi 7 giorni' })
+    expect(rows.find(row => row.label === 'Pesce')).toMatchObject({ value: 300, target: 300, period: 'ultimi 7 giorni' })
+  })
+  it('shows limit multiples without misleading rounding or division by zero', () => {
+    const row = { label: 'Sale', icon: '🧂', value: 10, target: 5, period: 'oggi' as const, direction: 'max' as const }
+    expect(habitExcessLabel(row)).toBe('2x')
+    expect(habitExcessLabel({ ...row, value: 15 })).toBe('3x')
+    expect(habitExcessLabel({ ...row, value: 6 })).toBe('1.2x')
+    expect(habitExcessLabel({ ...row, value: 5.01 })).toBe('>1x')
+    expect(habitExcessLabel({ ...row, partial: true })).toBe('≥2x')
+    expect(habitExcessLabel({ ...row, value: 5 })).toBeNull()
+    expect(habitExcessLabel({ ...row, value: null })).toBeNull()
+    expect(habitExcessLabel({ ...row, target: 0 })).toBe('↑')
+    expect(habitExcessLabel({ ...row, target: 0, value: 0 })).toBeNull()
+    expect(habitExcessLabel({ ...row, direction: 'min' })).toBeNull()
+  })
   it('compares total sugars with the total-sugars target and includes them in the summary', () => {
     const low = calculateHabitRows('2026-09-21', [meal('2026-09-21', [
       { category: 'fruit', quantity_g: 360, sugars_g: 2 },
