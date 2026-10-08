@@ -247,3 +247,13 @@ migrazioni.
 Dopo gli interventi descritti sopra, Trackr ha applicato altre sette migrazioni al Supabase condiviso. FitTrackr conserva la propria correzione RLS/FK per `meal_items` e sei marker delle versioni finanziarie già applicate; lo storico è pubblicato nel commit `9462f84`. I nuovi controlli impediscono di associare un ingrediente a un pasto diverso da quello della sua entry. Le funzioni fitness esistenti sono mantenute, mentre le nuove RPC richiedono grant espliciti.
 
 I test SQL isolati di Trackr hanno verificato la RPC pasto esistente, il rifiuto delle associazioni incoerenti e la foreign key composta. La verifica remota in sola lettura ha restituito zero associazioni pasto/entry incoerenti. Non sono stati cancellati dati fitness. Questo intervento non è un audit completo del frontend o delle Edge Functions FitTrackr. Stato e procedura: [database condiviso](../supabase/README.md) e [storico della sicurezza](../supabase/README-trackr-security-sync.md).
+
+## Pasti occasionali da foto — 8 ottobre 2026
+
+Pubblicata la registrazione da foto nel commit [8bf11f3](https://github.com/Luca404/fitness-tracker/commit/8bf11f3bf37ff3ebde33a721105857afcc47f0b5). **Occasionale** offre ora il percorso manuale e **Da foto**, adatto a ristorante, asporto e piatti con ricetta sconosciuta. La descrizione del menù è facoltativa; OpenAI propone ingredienti e quantità del cibo già pronto, calorie e macro.
+
+Il riepilogo è subito visibile; ingredienti e valori modificabili sono in dettagli inizialmente chiusi. I condimenti dedotti sono segnalati nella revisione. La percentuale mangiata si applica una sola volta alla registrazione, direttamente nel diario. Le modifiche successive partono dalla porzione già registrata. **Stimato da foto** distingue queste stime dalla trascrizione di etichette; non vengono create ricette o preparazioni e le voci sono scollegate dal catalogo personale.
+
+Verifiche del rilascio: **257 test superati in 52 file**, build, lint, controllo del diff e verifica TypeScript della Edge Function superati. Interfaccia controllata con dati di esempio a 320 pixel di larghezza, senza scorrimento orizzontale. La [CI del commit](https://github.com/Luca404/fitness-tracker/actions/runs/37816619269) ha completato test, build e lint con successo; il rilascio Vercel Production e il deploy di `analyze-meal-photo` su Supabase sono completati.
+
+L'endpoint remoto ha risposto `OPTIONS 200` e `POST 401` senza sessione, senza inviare foto. I test del modello e delle scritture usano simulazioni: non è stata eseguita una prova autenticata con foto reale e non è stata misurata l'accuratezza nutrizionale. Questa funzione non richiede migrazioni. Uso, configurazione e limiti delle verifiche sono nella [guida pasti da foto](pasti-da-foto.md).

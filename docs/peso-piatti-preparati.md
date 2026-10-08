@@ -6,6 +6,13 @@ piatto in porzioni pesate; se conosci il peso del piatto completo, inseriscilo
 nel campo **Correggi il peso cotto totale**. Conta anche il sugo o il fondo di
 cottura che mangerai.
 
+Per un piatto già pronto al ristorante o da asporto, **Occasionale → Da foto**
+propone invece quantità già cotte e registra direttamente la parte mangiata,
+senza passare dalla schermata Preparazione o creare un lotto. Non applicare
+una seconda conversione di cottura ai grammi stimati dalla foto. Il percorso
+manuale di Occasionale continua a usare la preparazione descritta qui.
+Vedi [pasti occasionali da foto](pasti-da-foto.md).
+
 ## Scegliere l'alimento nello stato giusto
 
 I valori nutrizionali degli alimenti base da cuocere si riferiscono di norma a

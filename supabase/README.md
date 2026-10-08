@@ -24,3 +24,11 @@ Frontend CI uses mocked data. SQL tests in `supabase/tests/` need an isolated Po
 The older local Trackr instance received the seven security changes without replaying all historical fitness upgrades. This does not claim that its fitness schema matches the hosted project. Back up local data before upgrading it; preserve the distinction between local schema compatibility and hosted migration status.
 
 On 2026-10-08, Trackr applied shared infrastructure migration `20261008120000_render_backend_keepalive` to the hosted project. Its identical SQL is mirrored here to keep migration ledgers synchronized. The named Supabase cron calls Trackr's public Render `/health` every 10 minutes via `pg_net`; it does not query or change fitness/application data. Operational checks and pause/remove commands are documented in `../trackr/docs/render-keepalive.md` (relative to the application root). Do not drop the shared extensions when disabling this job.
+
+## Meal-photo Edge Function — 2026-10-08
+
+`analyze-meal-photo` was deployed to `nitbisweytddtigoebeh` from [commit 8bf11f3](https://github.com/Luca404/fitness-tracker/commit/8bf11f3bf37ff3ebde33a721105857afcc47f0b5) using `supabase functions deploy analyze-meal-photo --project-ref nitbisweytddtigoebeh --no-verify-jwt`. The function validates the bearer token through Supabase Auth before calling OpenAI; disabling the gateway JWT check does not allow anonymous analysis.
+
+The existing `OPENAI_API_KEY` and `OPENAI_VISION_MODEL` secrets were present. `OPENAI_MEAL_PHOTO_MODEL` is an optional task-specific override. The deployed endpoint returned `OPTIONS 200` and `POST 401` with the application's invalid-session message for an unauthenticated request. These probes sent no photos and did not test a real authenticated OpenAI analysis.
+
+No schema or grant changes were needed for this feature: `ai_meal_photo` is stored in the existing source text field and the existing diary RPCs handle registration and edits. This Edge Function release is separate from the shared keepalive migration above. See [the meal-photo guide](../docs/pasti-da-foto.md) for behavior, test results and release status.

@@ -65,6 +65,8 @@ Keep the OpenAI key in Edge Function secrets, never in a `VITE_` variable. The o
 
 Occasional meal photos use the separate `analyze-meal-photo` function, which validates the user's session through Supabase Auth. `OPENAI_MEAL_PHOTO_MODEL` can override the vision model for this task. Photo estimates use cooked/ready-to-eat quantities and are reviewed before direct diary registration. No recipe, prepared batch or stored photo is created. See [meal photos](docs/pasti-da-foto.md) for setup and behavior.
 
+In the Italian UI, choose a meal → **Occasionale** → **Da foto**. Calories and macros appear first; expandable ingredient details allow corrections. Select how much you ate before registering directly in the diary. **Stimato da foto** remains visible on entries containing photo-estimated ingredients, and later edits apply to the already logged portion.
+
 ## Development checks
 
 ```bash
@@ -86,6 +88,8 @@ SQL tests require an isolated PostgreSQL database:
 Vercel deploys pushes to `main`. Use root `./`, build command `npm run build` and output directory `dist`.
 
 Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for Production and Preview. Use a publishable key or legacy `anon` key; never expose a `service_role` key. Configure the production domain and preview redirects in Supabase Auth. `vercel.json` provides routing and cache headers.
+
+The meal-photo feature was released on 2026-10-08 in [commit 8bf11f3](https://github.com/Luca404/fitness-tracker/commit/8bf11f3bf37ff3ebde33a721105857afcc47f0b5): Vercel Production succeeded, the dedicated Supabase function was deployed, and [CI passed](https://github.com/Luca404/fitness-tracker/actions/runs/37816619269). Installed PWA users can load the release through **Aggiorna** when the new-version notice appears. The [feature guide](docs/pasti-da-foto.md#pubblicazione-verificata--8-ottobre-2026) records the dated checks and their limits.
 
 ## Project layout
 
@@ -113,4 +117,4 @@ Use [the documentation index](docs/README.md) for current guides, shared securit
 
 ## Limitations
 
-Data operations require connectivity. Food-catalog coverage is incomplete, barcode scanning can be slow on some phones, and cooked-weight, cocktail and exercise-calorie estimates are approximate.
+Data operations require connectivity. Food-catalog coverage is incomplete, barcode scanning can be slow on some phones, and meal-photo, cooked-weight, cocktail and exercise-calorie estimates are approximate. Photo portions and hidden ingredients require user review; automated tests simulate the model and do not establish nutritional accuracy on real photos.

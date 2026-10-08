@@ -1,6 +1,6 @@
 # Documentazione fitTrackr
 
-Revisione del 6 ottobre 2026, riferita alle funzioni correnti e alle migrazioni condivise già applicate. L'app usa un ID di build generato da Vite per gli aggiornamenti PWA; non ha una versione applicativa numerica da incrementare nelle guide.
+Revisione dell'8 ottobre 2026, comprendente i pasti occasionali da foto pubblicati su Vercel e Supabase e le migrazioni condivise già documentate. L'app usa un ID di build generato da Vite per gli aggiornamenti PWA; non ha una versione applicativa numerica da incrementare nelle guide.
 
 | Documento | Contenuto |
 | --- | --- |
@@ -9,7 +9,7 @@ Revisione del 6 ottobre 2026, riferita alle funzioni correnti e alle migrazioni 
 | [Database condiviso](../supabase/README.md) | Distinzione locale/remoto, storico, grant e test isolati |
 | [Aggiornamento della sicurezza](../supabase/README-trackr-security-sync.md) | Migrazioni già applicate, correzione meal-item e commit pubblicato |
 | [Ordine del diario](meal-diary-order.md) | Registrazioni, ingredienti, icone e posizioni |
-| [Pasti da foto](pasti-da-foto.md) | Pasti occasionali, stime OpenAI, ingredienti espandibili e porzione mangiata |
+| [Pasti da foto](pasti-da-foto.md) | Uso, ingredienti espandibili, porzione mangiata, configurazione e pubblicazione verificata |
 | [Buone abitudini](buone-abitudini.md) | Quadratini a riempimento, limiti e media sugli ultimi 7 giorni |
 | [Peso dei piatti preparati](peso-piatti-preparati.md) | Cottura, stime, peso misurato e ricalcolo delle porzioni passate |
 | [Allenamenti in palestra](allenamenti-palestra.md) | Schede, riordino, sessioni, calorie stimate ed esempi |

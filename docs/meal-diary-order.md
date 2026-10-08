@@ -35,3 +35,18 @@ ordine; per i record senza riferimenti l’ordine originario non è recuperabile
 con certezza.
 
 I controlli sono in `src/services/api.test.ts` e `supabase/tests/ordering.sql`.
+
+## Pasti occasionali da foto
+
+Dal diario, **Occasionale → Da foto** apre l'analisi del piatto già pronto.
+La registrazione usa le stesse RPC e lo stesso ordine degli ingredienti degli
+altri pasti; non crea una ricetta o una preparazione. Il riepilogo mostra
+calorie e macro, con **Ingredienti e quantità** inizialmente chiuso sia nella
+revisione sia nella consultazione del pasto salvato.
+
+Le voci stimate conservano `source: ai_meal_photo`. Il diario mostra
+**Stimato da foto** quando ne è presente almeno una; la provenienza `ai_photo`
+delle etichette nutrizionali non attiva questo indicatore. Modificare il pasto
+mantiene la sua posizione e permette di correggere le quantità già mangiate
+senza riapplicare una percentuale. Dettagli e pubblicazione:
+[pasti occasionali da foto](pasti-da-foto.md).
