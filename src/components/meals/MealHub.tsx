@@ -8,6 +8,7 @@ import Modal from '../common/Modal'
 import FoodSearch from './FoodSearch'
 import IngredientQuantityInput from './IngredientQuantityInput'
 import BeveragePicker from './BeveragePicker'
+import MealPhotoCapture from './MealPhotoCapture'
 import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import { getDishIcon, getFoodIcon } from '../../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
@@ -40,7 +41,7 @@ function referenceWeight(dish: Dish): number {
 
 function totalKcal(dish: Dish): number { return dishTotals(dish).calories }
 
-export type MealHubMode = 'list' | 'ingredient' | 'new' | 'oneoff' | 'edit' | 'pick' | 'prepare' | 'prepared-pick'
+export type MealHubMode = 'list' | 'ingredient' | 'new' | 'oneoff' | 'oneoff-manual' | 'oneoff-photo' | 'edit' | 'pick' | 'prepare' | 'prepared-pick'
 
 export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beveragesOnly = false, mode, setMode, mealType, date }: Props) {
   const { user } = useAuth()
@@ -383,6 +384,33 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   }
 
   if (mode === 'oneoff') {
+    return <div className="space-y-4">
+      <ComposerHeader icon="✨" eyebrow="Inserimento veloce" title="Piatto occasionale" />
+      <p className="text-sm text-gray-400">Un piatto al ristorante, da asporto o una preparazione che non vuoi salvare tra le ricette.</p>
+      <button type="button" onClick={() => setMode('oneoff-photo')}
+        className="flex w-full items-center gap-3 rounded-2xl border border-primary-500/30 bg-primary-950/20 p-4 text-left">
+        <span className="text-2xl">📸</span><span><span className="block font-semibold">Da foto</span>
+          <span className="mt-1 block text-xs text-gray-400">Stima il piatto e registra quanto hai mangiato</span></span>
+      </button>
+      <button type="button" onClick={() => setMode('oneoff-manual')}
+        className="flex w-full items-center gap-3 rounded-2xl border border-gray-700 p-4 text-left">
+        <span className="text-2xl">✍️</span><span><span className="block font-semibold">Inserimento manuale</span>
+          <span className="mt-1 block text-xs text-gray-400">Componi il piatto con ingredienti e quantità</span></span>
+      </button>
+    </div>
+  }
+
+  if (mode === 'oneoff-photo') {
+    return <div className="space-y-5">
+      <ComposerHeader icon="📸" eyebrow="Piatto occasionale" title="Registra da foto" />
+      <MealPhotoCapture onCancel={() => setMode('oneoff')} onSave={async (name, items) => {
+        await onAddEntry(name, items)
+        setMode('list')
+      }} />
+    </div>
+  }
+
+  if (mode === 'oneoff-manual') {
     return (
       <div className="space-y-5">
         <ComposerHeader icon="✨" eyebrow="Inserimento veloce" title="Piatto occasionale" />
@@ -393,7 +421,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           requireName
           saveLabel="Prepara il piatto"
           onSave={handleSaveOneoff}
-          onCancel={() => setMode('list')}
+          onCancel={() => setMode('oneoff')}
         />
       </div>
     )

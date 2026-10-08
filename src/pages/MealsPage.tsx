@@ -20,6 +20,8 @@ import { getExtendedNutritionTotals } from '../utils/extendedNutrition'
 import { splitMealItems } from '../utils/mealCustomizations'
 import PreparedPortionInput from '../components/meals/PreparedPortionInput'
 import SingleIngredientEditor from '../components/meals/SingleIngredientEditor'
+import MealPhotoReview from '../components/meals/MealPhotoReview'
+import { isMealPhotoEntry } from '../utils/mealPhoto'
 import * as api from '../services/api'
 import { formatDecimal } from '../utils/decimal'
 
@@ -157,7 +159,7 @@ export default function MealsPage() {
   const activeMealLabel = MEAL_TYPES.find(m => m.type === activeMealType)?.label ?? activeMealType
   const mealTimeline = buildMealTimeline(meals)
   const isSingleIngredientEntry = selectedEntry?.items.length === 1
-    && !selectedEntry.dish_id && !selectedEntry.prepared_batch_id
+    && !selectedEntry.dish_id && !selectedEntry.prepared_batch_id && !isMealPhotoEntry(selectedEntry)
 
   return (
     <div className="p-4 pb-24 space-y-4">
@@ -285,6 +287,7 @@ export default function MealsPage() {
               <div className="flex items-center gap-2">
                 <button type="button" onClick={() => {
                   if (hubMode === 'list') setModalStep('meal-type')
+                  else if (hubMode === 'oneoff-photo' || hubMode === 'oneoff-manual') setHubMode('oneoff')
                   else setHubMode('list')
                 }} className="text-gray-400 text-lg leading-none" aria-label="Indietro">←</button>
                 <span className="text-sm font-medium text-gray-300">{activeMealLabel}</span>
@@ -322,6 +325,7 @@ export default function MealsPage() {
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/15 text-3xl">{selectedEntry.dish_icon || getFoodIcon(selectedEntry.items)}</div>
                     <div className="min-w-0 flex-1">
                       <h2 className="text-xl font-bold text-white">{selectedEntry.name}</h2>
+                      {isMealPhotoEntry(selectedEntry) && <p className="mt-1 text-xs text-primary-300">📸 Stimato da foto</p>}
                       <p className="mt-1 text-sm text-gray-400">
                         {selectedEntry.cooked_portion_g != null
                           ? `${formatDecimal(selectedEntry.cooked_portion_g)} g da cotto`
@@ -337,7 +341,11 @@ export default function MealsPage() {
                   </div>
                   <ExtendedNutrition totals={extendedTotals} />
                 </div>
-                {ingredientSections.filter(section => section.items.length > 0).map(section => (
+                {isMealPhotoEntry(selectedEntry) ? <details className="rounded-2xl border border-gray-700 bg-gray-900/40 p-4">
+                  <summary className="cursor-pointer text-sm font-semibold text-gray-200">Ingredienti e quantità · {selectedEntry.items.length}</summary>
+                  <p className="mt-3 text-xs text-gray-400">Ingredienti, quantità e valori nutrizionali stimati dalla foto, con le eventuali correzioni apportate.</p>
+                  <div className="mt-2">{selectedEntry.items.map(item => <MealItemRow key={item.id} item={item} />)}</div>
+                </details> : ingredientSections.filter(section => section.items.length > 0).map(section => (
                   <div key={section.label}>
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">{section.label}</p>
                     <div className="rounded-2xl bg-gray-900/40 px-4">
@@ -374,7 +382,11 @@ export default function MealsPage() {
                     disabled={savingPreparedEdit || preparedEditG <= 0 || preparedEditG > preparedAmounts.remaining_g + (selectedEntry.cooked_portion_g ?? 0)}
                     className="w-full rounded-xl bg-primary-500 py-3 font-semibold disabled:opacity-40">Salva porzione</button>
                 </div> : <p className="text-sm text-gray-500">Caricamento preparazione…</p>
-              ) : isSingleIngredientEntry ? <SingleIngredientEditor
+              ) : isMealPhotoEntry(selectedEntry) ? <MealPhotoReview
+                key={selectedEntry.id} editing initialName={selectedEntry.name}
+                initialItems={selectedEntry.items.map(mealItemToDraft)}
+                onSave={handleUpdateEntry} onCancel={() => setModalStep('view-entry')}
+              /> : isSingleIngredientEntry ? <SingleIngredientEditor
                 key={selectedEntry.id}
                 item={mealItemToDraft(selectedEntry.items[0])}
                 onSave={item => handleUpdateEntry(selectedEntry.name, [item])}

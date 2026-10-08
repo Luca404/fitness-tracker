@@ -6,7 +6,7 @@ Part of the **Trackrs ecosystem**, alongside [Trackr](https://github.com/Luca404
 
 ## Features
 
-- **Meals:** daily calories and macros, saved recipes, single foods, drinks and editable recipe additions.
+- **Meals:** daily calories and macros, saved recipes, single foods, drinks, editable recipe additions and occasional meals estimated from photos with editable ingredient details.
 - **Kitchen:** personal ingredients, recipe categories, custom icons and prepared batches with cooked-weight estimates and remaining portions.
 - **Food import:** basic-food search, Open Food Facts, barcode scanning, nutrition-label photos and manual entry.
 - **Fitness:** reusable gym plans with saved ordering, exercise search, set logging, rest timers and estimated session calories; duration-based logging for other activities.
@@ -52,6 +52,7 @@ supabase db push --dry-run
 supabase db push
 supabase secrets set OPENAI_API_KEY=<server-side-key>
 supabase functions deploy analyze-nutrition-label
+supabase functions deploy analyze-meal-photo --no-verify-jwt
 supabase functions deploy resolve-barcode-product
 supabase functions deploy confirm-barcode-product
 ```
@@ -61,6 +62,8 @@ The hosted database is shared. Review the dry-run and apply only this repository
 The seven Trackr security versions `20261004165900`–`20261004170500` are already applied to the hosted project. FitTrackr records the actual meal-item correction and six finance ledger markers; do not replay them. [The database workflow](supabase/README.md) explains grants for future RPCs and the distinction between hosted and local databases. Local `.env.local` URLs at `127.0.0.1:54321` target a separate instance; the existing local instance has older fitness migrations and is not claimed to mirror the complete hosted schema.
 
 Keep the OpenAI key in Edge Function secrets, never in a `VITE_` variable. The optional `OPENAI_VISION_MODEL` secret overrides the default `gpt-4.1-mini`.
+
+Occasional meal photos use the separate `analyze-meal-photo` function, which validates the user's session through Supabase Auth. `OPENAI_MEAL_PHOTO_MODEL` can override the vision model for this task. Photo estimates use cooked/ready-to-eat quantities and are reviewed before direct diary registration. No recipe, prepared batch or stored photo is created. See [meal photos](docs/pasti-da-foto.md) for setup and behavior.
 
 ## Development checks
 
@@ -102,6 +105,7 @@ Ingredient corrections update linked recipes and historical diary entries. Prepa
 Use [the documentation index](docs/README.md) for current guides, shared security status and historical plans. Detailed feature guides are in Italian:
 
 - [Diary and ingredient ordering](docs/meal-diary-order.md)
+- [Occasional meals from photos](docs/pasti-da-foto.md)
 - [Habit recap and rolling seven-day averages](docs/buone-abitudini.md)
 - [Prepared dishes and cooked weight](docs/peso-piatti-preparati.md)
 - [Gym training and sample plans](docs/allenamenti-palestra.md)

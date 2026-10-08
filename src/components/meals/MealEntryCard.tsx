@@ -3,6 +3,7 @@ import { getMealEntryTotals } from '../../utils/mealEntries'
 import { getFoodIcon } from '../../utils/foodIcons'
 import { alcoholStrength } from '../../utils/alcohol'
 import { formatDecimal } from '../../utils/decimal'
+import { isMealPhotoEntry } from '../../utils/mealPhoto'
 
 interface Props {
   entry: MealEntry
@@ -35,6 +36,7 @@ export default function MealEntryCard({ entry, onOpen }: Props) {
           <p className="mt-1 text-xs text-gray-500">
             {quantityLabel}{strength != null && <> · {formatDecimal(strength)}% vol</>} · P {formatDecimal(totals.protein)}g · C {formatDecimal(totals.carbs)}g · G {formatDecimal(totals.fat)}g
           </p>
+          {isMealPhotoEntry(entry) && <p className="mt-1 text-[11px] text-primary-300/80">📸 Stimato da foto</p>}
         </div>
         <svg className="h-4 w-4 shrink-0 text-gray-600 transition group-hover:translate-x-0.5 group-hover:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m9 5 7 7-7 7" />
