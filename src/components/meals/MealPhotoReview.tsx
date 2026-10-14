@@ -1,3 +1,4 @@
+import FormActions from '../common/FormActions'
 import { useRef, useState } from 'react'
 import type { DishItemDraft, FoodCategory } from '../../types'
 import type { MealPhotoAnalysis } from '../../services/mealPhoto'
@@ -193,12 +194,7 @@ export default function MealPhotoReview({ initialName, initialItems, analysis, e
     </fieldset>
     {error && <p role="alert" className="rounded-xl bg-red-950/30 p-3 text-sm text-red-300">{error}</p>}
     {!valid && <p className="text-xs text-amber-300">Completa nome, ingredienti e valori validi{!editing && ' e scegli una percentuale tra 1 e 100'}.</p>}
-    <button type="button" onClick={() => void save()} disabled={!valid || saving}
-      className="w-full rounded-xl bg-primary-600 py-3 font-semibold hover:bg-primary-500 disabled:opacity-40">
-      {saving ? 'Salvataggio…' : editing ? 'Salva modifiche' : 'Registra nel diario'}
-    </button>
-    <button type="button" onClick={onCancel} disabled={saving} className="w-full py-2 text-sm text-gray-400 disabled:opacity-40">
-      {editing ? 'Annulla' : '← Torna alla foto'}
-    </button>
+    <FormActions onSave={() => void save()} onCancel={onCancel} saving={saving} disabled={!valid}
+      saveLabel={editing ? 'Salva modifiche' : 'Registra nel diario'} cancelLabel={editing ? 'Annulla' : '← Torna alla foto'} />
   </div>
 }

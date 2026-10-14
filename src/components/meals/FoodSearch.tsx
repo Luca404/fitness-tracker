@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { searchBasicFoods, searchFood, calcNutrition } from '../../services/nutrition'
 import * as api from '../../services/api'
 import { useData } from '../../contexts/DataContext'
@@ -8,7 +8,10 @@ import OpenFoodFactsDetails from '../common/OpenFoodFactsDetails'
 import AlcoholStrengthInput from './AlcoholStrengthInput'
 import { alcoholStrength, validAlcoholStrength, withAlcoholStrength } from '../../utils/alcohol'
 import IngredientQuantityInput from './IngredientQuantityInput'
-import { formatDecimal, roundToTwo } from '../../utils/decimal'
+import NutritionFields from './NutritionFields'
+import IngredientEntryActions from './IngredientEntryActions'
+import { nutritionValidationError } from '../../utils/nutrition'
+import { formatDecimal } from '../../utils/decimal'
 
 const IngredientCatalog = lazy(() => import('../../pages/PantryPage'))
 
@@ -50,22 +53,25 @@ interface Props {
   allowManualEntry?: boolean
   addLabel?: string
   saving?: boolean
+  resetAfterAdd?: boolean
 }
 
-export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntry = true, addLabel = '+ Aggiungi ingrediente', saving = false }: Props) {
+export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntry = true, addLabel = '+ Aggiungi ingrediente', saving = false, resetAfterAdd = false }: Props) {
   const { showToast } = useData()
   const [query, setQuery] = useState('')
   const [offResults, setOffResults] = useState<FoodResult[]>([])
   const [offSearched, setOffSearched] = useState(false)
   const [selected, setSelected] = useState<FoodResult | null>(null)
   const [selectedAbv, setSelectedAbv] = useState<number | null | undefined>(undefined)
-  function selectFood(food: FoodResult) { setSelected(food); setSelectedAbv(undefined); setPiece(null) }
+  function selectFood(food: FoodResult) { setSelected(food); setSelectedAbv(undefined); setPiece(null); setQty(100); setQuantityValid(true) }
   function selectedNutrition(food: FoodResult, amount: number) {
     return withAlcoholStrength({ ...calcNutrition(food, amount), quantity_g: amount,
       unit: food.quantity_unit === 'ml' ? 'ml' as const : 'g' as const, food_key: food.food_key,
       alcohol_abv: alcoholStrength(food) }, selectedAbv === undefined ? alcoholStrength(food) : selectedAbv)
   }
   const [qty, setQty] = useState(100)
+  const [quantityValid, setQuantityValid] = useState(true)
+  const searchVersion = useRef(0)
   const [piece, setPiece] = useState<{ size: PieceSize; count: number } | null>(null)
   const [loading, setLoading] = useState(false)
   const [offError, setOffError] = useState(false)
@@ -81,7 +87,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
   const [manualAbv, setManualAbv] = useState<number | null>(null)
   const [manualCategory, setManualCategory] = useState<FoodCategory>('other')
   const [pantryItems, setPantryItems] = useState<PantryItem[]>([])
-  const [importMode, setImportMode] = useState<'scan' | 'photo' | null>(null)
+  const [importMode, setImportMode] = useState<'scan' | 'photo' | 'manual' | null>(null)
 
   useEffect(() => {
     api.getPantryItems().then(setPantryItems).catch(() => {
@@ -99,27 +105,47 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
 
   async function handleOffSearch() {
     if (!query.trim()) return
+    const version = ++searchVersion.current
     setLoading(true)
     setOffError(false)
     try {
       const r = await searchFood(query)
+      if (version !== searchVersion.current) return
       setOffResults(r)
       setOffSearched(true)
     } catch {
-      setOffError(true)
+      if (version === searchVersion.current) setOffError(true)
     } finally {
-      setLoading(false)
+      if (version === searchVersion.current) setLoading(false)
+    }
+  }
+
+  const manualValues = { calories: manualCal, protein_g: manualProt, carbs_g: manualCarbs, fat_g: manualFat,
+    fiber_g: manualFiber, sugars_g: manualSugars, salt_g: manualSalt }
+  const manualError = nutritionValidationError(manualValues)
+
+  function startManual() {
+    if (!allowManualEntry) { setImportMode('manual'); return }
+    setManualName(query.trim()); setManualCal(0); setManualProt(0); setManualCarbs(0); setManualFat(0)
+    setManualFiber(null); setManualSugars(null); setManualSalt(null); setManualAbv(null)
+    setManualCategory('other'); setQty(100); setPiece(null); setQuantityValid(true); setManualMode(true)
+  }
+
+  function submitItem(item: Parameters<Props['onAdd']>[0]) {
+    onAdd(item)
+    if (resetAfterAdd) {
+      searchVersion.current += 1
+      setSelected(null); setQuery(''); setManualMode(false); setQty(100); setQuantityValid(true)
+      setPiece(null); setOffResults([]); setOffSearched(false); setOffError(false); setLoading(false)
     }
   }
 
   function handleAdd() {
-    if (saving) return
+    if (saving || !quantityValid) return
     if (manualMode) {
       if (manualAbv != null && !validAlcoholStrength(manualAbv)) return
-      if (!manualName.trim() || qty <= 0 || [manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0)) return
-      if ([manualFiber, manualSugars, manualSalt].some(v => v !== null && v < 0)
-        || (manualSugars !== null && manualSugars > manualCarbs)) return
-      onAdd({
+      if (!manualName.trim() || !Number.isFinite(qty) || qty <= 0 || manualError) return
+      submitItem({
         food_name: manualName.trim(), quantity_g: qty,
         calories: manualCal, protein_g: manualProt,
         carbs_g: manualCarbs, fat_g: manualFat,
@@ -136,7 +162,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
       || (selected.alcohol_abv != null && !validAlcoholStrength(selected.alcohol_abv))) return
     if (selectedAbv != null && !validAlcoholStrength(selectedAbv)) return
     const nutrition = selectedNutrition(selected, qty)
-    onAdd({
+    submitItem({
       food_name: selected.name,
       ...nutrition,
       unit: selected.quantity_unit === 'ml' ? 'ml' : 'g',
@@ -155,7 +181,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
         <div className="space-y-3">
           <button type="button" onClick={() => setImportMode(null)} className="text-sm text-gray-400">← Torna agli ingredienti</button>
           <Suspense fallback={<p className="text-sm text-gray-500">Caricamento…</p>}>
-            <IngredientCatalog embedded initialMode={importMode} onSaved={item => {
+            <IngredientCatalog embedded initialMode={importMode} onCancel={() => setImportMode(null)} onSaved={item => {
               setPantryItems(current => [...current.filter(existing => existing.id !== item.id), item])
               selectFood(pantryItemToFoodResult(item))
               setQty(100)
@@ -181,7 +207,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
             </svg>
             <input
               value={query}
-              onChange={e => { setQuery(e.target.value); setOffResults([]); setOffSearched(false) }}
+              onChange={e => { searchVersion.current += 1; setQuery(e.target.value); setSelected(null); setOffResults([]); setOffSearched(false); setOffError(false); setLoading(false) }}
               placeholder="Cerca un ingrediente..."
               className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-gray-600"
             />
@@ -227,14 +253,8 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
             </button>
           )}
 
-          {!selected && (
-            <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setImportMode('scan')}
-                className="rounded-xl border border-gray-700 px-2 py-2.5 text-sm text-gray-300 hover:bg-gray-700">📷 Scansiona prodotto</button>
-              <button type="button" onClick={() => setImportMode('photo')}
-                className="rounded-xl border border-gray-700 px-2 py-2.5 text-sm text-gray-300 hover:bg-gray-700">📸 Foto etichetta</button>
-            </div>
-          )}
+          {!selected && <IngredientEntryActions disabled={saving}
+            onScan={() => setImportMode('scan')} onPhoto={() => setImportMode('photo')} onManual={startManual} />}
 
           {!selected && offError && (
             <p className="text-sm text-orange-400">Open Food Facts non disponibile.</p>
@@ -284,6 +304,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
                   grams={qty}
                   unit={selected.quantity_unit === 'ml' ? 'ml' : 'g'}
                   onChange={setQty}
+              onValidityChange={setQuantityValid}
                   pieceSize={piece?.size}
                   pieceCount={piece?.count}
                   onPieceChange={setPiece}
@@ -343,21 +364,13 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
                   </>
                 )
               })()}
-              <button type="button" onClick={handleAdd} disabled={!Number.isFinite(qty) || qty <= 0 || saving || (selectedAbv != null && !validAlcoholStrength(selectedAbv))}
+              <button type="button" onClick={handleAdd} disabled={!quantityValid || !Number.isFinite(qty) || qty <= 0 || saving || (selectedAbv != null && !validAlcoholStrength(selectedAbv))}
                 className="w-full rounded-xl bg-primary-500 py-3 font-semibold hover:bg-primary-400 disabled:opacity-40">
                 {saving ? 'Registrazione…' : addLabel}
               </button>
             </div>
           )}
 
-          {allowManualEntry ? (
-            <button type="button" onClick={() => { setManualMode(true); setPiece(null) }}
-              className="w-full rounded-xl border border-dashed border-gray-700 py-2.5 text-center text-sm text-gray-500 hover:border-gray-600 hover:text-gray-300">
-              Non lo trovi? Inseriscilo manualmente
-            </button>
-          ) : (
-            <p className="text-xs text-gray-500">Per salvare un ingrediente personalizzato, apri Ingredienti in Cucina.</p>
-          )}
         </>
       ) : (
         <div className="space-y-4">
@@ -390,85 +403,28 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
               category={manualCategory}
               grams={qty}
               onChange={setQty}
+              onValidityChange={setQuantityValid}
               pieceSize={piece?.size}
               pieceCount={piece?.count}
               onPieceChange={setPiece}
             />
           </div>
           {manualCategory === 'alcohol' && <AlcoholStrengthInput value={manualAbv} onChange={setManualAbv} volumeMl={qty} />}
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { label: 'Calorie', unit: 'kcal', val: manualCal, set: (v: number) => setManualCal(v), min: 0 },
-              { label: 'Proteine', unit: 'g', val: manualProt, set: (v: number) => setManualProt(v), min: 0 },
-            ].map(({ label, unit, val, set, min }) => (
-              <label key={label} className="rounded-xl border border-gray-700 bg-gray-800/80 p-3 focus-within:border-primary-500">
-                <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">{label}</span>
-                <span className="mt-1 flex items-center gap-2">
-                  <input type="number" min={min} step="0.1" inputMode="decimal" value={val ? formatDecimal(val) : ''}
-                    onChange={e => set(roundToTwo(parseFloat(e.target.value) || 0))}
-                    className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none" />
-                  <span aria-hidden="true" className="text-xs text-gray-600">{unit}</span>
-                </span>
-              </label>
-            ))}
-          </div>
-          <fieldset aria-label="Carboidrati" className="rounded-xl border border-gray-700 bg-gray-800/80 p-3 focus-within:border-primary-500">
-            <label className="block">
-              <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">Carboidrati totali</span>
-              <span className="mt-1 flex items-center gap-2">
-                <input type="number" min={0} step="0.1" inputMode="decimal" value={manualCarbs ? formatDecimal(manualCarbs) : ''}
-                  onChange={event => setManualCarbs(roundToTwo(parseFloat(event.target.value) || 0))}
-                  className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none" />
-                <span aria-hidden="true" className="text-xs text-gray-600">g</span>
-              </span>
-            </label>
-            <label className="mt-3 block border-l-2 border-gray-600 pl-3">
-              <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">di cui zuccheri (facoltativo)</span>
-              <span className="mt-1 flex items-center gap-2">
-                <input type="number" min={0} step="0.1" inputMode="decimal" value={manualSugars == null ? '' : formatDecimal(manualSugars)}
-                  onChange={event => setManualSugars(event.target.value === '' ? null : roundToTwo(Number(event.target.value)))}
-                  className="min-w-0 flex-1 bg-transparent text-base font-semibold outline-none" />
-                <span aria-hidden="true" className="text-xs text-gray-600">g</span>
-              </span>
-            </label>
-          </fieldset>
-          <label className="block rounded-xl border border-gray-700 bg-gray-800/80 p-3 focus-within:border-primary-500">
-            <span className="block text-[10px] font-semibold uppercase tracking-wider text-gray-500">Grassi totali</span>
-            <span className="mt-1 flex items-center gap-2">
-              <input type="number" min={0} step="0.1" inputMode="decimal" value={manualFat ? formatDecimal(manualFat) : ''}
-                onChange={event => setManualFat(roundToTwo(parseFloat(event.target.value) || 0))}
-                className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none" />
-              <span aria-hidden="true" className="text-xs text-gray-600">g</span>
-            </span>
-          </label>
-          <div>
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Altri valori della porzione (facoltativi)</p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { label: 'Fibre', val: manualFiber, set: setManualFiber },
-                { label: 'Sale', val: manualSalt, set: setManualSalt },
-              ].map(({ label, val, set }) => (
-                <label key={label} className="rounded-xl border border-gray-700 bg-gray-800/80 p-2.5 focus-within:border-primary-500">
-                  <span className="block text-[9px] font-semibold uppercase tracking-wider text-gray-500">{label}</span>
-                  <span className="mt-1 flex items-center gap-1">
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.1"
-                      value={val == null ? '' : formatDecimal(val)}
-                      onChange={event => set(event.target.value === '' ? null : roundToTwo(Number(event.target.value)))}
-                      className="min-w-0 flex-1 bg-transparent text-base font-semibold outline-none"
-                    />
-                    <span aria-hidden="true" className="text-[10px] text-gray-600">g</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
+          <NutritionFields values={manualValues} disabled={saving} onChange={(key, value) => {
+            switch (key) {
+              case 'calories': setManualCal(value ?? 0); break
+              case 'protein_g': setManualProt(value ?? 0); break
+              case 'carbs_g': setManualCarbs(value ?? 0); break
+              case 'fat_g': setManualFat(value ?? 0); break
+              case 'fiber_g': setManualFiber(value); break
+              case 'sugars_g': setManualSugars(value); break
+              case 'salt_g': setManualSalt(value); break
+            }
+          }} />
+          {manualError && <p role="alert" className="text-xs text-amber-300">{manualError}</p>}
           <button type="button" onClick={handleAdd}
-            disabled={saving || !manualName.trim() || qty <= 0 || [manualCal, manualProt, manualCarbs, manualFat].some(v => v < 0)
-              || [manualFiber, manualSugars, manualSalt].some(v => v !== null && v < 0)
-              || (manualSugars !== null && manualSugars > manualCarbs)}
+            disabled={saving || !quantityValid || !manualName.trim() || !Number.isFinite(qty) || qty <= 0 || Boolean(manualError)
+              || (manualAbv != null && !validAlcoholStrength(manualAbv))}
             className="w-full rounded-xl bg-primary-500 py-3 font-semibold hover:bg-primary-400 disabled:opacity-40">
             {saving ? 'Registrazione…' : addLabel}
           </button>

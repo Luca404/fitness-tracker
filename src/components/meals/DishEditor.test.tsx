@@ -60,4 +60,22 @@ describe('DishEditor', () => {
       expect.objectContaining({ food_name: 'Pasta', is_customization: false }),
     ], ['lunch']))
   })
+
+  it('keeps an invalid quantity visible when an earlier ingredient is removed and blocks saving', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    const base = { food_name: 'Pasta', quantity_g: 100, calories: 150, protein_g: 5, carbs_g: 30, fat_g: 1,
+      category: 'grain' as const, food_key: null, source: 'manual' as const, off_food_id: null }
+    render(<DishEditor initialName="Pasta" initialItems={[base, { ...base, food_name: 'Pomodoro' }]}
+      onSave={onSave} onCancel={() => {}} />)
+    fireEvent.change(screen.getByLabelText('Quantità di Pomodoro'), { target: { value: '' } })
+    fireEvent.blur(screen.getByLabelText('Quantità di Pomodoro'))
+    expect((screen.getByRole('button', { name: 'Salva piatto' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Rimuovi Pasta' }))
+    expect((screen.getByLabelText('Quantità di Pomodoro') as HTMLInputElement).value).toBe('')
+    fireEvent.change(screen.getByLabelText('Quantità di Pomodoro'), { target: { value: '50' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salva piatto' }))
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith('Pasta', [expect.objectContaining({
+      food_name: 'Pomodoro', quantity_g: 50, calories: 75,
+    })], ['lunch']))
+  })
 })

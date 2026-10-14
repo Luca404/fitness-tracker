@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PantryItem } from '../types'
 
@@ -33,7 +33,6 @@ function enterManual(name = 'Lenticchie') {
   click('✏️ Inserisci a mano')
   fireEvent.change(screen.getByLabelText('Nome alimento'), { target: { value: name } })
   fireEvent.change(screen.getByLabelText('Calorie (kcal/100g)'), { target: { value: '120.5' } })
-  click('Continua')
 }
 
 describe('PantryPage manual entry', () => {
@@ -50,17 +49,16 @@ describe('PantryPage manual entry', () => {
     render(<PantryPage />)
     openManualForm()
 
-    expect(within(screen.getByRole('group', { name: 'Carboidrati' })).getByLabelText('Zuccheri (g/100g)')).toBeTruthy()
-    expect(within(screen.getByRole('group', { name: 'Grassi' })).getByLabelText('di cui grassi saturi (g/100g)')).toBeTruthy()
+    expect(screen.getByLabelText('di cui zuccheri (g/100g)')).toBeTruthy()
+    expect(screen.getByLabelText('di cui grassi saturi (g/100g)')).toBeTruthy()
 
     fireEvent.change(screen.getByLabelText('Nome alimento'), { target: { value: 'Biscotti' } })
     fireEvent.change(screen.getByLabelText('Carboidrati (g/100g)'), { target: { value: '65' } })
     fireEvent.change(screen.getByLabelText('Grassi (g/100g)'), { target: { value: '20' } })
     fireEvent.change(screen.getByLabelText('di cui grassi saturi (g/100g)'), { target: { value: '8.5' } })
-    fireEvent.change(screen.getByLabelText('Zuccheri (g/100g)'), { target: { value: '22' } })
+    fireEvent.change(screen.getByLabelText('di cui zuccheri (g/100g)'), { target: { value: '22' } })
     fireEvent.change(screen.getByLabelText('Sale (g/100g)'), { target: { value: '0.45' } })
     fireEvent.change(screen.getByLabelText('Fibre (g/100g)'), { target: { value: '4.2' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Continua' }))
     fireEvent.click(screen.getByRole('button', { name: 'Salva ingrediente' }))
 
     await waitFor(() => expect(mocks.addPantryItem).toHaveBeenCalledWith(expect.objectContaining({
@@ -75,7 +73,6 @@ describe('PantryPage manual entry', () => {
 
     fireEvent.change(screen.getByLabelText('Nome alimento'), { target: { value: 'Pane' } })
     fireEvent.change(screen.getByLabelText('Sale (g/100g)'), { target: { value: '0' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Continua' }))
     fireEvent.click(screen.getByRole('button', { name: 'Salva ingrediente' }))
 
     await waitFor(() => expect(mocks.addPantryItem).toHaveBeenCalledWith(expect.objectContaining({
@@ -109,10 +106,10 @@ describe('PantryPage manual entry', () => {
     render(<PantryPage />)
 
     fireEvent.click(await screen.findByRole('button', { name: 'Modifica Biscotti' }))
-    expect(within(screen.getByRole('group', { name: 'Carboidrati' })).getByLabelText('Zuccheri (g)')).toBeTruthy()
-    expect(within(screen.getByRole('group', { name: 'Grassi' })).getByLabelText('di cui grassi saturi (g)')).toBeTruthy()
-    fireEvent.change(screen.getByLabelText('di cui grassi saturi (g)'), { target: { value: '7' } })
-    fireEvent.change(screen.getByLabelText('Fibre (g)'), { target: { value: '' } })
+    expect(screen.getByLabelText('di cui zuccheri (g/100g)')).toBeTruthy()
+    expect(screen.getByLabelText('di cui grassi saturi (g/100g)')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('di cui grassi saturi (g/100g)'), { target: { value: '7' } })
+    fireEvent.change(screen.getByLabelText('Fibre (g/100g)'), { target: { value: '' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salva modifiche' }))
 
     await waitFor(() => expect(mocks.updatePantryItem).toHaveBeenCalledWith('item-1', expect.objectContaining({
@@ -131,7 +128,7 @@ describe('PantryPage manual entry', () => {
     render(<PantryPage />)
 
     fireEvent.click(await screen.findByRole('button', { name: 'Modifica Mela' }))
-    fireEvent.change(screen.getByLabelText('Fibre (g)'), { target: { value: '2.4' } })
+    fireEvent.change(screen.getByLabelText('Fibre (g/100g)'), { target: { value: '2.4' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salva modifiche' }))
 
     await waitFor(() => expect(mocks.updatePantryItem).toHaveBeenCalledWith('item-basic', expect.objectContaining({
@@ -144,10 +141,10 @@ describe('PantryPage manual entry', () => {
     openManualForm()
 
     fireEvent.change(screen.getByLabelText('Nome alimento'), { target: { value: 'Biscotti' } })
-    fireEvent.change(screen.getByLabelText('Zuccheri (g/100g)'), { target: { value: '3' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Continua' }))
+    fireEvent.change(screen.getByLabelText('di cui zuccheri (g/100g)'), { target: { value: '3' } })
 
-    expect(mocks.showToast).toHaveBeenCalledWith('Grassi saturi e zuccheri non possono superare i rispettivi totali')
+    expect(screen.getByRole('alert').textContent).toContain('Grassi saturi e zuccheri non possono superare i rispettivi totali')
+    expect((screen.getByRole('button', { name: 'Salva ingrediente' }) as HTMLButtonElement).disabled).toBe(true)
     expect(screen.queryByRole('button', { name: 'Aggiungi alla dispensa' })).toBeNull()
   })
   it('saves manual ingredients with unknown optional nutrients and resets the flow after cancellation', async () => {
@@ -160,8 +157,7 @@ describe('PantryPage manual entry', () => {
     expect((screen.getByLabelText('Nome alimento') as HTMLInputElement).value).toBe('')
     fireEvent.change(screen.getByLabelText('Nome alimento'), { target: { value: 'Lenticchie' } })
     fireEvent.change(screen.getByLabelText('Calorie (kcal/100g)'), { target: { value: '120.5' } })
-    click('Continua')
-    click('Salva ingrediente')
+      click('Salva ingrediente')
     await waitFor(() => expect(mocks.addPantryItem).toHaveBeenCalledWith(expect.objectContaining({
       user_id: 'user-1', name: 'Lenticchie', calories_100g: 120.5, nutrition_unit: 'g',
       fiber_100g: null, sugars_100g: null, salt_100g: null,

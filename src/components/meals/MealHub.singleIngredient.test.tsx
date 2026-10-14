@@ -85,7 +85,7 @@ describe('saved dish meal flow', () => {
     render(<TestHub onAddEntry={onAddEntry} />)
 
     fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Grammi di Pasta' }), { target: { value: '80' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantità di Pasta' }), { target: { value: '80' } })
     fireEvent.click(screen.getByRole('button', { name: 'Prepara e conserva il resto' }))
 
     fireEvent.click(screen.getByRole('button', { name: /Salva e registra la porzione/ }))
@@ -104,7 +104,7 @@ describe('saved dish meal flow', () => {
     render(<TestHub onAddEntry={onAddEntry} />)
 
     fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
-    const quantity = screen.getByRole('spinbutton', { name: 'Grammi di Pasta' })
+    const quantity = screen.getByRole('spinbutton', { name: 'Quantità di Pasta' })
     expect((quantity as HTMLInputElement).value).toBe('80.1')
     fireEvent.focus(quantity)
     fireEvent.blur(quantity)
@@ -129,8 +129,8 @@ describe('saved dish meal flow', () => {
     render(<TestHub onAddEntry={onAddEntry} />)
 
     fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Grammi di Pasta' }), { target: { value: '80.126' } })
-    expect((screen.getByRole('spinbutton', { name: 'Grammi di Pomodoro' }) as HTMLInputElement).value).toBe('50')
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantità di Pasta' }), { target: { value: '80.126' } })
+    expect((screen.getByRole('spinbutton', { name: 'Quantità di Pomodoro' }) as HTMLInputElement).value).toBe('50')
     fireEvent.click(screen.getByRole('button', { name: 'Registra tutto' }))
 
     await waitFor(() => expect(onAddEntry).toHaveBeenCalledWith('Pasta al pomodoro', [
@@ -138,7 +138,7 @@ describe('saved dish meal flow', () => {
       expect.objectContaining({ dish_item_id: 'item-2', quantity_g: 50, calories: 15 }),
     ], 'dish-1', '🍝'))
     fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
-    expect((screen.getByRole('spinbutton', { name: 'Grammi di Pasta' }) as HTMLInputElement).value).toBe('100')
+    expect((screen.getByRole('spinbutton', { name: 'Quantità di Pasta' }) as HTMLInputElement).value).toBe('100')
   })
 
   it('remembers a measured yield and scales it when the recipe quantity changes', async () => {
@@ -151,7 +151,7 @@ describe('saved dish meal flow', () => {
     render(<TestHub onAddEntry={vi.fn()} />)
 
     fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Grammi di Pasta' }), { target: { value: '80' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantità di Pasta' }), { target: { value: '80' } })
     fireEvent.click(screen.getByRole('button', { name: 'Prepara e conserva il resto' }))
     expect(screen.getByText(/Dall’ultima pesata della ricetta: 160 g/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /Salva e registra la porzione/ }))
@@ -168,7 +168,7 @@ describe('saved dish meal flow', () => {
     render(<TestHub onAddEntry={vi.fn()} />)
 
     fireEvent.click(await screen.findByRole('button', { name: /^Pasta al pomodoro/ }))
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Grammi di Pasta' }), { target: { value: '1200' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantità di Pasta' }), { target: { value: '1200' } })
     fireEvent.click(screen.getByRole('button', { name: 'Prepara e conserva il resto' }))
     fireEvent.change(screen.getByRole('spinbutton', { name: /Correggi il peso cotto totale/ }), { target: { value: '800' } })
     fireEvent.click(screen.getByRole('button', { name: /Salva e registra la porzione/ }))

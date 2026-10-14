@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({ getPantryItems: vi.fn().mockResolvedValue([]), showToast: vi.fn() }))
@@ -12,14 +12,15 @@ afterEach(cleanup)
 
 describe('FoodSearch manual entry', () => {
 
-  it('places sugars below total carbohydrates', () => {
+  it('keeps optional nutrients collapsed with a clear portion basis', () => {
     render(<FoodSearch onAdd={vi.fn()} onClose={vi.fn()} />)
-    fireEvent.click(screen.getByRole('button', { name: /Inseriscilo manualmente/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Inserisci a mano/ }))
 
-    const carbsGroup = screen.getByRole('group', { name: 'Carboidrati' })
-    expect(within(carbsGroup).getByText('Carboidrati totali')).toBeTruthy()
-    expect(within(carbsGroup).getByText('di cui zuccheri (facoltativo)')).toBeTruthy()
-    expect(within(carbsGroup).getByRole('spinbutton', { name: 'di cui zuccheri (facoltativo)' })).toBeTruthy()
+    expect(screen.getByLabelText('Carboidrati (g)')).toBeTruthy()
+    expect(document.querySelector('details')?.open).toBe(false)
+    fireEvent.click(screen.getByText('Altri valori nutrizionali (facoltativi)'))
+    expect(screen.getByRole('spinbutton', { name: 'di cui zuccheri (g)' })).toBeTruthy()
+
   })
 
   it('copies updated pantry nutrients into a new meal ingredient', async () => {
@@ -39,6 +40,29 @@ describe('FoodSearch manual entry', () => {
     await waitFor(() => expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({
       pantry_item_id: 'pantry-1', fiber_g: 2.4, sugars_g: 10, salt_g: 0.01,
     })))
+  })
+
+  it('does not save a cleared quantity and resets the selection for another search', async () => {
+    const onAdd = vi.fn()
+    mocks.getPantryItems.mockResolvedValueOnce([{
+      id: 'quantity-test', name: 'Mela per test', quantity: 500, unit: 'g', category: 'fruit',
+      calories_100g: 52, protein_100g: 0.3, carbs_100g: 14, fat_100g: 0.2,
+    }])
+    render(<FoodSearch onAdd={onAdd} onClose={() => {}} resetAfterAdd />)
+    fireEvent.change(screen.getByPlaceholderText('Cerca un ingrediente...'), { target: { value: 'Mela' } })
+    fireEvent.click(await screen.findByRole('button', { name: /🧺 Mela per test/ }))
+    fireEvent.change(screen.getByLabelText('Quantità di Mela per test'), { target: { value: '' } })
+    fireEvent.blur(screen.getByLabelText('Quantità di Mela per test'))
+    expect((screen.getByRole('button', { name: '+ Aggiungi ingrediente' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText('Quantità di Mela per test'), { target: { value: '0.001' } })
+    fireEvent.blur(screen.getByLabelText('Quantità di Mela per test'))
+    expect((screen.getByLabelText('Quantità di Mela per test') as HTMLInputElement).value).toBe('0.001')
+    expect((screen.getByRole('button', { name: '+ Aggiungi ingrediente' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText('Quantità di Mela per test'), { target: { value: '150' } })
+    fireEvent.click(screen.getByRole('button', { name: '+ Aggiungi ingrediente' }))
+    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ quantity_g: 150, calories: 78 }))
+    expect((screen.getByPlaceholderText('Cerca un ingrediente...') as HTMLInputElement).value).toBe('')
+    expect(screen.queryByLabelText('Quantità di Mela per test')).toBeNull()
   })
 })
 

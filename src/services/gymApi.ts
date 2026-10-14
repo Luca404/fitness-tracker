@@ -57,6 +57,13 @@ export async function getGymSessionsForDate(date: string): Promise<GymSession[]>
   return hydrateGymSessions((data ?? []) as Omit<GymSession, 'sets'>[])
 }
 
+export async function getGymSessionsForRange(from: string, to: string): Promise<GymSession[]> {
+  const { data, error } = await supabase.from('gym_sessions').select('*')
+    .gte('date', from).lte('date', to).not('completed_at', 'is', null).order('date')
+  if (error) throw error
+  return hydrateGymSessions((data ?? []) as Omit<GymSession, 'sets'>[])
+}
+
 export async function getRecentGymSessions(date: string): Promise<GymSession[]> {
   const [recentResult, activeResult, dateResult] = await Promise.all([
     supabase.from('gym_sessions').select('*').order('started_at', { ascending: false }).limit(30),

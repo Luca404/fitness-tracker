@@ -45,7 +45,10 @@ da soli non misurano lo sforzo individuale. La stima segue la convenzione
 consumo energetico.
 
 Le calorie delle sessioni completate rientrano nella voce **Bruciate** della
-panoramica del giorno, insieme a quelle delle altre attività registrate.
+panoramica del giorno e nella linea **Bruciato** e nelle medie dello **Storico**
+a 7 e 30 giorni, insieme a quelle delle altre attività registrate. Le sessioni
+ancora aperte non contribuiscono. Vedi [attività e storico](attivita-e-storico.md)
+per i chilometri facoltativi e le verifiche.
 
 ## Esempio: quattro schede Upper/Lower
 

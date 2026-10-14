@@ -1,19 +1,25 @@
-import { mealItems } from '../utils/mealEntries'
 import { useEffect, useState, useMemo } from 'react'
-import { format, subDays, eachDayOfInterval } from 'date-fns'
+import { format, subDays } from 'date-fns'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useData } from '../contexts/DataContext'
-import { getMealsForRange, getWorkoutsForRange } from '../services/api'
-import type { Meal, Workout } from '../types'
+import { getLatestWeightLog, getMealsForRange, getWeightLogs, getWorkoutsForRange } from '../services/api'
+import { getGymSessionsForRange } from '../services/gymApi'
+import { buildHistoryData } from '../utils/history'
+import { useAuth } from '../contexts/AuthContext'
+import type { GymSession, Meal, WeightLog, Workout } from '../types'
 import { formatDecimal } from '../utils/decimal'
 
 type Range = 7 | 30
 
 export default function HistoryPage() {
-  const { goals, showToast } = useData()
+  const { goals, showToast, currentWeightKg } = useData()
+  const { user } = useAuth()
+  const userId = user?.id
   const [range, setRange] = useState<Range>(7)
   const [meals, setMeals] = useState<Meal[]>([])
   const [workouts, setWorkouts] = useState<Workout[]>([])
+  const [gymSessions, setGymSessions] = useState<GymSession[]>([])
+  const [weights, setWeights] = useState<WeightLog[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -24,37 +30,34 @@ export default function HistoryPage() {
     async function load() {
       setLoading(true)
       try {
-        const [m, w] = await Promise.all([getMealsForRange(from, to), getWorkoutsForRange(from, to)])
+        const [m, w, sessions, before, within] = await Promise.all([
+          getMealsForRange(from, to), getWorkoutsForRange(from, to), getGymSessionsForRange(from, to),
+          getLatestWeightLog(from), getWeightLogs(from, to),
+        ])
         if (cancelled) return
         setMeals(m)
         setWorkouts(w)
+        setGymSessions(sessions)
+        setWeights(before ? [before, ...within] : within)
       } catch {
-        if (!cancelled) showToast('Errore caricamento storico')
+        if (!cancelled) {
+          setMeals([]); setWorkouts([]); setGymSessions([]); setWeights([])
+          showToast('Errore caricamento storico')
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
 
-    load()
+    if (userId) void load()
     return () => { cancelled = true }
-  }, [range, showToast])
+  }, [range, showToast, userId])
 
   const chartData = useMemo(() => {
     const to = new Date()
-    const days = eachDayOfInterval({ start: subDays(to, range - 1), end: to })
-    return days.map(day => {
-      const dateStr = format(day, 'yyyy-MM-dd')
-      const dayMeals = meals.filter(m => m.date === dateStr)
-      const dayWorkouts = workouts.filter(w => w.date === dateStr)
-      const consumed = dayMeals.flatMap(mealItems).reduce((s, i) => s + i.calories, 0)
-      const burned = dayWorkouts.reduce((s, w) => s + w.calories_burned, 0)
-      return {
-        date: format(day, 'dd/MM'),
-        Mangiato: consumed,
-        Bruciato: burned,
-      }
-    })
-  }, [meals, workouts, range])
+    return buildHistoryData(format(subDays(to, range - 1), 'yyyy-MM-dd'), format(to, 'yyyy-MM-dd'),
+      meals, workouts, gymSessions, weights, currentWeightKg)
+  }, [meals, workouts, gymSessions, weights, currentWeightKg, range])
 
   const avgConsumed = chartData.length > 0
     ? chartData.reduce((s, d) => s + d.Mangiato, 0) / chartData.length

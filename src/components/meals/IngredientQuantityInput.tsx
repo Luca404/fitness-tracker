@@ -8,6 +8,7 @@ interface Props {
   category: FoodCategory
   grams: number
   onChange: (grams: number) => void
+  onValidityChange?: (valid: boolean) => void
   compact?: boolean
   unit?: MealItemUnit
   pieceSize?: PieceSize | null
@@ -25,7 +26,7 @@ function isPieceSize(mode: QuantityMode): mode is PieceSize {
   return mode === 'small' || mode === 'medium' || mode === 'large'
 }
 
-export default function IngredientQuantityInput({ foodName, category, grams, onChange, compact = false, unit = 'g', pieceSize, pieceCount, onPieceChange }: Props) {
+export default function IngredientQuantityInput({ foodName, category, grams, onChange, onValidityChange, compact = false, unit = 'g', pieceSize, pieceCount, onPieceChange }: Props) {
   const selectionKey = `${category}:${foodName}:${unit}`
   const [selection, setSelection] = useState<{ key: string; mode: QuantityMode }>({
     key: selectionKey,
@@ -41,6 +42,7 @@ export default function IngredientQuantityInput({ foodName, category, grams, onC
   function changeMode(nextMode: QuantityMode) {
     setSelection({ key: selectionKey, mode: nextMode })
     setDraftValue(null)
+    onValidityChange?.(true)
     if (nextMode === 'grams') { onPieceChange?.(null); return }
     const estimate = estimates.find(option => option.id === nextMode)
     if (estimate) {
@@ -49,11 +51,18 @@ export default function IngredientQuantityInput({ foodName, category, grams, onC
     }
   }
 
+  function validQuantity(rawValue: string) {
+    const value = Number(rawValue)
+    return rawValue.trim() !== '' && Number.isFinite(value) && value > 0
+      && roundQuantity(activeEstimate ? value * activeEstimate.grams : value) > 0
+  }
+
   function changeQuantity(rawValue: string) {
     setDraftValue(rawValue)
-    if (rawValue === '') return
     const value = Number(rawValue)
-    if (!Number.isFinite(value) || value <= 0) return
+    const valid = validQuantity(rawValue)
+    onValidityChange?.(valid)
+    if (!valid) return
     onChange(roundQuantity(activeEstimate ? value * activeEstimate.grams : value))
     if (isPieceSize(effectiveMode)) onPieceChange?.({ size: effectiveMode, count: roundQuantity(value) })
   }
@@ -67,9 +76,12 @@ export default function IngredientQuantityInput({ foodName, category, grams, onC
           step={activeEstimate ? 0.5 : 0.1}
           value={draftValue ?? (displayedQuantity > 0 ? formatDecimal(displayedQuantity) : '')}
           onChange={event => changeQuantity(event.target.value)}
-          onBlur={() => setDraftValue(null)}
+          onBlur={() => {
+            if (draftValue === null || validQuantity(draftValue)) setDraftValue(null)
+          }}
           onFocus={event => event.currentTarget.select()}
           aria-label={`Quantità di ${foodName}`}
+          aria-invalid={draftValue !== null && !validQuantity(draftValue)}
           className={`min-w-0 flex-1 bg-transparent font-semibold outline-none ${compact ? 'px-2 py-2 text-sm' : 'px-3 py-2.5 text-lg'}`}
         />
         {estimates.length > 0 ? (

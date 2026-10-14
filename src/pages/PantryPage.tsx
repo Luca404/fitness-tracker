@@ -7,8 +7,8 @@ import { normalizeBarcode, resolveBarcodeProduct } from '../services/barcodeProd
 import { analysisToPantryDraft, barcodeProductToAnalysis, confirmBarcodeProduct } from '../services/nutritionLabel'
 import type { NutritionLabelAnalysis } from '../services/nutritionLabel'
 import PantryReview from '../components/pantry/PantryReview'
-import { NutrientNumberInput } from '../components/pantry/PantryNutritionFields'
-import { manualNutritionError, pantryValues, storedAiPhotoFields, openFoodFactsMetadata } from '../utils/pantryDraft'
+import IngredientEntryActions from '../components/meals/IngredientEntryActions'
+import { emptyManualFood, manualNutritionError, pantryValues, storedAiPhotoFields, openFoodFactsMetadata } from '../utils/pantryDraft'
 import type { PendingFood } from '../utils/pantryDraft'
 
 const BarcodeScanner = lazy(() => import('../components/pantry/BarcodeScanner'))
@@ -21,20 +21,23 @@ import { formatDecimal } from '../utils/decimal'
 type Mode = 'list' | 'choose' | 'scan' | 'photo' | 'search' | 'manual'
 type Flow = { mode: Mode } | { mode: 'quantity'; pending: PendingFood; editingItemId: string | null }
 
-export default function PantryPage({ embedded = false, onSaved, initialMode = 'list' }: {
+export default function PantryPage({ embedded = false, onSaved, onCancel, initialMode = 'list' }: {
   embedded?: boolean
   onSaved?: (item: PantryItem) => void
+  onCancel?: () => void
   initialMode?: Mode
 }) {
   const { user } = useAuth()
   const { showToast, refreshDiary } = useData()
   const [items, setItems] = useState<PantryItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [flow, setFlow] = useState<Flow>({ mode: initialMode })
+  const [flow, setFlow] = useState<Flow>(() => initialMode === 'manual'
+    ? { mode: 'quantity', pending: emptyManualFood(), editingItemId: null } : { mode: initialMode })
   const mode = flow.mode
   const pending = flow.mode === 'quantity' ? flow.pending : null
   const editingItemId = flow.mode === 'quantity' ? flow.editingItemId : null
-  function setMode(mode: Mode) { setFlow({ mode }) }
+  function setMode(mode: Mode) { setFlow(mode === 'manual'
+    ? { mode: 'quantity', pending: emptyManualFood(), editingItemId: null } : { mode }) }
   function setPending(pending: PendingFood) {
     setFlow(previous => previous.mode === 'quantity' ? { ...previous, pending } : previous)
   }
@@ -46,16 +49,6 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
   const addInProgressRef = useRef(false)
 
   const [query, setQuery] = useState('')
-  const [manualName, setManualName] = useState('')
-  const [manualCal, setManualCal] = useState(0)
-  const [manualProt, setManualProt] = useState(0)
-  const [manualCarbs, setManualCarbs] = useState(0)
-  const [manualFat, setManualFat] = useState(0)
-  const [manualSaturatedFat, setManualSaturatedFat] = useState<number | null>(null)
-  const [manualSugars, setManualSugars] = useState<number | null>(null)
-  const [manualSalt, setManualSalt] = useState<number | null>(null)
-  const [manualFiber, setManualFiber] = useState<number | null>(null)
-  const [manualCategory, setManualCategory] = useState<FoodCategory>('other')
   const [listQuery, setListQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<FoodCategory | 'all'>('all')
 
@@ -78,9 +71,7 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
     setScanError(null)
     setScannedBarcode(null)
     setAnalysisReviewAcknowledged(false)
-    setManualName(''); setManualCal(0); setManualProt(0); setManualCarbs(0); setManualFat(0)
-    setManualSaturatedFat(null); setManualSugars(null); setManualSalt(null); setManualFiber(null)
-    setManualCategory('other')
+    onCancel?.()
   }
 
   function goToReview(food: PendingFood) {
@@ -193,52 +184,16 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
     })
   }
 
-  function handleManualConfirm() {
-    if (!manualName.trim()) return
-    const nutritionError = manualNutritionError({
-      calories_100g: manualCal, protein_100g: manualProt, carbs_100g: manualCarbs, fat_100g: manualFat,
-      saturated_fat_100g: manualSaturatedFat, sugars_100g: manualSugars,
-      salt_100g: manualSalt, fiber_100g: manualFiber,
-    })
-    if (nutritionError) {
-      showToast(nutritionError)
-      return
-    }
-    goToReview({
-      name: manualName.trim(),
-      calories_100g: manualCal,
-      protein_100g: manualProt,
-      carbs_100g: manualCarbs,
-      fat_100g: manualFat,
-      category: manualCategory,
-      food_key: null,
-      source: 'manual',
-      off_food_id: null,
-      off_data: null,
-      fiber_100g: manualFiber,
-      sugars_100g: manualSugars,
-      saturated_fat_100g: manualSaturatedFat,
-      unsaturated_fat_100g: null,
-      salt_100g: manualSalt,
-      nutrition_score: null,
-      nutrition_grade: null,
-      nova_group: null,
-      ecoscore_grade: null,
-    })
-  }
-
   async function handleAddToPantry() {
     if (!pending || !user || !pending.name.trim() || addInProgressRef.current) return
     if (pending.alcohol_abv != null && !validAlcoholStrength(pending.alcohol_abv)) {
       showToast('Inserisci una gradazione tra 0 e 100')
       return
     }
-    if (pending.source === 'manual') {
-      const nutritionError = manualNutritionError(pending)
-      if (nutritionError) {
-        showToast(nutritionError)
-        return
-      }
+    const nutritionError = manualNutritionError(pending)
+    if (nutritionError) {
+      showToast(nutritionError)
+      return
     }
     addInProgressRef.current = true
     setSavingItem(true)
@@ -402,24 +357,9 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
 
       {mode === 'choose' && (
         <div className="space-y-3">
-          <div className="grid grid-cols-1 gap-3">
-            <button type="button" onClick={() => { setScannedBarcode(null); setMode('scan') }}
-              className="py-4 rounded-xl bg-gray-700 hover:bg-gray-600 text-sm font-medium">
-              📷 Scansiona codice a barre
-            </button>
-            <button type="button" onClick={() => { setScannedBarcode(null); setMode('photo') }}
-              className="py-4 rounded-xl bg-gray-700 hover:bg-gray-600 text-sm font-medium">
-              📸 Foto confezione o etichetta
-            </button>
-            <button type="button" onClick={() => setMode('search')}
-              className="py-4 rounded-xl bg-gray-700 hover:bg-gray-600 text-sm font-medium">
-              🔍 Cerca alimento base
-            </button>
-            <button type="button" onClick={() => setMode('manual')}
-              className="py-4 rounded-xl bg-gray-700 hover:bg-gray-600 text-sm font-medium">
-              ✏️ Inserisci a mano
-            </button>
-          </div>
+          <IngredientEntryActions onSearch={() => setMode('search')}
+            onScan={() => { setScannedBarcode(null); setMode('scan') }}
+            onPhoto={() => { setScannedBarcode(null); setMode('photo') }} onManual={() => setMode('manual')} />
           <button type="button" onClick={resetAddFlow} className="text-sm text-gray-500 text-center w-full">
             Annulla
           </button>
@@ -484,53 +424,6 @@ export default function PantryPage({ embedded = false, onSaved, initialMode = 'l
               </button>
             ))}
           </div>
-          <button type="button" onClick={() => setMode('choose')} className="text-sm text-gray-500 text-center w-full">
-            Annulla
-          </button>
-        </div>
-      )}
-
-      {mode === 'manual' && (
-        <div className="space-y-3">
-          <div>
-            <label className="text-sm text-gray-400" htmlFor="manual-food-name">Nome alimento</label>
-            <input id="manual-food-name" value={manualName} onChange={e => setManualName(e.target.value)}
-              className="w-full mt-1 px-3 py-2 rounded bg-gray-700 border border-gray-600 outline-none" />
-          </div>
-          <div>
-            <label className="text-sm text-gray-400">Categoria</label>
-            <select value={manualCategory} onChange={event => setManualCategory(event.target.value as FoodCategory)}
-              className="mt-1 w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 outline-none">
-              {FOOD_CATEGORIES.map(category => (
-                <option key={category.id} value={category.id}>{category.icon} {category.label}</option>
-              ))}
-            </select>
-          </div>
-          <p className="text-xs text-gray-500">Valori per 100 g. Gli zuccheri sono inclusi nei carboidrati e i saturi nei grassi.</p>
-          <div className="grid grid-cols-2 gap-3">
-            <NutrientNumberInput label="Calorie (kcal/100g)" value={manualCal} onChange={value => setManualCal(value ?? 0)} />
-            <NutrientNumberInput label="Proteine (g/100g)" value={manualProt} onChange={value => setManualProt(value ?? 0)} />
-          </div>
-          <fieldset aria-label="Carboidrati" className="rounded-xl border border-gray-600 bg-gray-800/50 p-3">
-            <NutrientNumberInput label="Carboidrati (g/100g)" value={manualCarbs} onChange={value => setManualCarbs(value ?? 0)} />
-            <div className="mt-2 border-l-2 border-gray-600 pl-3">
-              <NutrientNumberInput label="Zuccheri (g/100g)" value={manualSugars} onChange={setManualSugars} optional />
-            </div>
-          </fieldset>
-          <fieldset aria-label="Grassi" className="rounded-xl border border-gray-600 bg-gray-800/50 p-3">
-            <NutrientNumberInput label="Grassi (g/100g)" value={manualFat} onChange={value => setManualFat(value ?? 0)} />
-            <div className="mt-2 border-l-2 border-gray-600 pl-3">
-              <NutrientNumberInput label="di cui grassi saturi (g/100g)" value={manualSaturatedFat} onChange={setManualSaturatedFat} optional />
-            </div>
-          </fieldset>
-          <div className="grid grid-cols-2 gap-3">
-            <NutrientNumberInput label="Fibre (g/100g)" value={manualFiber} onChange={setManualFiber} optional />
-            <NutrientNumberInput label="Sale (g/100g)" value={manualSalt} onChange={setManualSalt} optional />
-          </div>
-          <button type="button" onClick={handleManualConfirm} disabled={!manualName.trim()}
-            className="w-full py-3 bg-primary-600 rounded-lg font-semibold disabled:opacity-40">
-            Continua
-          </button>
           <button type="button" onClick={() => setMode('choose')} className="text-sm text-gray-500 text-center w-full">
             Annulla
           </button>

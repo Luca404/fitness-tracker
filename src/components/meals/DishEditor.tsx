@@ -1,12 +1,13 @@
-import { Fragment, useState } from 'react'
+import FormActions from '../common/FormActions'
+import { Fragment, useRef, useState } from 'react'
 import FoodSearch from './FoodSearch'
 import type { DishItemDraft, DishMealType, PieceSize } from '../../types'
 import { DISH_MEAL_TYPES } from '../../data/dishMealTypes'
-import IngredientQuantityInput from './IngredientQuantityInput'
+import IngredientPortionCard from './IngredientPortionCard'
 import { formatDecimal } from '../../utils/decimal'
 
 export type { DishItemDraft } from '../../types'
-import { nutritionTotals, scaleIngredient } from '../../utils/nutrition'
+import { nutritionTotals, nutritionValidationError, scaleIngredient } from '../../utils/nutrition'
 
 interface Props {
   initialName: string
@@ -28,9 +29,11 @@ export default function DishEditor({
   const [name, setName] = useState(initialName)
   const [mealTypes, setMealTypes] = useState<DishMealType[]>(initialMealTypes)
   const [items, setItems] = useState<DishItemDraft[]>(initialItems)
-  const [searchKey, setSearchKey] = useState(0)
+  const [itemKeys, setItemKeys] = useState(() => initialItems.map((_, index) => index))
+  const nextItemKey = useRef(initialItems.length)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [invalidQuantities, setInvalidQuantities] = useState<number[]>([])
 
   const { weight: totalWeight, volumeMl: totalVolume, calories: totalKcal, protein: totalProtein, carbs: totalCarbs, fat: totalFat } = nutritionTotals(items)
   const orderedItems = items.map((item, index) => ({ item, index }))
@@ -52,12 +55,12 @@ export default function DishEditor({
 
   function removeItem(index: number) {
     setItems(prev => prev.filter((_, i) => i !== index))
+    setItemKeys(current => current.filter((_, i) => i !== index))
+    setInvalidQuantities(current => current.filter(i => i !== index).map(i => i > index ? i - 1 : i))
   }
 
   const nameValid = !requireName || name.trim().length > 0
-  const itemsValid = items.every(i => i.quantity_g > 0 &&
-    i.calories >= 0 && i.protein_g >= 0 && i.carbs_g >= 0 && i.fat_g >= 0 &&
-    [i.fiber_g, i.sugars_g, i.salt_g].every(value => value == null || value >= 0))
+  const itemsValid = invalidQuantities.length === 0 && items.every(i => Number.isFinite(i.quantity_g) && i.quantity_g > 0 && !nutritionValidationError(i))
   const canSave = nameValid && (!showMealTypes || mealTypes.length > 0) && items.length > 0 && itemsValid && !saving
 
   async function handleSave() {
@@ -111,13 +114,14 @@ export default function DishEditor({
         </div>
         <div className="rounded-2xl border border-gray-700/80 bg-gray-900/25 p-3">
           <FoodSearch
-            key={searchKey}
             hideHeader
+            resetAfterAdd
             allowManualEntry={!showMealTypes && !separateCustomizations}
             onClose={() => {}}
             onAdd={(item) => {
+              const key = nextItemKey.current++
+              setItemKeys(current => [...current, key])
               setItems(prev => [...prev, { ...item, is_customization: separateCustomizations }])
-              setSearchKey(k => k + 1)
             }}
           />
         </div>
@@ -134,35 +138,17 @@ export default function DishEditor({
           </div>
         )}
         {orderedItems.map(({ item, index: i }, position) => (
-          <Fragment key={`${item.food_name}-${i}`}>
+          <Fragment key={itemKeys[i]}>
           {separateCustomizations && (position === 0 || Boolean(orderedItems[position - 1].item.is_customization) !== Boolean(item.is_customization)) && (
             <p className="px-1 pt-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
               {item.is_customization ? 'Ingredienti aggiunti' : 'Ricetta base'}
             </p>
           )}
-          <div className="rounded-xl bg-gray-900/35 px-3 py-2.5 text-sm">
-            <div className="flex items-center justify-between gap-2">
-              <span className="min-w-0 truncate text-gray-300">{item.food_name}</span>
-              <button type="button" onClick={() => removeItem(i)} className="text-lg text-gray-600 hover:text-red-400" aria-label={`Rimuovi ${item.food_name}`}>✕</button>
-            </div>
-            <p className="mt-1 text-xs text-gray-500">P {formatDecimal(item.protein_g)}g · C {formatDecimal(item.carbs_g)}g · G {formatDecimal(item.fat_g)}g</p>
-            <p className="mt-0.5 text-[11px] text-gray-600">
-              Fibre {item.fiber_g == null ? '—' : `${formatDecimal(item.fiber_g)}g`} · Zuccheri {item.sugars_g == null ? '—' : `${formatDecimal(item.sugars_g)}g`} · Sale {item.salt_g == null ? '—' : `${formatDecimal(item.salt_g)}g`}
-            </p>
-            <div className="mt-2">
-              <IngredientQuantityInput
-                foodName={item.food_name}
-                category={item.category}
-                grams={item.quantity_g}
-                onChange={value => updateQuantity(i, value)}
-                pieceSize={item.piece_size}
-                pieceCount={item.piece_count}
-                onPieceChange={piece => updatePiece(i, piece)}
-                unit={item.unit}
-                compact
-              />
-            </div>
-          </div>
+          <IngredientPortionCard item={item} disabled={saving}
+            onQuantityChange={value => updateQuantity(i, value)} onPieceChange={piece => updatePiece(i, piece)}
+            onValidityChange={valid => setInvalidQuantities(current => valid ? current.filter(index => index !== i)
+              : current.includes(i) ? current : [...current, i])}
+            onRemove={() => removeItem(i)} />
           </Fragment>
         ))}
       </section>
@@ -187,16 +173,7 @@ export default function DishEditor({
 
       {error && <p className="text-sm text-red-400" role="alert">{error}</p>}
 
-      <div className="grid grid-cols-[auto_1fr] gap-3 pt-1">
-        <button type="button" onClick={onCancel}
-          className="rounded-2xl border border-gray-700 px-5 py-3.5 font-medium text-gray-400 hover:bg-gray-700">
-          Annulla
-        </button>
-        <button type="button" onClick={handleSave} disabled={!canSave}
-          className="rounded-2xl bg-primary-500 px-5 py-3.5 font-semibold shadow-lg shadow-primary-900/30 hover:bg-primary-400 disabled:opacity-40">
-          {saveLabel}
-        </button>
-      </div>
+      <FormActions onSave={() => void handleSave()} onCancel={onCancel} saveLabel={saveLabel} saving={saving} disabled={!canSave} />
     </div>
   )
 }

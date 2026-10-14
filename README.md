@@ -8,8 +8,8 @@ Part of the **Trackrs ecosystem**, alongside [Trackr](https://github.com/Luca404
 
 - **Meals:** daily calories and macros, saved recipes, single foods, drinks, editable recipe additions and occasional meals estimated from photos with editable ingredient details.
 - **Kitchen:** personal ingredients, recipe categories, custom icons and prepared batches with cooked-weight estimates and remaining portions.
-- **Food import:** basic-food search, Open Food Facts, barcode scanning, nutrition-label photos and manual entry.
-- **Fitness:** reusable gym plans with saved ordering, exercise search, set logging, rest timers and estimated session calories; duration-based logging for other activities.
+- **Food import:** basic-food search, Open Food Facts, barcode scanning, nutrition-label photos and manual entry through shared ingredient forms with expandable optional nutrients.
+- **Fitness:** reusable gym plans with saved ordering, exercise search, set logging, rest timers and estimated session calories; activity logging with optional kilometres for walking, running, cycling and treadmill.
 - **Goals and weight:** personalized calorie and macro targets, a weight history and automatic recalculation from a seven-day average after a change of at least 2%.
 - **Wellbeing:** daily habits, including total sugars and alcohol units, plus rolling seven-day totals and daily averages for legumes and fish; drinks support editable volume and alcohol strength.
 - **History and PWA:** calorie/workout trends, installation on mobile or desktop, an update prompt and page-load recovery.
@@ -18,7 +18,7 @@ The Kitchen category buttons appear in one row above search. Select breakfast, l
 
 Diary ingredients retain their order, keeping automatic icons based on the first ingredient consistent. Custom icons take precedence. Gym plans can be reordered with up/down controls; new plans are added at the end.
 
-Overview values use whole numbers; details use at most one decimal. Calculations retain stored precision. Completed gym sessions contribute to the daily burned total; exercise calories are not added back to the calorie budget.
+Overview values use whole numbers; summaries use at most one decimal. Nutrition edit fields preserve their entered precision. Completed gym sessions contribute to the daily burned total and both History ranges; exercise calories are not added back to the calorie budget. [The activity/history guide](docs/attivita-e-storico.md) documents distance estimates and historical body weight.
 
 The meal-page habit recap uses compact square tiles with icons and status marks, without numbers inside. Their color fills in proportion to the target for both minimum goals and maximum limits, including amounts below a maximum; exceeding a maximum turns the full tile orange. Amounts and limit multiples appear in the dedicated detail page. Legumes and fish use the seven calendar days ending on the selected date, with a daily average and the existing weekly target; their progress no longer resets on Monday. The average always divides by seven, including days without diary entries. Unavailable history remains unknown. See [the habit guide](docs/buone-abitudini.md).
 
@@ -82,6 +82,7 @@ SQL tests require an isolated PostgreSQL database:
 - `supabase/tests/alcohol_strength.sql`: run after replaying all migrations; checks alcohol persistence, energy calculations, portions and user isolation.
 - `supabase/tests/prepared_weight_correction.sql`: run after all migrations; checks remainder corrections, historical nutrition, unchanged weighed portions, validation and user isolation.
 - `supabase/tests/ordering.sql`: run after migrations through `20261004140000` only. The test creates historical fixtures, applies both ordering migrations inside a transaction, verifies diary and plan ordering, then rolls back.
+- `supabase/tests/workout_distance.sql`: use a fresh `fittrackr_distance_test_*` database with the minimal fixture table described in the file, then apply `20261014120000_workout_distance.sql`. Checks nullable distance, decimal storage and invalid values; refuses application databases.
 
 ## Deployment
 
@@ -113,6 +114,8 @@ Use [the documentation index](docs/README.md) for current guides, shared securit
 - [Habit recap and rolling seven-day averages](docs/buone-abitudini.md)
 - [Prepared dishes and cooked weight](docs/peso-piatti-preparati.md)
 - [Gym training and sample plans](docs/allenamenti-palestra.md)
+- [Activity distance and gym calories in History](docs/attivita-e-storico.md)
+- [Shared ingredient and dish entry forms](docs/inserimento-ingredienti.md)
 - [Simplification report and verification results](docs/rapporto-semplificazione-2026-09-29.md)
 
 ## Limitations

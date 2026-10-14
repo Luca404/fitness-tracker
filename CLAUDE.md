@@ -24,6 +24,16 @@ Released on 2026-10-08 with commit `8bf11f3`: Supabase deployment, Vercel Produc
 
 `GoodHabits` uses square tiles with only icons/status marks in the Pasti recap. `habitTileFill` fills both minimum and maximum targets using value/target, capped at 100%; exceeded maximums turn orange. Keep amounts, daily averages and limit multiples in the Benessere detail, without adding numeric text inside recap tiles. Legumes and fish use `habitWindow(selectedDate)` from the selected date minus six days through the selected date, preserving weekly targets and dividing the total by seven for the daily average. `getWeeklyMeals` accepts these rolling ranges; diary revisions invalidate its cache. Missing history stays unknown while daily rows remain available. See [the current habit guide](docs/buone-abitudini.md).
 
+## Activity distance, history and shared forms
+
+`Workout.distance_km` is optional. Walking, running, cycling and treadmill use speed-based MET bands when distance is entered; other activities and empty distances keep reference METs. Do not recalculate stored workout calories when rendering history. Migration `20261014120000_workout_distance` is applied online and locally; the local database still has older unrelated fitness schema.
+
+`getGymSessionsForRange` hydrates completed sessions and their sets. `buildHistoryData` combines their existing calorie estimator with stored workout calories, using the latest body weight at/before each session date and current weight only as fallback. Both History ranges and averages include gym calories. See [activities/history](docs/attivita-e-storico.md).
+
+Reuse `IngredientEntryActions`, `NutritionFields`, `IngredientPortionCard` and `FormActions` across pantry, meal and dish editors. Nutrition fields must state portion versus per-100g/ml basis and retain null optional nutrients. `IngredientQuantityInput` reports draft validity: do not save the previous quantity when the visible draft is blank/invalid. Keep stable ingredient keys when removing rows. `FoodSearch.resetAfterAdd` clears selection without reloading the pantry. Manual pantry entry goes directly to the common review. See [ingredient entry](docs/inserimento-ingredienti.md).
+
+The user performs visual QA. Do not open a browser to test graphics; use appropriate build, lint, logic and isolated database checks.
+
 ## Commands
 
 ```bash

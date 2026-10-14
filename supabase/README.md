@@ -1,6 +1,6 @@
 # Shared Supabase workflow
 
-Reviewed on 2026-10-04. FitTrackr and `../trackr/` link to hosted project `nitbisweytddtigoebeh`. Auth users, database roles/default grants and migration history are shared; FitTrackr application tables have user ownership policies. A frontend URL at `http://127.0.0.1:54321` uses a separate local database.
+Reviewed on 2026-10-14. FitTrackr and `../trackr/` link to hosted project `nitbisweytddtigoebeh`. Auth users, database roles/default grants and migration history are shared; FitTrackr application tables have user ownership policies. A frontend URL at `http://127.0.0.1:54321` uses a separate local database.
 
 Before changing the hosted schema:
 
@@ -32,3 +32,9 @@ On 2026-10-08, Trackr applied shared infrastructure migration `20261008120000_re
 The existing `OPENAI_API_KEY` and `OPENAI_VISION_MODEL` secrets were present. `OPENAI_MEAL_PHOTO_MODEL` is an optional task-specific override. The deployed endpoint returned `OPTIONS 200` and `POST 401` with the application's invalid-session message for an unauthenticated request. These probes sent no photos and did not test a real authenticated OpenAI analysis.
 
 No schema or grant changes were needed for this feature: `ai_meal_photo` is stored in the existing source text field and the existing diary RPCs handle registration and edits. This Edge Function release is separate from the shared keepalive migration above. See [the meal-photo guide](../docs/pasti-da-foto.md) for behavior, test results and release status.
+
+## Workout distance — 2026-10-14
+
+`20261014120000_workout_distance` was applied to the hosted project after a dry-run listing only this migration. It adds nullable `workouts.distance_km` with a positive/maximum-1000 constraint; NULL preserves existing rows and duration-only clients. No RPC, grant or ownership policy changes are required. The SQL is mirrored in Trackr.
+
+The same single migration was applied to the local application database in a transaction with its ledger entry, after a private full backup. Unrelated historical fitness upgrades were not replayed. The SQL regression test ran in an isolated `fittrackr_distance_test_*` database with a minimal synthetic workouts table and verified NULL, decimals, bounds, NaN and infinity. See [the activity/history guide](../docs/attivita-e-storico.md).

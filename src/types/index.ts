@@ -104,6 +104,7 @@ export interface Workout {
   date: string       // YYYY-MM-DD
   activity: string   // key in MET_ACTIVITIES
   duration_min: number
+  distance_km?: number | null
   calories_burned: number
   notes: string | null
   created_at: string

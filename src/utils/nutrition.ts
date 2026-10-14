@@ -10,6 +10,20 @@ interface NutritionValues {
   salt_g?: number | null
 }
 
+export function nutritionValidationError(values: NutritionValues & { saturated_fat_g?: number | null }): string | null {
+  const required = [values.calories, values.protein_g, values.carbs_g, values.fat_g]
+  const optional = [values.fiber_g, values.sugars_g, values.salt_g, values.saturated_fat_g]
+  if (required.some(value => !Number.isFinite(value) || value < 0)
+    || optional.some(value => value != null && (!Number.isFinite(value) || value < 0))) {
+    return 'I valori nutrizionali devono essere numeri non negativi'
+  }
+  if ((values.sugars_g != null && values.sugars_g > values.carbs_g)
+    || (values.saturated_fat_g != null && values.saturated_fat_g > values.fat_g)) {
+    return 'Grassi saturi e zuccheri non possono superare i rispettivi totali'
+  }
+  return null
+}
+
 /** Scale without losing unknown nutrients; calculations keep two decimals. */
 export function scaleNutrition(values: NutritionValues, factor: number) {
   const optional = (value: number | null | undefined) => value == null ? null : roundToTwo(value * factor)

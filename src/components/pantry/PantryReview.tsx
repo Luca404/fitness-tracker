@@ -1,10 +1,11 @@
+import FormActions from '../common/FormActions'
 import AlcoholStrengthInput from '../meals/AlcoholStrengthInput'
 import { validAlcoholStrength } from '../../utils/alcohol'
 import OpenFoodFactsDetails from '../common/OpenFoodFactsDetails'
 import { FOOD_CATEGORIES, FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import { normalizeBarcode } from '../../services/barcodeProducts'
 import type { FoodCategory } from '../../types'
-import type { PendingFood } from '../../utils/pantryDraft'
+import { manualNutritionError, type PendingFood } from '../../utils/pantryDraft'
 import { formatDecimal, roundToTwo } from '../../utils/decimal'
 import { PendingNutritionFields } from './PantryNutritionFields'
 
@@ -19,6 +20,7 @@ export default function PantryReview({ pending, setPending, editingItemId, analy
   handleAddToPantry: () => Promise<void>
   resetAddFlow: () => void
 }) {
+  const nutritionError = manualNutritionError(pending)
   return (
     <div className="space-y-4">
       <div className="rounded-2xl bg-gray-800 p-4">
@@ -121,11 +123,6 @@ export default function PantryReview({ pending, setPending, editingItemId, analy
               onChange={event => setPending({ ...pending, allergens: event.target.value || null })}
               className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 outline-none focus:border-primary-500" />
           </div>
-          <div>
-            <p className="text-sm text-gray-400">Valori nutrizionali per 100 {pending.nutrition_basis === 'per_100ml' ? 'ml' : 'g'}</p>
-            <PendingNutritionFields food={pending}
-              onChange={(key, value) => setPending({ ...pending, [key]: value === null ? null : Math.max(0, value) })} />
-          </div>
           {pending.analysis_requires_review && (
             <label className="flex items-start gap-2 rounded-xl border border-gray-700 bg-gray-900/50 p-3 text-xs text-gray-300">
               <input type="checkbox" checked={analysisReviewAcknowledged}
@@ -136,13 +133,11 @@ export default function PantryReview({ pending, setPending, editingItemId, analy
           )}
         </div>
       )}
-      {editingItemId && pending.source !== 'ai_photo' && (
-        <div className="rounded-2xl bg-gray-800 p-4">
-          <p className="text-sm text-gray-400">Valori nutrizionali per 100 {pending.nutrition_basis === 'per_100ml' ? 'ml' : 'g'}</p>
-          <PendingNutritionFields food={pending}
-            onChange={(key, value) => setPending({ ...pending, [key]: value })} />
-        </div>
-      )}
+      <div className="rounded-2xl border border-gray-700 p-4">
+        <PendingNutritionFields food={pending} disabled={savingItem}
+          onChange={(key, value) => setPending({ ...pending, [key]: value })} />
+        {nutritionError && <p role="alert" className="mt-3 text-xs text-amber-300">{nutritionError}</p>}
+      </div>
       <div>
         <label className="text-sm text-gray-400" htmlFor="pending-barcode">Codice a barre</label>
         <input
@@ -171,19 +166,12 @@ export default function PantryReview({ pending, setPending, editingItemId, analy
       </div>
       {pending.category === 'alcohol' && <AlcoholStrengthInput value={pending.alcohol_abv ?? null}
         onChange={value => setPending({ ...pending, alcohol_abv: value })} disabled={savingItem} />}
-      <button type="button" onClick={handleAddToPantry}
-        disabled={savingItem
+      <FormActions onSave={() => void handleAddToPantry()} onCancel={resetAddFlow} saving={savingItem}
+        saveLabel={editingItemId ? 'Salva modifiche' : 'Salva ingrediente'}
+        disabled={Boolean(nutritionError)
           || (pending.alcohol_abv != null && !validAlcoholStrength(pending.alcohol_abv))
-          || !pending.name.trim()
-          || Boolean(pending.barcode && !normalizeBarcode(pending.barcode))
-          || Boolean(pending.analysis_requires_review && !analysisReviewAcknowledged)}
-        className="w-full py-3 bg-primary-600 rounded-lg font-semibold disabled:opacity-40">
-        {savingItem ? 'Salvataggio…' : editingItemId ? 'Salva modifiche' : 'Salva ingrediente'}
-      </button>
-      <button type="button" onClick={resetAddFlow} disabled={savingItem}
-        className="text-sm text-gray-500 text-center w-full disabled:opacity-40">
-        Annulla
-      </button>
+          || !pending.name.trim() || Boolean(pending.barcode && !normalizeBarcode(pending.barcode))
+          || Boolean(pending.analysis_requires_review && !analysisReviewAcknowledged)} />
     </div>
   )
 }

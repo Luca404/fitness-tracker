@@ -1,6 +1,7 @@
 import type { NutritionBasis, AnalysisConfidence } from '../services/nutritionLabel'
 import type { PantryItem, PantryUnit, FoodSource, FoodCategory } from '../types'
 import { normalizeBarcode } from '../services/barcodeProducts'
+import { nutritionValidationError } from './nutrition'
 
 export interface PendingFood {
   barcode?: string | null
@@ -59,18 +60,20 @@ export const PHOTO_NUTRIENT_FIELDS = [
 ] as const
 
 export type NutrientFieldKey = (typeof PHOTO_NUTRIENT_FIELDS)[number]['key']
+export function emptyManualFood(): PendingFood {
+  return {
+    name: '', calories_100g: 0, protein_100g: 0, carbs_100g: 0, fat_100g: 0,
+    fiber_100g: null, sugars_100g: null, saturated_fat_100g: null, salt_100g: null,
+    category: 'other', source: 'manual', food_key: null, off_food_id: null,
+  }
+}
 export function manualNutritionError(food: Pick<PendingFood,
   'calories_100g' | 'protein_100g' | 'carbs_100g' | 'fat_100g'
   | 'fiber_100g' | 'sugars_100g' | 'saturated_fat_100g' | 'salt_100g'>): string | null {
-  if (PHOTO_NUTRIENT_FIELDS.some(({ key }) => {
-    const value = food[key]
-    return value != null && (!Number.isFinite(value) || value < 0)
-  })) return 'I valori nutrizionali devono essere numeri non negativi'
-  if ((food.saturated_fat_100g != null && food.saturated_fat_100g > food.fat_100g)
-    || (food.sugars_100g != null && food.sugars_100g > food.carbs_100g)) {
-    return 'Grassi saturi e zuccheri non possono superare i rispettivi totali'
-  }
-  return null
+  return nutritionValidationError({
+    calories: food.calories_100g, protein_g: food.protein_100g, carbs_g: food.carbs_100g, fat_g: food.fat_100g,
+    saturated_fat_g: food.saturated_fat_100g, sugars_g: food.sugars_100g, salt_g: food.salt_100g, fiber_g: food.fiber_100g,
+  })
 }
 
 function aiPhotoMetadata(food: PendingFood): Record<string, unknown> {

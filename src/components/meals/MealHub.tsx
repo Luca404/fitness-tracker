@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
 import * as api from '../../services/api'
@@ -6,10 +6,9 @@ import DishEditor, { type DishItemDraft } from './DishEditor'
 import DishIconChoices from '../kitchen/DishIconChoices'
 import Modal from '../common/Modal'
 import FoodSearch from './FoodSearch'
-import IngredientQuantityInput from './IngredientQuantityInput'
+import IngredientPortionCard from './IngredientPortionCard'
 import BeveragePicker from './BeveragePicker'
 import MealPhotoCapture from './MealPhotoCapture'
-import { FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import { getDishIcon, getFoodIcon } from '../../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
 import { dishMealTypeLabels, dishesForMeal } from '../../data/dishMealTypes'
@@ -53,6 +52,8 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   const [iconDish, setIconDish] = useState<Dish | null>(null)
   const [iconSaving, setIconSaving] = useState(false)
   const [itemQuantities, setItemQuantities] = useState<Record<string, string>>({})
+  const [invalidQuantities, setInvalidQuantities] = useState<string[]>([])
+  const [pieceOverrides, setPieceOverrides] = useState<Record<string, { size: PieceSize; count: number } | null>>({})
   const [pendingPreparation, setPendingPreparation] = useState<{
     name: string; items: DishItemDraft[]; sourceDishId: string | null; icon: string | null
   } | null>(null)
@@ -68,7 +69,8 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   const [preparedGrams, setPreparedGrams] = useState(0)
   const [consumingPrepared, setConsumingPrepared] = useState(false)
   const [extraItems, setExtraItems] = useState<DishItemDraft[]>([])
-  const [extraSearchKey, setExtraSearchKey] = useState(0)
+  const [extraKeys, setExtraKeys] = useState<number[]>([])
+  const nextExtraKey = useRef(0)
   const [addingExtra, setAddingExtra] = useState(false)
   const visibleDishes = dishesForMeal(dishes, mealType)
 
@@ -114,7 +116,10 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   function startPick(dish: Dish) {
     setPickingDish(dish)
     setItemQuantities({})
+    setInvalidQuantities([])
+    setPieceOverrides({})
     setExtraItems([])
+    setExtraKeys([])
     setAddingExtra(false)
     setMode('pick')
   }
@@ -181,7 +186,9 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
       const rawQuantity = Number(itemQuantities[i.id] ?? i.quantity_g)
       const quantity = Number.isFinite(rawQuantity) && rawQuantity > 0 ? roundToTwo(rawQuantity) : 0
       const factor = quantity / i.quantity_g
-      const pieceCount = i.piece_count == null ? null : roundToTwo(i.piece_count * factor) || null
+      const override = pieceOverrides[i.id]
+      const pieceCount = override === undefined
+        ? (i.piece_count == null ? null : roundToTwo(i.piece_count * factor) || null) : override?.count ?? null
       return {
         dish_item_id: i.id,
         is_customization: false,
@@ -190,7 +197,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
         unit: i.unit ?? 'g',
         alcohol_abv: i.alcohol_abv ?? null,
         piece_count: pieceCount,
-        piece_size: pieceCount == null ? null : i.piece_size ?? null,
+        piece_size: pieceCount == null ? null : override?.size ?? i.piece_size ?? null,
         ...scaleNutrition(i, factor),
         source: i.source,
         off_food_id: i.off_food_id,
@@ -203,10 +210,10 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   }
 
   function validPickedQuantities(): boolean {
-    return pickingDish?.items.every(item => {
+    return invalidQuantities.length === 0 && (pickingDish?.items.every(item => {
       const quantity = Number(itemQuantities[item.id] ?? item.quantity_g)
       return Number.isFinite(quantity) && roundToTwo(quantity) > 0
-    }) ?? false
+    }) ?? false)
   }
 
   async function logPickedDish() {
@@ -578,45 +585,27 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Ingredienti del piatto</p>
             <p className="mt-0.5 text-xs text-gray-500">Le quantità valgono solo per questo inserimento.</p>
           </div>
-          {pickingDish.items.map(item => (
-            <label key={item.id} className="flex items-center gap-3 rounded-xl border border-gray-700/70 bg-gray-900/30 px-3 py-2 text-sm focus-within:border-primary-500">
-              <span className="min-w-0 flex-1 truncate text-gray-300">{item.food_name}</span>
-              <input type="number" min="0.1" step="0.1" inputMode="decimal"
-                aria-label={`${item.unit === 'ml' ? 'Millilitri' : 'Grammi'} di ${item.food_name}`}
-                value={itemQuantities[item.id] ?? formatDecimal(item.quantity_g)}
-                onChange={event => setItemQuantities(current => ({ ...current, [item.id]: event.target.value }))}
-                onBlur={event => {
-                  if (itemQuantities[item.id] === undefined) return
-                  const quantity = Number(event.target.value)
-                  if (Number.isFinite(quantity) && quantity > 0) setItemQuantities(current => ({ ...current, [item.id]: formatDecimal(quantity) }))
-                }}
-                onFocus={event => event.currentTarget.select()}
-                className="w-16 rounded-lg border border-gray-600 bg-gray-800 px-2 py-1.5 text-right font-semibold outline-none focus:border-primary-500" />
-              <span className="w-5 text-xs text-gray-500">{item.unit ?? 'g'}</span>
-            </label>
+          {pickingDish.items.map((item, index) => (
+            <IngredientPortionCard key={item.id} item={pickedItems()[index]} disabled={loggingDish}
+              onQuantityChange={quantity => setItemQuantities(current => ({ ...current, [item.id]: String(quantity) }))}
+              onPieceChange={piece => setPieceOverrides(current => ({ ...current, [item.id]: piece }))}
+              onValidityChange={valid => setInvalidQuantities(current => valid ? current.filter(id => id !== item.id)
+                : current.includes(item.id) ? current : [...current, item.id])} />
           ))}
           {extraItems.map((item, index) => (
-            <div key={`${item.food_name}-${index}`} className="rounded-xl bg-primary-950/20 p-3 text-sm ring-1 ring-primary-500/15">
-              <div className="flex items-center gap-2">
-                <span>{FOOD_CATEGORY_BY_ID[item.category]?.icon ?? '📦'}</span>
-                <span className="min-w-0 flex-1 truncate text-gray-300">{item.food_name}</span>
-                <button type="button" onClick={() => setExtraItems(items => items.filter((_, itemIndex) => itemIndex !== index))}
-                  className="text-gray-600 hover:text-red-400" aria-label={`Rimuovi ${item.food_name}`}>✕</button>
-              </div>
-              <div className="mt-2 pl-7">
-                <IngredientQuantityInput
-                  foodName={item.food_name}
-                  category={item.category}
-                  grams={item.quantity_g}
-                  unit={item.unit}
-                  compact
-                  onChange={quantity => updateExtraQuantity(index, quantity)}
-                  pieceSize={item.piece_size}
-                  pieceCount={item.piece_count}
-                  onPieceChange={piece => updateExtraPiece(index, piece)}
-                />
-              </div>
-            </div>
+            <IngredientPortionCard key={`extra:${extraKeys[index]}`} item={item} disabled={loggingDish}
+              onQuantityChange={quantity => updateExtraQuantity(index, quantity)} onPieceChange={piece => updateExtraPiece(index, piece)}
+              onValidityChange={valid => setInvalidQuantities(current => valid ? current.filter(id => id !== `extra:${index}`)
+                : current.includes(`extra:${index}`) ? current : [...current, `extra:${index}`])}
+              onRemove={() => {
+                setExtraItems(items => items.filter((_, itemIndex) => itemIndex !== index))
+                setExtraKeys(keys => keys.filter((_, itemIndex) => itemIndex !== index))
+                setInvalidQuantities(current => current.flatMap(id => {
+                  if (!id.startsWith('extra:')) return [id]
+                  const previous = Number(id.slice(6))
+                  return previous === index ? [] : [`extra:${previous > index ? previous - 1 : previous}`]
+                }))
+              }} />
           ))}
         </div>
         <section className="rounded-2xl border border-gray-700 bg-gray-900/25 p-4">
@@ -630,13 +619,14 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           {addingExtra && (
             <div className="mt-4 border-t border-gray-700 pt-4">
               <FoodSearch
-                key={extraSearchKey}
                 hideHeader
+                resetAfterAdd
                 allowManualEntry={false}
                 onClose={() => {}}
                 onAdd={item => {
+                  const key = nextExtraKey.current++
+                  setExtraKeys(keys => [...keys, key])
                   setExtraItems(items => [...items, item])
-                  setExtraSearchKey(key => key + 1)
                 }}
               />
             </div>

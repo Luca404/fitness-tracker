@@ -17,24 +17,22 @@ export default function WorkoutPage({ embedded = false }: { embedded?: boolean }
 
   const totalBurned = workouts.reduce((s, w) => s + w.calories_burned, 0)
 
-  async function handleSave(activityKey: string, durationMin: number, caloriesBurned: number) {
-    if (!user) return
-    if (durationMin <= 0 || caloriesBurned < 0) {
-      showToast('Durata workout non valida')
-      return
-    }
+  async function handleSave(activityKey: string, durationMin: number, caloriesBurned: number, distanceKm: number | null) {
+    if (!user) throw new Error('Sessione non valida')
     try {
       await addWorkout({
         user_id: user.id,
         date: selectedDate,
         activity: activityKey,
         duration_min: durationMin,
+        distance_km: distanceKm,
         calories_burned: caloriesBurned,
         notes: null,
       })
       setSelectedActivity(null)
     } catch {
       showToast('Errore salvataggio workout')
+      throw new Error('Salvataggio non riuscito')
     }
   }
 
@@ -54,7 +52,7 @@ export default function WorkoutPage({ embedded = false }: { embedded?: boolean }
 
       <details className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
         <summary className="cursor-pointer font-semibold">Altre attività</summary>
-        <p className="mt-2 text-xs text-gray-500">Per registrare solo durata e calorie stimate. Per serie e carichi usa una scheda palestra.</p>
+        <p className="mt-2 text-xs text-gray-500">Registra durata, distanza facoltativa e calorie stimate. Per serie e carichi usa una scheda palestra.</p>
         <div className="mt-4"><ActivityGrid onSelect={setSelectedActivity} /></div>
       </details>
 
