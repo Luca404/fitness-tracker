@@ -1,6 +1,6 @@
 # Documentazione fitTrackr
 
-Revisione del 14 ottobre 2026: distanza facoltativa delle attività, palestra nello storico e moduli ingredienti condivisi, oltre ai pasti occasionali da foto. L'app usa un ID di build generato da Vite per gli aggiornamenti PWA; non ha una versione applicativa numerica da incrementare nelle guide.
+Revisione del 15 ottobre 2026: miglioramenti all'editor delle schede palestra (catalogo personale, serie cancellabili e inclinazione panca), oltre a distanza delle attività, palestra nello storico e moduli ingredienti condivisi. La nuova migrazione palestra è stata verificata in isolamento e applicata al database online il 15 ottobre; l’istanza locale resta separata. L'app usa un ID di build generato da Vite per gli aggiornamenti PWA; non ha una versione applicativa numerica da incrementare nelle guide.
 
 | Documento | Contenuto |
 | --- | --- |

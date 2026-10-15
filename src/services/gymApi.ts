@@ -1,9 +1,19 @@
 import { supabase } from './supabase'
 import { groupBy } from '../utils/groupBy'
+import type { GymExerciseDefinition } from '../data/gymExercises'
 import type { GymPlan, GymPlanExercise, GymSession, GymSet } from '../types'
 
 export type GymPlanExerciseInput = Pick<GymPlanExercise,
-  'exercise_key' | 'exercise_name' | 'equipment' | 'target_sets' | 'target_reps' | 'target_reps_max' | 'per_side'>
+  'exercise_key' | 'exercise_name' | 'equipment' | 'bench_angle' | 'target_sets' | 'target_reps' | 'target_reps_max' | 'per_side'>
+
+export async function getCustomGymExercises(): Promise<GymExerciseDefinition[]> {
+  const { data, error } = await supabase.from('gym_custom_exercises').select('id, exercise_name, equipment').order('exercise_name')
+  if (error) throw error
+  return (data ?? []).map(exercise => ({
+    key: `custom:${exercise.id}`, name: exercise.exercise_name, equipment: exercise.equipment,
+    muscle: 'Personalizzato', custom: true,
+  }))
+}
 
 export async function getGymPlans(): Promise<GymPlan[]> {
   const { data: plans, error } = await supabase.from('gym_plans').select('*').order('position').order('created_at').order('id')

@@ -1,9 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({ from: vi.fn() }))
 vi.mock('./supabase', () => ({ supabase: { from: mocks.from } }))
-import { getGymSessionsForRange } from './gymApi'
+import { getCustomGymExercises, getGymSessionsForRange } from './gymApi'
 
 beforeEach(() => vi.clearAllMocks())
+
+it('loads saved personal exercises as reusable custom search results', async () => {
+  const order = vi.fn().mockResolvedValue({ data: [
+    { id: 'exercise-1', exercise_name: 'Croci su panca', equipment: 'Manubri' },
+  ], error: null })
+  mocks.from.mockReturnValue({ select: vi.fn(() => ({ order })) })
+  expect(await getCustomGymExercises()).toEqual([
+    { key: 'custom:exercise-1', name: 'Croci su panca', equipment: 'Manubri', muscle: 'Personalizzato', custom: true },
+  ])
+  expect(mocks.from).toHaveBeenCalledWith('gym_custom_exercises')
+  expect(order).toHaveBeenCalledWith('exercise_name')
+})
+
+it('reports personal catalog read failures instead of returning an empty catalog', async () => {
+  const error = new Error('offline')
+  mocks.from.mockReturnValue({ select: vi.fn(() => ({ order: vi.fn().mockResolvedValue({ data: null, error }) })) })
+  await expect(getCustomGymExercises()).rejects.toBe(error)
+})
 
 describe('gym history loading', () => {
   it('loads completed sessions for the requested range and attaches all their sets', async () => {

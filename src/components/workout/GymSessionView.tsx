@@ -203,6 +203,7 @@ export default function GymSessionView({ session, onBack, onCompleted, onDeleted
         exercise_key: last.exercise_key,
         exercise_name: last.exercise_name,
         equipment: last.equipment,
+        bench_angle: last.bench_angle ?? null,
         set_number: last.set_number + 1,
         target_reps: last.target_reps,
         target_reps_max: last.target_reps_max,
@@ -276,6 +277,7 @@ export default function GymSessionView({ session, onBack, onCompleted, onDeleted
         <div className="px-1">
           <h3 className="text-lg font-semibold">{activeGroup[0].exercise_name}</h3>
           <p className="text-xs text-gray-400">{activeGroup[0].equipment}{activeGroup[0].equipment === 'Manubri' ? ' · peso per manubrio' : ''} · {activeGroup.filter(set => set.done).length}/{activeGroup.length} serie</p>
+          {activeGroup[0].bench_angle != null && <p className="mt-1 text-xs text-primary-300">Inclinazione panca: {activeGroup[0].bench_angle}°</p>}
         </div>
         {activeGroup.map(set => <GymSetRow key={set.id} set={set} draft={drafts[set.id]}
           onDraftChange={draft => setDrafts(current => ({ ...current, [set.id]: draft }))}

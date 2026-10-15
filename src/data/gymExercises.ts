@@ -4,6 +4,7 @@ export interface GymExerciseDefinition {
   equipment: string
   muscle: string
   aliases?: string[]
+  custom?: boolean
 }
 
 export const GYM_EXERCISES: GymExerciseDefinition[] = [
@@ -60,10 +61,19 @@ function normalize(value: string): string {
     .replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
 }
 
-export function searchGymExercises(query: string): GymExerciseDefinition[] {
+export function searchGymExercises(query: string, customExercises: GymExerciseDefinition[] = []): GymExerciseDefinition[] {
+  const identityOf = (exercise: GymExerciseDefinition) => `${normalize(exercise.name)}:${normalize(exercise.equipment)}`
+  const seen = new Set(GYM_EXERCISES.map(identityOf))
+  const personal = customExercises.filter(exercise => {
+    const identity = identityOf(exercise)
+    if (seen.has(identity)) return false
+    seen.add(identity)
+    return true
+  })
+  const catalog = [...personal, ...GYM_EXERCISES]
   const terms = normalize(query).split(/\s+/).filter(Boolean)
-  if (terms.length === 0) return GYM_EXERCISES
-  return GYM_EXERCISES.filter(exercise => {
+  if (terms.length === 0) return catalog
+  return catalog.filter(exercise => {
     const searchable = normalize([
       exercise.name, exercise.equipment, exercise.muscle, ...(exercise.aliases ?? []),
     ].join(' '))

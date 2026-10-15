@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { searchGymExercises } from './gymExercises'
 
 describe('gym exercise search', () => {
+  it('searches personal exercises by name/equipment and avoids duplicate catalog entries', () => {
+    const custom = { key: 'custom:1', name: 'Croci su panca', equipment: 'Manubri', muscle: 'Personalizzato', custom: true }
+    const duplicate = { ...custom, key: 'custom:2', name: 'croci su PANCA' }
+    const standard = { ...custom, key: 'custom:3', name: 'Panca piana', equipment: 'Bilanciere' }
+    expect(searchGymExercises('croci manubri', [custom, duplicate, standard])).toEqual([custom])
+    expect(searchGymExercises('panca piana', [standard])).toHaveLength(1)
+  })
+
   it('finds exercises by equipment and name, ignoring accents', () => {
     expect(searchGymExercises('manubri rematore').map(exercise => exercise.key)).toContain('dumbbell-row')
     expect(searchGymExercises('panca scott').map(exercise => exercise.key)).toContain('preacher-curl')

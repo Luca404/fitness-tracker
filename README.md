@@ -18,6 +18,8 @@ The Kitchen category buttons appear in one row above search. Select breakfast, l
 
 Diary ingredients retain their order, keeping automatic icons based on the first ingredient consistent. Custom icons take precedence. Gym plans can be reordered with up/down controls; new plans are added at the end.
 
+The gym editor now supports reusable personal exercises, a fully clearable set-count field and optional bench angles preserved in session history. The `20261015120000_gym_exercise_catalog_and_bench` migration was applied to hosted Supabase on 2026-10-15 after isolated tests; the older local application database remains separate. See [the gym guide](docs/allenamenti-palestra.md).
+
 Overview values use whole numbers; summaries use at most one decimal. Nutrition edit fields preserve their entered precision. Completed gym sessions contribute to the daily burned total and both History ranges; exercise calories are not added back to the calorie budget. [The activity/history guide](docs/attivita-e-storico.md) documents distance estimates and historical body weight.
 
 The meal-page habit recap uses compact square tiles with icons and status marks, without numbers inside. Their color fills in proportion to the target for both minimum goals and maximum limits, including amounts below a maximum; exceeding a maximum turns the full tile orange. Amounts and limit multiples appear in the dedicated detail page. Legumes and fish use the seven calendar days ending on the selected date, with a daily average and the existing weekly target; their progress no longer resets on Monday. The average always divides by seven, including days without diary entries. Unavailable history remains unknown. See [the habit guide](docs/buone-abitudini.md).
@@ -83,6 +85,7 @@ SQL tests require an isolated PostgreSQL database:
 - `supabase/tests/prepared_weight_correction.sql`: run after all migrations; checks remainder corrections, historical nutrition, unchanged weighed portions, validation and user isolation.
 - `supabase/tests/ordering.sql`: run after migrations through `20261004140000` only. The test creates historical fixtures, applies both ordering migrations inside a transaction, verifies diary and plan ordering, then rolls back.
 - `supabase/tests/workout_distance.sql`: use a fresh `fittrackr_distance_test_*` database with the minimal fixture table described in the file, then apply `20261014120000_workout_distance.sql`. Checks nullable distance, decimal storage and invalid values; refuses application databases.
+- `supabase/tests/gym_exercise_catalog_and_bench.sql`: self-contained test for a fresh empty `fittrackr_gym_test_*` database. Covers personal exercise backfill/deduplication, atomic saves, bench snapshots, previous-load matching, user isolation and explicit grants. Rolls back its fixture schema.
 
 ## Deployment
 

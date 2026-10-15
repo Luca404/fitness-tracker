@@ -9,6 +9,7 @@ import type { GymPlan, GymSession, GymSet, WeightLog } from '../../types'
 import { formatDecimal } from '../../utils/decimal'
 import { estimateGymSessionCalories, formatGymDuration, sessionDurationMinutes, weightForSessionDate } from '../../utils/gymSessionSummary'
 import GymPlanEditor from './GymPlanEditor'
+import type { GymExerciseDefinition } from '../../data/gymExercises'
 
 function formatPerformance(set: GymSet): string {
   return `${set.weight_kg == null ? 'Corpo libero' : `${formatDecimal(set.weight_kg)} kg`} × ${set.reps} rip.`
@@ -20,7 +21,7 @@ function gymProgress(sessions: GymSession[]) {
     .sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? ''))
   for (const session of completed) {
     for (const set of session.sets.filter(item => item.done).sort((a, b) => b.set_number - a.set_number)) {
-      const key = set.exercise_key ?? `${set.exercise_name.toLowerCase()}:${set.equipment.toLowerCase()}`
+      const key = `${set.exercise_key ?? set.exercise_name.toLowerCase()}:${set.equipment.toLowerCase()}:${set.bench_angle ?? 'unspecified'}`
       const previous = history.get(key)
       if (!previous) {
         history.set(key, { name: set.exercise_name, equipment: set.equipment, last: set, best: set })
@@ -74,6 +75,8 @@ export default function GymTraining() {
   const { selectedDate } = useSettings()
   const navigate = useNavigate()
   const [plans, setPlans] = useState<GymPlan[]>([])
+  const [customExercises, setCustomExercises] = useState<GymExerciseDefinition[]>([])
+  const [catalogError, setCatalogError] = useState(false)
   const [sessions, setSessions] = useState<GymSession[]>([])
   const [weightLogs, setWeightLogs] = useState<WeightLog[]>([])
   const [editingPlan, setEditingPlan] = useState<{ plan: GymPlan | null } | null>(null)
@@ -132,11 +135,22 @@ export default function GymTraining() {
 
   useEffect(() => { void refresh() }, [refresh])
 
+  const refreshCatalog = useCallback(async () => {
+    try {
+      setCustomExercises(await gymApi.getCustomGymExercises())
+      setCatalogError(false)
+    } catch {
+      setCatalogError(true)
+    }
+  }, [])
+  useEffect(() => { void refreshCatalog() }, [refreshCatalog])
+
   async function savePlan(name: string, exercises: gymApi.GymPlanExerciseInput[]) {
     if (!user) return
     await gymApi.saveGymPlan(user.id, editingPlan?.plan?.id ?? null, name, exercises)
     setEditingPlan(null)
     await refresh()
+    await refreshCatalog()
     showToast('Scheda salvata')
   }
 
@@ -166,6 +180,7 @@ export default function GymTraining() {
   }
 
   if (editingPlan) return <GymPlanEditor key={editingPlan.plan?.id ?? 'new'} plan={editingPlan.plan}
+    customExercises={customExercises} catalogError={catalogError} onRetryCatalog={() => void refreshCatalog()}
     onSave={savePlan} onCancel={() => setEditingPlan(null)} />
 
   const active = sessions.find(session => !session.completed_at)
@@ -236,8 +251,8 @@ export default function GymTraining() {
       <summary className="cursor-pointer font-semibold">Progressi per esercizio</summary>
       <p className="mt-2 text-xs text-gray-500">Dalle ultime 30 sessioni</p>
       <div className="mt-3 space-y-3">
-        {progress.map(item => <div key={`${item.name}:${item.equipment}`} className="border-t border-gray-700 pt-3 text-sm">
-          <p className="font-medium">{item.name} <span className="text-xs font-normal text-gray-500">· {item.equipment}</span></p>
+        {progress.map(item => <div key={`${item.name}:${item.equipment}:${item.last.bench_angle ?? 'unspecified'}`} className="border-t border-gray-700 pt-3 text-sm">
+          <p className="font-medium">{item.name} <span className="text-xs font-normal text-gray-500">· {item.equipment}{item.last.bench_angle != null ? ` · panca ${item.last.bench_angle}°` : ''}</span></p>
           <p className="mt-1 text-xs text-gray-400">Ultima: {formatPerformance(item.last)} · Migliore: {formatPerformance(item.best)}</p>
         </div>)}
       </div>

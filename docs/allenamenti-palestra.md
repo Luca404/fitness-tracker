@@ -7,6 +7,25 @@ esercizio ha un numero di serie, una ripetizione minima, un massimo facoltativo
 e l'opzione **Ripetizioni per lato/gamba**. Lascia vuote entrambe le ripetizioni
 per una serie con obiettivo libero.
 
+Salvando una scheda, gli esercizi personalizzati entrano automaticamente nel
+catalogo personale: nelle schede successive puoi cercarli per nome o attrezzo.
+Restano disponibili anche eliminando la scheda originale e sono sincronizzati
+tra dispositivi. Il recupero iniziale include i personalizzati già presenti
+nelle schede e nelle sessioni salvate; nomi e attrezzi uguali, salvo maiuscole
+e spazi esterni, non creano duplicati. Per riutilizzare un esercizio, seleziona
+il risultato della ricerca; ogni scheda mantiene i propri obiettivi.
+
+Il campo **Serie** può essere cancellato completamente mentre cambi il numero,
+senza che compaia uno zero. Per salvare serve un numero intero da 1 a 20.
+
+Con **Usa una panca** puoi aggiungere l'**Inclinazione panca (°)**, facoltativa,
+con valori interi da −90° a 90°: 0° indica la panca piana, i valori positivi
+quella inclinata e i negativi quella declinata. Il campo viene mostrato subito
+per gli esercizi con «panca»/«bench» nel nome e per la shoulder press con
+manubri; puoi attivarlo anche per un esercizio personalizzato. L'angolo viene
+conservato nella sessione, mostrato durante l'allenamento e copiato nelle
+serie aggiuntive. Lasciandolo vuoto l'inclinazione resta non specificata.
+
 Nell’elenco delle schede, le frecce **↑ / ↓** spostano una scheda di una
 posizione. L’ordine viene salvato per account e mantenuto tornando alla pagina
 o accedendo da un altro dispositivo. Le nuove schede vengono aggiunte in fondo;
@@ -17,7 +36,9 @@ salvataggio fallisce, viene ripristinato l’ordine precedente.
 Avviando una scheda, l'app crea le serie da registrare. Per ciascuna puoi
 modificare peso e ripetizioni effettive e premere **Fatto**. Il peso può restare
 vuoto per gli esercizi a corpo libero. L'ultimo peso e le ultime ripetizioni
-registrati per lo stesso esercizio vengono proposti alla sessione successiva.
+registrati per lo stesso esercizio, attrezzo e inclinazione vengono proposti
+alla sessione successiva. Anche i progressi separano le diverse inclinazioni;
+un angolo non specificato rimane distinto da uno 0° esplicito.
 Puoi aggiungere o rimuovere serie, riprendere una sessione iniziata e consultare
 le sessioni recenti. Modificare o eliminare una scheda non riscrive le sessioni
 già registrate.
@@ -49,6 +70,27 @@ panoramica del giorno e nella linea **Bruciato** e nelle medie dello **Storico**
 a 7 e 30 giorni, insieme a quelle delle altre attività registrate. Le sessioni
 ancora aperte non contribuiscono. Vedi [attività e storico](attivita-e-storico.md)
 per i chilometri facoltativi e le verifiche.
+
+## Migrazione e verifiche del 15 ottobre 2026
+
+La migrazione `20261015120000_gym_exercise_catalog_and_bench.sql` crea
+`gym_custom_exercises` con accesso limitato al proprietario, recupera i
+personalizzati esistenti e aggiunge `bench_angle` alle schede e alle serie.
+Il salvataggio della scheda aggiorna il catalogo nella stessa transazione.
+Le sessioni precedenti conservano un angolo non specificato. La migrazione
+è stata verificata in un database isolato e applicata al Supabase ospitato
+il 15 ottobre 2026, dopo un dry-run che elencava soltanto questa migrazione.
+L’istanza locale più vecchia non è stata aggiornata. Vedi il
+[workflow condiviso](../supabase/README.md).
+
+I 282 test frontend, la compilazione e il controllo del codice sono passati.
+I test dell'interfaccia coprono cancellazione e sostituzione delle serie,
+ricerca e riuso dei personalizzati, ricaricamento del catalogo, errori di
+caricamento e inclinazioni piane/inclinate/declinate. Il test SQL autonomo
+`supabase/tests/gym_exercise_catalog_and_bench.sql` richiede un database vuoto
+`fittrackr_gym_test_*` e verifica recupero, duplicati, salvataggio atomico,
+snapshot, suggerimenti per attrezzo/angolo, compatibilità con i vecchi client,
+isolamento degli utenti e permessi.
 
 ## Esempio: quattro schede Upper/Lower
 

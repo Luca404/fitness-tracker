@@ -7,16 +7,27 @@ function optionalNumber(value: string): number | null {
   return value === '' ? null : Number(value)
 }
 
-export default function GymPlanEditor({ plan, onSave, onCancel }: {
+type ExerciseDraft = Omit<GymPlanExerciseInput, 'target_sets'> & { target_sets: number | ''; usesBench: boolean }
+
+function usesBench(name: string, key: string | null): boolean {
+  return /\b(panca|bench)\b/i.test(name) || key === 'shoulder-press'
+}
+
+export default function GymPlanEditor({ plan, customExercises = [], catalogError = false, onRetryCatalog, onSave, onCancel }: {
   plan: GymPlan | null
+  customExercises?: GymExerciseDefinition[]
+  catalogError?: boolean
+  onRetryCatalog?: () => void
   onSave: (name: string, exercises: GymPlanExerciseInput[]) => Promise<void>
   onCancel: () => void
 }) {
   const [name, setName] = useState(plan?.name ?? '')
-  const [exercises, setExercises] = useState<GymPlanExerciseInput[]>(plan?.exercises.map(exercise => ({
+  const [exercises, setExercises] = useState<ExerciseDraft[]>(plan?.exercises.map(exercise => ({
     exercise_key: exercise.exercise_key,
     exercise_name: exercise.exercise_name,
     equipment: exercise.equipment,
+    bench_angle: exercise.bench_angle ?? null,
+    usesBench: exercise.bench_angle != null || usesBench(exercise.exercise_name, exercise.exercise_key),
     target_sets: exercise.target_sets,
     target_reps: exercise.target_reps,
     target_reps_max: exercise.target_reps_max,
@@ -26,10 +37,12 @@ export default function GymPlanEditor({ plan, onSave, onCancel }: {
   const [query, setQuery] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(false)
-  const results = searchGymExercises(query).slice(0, 12)
+  const results = searchGymExercises(query, customExercises).slice(0, 12)
   const valid = Boolean(name.trim()) && exercises.length > 0 && exercises.every(exercise =>
     Boolean(exercise.exercise_name.trim() && exercise.equipment.trim())
-    && Number.isInteger(exercise.target_sets) && exercise.target_sets >= 1 && exercise.target_sets <= 20
+    && exercise.target_sets !== '' && Number.isInteger(exercise.target_sets) && exercise.target_sets >= 1 && exercise.target_sets <= 20
+    && (exercise.bench_angle == null || (Number.isInteger(exercise.bench_angle)
+      && exercise.bench_angle >= -90 && exercise.bench_angle <= 90))
     && (exercise.target_reps === null || (Number.isInteger(exercise.target_reps)
       && exercise.target_reps >= 1 && exercise.target_reps <= 100))
     && (exercise.target_reps_max === null || (exercise.target_reps !== null
@@ -38,9 +51,11 @@ export default function GymPlanEditor({ plan, onSave, onCancel }: {
 
   function addExercise(exercise: GymExerciseDefinition | null) {
     setExercises(current => [...current, {
-      exercise_key: exercise?.key ?? null,
+      exercise_key: exercise?.custom ? null : exercise?.key ?? null,
       exercise_name: exercise?.name ?? query.trim(),
       equipment: exercise?.equipment ?? 'Personalizzato',
+      bench_angle: null,
+      usesBench: usesBench(exercise?.name ?? query.trim(), exercise?.key ?? null),
       target_sets: 3,
       target_reps: 10,
       target_reps_max: null,
@@ -50,7 +65,7 @@ export default function GymPlanEditor({ plan, onSave, onCancel }: {
     setQuery('')
   }
 
-  function updateExercise(index: number, change: Partial<GymPlanExerciseInput>) {
+  function updateExercise(index: number, change: Partial<ExerciseDraft>) {
     setExercises(current => current.map((exercise, i) => i === index ? { ...exercise, ...change } : exercise))
   }
 
@@ -69,7 +84,12 @@ export default function GymPlanEditor({ plan, onSave, onCancel }: {
     setSaving(true)
     setError(false)
     try {
-      await onSave(name.trim(), exercises)
+      await onSave(name.trim(), exercises.map(exercise => ({
+        exercise_key: exercise.exercise_key, exercise_name: exercise.exercise_name, equipment: exercise.equipment,
+        target_sets: Number(exercise.target_sets), target_reps: exercise.target_reps,
+        target_reps_max: exercise.target_reps_max, per_side: exercise.per_side,
+        bench_angle: exercise.bench_angle,
+      })))
     } catch {
       setError(true)
     } finally {
@@ -102,7 +122,7 @@ export default function GymPlanEditor({ plan, onSave, onCancel }: {
         <div className="mt-3 grid grid-cols-3 gap-2">
           <label className="text-xs text-gray-400">Serie
             <input type="number" min={1} max={20} value={exercise.target_sets}
-              onChange={event => updateExercise(index, { target_sets: Number(event.target.value) })}
+              onChange={event => updateExercise(index, { target_sets: event.target.value === '' ? '' : Number(event.target.value) })}
               className="mt-1 w-full rounded-lg bg-gray-800 px-3 py-2 text-white" />
           </label>
           <label className="text-xs text-gray-400">Rip. min
@@ -121,6 +141,17 @@ export default function GymPlanEditor({ plan, onSave, onCancel }: {
             onChange={event => updateExercise(index, { per_side: event.target.checked })} />
           Ripetizioni per lato/gamba
         </label>
+        <label className="mt-3 flex items-center gap-2 text-xs text-gray-400">
+          <input type="checkbox" checked={exercise.usesBench}
+            onChange={event => updateExercise(index, { usesBench: event.target.checked, bench_angle: null })} />
+          Usa una panca
+        </label>
+        {exercise.usesBench && <label className="mt-3 block text-xs text-gray-400">Inclinazione panca (°)
+          <input type="number" min={-90} max={90} step={1} value={exercise.bench_angle ?? ''} placeholder="Facoltativa"
+            onChange={event => updateExercise(index, { bench_angle: optionalNumber(event.target.value) })}
+            className="mt-1 w-full rounded-lg bg-gray-800 px-3 py-2 text-white" />
+          <span className="mt-1 block text-gray-500">0° piana, valori positivi inclinata, negativi declinata.</span>
+        </label>}
         {exercise.target_reps === null && <p className="mt-2 text-xs text-gray-500">Ripetizioni libere: inserirai quelle eseguite durante l’allenamento.</p>}
         {exercise.exercise_key === null && <label className="mt-3 block text-xs text-gray-400">Attrezzo
           <input value={exercise.equipment} onChange={event => updateExercise(index, { equipment: event.target.value })}
@@ -129,6 +160,9 @@ export default function GymPlanEditor({ plan, onSave, onCancel }: {
       </div>)}
     </div>
     {searchOpen ? <div className="space-y-2 rounded-2xl border border-gray-700 bg-gray-900/40 p-3">
+      {catalogError && <p role="alert" className="text-sm text-amber-400">Impossibile caricare i tuoi esercizi personalizzati.{' '}
+        <button type="button" onClick={onRetryCatalog} className="underline">Riprova</button>
+      </p>}
       <input value={query} onChange={event => setQuery(event.target.value)} autoFocus
         placeholder="Cerca esercizio o attrezzo..." aria-label="Cerca esercizio o attrezzo"
         className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 outline-none focus:border-primary-500" />

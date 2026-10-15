@@ -6,9 +6,11 @@ import type { GymPlan, GymSession } from '../../types'
 const mocks = vi.hoisted(() => ({
   selectedDate: '2026-10-01', getGymPlans: vi.fn(), getRecentGymSessions: vi.fn(), reorderGymPlans: vi.fn(),
   getLatestWeightLog: vi.fn(), getWeightLogs: vi.fn(), showToast: vi.fn(),
+  getCustomGymExercises: vi.fn(), saveGymPlan: vi.fn(),
 }))
 vi.mock('../../services/gymApi', () => ({
   getGymPlans: mocks.getGymPlans, getRecentGymSessions: mocks.getRecentGymSessions, reorderGymPlans: mocks.reorderGymPlans,
+  getCustomGymExercises: mocks.getCustomGymExercises, saveGymPlan: mocks.saveGymPlan,
 }))
 vi.mock('../../services/api', () => ({
   getLatestWeightLog: mocks.getLatestWeightLog, getWeightLogs: mocks.getWeightLogs,
@@ -33,9 +35,43 @@ beforeEach(() => {
   mocks.selectedDate = '2026-10-01'
   mocks.reorderGymPlans.mockReset().mockResolvedValue(undefined)
   mocks.getGymPlans.mockResolvedValue([])
+  mocks.getCustomGymExercises.mockResolvedValue([])
+  mocks.saveGymPlan.mockResolvedValue('new-plan')
   mocks.getRecentGymSessions.mockResolvedValue([session])
   mocks.getLatestWeightLog.mockResolvedValue({ date: '2026-10-01', weight_kg: 78 })
   mocks.getWeightLogs.mockResolvedValue([])
+})
+
+it('refreshes the personal catalog after saving and offers it in the next plan', async () => {
+  mocks.getCustomGymExercises.mockResolvedValueOnce([]).mockResolvedValue([
+    { key: 'custom:1', name: 'Croci su panca', equipment: 'Manubri', muscle: 'Personalizzato', custom: true },
+  ])
+  render(<MemoryRouter><GymTraining /></MemoryRouter>)
+  await screen.findByText('1 h')
+  fireEvent.click(screen.getByRole('button', { name: '+ Nuova scheda' }))
+  fireEvent.change(screen.getByPlaceholderText('Es. Scheda A · Petto e tricipiti'), { target: { value: 'Nuova' } })
+  fireEvent.click(screen.getByRole('button', { name: '+ Aggiungi esercizio' }))
+  fireEvent.change(screen.getByLabelText('Cerca esercizio o attrezzo'), { target: { value: 'Croci su panca' } })
+  fireEvent.click(screen.getByRole('button', { name: /come esercizio personalizzato/ }))
+  fireEvent.change(screen.getByLabelText('Attrezzo'), { target: { value: 'Manubri' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Salva scheda' }))
+  await waitFor(() => expect(mocks.getCustomGymExercises).toHaveBeenCalledTimes(2))
+  fireEvent.click(screen.getByRole('button', { name: '+ Nuova scheda' }))
+  fireEvent.click(screen.getByRole('button', { name: '+ Aggiungi esercizio' }))
+  expect(screen.getByRole('button', { name: /Croci su pancaManubri/ })).toBeTruthy()
+})
+
+it('shows catalog failures in search and retries without losing the plan draft', async () => {
+  mocks.getCustomGymExercises.mockRejectedValueOnce(new Error('offline')).mockResolvedValue([])
+  render(<MemoryRouter><GymTraining /></MemoryRouter>)
+  await screen.findByText('1 h')
+  fireEvent.click(screen.getByRole('button', { name: '+ Nuova scheda' }))
+  fireEvent.change(screen.getByPlaceholderText('Es. Scheda A · Petto e tricipiti'), { target: { value: 'Bozza' } })
+  fireEvent.click(screen.getByRole('button', { name: '+ Aggiungi esercizio' }))
+  expect(await screen.findByRole('alert')).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: 'Riprova' }))
+  await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
+  expect((screen.getByPlaceholderText('Es. Scheda A · Petto e tricipiti') as HTMLInputElement).value).toBe('Bozza')
 })
 afterEach(cleanup)
 

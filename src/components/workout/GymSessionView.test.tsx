@@ -2,10 +2,10 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GymSession } from '../../types'
 
-const mocks = vi.hoisted(() => ({ saveGymSet: vi.fn(), completeGymSession: vi.fn(), deleteGymSession: vi.fn(), showToast: vi.fn() }))
+const mocks = vi.hoisted(() => ({ saveGymSet: vi.fn(), addGymSet: vi.fn(), completeGymSession: vi.fn(), deleteGymSession: vi.fn(), showToast: vi.fn() }))
 vi.mock('../../services/gymApi', () => ({
   saveGymSet: mocks.saveGymSet,
-  addGymSet: vi.fn(), deleteGymSet: vi.fn(), completeGymSession: mocks.completeGymSession, deleteGymSession: mocks.deleteGymSession,
+  addGymSet: mocks.addGymSet, deleteGymSet: vi.fn(), completeGymSession: mocks.completeGymSession, deleteGymSession: mocks.deleteGymSession,
 }))
 vi.mock('../../contexts/DataContext', () => ({ useData: () => ({ showToast: mocks.showToast }) }))
 
@@ -26,6 +26,15 @@ describe('GymSessionView', () => {
     vi.clearAllMocks()
   })
   afterEach(cleanup)
+
+  it.each([0, 30])('shows the saved bench angle %s and copies it into extra sets', async angle => {
+    const set = { ...session.sets[0], bench_angle: angle }
+    mocks.addGymSet.mockResolvedValue({ ...set, id: 'set-2', set_number: 2 })
+    render(<GymSessionView session={{ ...session, sets: [set] }} onBack={vi.fn()} onCompleted={vi.fn()} onDeleted={vi.fn()} />)
+    expect(screen.getByText(`Inclinazione panca: ${angle}°`)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '+ Serie' }))
+    await waitFor(() => expect(mocks.addGymSet).toHaveBeenCalledWith(expect.objectContaining({ bench_angle: angle, set_number: 2 })))
+  })
 
   it('records the performed weight and reps for an individual set', async () => {
     mocks.saveGymSet.mockResolvedValue({ ...session.sets[0], weight_kg: 45, reps: 8, done: true })

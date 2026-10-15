@@ -117,6 +117,7 @@ export interface GymPlanExercise {
   exercise_key: string | null
   exercise_name: string
   equipment: string
+  bench_angle?: number | null
   target_sets: number
   target_reps: number | null
   target_reps_max: number | null
@@ -140,6 +141,7 @@ export interface GymSet {
   exercise_key: string | null
   exercise_name: string
   equipment: string
+  bench_angle?: number | null
   set_number: number
   target_reps: number | null
   target_reps_max: number | null

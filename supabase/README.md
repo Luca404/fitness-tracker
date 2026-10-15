@@ -19,6 +19,12 @@ On 2026-10-06, `20261006120000_correct_prepared_batch_weight` was applied to the
 
 New tables must enable RLS with ownership policies. New postgres-owned public RPCs must explicitly grant `EXECUTE` to authenticated/service roles as needed: default execution for PUBLIC/anon/authenticated is revoked. New anonymous table reads require explicit grants. Existing fitness CRUD/RPC grants are preserved. Keep administrative keys in server/Edge Function secrets.
 
+## Gym exercise catalog and bench angles — 2026-10-15
+
+`20261015120000_gym_exercise_catalog_and_bench` was applied to hosted Supabase on 2026-10-15 after a dry-run listing only this migration. It is mirrored in Trackr and tested in an isolated PostgreSQL database. The older local application database was not upgraded. It creates an account-owned custom exercise catalog, backfills saved plans/session history and adds nullable integer bench angles to plan exercises and session snapshots. Existing unspecified angles remain NULL; the existing save/start RPCs keep their signatures and explicit authenticated grants. Catalog writes happen atomically with plan saves; plan deletion preserves catalog entries. New catalog SELECT/INSERT grants are explicit and subject to RLS.
+
+The self-contained `tests/gym_exercise_catalog_and_bench.sql` refuses database names outside `fittrackr_gym_test_*`; use a fresh empty database and let the test build and roll back its synthetic Auth and gym fixture. It verifies backfill/deduplication, atomic failures, snapshots, previous-load matching by equipment/angle, old clients, user isolation and anonymous denial.
+
 Frontend CI uses mocked data. SQL tests in `supabase/tests/` need an isolated PostgreSQL database with synthetic Auth/roles: `alcohol_strength.sql` runs after the full fitness schema; `ordering.sql` reconstructs historical fixtures and applies ordering migrations in its transaction, so use the migration cutoff specified in the project README. Do not run fixture tests against the hosted or application database. Trackr also runs shared-schema security/concurrency tests in its separate `trackr_security_tests` database.
 
 The older local Trackr instance received the seven security changes without replaying all historical fitness upgrades. This does not claim that its fitness schema matches the hosted project. Back up local data before upgrading it; preserve the distinction between local schema compatibility and hosted migration status.
