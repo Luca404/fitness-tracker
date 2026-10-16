@@ -30,6 +30,35 @@ entro il giorno della sessione, con il peso corrente come ripiego. Vedi
 [la guida palestra](allenamenti-palestra.md). Le calorie bruciate non aumentano
 il budget alimentare.
 
+## Giorni mancanti e medie nello Storico
+
+Gli intervalli **7 giorni** e **30 giorni** comprendono gli ultimi giorni
+conclusi, fino a ieri. Il giorno in corso è escluso sia dal grafico sia dalle
+medie, anche se contiene già pasti o allenamenti. Il periodo avanza quando
+cambia la data locale, anche lasciando aperta la pagina.
+
+Un giorno senza calorie alimentari registrate (totale 0 kcal) ha **dati
+mancanti** per la serie Mangiato: resta una data sull'asse ma non compare un
+punto a zero e quel giorno non entra nella media alimentare. Le interruzioni
+non vengono unite dalla linea; i giorni registrati isolati restano visibili
+come punti. Il dettaglio del grafico indica **Dati mancanti** e il riepilogo
+espandibile elenca le date interessate.
+
+Le due medie hanno un conteggio separato, indicato sotto il valore. Un giorno
+con allenamenti ma senza pasti contribuisce alle bruciate, non alla media
+alimentare. Un giorno con pasti registrati e senza allenamenti vale invece
+0 kcal bruciate e resta nella media delle bruciate, come giorno di riposo.
+Un giorno senza pasti né attività disponibili non entra in nessuna media.
+Le sessioni ancora aperte o senza stima disponibile, da sole, non forniscono
+dati di attività. Se non ci sono giorni utilizzabili, la media mostra **—**.
+
+Un errore di caricamento è segnalato come **Storico non disponibile**, con un
+pulsante per riprovare, senza classificare il periodo come giorni mancanti.
+Questa modifica del 16 ottobre 2026 riguarda il frontend e non richiede
+migrazioni del database. I test coprono entrambi gli intervalli, dati
+mancanti/parziali, riposo, attività senza pasti, giorno corrente, cambio data,
+cambi di mese/anno e caricamenti falliti.
+
 ## Verifiche del 14 ottobre 2026
 
 La migrazione `20261014120000_workout_distance` aggiunge soltanto

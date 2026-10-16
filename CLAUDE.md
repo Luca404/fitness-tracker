@@ -30,6 +30,8 @@ Released on 2026-10-08 with commit `8bf11f3`: Supabase deployment, Vercel Produc
 
 `getGymSessionsForRange` hydrates completed sessions and their sets. `buildHistoryData` combines their existing calorie estimator with stored workout calories, using the latest body weight at/before each session date and current weight only as fallback. Both History ranges and averages include gym calories. See [activities/history](docs/attivita-e-storico.md).
 
+History uses `SettingsContext.today` and `historyWindow` to load the last 7/30 concluded local days, ending yesterday. Zero-intake days have null `Mangiato`; wholly unlogged days have null `Bruciato` too. Diary days without exercise retain real rest-day zeros, and activity-only days contribute only to burned averages. `historyAverage` excludes null values per series and preserves recorded zeros; no valid days yields null, displayed as a dash. Keep gaps disconnected, isolated valid points visible and missing dates explicit. Loading failures remain distinct from missing diary data.
+
 Reuse `IngredientEntryActions`, `NutritionFields`, `IngredientPortionCard` and `FormActions` across pantry, meal and dish editors. Nutrition fields must state portion versus per-100g/ml basis and retain null optional nutrients. `IngredientQuantityInput` reports draft validity: do not save the previous quantity when the visible draft is blank/invalid. Keep stable ingredient keys when removing rows. `FoodSearch.resetAfterAdd` clears selection without reloading the pantry. Manual pantry entry goes directly to the common review. See [ingredient entry](docs/inserimento-ingredienti.md).
 
 The user performs visual QA. Do not open a browser to test graphics; use appropriate build, lint, logic and isolated database checks.

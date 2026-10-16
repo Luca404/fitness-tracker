@@ -22,6 +22,8 @@ The gym editor now supports reusable personal exercises, a fully clearable set-c
 
 Overview values use whole numbers; summaries use at most one decimal. Nutrition edit fields preserve their entered precision. Completed gym sessions contribute to the daily burned total and both History ranges; exercise calories are not added back to the calorie budget. [The activity/history guide](docs/attivita-e-storico.md) documents distance estimates and historical body weight.
 
+History uses the last 7 or 30 completed days, ending yesterday. Missing intake days appear as gaps marked as missing data and are excluded from intake averages; completely unlogged days are excluded from both averages. Recorded diary days without exercise retain zero burned calories as rest days. Each average shows the number of days counted; unavailable averages show a dash. See [missing days and averages](docs/attivita-e-storico.md#giorni-mancanti-e-medie-nello-storico).
+
 The meal-page habit recap uses compact square tiles with icons and status marks, without numbers inside. Their color fills in proportion to the target for both minimum goals and maximum limits, including amounts below a maximum; exceeding a maximum turns the full tile orange. Amounts and limit multiples appear in the dedicated detail page. Legumes and fish use the seven calendar days ending on the selected date, with a daily average and the existing weekly target; their progress no longer resets on Monday. The average always divides by seven, including days without diary entries. Unavailable history remains unknown. See [the habit guide](docs/buone-abitudini.md).
 
 ## Stack
