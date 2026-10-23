@@ -4,7 +4,19 @@ Dal diario: scegli il pasto → **Occasionale** → **Da foto**. L'inserimento m
 
 La funzione è pubblicata dall'8 ottobre 2026. Se nell'app installata compare **È disponibile una nuova versione di fitTrackr.**, premi **Aggiorna** per caricare il rilascio.
 
-Scatta una foto o scegli un JPEG, PNG o WebP dalla galleria. È possibile aggiungere fino a 1000 caratteri con il nome del piatto o la descrizione del menù. La foto viene compressa nel browser (lato massimo 1600 pixel, upload massimo 4 MB, originale massimo 15 MB), inviata al server e analizzata tramite OpenAI Responses. Non viene archiviata nell'app; la richiesta usa `store: false`.
+Scatta una foto o scegli un JPEG, PNG, WebP, HEIC/HEIF o AVIF dalla galleria. HEIC/HEIF e AVIF richiedono un browser in grado di aprirli: se non è disponibile, il messaggio spiega come esportare un JPEG. È possibile aggiungere fino a 1000 caratteri con il nome del piatto o la descrizione del menù. La foto viene convertita in JPEG e compressa nel browser (lato massimo 1600 pixel, upload massimo 4 MB, originale massimo 15 MB), inviata al server e analizzata tramite OpenAI Responses. Non viene archiviata nell'app; la richiesta usa `store: false`.
+
+## Live Photo e Motion Photo
+
+L’analisi usa solo la parte fotografica decodificabile della foto in movimento. La riscrittura in JPEG esclude clip, audio e metadati dall’immagine inviata al server. Il riconoscimento dell’immagine legge anche la firma del file, per accettare foto con tipo MIME mancante o errato dal selettore del telefono. Lo stesso trattamento è usato per le foto delle etichette.
+
+Le [Motion Photo Android](https://developer.android.com/media/platform/motion-photo-format?hl=en) possono avere una foto primaria JPEG, HEIC o AVIF con una clip aggiunta. Il supporto HEIC dipende dal browser; [WebKit lo documenta da Safari 17](https://webkit.org/blog/14445/webkit-features-in-safari-17-0/). Non è incluso un decoder HEIC aggiuntivo nell’app.
+
+Se viene selezionato soltanto un video MOV/MP4, l’app chiede di scegliere la parte fotografica o esportare un fotogramma in JPEG dalla galleria. Non estrae automaticamente un fotogramma arbitrario dal video. Anche per un file oltre 15 MB suggerisce di esportare solo la foto. Queste verifiche avvengono prima di chiamare il servizio di analisi.
+
+I test di preparazione simulano la decodifica del browser e verificano firme dei file, MIME mancanti/errati, contenitori telefonici, output JPEG statico, limiti ed errori con istruzioni. Non sostituiscono una prova su Live Photo/Motion Photo reali e sui browser dei singoli telefoni.
+
+## Revisione e registrazione
 
 La revisione mostra subito calorie e macro. **Ingredienti e quantità** è chiuso inizialmente: aprendolo si possono cambiare nomi, categorie, pesi, calorie e macro, rimuovere componenti e aggiungere ingredienti. I condimenti dedotti sono indicati come **Ipotizzato** durante la revisione. Gli avvisi espongono le incertezze del modello senza percentuali di accuratezza.
 

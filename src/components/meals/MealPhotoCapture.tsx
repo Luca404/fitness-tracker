@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { analyzeMealPhoto, mealPhotoItems, type MealPhotoAnalysis } from '../../services/mealPhoto'
 import type { DishItemDraft } from '../../types'
 import MealPhotoReview from './MealPhotoReview'
+import { PHOTO_INPUT_ACCEPT } from '../../services/photoUpload'
 
 interface Props {
   onSave: (name: string, items: DishItemDraft[]) => Promise<void>
@@ -44,10 +45,10 @@ export default function MealPhotoCapture({ onSave, onCancel }: Props) {
 
   return <div className="space-y-4">
     <p className="text-sm text-gray-400">Fotografa il piatto intero, ben visibile. Puoi aggiungere il nome o la descrizione del menù per aiutare la stima.</p>
-    <input ref={cameraRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment"
+    <input ref={cameraRef} type="file" accept={PHOTO_INPUT_ACCEPT} capture="environment"
       disabled={loading} aria-label="Scatta foto del piatto" className="sr-only"
       onChange={event => { selectFile(event.target.files?.[0]); event.target.value = '' }} />
-    <input ref={galleryRef} type="file" accept="image/jpeg,image/png,image/webp"
+    <input ref={galleryRef} type="file" accept={PHOTO_INPUT_ACCEPT}
       disabled={loading} aria-label="Scegli foto del piatto" className="sr-only"
       onChange={event => { selectFile(event.target.files?.[0]); event.target.value = '' }} />
     {preview && <img src={preview} alt="Anteprima del piatto" className="max-h-72 w-full rounded-2xl bg-black/20 object-contain" />}
@@ -62,7 +63,7 @@ export default function MealPhotoCapture({ onSave, onCancel }: Props) {
         onChange={event => setDescription(event.target.value)} placeholder="Es. Risotto ai funghi con parmigiano, dal menù del ristorante"
         className="mt-1 w-full resize-y rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-primary-500" />
     </label>
-    <p className="text-xs leading-relaxed text-gray-500">La foto viene compressa e inviata a OpenAI per l’analisi; non viene salvata nell’app. Controlla la stima prima di registrarla.</p>
+    <p className="text-xs leading-relaxed text-gray-500">Per Live Photo e Motion Photo viene usata solo la parte fotografica. La foto viene compressa e inviata a OpenAI per l’analisi; non viene salvata nell’app. Controlla la stima prima di registrarla.</p>
     {error && <p role="alert" className="rounded-xl bg-red-950/30 p-3 text-sm text-red-300">{error}</p>}
     <button type="button" onClick={() => void analyze()} disabled={!file || loading}
       className="w-full rounded-xl bg-primary-600 py-3 font-semibold hover:bg-primary-500 disabled:opacity-40">

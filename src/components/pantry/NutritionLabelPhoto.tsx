@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { analyzeNutritionLabel } from '../../services/nutritionLabel'
 import type { NutritionLabelAnalysis } from '../../services/nutritionLabel'
+import { PHOTO_INPUT_ACCEPT } from '../../services/photoUpload'
 
 interface Props {
   onAnalysis: (analysis: NutritionLabelAnalysis) => void
@@ -54,7 +55,7 @@ export default function NutritionLabelPhoto({ onAnalysis, onCancel, knownBarcode
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept={PHOTO_INPUT_ACCEPT}
         capture="environment"
         onChange={event => selectFile(event.target.files?.[0])}
         className="sr-only"
@@ -81,7 +82,7 @@ export default function NutritionLabelPhoto({ onAnalysis, onCancel, knownBarcode
       )}
 
       {error && <p role="alert" className="rounded-xl bg-red-950/30 p-3 text-sm text-red-300">{error}</p>}
-      <p className="text-xs text-gray-500">La foto viene compressa nel browser e non viene salvata nell’app.</p>
+      <p className="text-xs text-gray-500">Per Live Photo e Motion Photo viene usata solo la parte fotografica. La foto viene compressa nel browser e non viene salvata nell’app.</p>
       <button type="button" onClick={onCancel} disabled={loading} className="w-full text-center text-sm text-gray-500 disabled:opacity-50">
         Annulla
       </button>

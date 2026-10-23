@@ -42,6 +42,10 @@ describe('occasional meal photo flow', () => {
     render(<TestHub onAddEntry={onAddEntry} />)
     fireEvent.click(screen.getByRole('button', { name: /Occasionale/ }))
     fireEvent.click(screen.getByRole('button', { name: /Da foto/ }))
+    expect(screen.getByText(/Per Live Photo e Motion Photo viene usata solo la parte fotografica/)).toBeTruthy()
+    const gallery = screen.getByLabelText('Scegli foto del piatto') as HTMLInputElement
+    expect(gallery.accept).toContain('image/heic')
+    expect(gallery.accept).toContain('image/avif')
     const file = new File(['photo'], 'risotto.jpg', { type: 'image/jpeg' })
     fireEvent.change(screen.getByLabelText('Scegli foto del piatto'), { target: { files: [file] } })
     fireEvent.change(screen.getByLabelText('Descrizione del piatto (facoltativa)'), { target: { value: 'Risotto ai funghi dal menù' } })
