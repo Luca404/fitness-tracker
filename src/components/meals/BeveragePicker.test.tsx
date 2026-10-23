@@ -27,6 +27,24 @@ describe('beverage registration', () => {
     expect((screen.getByLabelText('Quantità (ml)') as HTMLInputElement).value).toBe('180')
     expect(screen.getByText(/volume senza ghiaccio/)).toBeTruthy()
   })
+  it.each([
+    ['shot di vodka', 'Vodka (shot)', 40, 40, 'vodka', 88.368],
+    ['shot di tequila', 'Tequila (shot)', 40, 40, 'tequila', 88.368],
+    ['amari', 'Amaro alle erbe', 40, 30, 'amaro', 106.276],
+    ['limoncello', 'Limoncello', 30, 30, 'limoncello', 85.707],
+  ])('finds %s and registers its default portion including alcohol energy', async (query, name, volume, abv, id, calories) => {
+    const onAddEntry = vi.fn().mockResolvedValue(undefined)
+    render(<BeveragePicker onAddEntry={onAddEntry} />)
+    fireEvent.change(screen.getByLabelText('Cerca bevanda'), { target: { value: query } })
+    fireEvent.click(screen.getByRole('button', { name }))
+    expect((screen.getByLabelText('Quantità (ml)') as HTMLInputElement).value).toBe(String(volume))
+    expect((screen.getByLabelText('Gradazione (% vol)') as HTMLInputElement).value).toBe(String(abv))
+    fireEvent.click(screen.getByRole('button', { name: /Registra .* kcal/ }))
+    await waitFor(() => expect(onAddEntry).toHaveBeenCalledWith(name, [expect.objectContaining({
+      unit: 'ml', quantity_g: volume, alcohol_abv: abv, food_key: `basic:${id}`,
+      calories: expect.closeTo(calories, 2),
+    })]))
+  })
   it('blocks invalid amounts and strength, and accepts alcohol-free strength', async () => {
     const onAddEntry = vi.fn().mockResolvedValue(undefined)
     render(<BeveragePicker onAddEntry={onAddEntry} />)

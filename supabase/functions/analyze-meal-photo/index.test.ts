@@ -42,6 +42,7 @@ describe('analyze-meal-photo endpoint', () => {
     expect(sent.store).toBe(false)
     expect(sent.text.format.type).toBe('json_schema')
     expect(sent.input[0].content[1].image_url).toBe('data:image/jpeg;base64,YQ==')
+    expect(sent.input[0].content[0].text).toContain(body.description)
     expect(sent.instructions).toContain('COTTO/GIÀ PRONTO')
   })
 
@@ -85,7 +86,43 @@ describe('analyze-meal-photo endpoint', () => {
     fetchMock.mockResolvedValueOnce(new Response('{}', { status: 429 }))
     expect((await handleRequest(request())).status).toBe(429)
     fetchMock.mockRejectedValueOnce(new DOMException('Timeout', 'TimeoutError'))
-    expect((await handleRequest(request())).status).toBe(502)
+    expect((await handleRequest(request())).status).toBe(504)
+    log.mockRestore()
+  })
+
+  it.each([
+    [401, 'invalid_api_key', 503, 'chiave API OpenAI'],
+    [401, null, 503, 'autenticazione del servizio'],
+    [403, null, 503, 'permessi'],
+    [429, 'insufficient_quota', 503, 'credito o il budget'],
+    [429, 'credit_balance_exhausted', 503, 'credito o il budget'],
+    [429, 'project_spend_limit_exceeded', 503, 'limiti'],
+    [429, 'rate_limit_exceeded', 429, 'limite temporaneo'],
+    [400, 'invalid_image', 422, 'leggere questa immagine'],
+    [404, 'model_not_found', 503, 'configurazione'],
+    [400, null, 503, 'configurazione'],
+    [503, null, 503, 'temporaneamente non disponibile'],
+  ])('explains provider status %s (%s) without exposing raw errors', async (status, code, expectedStatus, message) => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ error: { code, message: 'secret-key-must-not-leak' } }), {
+      status, headers: { 'x-request-id': 'req_example' },
+    }))
+    const response = await handleRequest(request())
+    const result = await response.json()
+    expect(response.status).toBe(expectedStatus)
+    expect(result.error).toContain(message)
+    expect(result.request_id).toBe('req_example')
+    expect(JSON.stringify(result)).not.toContain('secret-key-must-not-leak')
+    expect(JSON.stringify(log.mock.calls)).not.toContain('secret-key-must-not-leak')
+    log.mockRestore()
+  })
+
+  it('handles non-JSON provider errors and invalid output JSON', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    fetchMock.mockResolvedValueOnce(new Response('Bad gateway', { status: 502 }))
+    expect((await (await handleRequest(request())).json()).error).toContain('temporaneamente non disponibile')
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ output: [{ content: [{ type: 'output_text', text: '{' }] }] })))
+    expect((await (await handleRequest(request())).json()).code).toBe('analysis_invalid_response')
     log.mockRestore()
   })
 })

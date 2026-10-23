@@ -1,5 +1,6 @@
 import { getAuthenticatedUser } from '../_shared/auth.ts'
 import { isMealPhotoAnalysis, mealPhotoSchema } from '../_shared/mealPhotoAnalysis.ts'
+import { openAiConnectionError, openAiError } from '../_shared/openAiErrors.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,7 +33,7 @@ export async function handleRequest(request: Request): Promise<Response> {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (request.method !== 'POST') return json({ error: 'Metodo non consentito.' }, 405)
   const user = await getAuthenticatedUser(request)
-  if (!user) return json({ error: 'Sessione non valida.' }, 401)
+  if (!user) return json({ error: 'Sessione scaduta o non valida. Accedi di nuovo e riprova.' }, 401)
   const apiKey = Deno.env.get('OPENAI_API_KEY')
   if (!apiKey) return json({ error: 'Servizio di analisi non configurato.' }, 503)
 
@@ -70,28 +71,37 @@ export async function handleRequest(request: Request): Promise<Response> {
       }),
     })
     if (!response.ok) {
-      console.error('Meal photo OpenAI request failed', response.status, response.headers.get('x-request-id'))
-      return json({ error: response.status === 429 ? 'Troppe analisi in corso. Riprova tra poco.' : 'Non è stato possibile analizzare la foto.' }, response.status === 429 ? 429 : 502)
+      const failure = await openAiError(response, model)
+      return json(failure.body, failure.status)
     }
-    const result: unknown = await response.json()
+    let result: unknown
+    try { result = await response.json() } catch {
+      return json({ error: 'OpenAI ha restituito una risposta non leggibile. Riprova l’analisi.', code: 'analysis_invalid_response' }, 502)
+    }
     if (!record(result) || result.status === 'incomplete' || !Array.isArray(result.output)) {
-      return json({ error: 'L’analisi non è completa. Riprova con una foto più chiara.' }, 502)
+      return json({ error: 'OpenAI non ha completato l’analisi. Riprova; se il problema continua, usa l’inserimento manuale.', code: 'analysis_incomplete' }, 502)
     }
     let outputText: string | null = null
     for (const output of result.output) {
       if (!record(output) || !Array.isArray(output.content)) continue
       for (const content of output.content) {
+        if (record(content) && content.type === 'refusal') {
+          return json({ error: 'OpenAI ha rifiutato l’analisi di questa foto. Prova un’altra foto del piatto o usa l’inserimento manuale.', code: 'analysis_refused' }, 422)
+        }
         if (record(content) && content.type === 'output_text' && typeof content.text === 'string') outputText = content.text
       }
     }
     if (!outputText) return json({ error: 'Non è stato possibile riconoscere il piatto. Prova un’altra foto.' }, 422)
-    const analysis: unknown = JSON.parse(outputText)
-    if (!isMealPhotoAnalysis(analysis)) return json({ error: 'La stima non è valida. Prova una foto più chiara.' }, 502)
+    let analysis: unknown
+    try { analysis = JSON.parse(outputText) } catch {
+      return json({ error: 'OpenAI ha restituito una risposta non leggibile. Riprova l’analisi.', code: 'analysis_invalid_response' }, 502)
+    }
+    if (!isMealPhotoAnalysis(analysis)) return json({ error: 'OpenAI ha restituito una stima con quantità o nutrienti incoerenti. Riprova l’analisi o usa l’inserimento manuale.', code: 'analysis_invalid_nutrition' }, 502)
     if (!analysis.items.length) return json({ error: 'Non riconosco un pasto nella foto. Prova un’altra foto o l’inserimento manuale.' }, 422)
     return json({ analysis })
   } catch (error) {
-    console.error('Meal photo analysis failed', error instanceof Error ? error.name : 'Unknown error')
-    return json({ error: 'Analisi non riuscita o servizio temporaneamente non raggiungibile. Riprova.' }, 502)
+    const failure = openAiConnectionError(error)
+    return json(failure.body, failure.status)
   }
 }
 

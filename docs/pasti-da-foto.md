@@ -30,6 +30,20 @@ La funzione verifica autonomamente il bearer token tramite Supabase Auth, come l
 
 Riutilizza il secret server `OPENAI_API_KEY` già presente. Il modello viene scelto in ordine da `OPENAI_MEAL_PHOTO_MODEL`, `OPENAI_VISION_MODEL`, oppure `gpt-4.1-mini`. Il modello configurato deve supportare immagini e Structured Outputs. Non mettere la chiave OpenAI nelle variabili del frontend.
 
+### Diagnostica degli errori — 24 ottobre 2026
+
+I log remoti del 23 ottobre hanno confermato tre risposte **OpenAI HTTP 401**: la chiave API del servizio non veniva accettata. Non era un errore della descrizione o della stima nutrizionale. Per ripristinare l’analisi occorre aggiornare `OPENAI_API_KEY` nei secret delle Edge Function del progetto `nitbisweytddtigoebeh` con una chiave valida. Non serve modificare il database. Non salvare chiavi nel repository, nei log o nelle variabili `VITE_`.
+
+Una prova minima server-side sullo stesso endpoint Responses e modello ha confermato `401 invalid_api_key` (messaggio riconosciuto come “Incorrect API key”). Il secret è presente, inizia con il prefisso atteso e non contiene spazi iniziali/finali. La prova usa solo testo sintetico, `store: false`, senza foto o dati utente; la funzione diagnostica temporanea, protetta da token e scadenza, è stata eliminata subito dopo. Questo verifica il rifiuto attuale della credenziale, senza stabilire quando o perché sia diventata inutilizzabile. Per le altre risposte 401 il messaggio resta generico sull’autenticazione: vedi i [codici di errore OpenAI](https://developers.openai.com/api/docs/guides/error-codes).
+
+Le funzioni di analisi piatto ed etichetta distinguono ora chiave rifiutata, accesso negato, credito/budget esaurito, limite temporaneo di richieste, immagine non leggibile, configurazione incompatibile e indisponibilità del servizio. Il timeout restituisce HTTP 504. Il client spiega anche errori di rete e risposte non JSON del gateway. La foto e la descrizione rimangono disponibili dopo un errore.
+
+La diagnostica registra stato, codice OpenAI, modello e request ID, senza messaggi grezzi del provider che potrebbero contenere credenziali. La risposta include `code` e, quando disponibile, `request_id` per il supporto. Il formato Structured Outputs segue la [documentazione ufficiale OpenAI](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses).
+
+Le due Edge Function sono state pubblicate il 24 ottobre. Verifica locale finale: 318 test superati in 57 file, build frontend e lint superati; controllo TypeScript separato della funzione piatto superato. Il controllo TypeScript 6 esteso alla funzione etichetta incontra due problemi preesistenti in `analysisConfirmation.ts` (tipo `BufferSource`) e nella validazione `package_piece_count`; non è una verifica completa dell’ambiente Deno. Le richieste remote senza autenticazione hanno restituito `OPTIONS 200` e `POST 401` con il messaggio aggiornato.
+
+Dopo l’aggiornamento del secret da parte dell’utente, una nuova prova minima server-side su Responses con `gpt-4.1-mini` ha restituito **HTTP 200**: l’autenticazione OpenAI è ripristinata. Anche questa prova ha inviato solo testo sintetico, `store: false`, senza foto o dati utente; la funzione temporanea è stata eliminata subito dopo. L’analisi completa con foto reale e descrizione resta da verificare nell’app.
+
 ## Verifica
 
 I test coprono input invalidi, sessione mancante, rifiuti/errori del modello, stime impossibili, revisione espandibile, correzioni e quantità mangiata, ingredienti scollegati, retry e registrazione diretta. Le risposte OpenAI e le scritture Supabase sono simulate nei test: la precisione nutrizionale su foto reali richiede valutazione separata.

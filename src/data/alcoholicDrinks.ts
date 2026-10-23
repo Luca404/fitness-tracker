@@ -17,6 +17,23 @@ export const ALCOHOLIC_DRINKS: BasicFood[] = [
   drink('prosecco', 'Prosecco', 125, 11, 2, 1.5, false),
   drink('birra-ambrata', 'Birra ambrata', 330, 5.5, 4, 0.3, false),
   drink('birra-forte', 'Birra forte', 330, 8, 4, 0.3, false),
+  // Indicative plain spirits and liqueurs; nutrition is per 100 ml, serving
+  // volumes are defaults only. Strength and volume can be edited before saving.
+  drink('vodka', 'Vodka (shot)', 40, 40, 0, 0, false, ['vodka', 'shot di vodka', 'shot vodka', 'cicchetto di vodka']),
+  drink('tequila', 'Tequila (shot)', 40, 40, 0, 0, false, ['tequila', 'shot di tequila', 'shot tequila', 'cicchetto di tequila']),
+  drink('gin', 'Gin', 40, 40, 0, 0, false, ['gin liscio', 'shot di gin']),
+  drink('rum', 'Rum', 40, 40, 0, 0, false, ['rum bianco', 'rum scuro', 'rum liscio', 'shot di rum']),
+  drink('whisky', 'Whisky', 40, 40, 0, 0, false, ['whiskey', 'bourbon', 'scotch', 'shot di whisky']),
+  drink('grappa', 'Grappa', 40, 40, 0, 0, false, ['grappino', 'shot di grappa']),
+  drink('brandy', 'Brandy', 40, 40, 0, 0, false, ['cognac', 'armagnac']),
+  drink('amaro', 'Amaro alle erbe', 40, 30, 25, 25, false, ['amaro', 'amari', 'digestivo', 'amaro del capo', 'montenegro', 'averna', 'ramazzotti']),
+  drink('fernet', 'Fernet', 40, 39, 8, 8, false, ['fernet branca', 'amaro fernet']),
+  drink('limoncello', 'Limoncello', 30, 30, 30, 30, false, ['limoncino', 'shot di limoncello']),
+  drink('sambuca', 'Sambuca', 40, 40, 35, 35, false, ['shot di sambuca']),
+  drink('amaretto', 'Amaretto', 40, 28, 35, 35, false, ['disaronno', 'liquore amaretto']),
+  drink('mirto', 'Mirto', 40, 32, 25, 25, false, ['mirto sardo', 'liquore di mirto']),
+  drink('liquore-caffe', 'Liquore al caffè', 40, 20, 40, 40, false, ['liquore al caffe', 'kahlua', 'borghetti']),
+  drink('crema-whisky', 'Crema di whisky', 40, 17, 22, 20, false, ['baileys', 'irish cream', 'crema di whiskey'], 13),
   // 90 ml prosecco (11%) + 60 ml Aperol (11%) / Campari (25%) + 30 ml soda.
   drink('aperol-spritz', 'Aperol Spritz', 180, 9.17, 9),
   drink('campari-spritz', 'Campari Spritz', 180, 13.83, 9),

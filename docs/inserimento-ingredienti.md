@@ -34,6 +34,16 @@ superata non sostituiscono quelli della ricerca corrente. I pulsanti di
 annullamento e salvataggio sono condivisi tra i principali editor, inclusa
 la revisione dei [pasti da foto](pasti-da-foto.md).
 
+## Shot, distillati e digestivi
+
+Il catalogo bevande include vodka e tequila in shot da 40 ml, gin, rum, whisky,
+grappa, brandy, amaro alle erbe, fernet, limoncello, sambuca, amaretto, mirto,
+liquore al caffè e crema di whisky. Le porzioni iniziali sono 40 ml, tranne il
+limoncello (30 ml); volume e gradazione si possono correggere prima di registrare.
+Calorie e macro vengono scalati dal riferimento per 100 ml e le calorie
+includono l’energia dell’alcol. I valori sono indicativi: gli alias di marca
+aiutano la ricerca del tipo di liquore, senza rappresentarne l’etichetta esatta.
+
 ## Note per lo sviluppo e verifica
 
 `IngredientEntryActions`, `NutritionFields`, `IngredientPortionCard` e

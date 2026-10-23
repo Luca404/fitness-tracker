@@ -83,7 +83,14 @@ export async function functionErrorMessage(error: unknown, fallback = 'Analisi n
     } catch {
       // The function may have returned a non-JSON gateway error.
     }
+    if (context.status === 401) return 'Sessione scaduta o non valida. Accedi di nuovo e riprova.'
+    if (context.status === 413) return 'La foto è troppo grande per il server. Ritagliala o scegli un’immagine più piccola.'
+    if (context.status === 429) return 'Troppe richieste di analisi. Attendi un minuto e riprova.'
+    if (context.status === 504) return 'Il servizio ha impiegato troppo tempo. Riprova tra poco.'
+    if (context.status >= 500) return 'Il servizio di analisi è temporaneamente non disponibile. Riprova tra poco.'
+  }
+  if ((error as { name?: string } | null)?.name === 'FunctionsFetchError') {
+    return 'Non riesco a contattare il servizio di analisi. Controlla la connessione a Internet e riprova.'
   }
   return fallback
 }
-

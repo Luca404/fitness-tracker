@@ -1,4 +1,5 @@
 import { getAuthenticatedUser } from '../_shared/auth.ts'
+import { openAiConnectionError, openAiError } from '../_shared/openAiErrors.ts'
 import { createConfirmationToken } from '../_shared/analysisConfirmation.ts'
 import {
   NUTRIENT_KEYS,
@@ -168,7 +169,7 @@ Deno.serve(async request => {
   const openAiKey = Deno.env.get('OPENAI_API_KEY')
   const user = await getAuthenticatedUser(request)
   if (!openAiKey) return json({ error: 'Servizio di analisi non configurato.' }, 503)
-  if (!user) return json({ error: 'Sessione non valida.' }, 401)
+  if (!user) return json({ error: 'Sessione scaduta o non valida. Accedi di nuovo e riprova.' }, 401)
 
   let body: unknown
   try {
@@ -190,6 +191,7 @@ Deno.serve(async request => {
   try {
     openAiResponse = await fetch(OPENAI_RESPONSES_URL, {
       method: 'POST',
+      signal: AbortSignal.timeout(60000),
       headers: { Authorization: `Bearer ${openAiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model,
@@ -215,16 +217,13 @@ Deno.serve(async request => {
       }),
     })
   } catch (error) {
-    console.error('OpenAI request could not be sent', error)
-    return json({ error: 'Servizio di analisi temporaneamente non raggiungibile.' }, 502)
+    const failure = openAiConnectionError(error)
+    return json(failure.body, failure.status)
   }
 
   if (!openAiResponse.ok) {
-    const requestId = openAiResponse.headers.get('x-request-id')
-    const errorText = await openAiResponse.text()
-    console.error('OpenAI request failed', openAiResponse.status, requestId, errorText.slice(0, 800))
-    if (openAiResponse.status === 429) return json({ error: 'Troppe analisi in corso. Riprova tra poco.' }, 429)
-    return json({ error: 'Non è stato possibile analizzare la foto.' }, 502)
+    const failure = await openAiError(openAiResponse, model)
+    return json(failure.body, failure.status)
   }
 
   const openAiBody = await openAiResponse.json() as JsonRecord

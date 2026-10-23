@@ -10,6 +10,7 @@ const beverages = BASIC_FOODS.filter(food => ['beverage', 'alcohol'].includes(fo
 function beverageIcon(food: BasicFood) {
   if (food.cocktail) return '🍸'
   if (food.id.startsWith('birra')) return '🍺'
+  if (food.category === 'alcohol' && (food.serving_ml ?? 100) <= 60) return '🥃'
   if (food.category === 'alcohol') return '🍷'
   if (food.id.includes('acqua')) return '💧'
   if (food.id === 'caffe-nero') return '☕'
@@ -62,7 +63,7 @@ export default function BeveragePicker({ onAddEntry }: {
       </button>
     </div>}
     {matches.length === 0 && <p className="text-sm text-gray-500">Nessuna bevanda trovata.</p>}
-    {(['Analcoliche', 'Vino e birra', 'Cocktail'] as const).map((group, index) => {
+    {(['Analcoliche', 'Vino, birra e liquori', 'Cocktail'] as const).map((group, index) => {
       const foods = matches.filter(food => index === 0 ? food.category === 'beverage' : index === 1 ? food.category === 'alcohol' && !food.cocktail : food.cocktail)
       return foods.length > 0 && <section key={group} className="space-y-2"><h4 className="text-xs font-semibold text-gray-400">{group}</h4>
         <div className="grid grid-cols-2 gap-2">{foods.map(food => <button key={food.id} type="button" disabled={saving}
