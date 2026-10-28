@@ -15,7 +15,7 @@ function meal(type: MealType, ...entries: MealEntry[]): Meal {
 }
 
 describe('buildMealTimeline', () => {
-  it('places a snack before dinner when it was registered earlier', () => {
+  it('shows the day from the latest meal back to breakfast, with afternoon snacks below dinner', () => {
     const timeline = buildMealTimeline([
       meal('breakfast', entry('breakfast', '2026-09-23T08:00:00Z')),
       meal('lunch', entry('lunch', '2026-09-23T12:00:00Z')),
@@ -23,10 +23,10 @@ describe('buildMealTimeline', () => {
       meal('snack', entry('snack', '2026-09-23T16:00:00Z')),
     ])
 
-    expect(timeline.map(group => group.type)).toEqual(['breakfast', 'lunch', 'snack', 'dinner'])
+    expect(timeline.map(group => group.type)).toEqual(['dinner', 'snack', 'lunch', 'breakfast'])
   })
 
-  it('splits snacks around dinner and keeps each registration in time order', () => {
+  it('places snacks around dinner with the latest registration first', () => {
     const timeline = buildMealTimeline([
       meal('dinner', entry('dinner', '2026-09-23T20:00:00Z')),
       meal('snack',
@@ -36,9 +36,9 @@ describe('buildMealTimeline', () => {
     ])
 
     expect(timeline.map(group => [group.type, group.entries.map(item => item.id)])).toEqual([
-      ['snack', ['early-snack', 'second-early-snack']],
-      ['dinner', ['dinner']],
       ['snack', ['late-snack']],
+      ['dinner', ['dinner']],
+      ['snack', ['second-early-snack', 'early-snack']],
     ])
   })
 
@@ -48,20 +48,20 @@ describe('buildMealTimeline', () => {
       meal('snack', entry('snack-b', timestamp), entry('snack-a', timestamp)),
     ])
 
-    expect(timeline[0].entries.map(item => item.id)).toEqual(['snack-a', 'snack-b'])
+    expect(timeline[0].entries.map(item => item.id)).toEqual(['snack-b', 'snack-a'])
   })
 
-  it('keeps breakfast, lunch and dinner in their usual order if logged late', () => {
+  it('keeps meal order reversed even when a main meal is logged late', () => {
     const timeline = buildMealTimeline([
       meal('dinner', entry('dinner', '2026-09-23T12:00:00Z')),
       meal('breakfast', entry('breakfast', '2026-09-23T20:00:00Z')),
       meal('lunch', entry('lunch', '2026-09-23T21:00:00Z')),
     ])
 
-    expect(timeline.map(group => group.type)).toEqual(['breakfast', 'lunch', 'dinner'])
+    expect(timeline.map(group => group.type)).toEqual(['dinner', 'lunch', 'breakfast'])
   })
 
-  it('can place a snack between two dinner registrations', () => {
+  it('keeps late dinner additions in one dinner below the post-dinner snack', () => {
     const timeline = buildMealTimeline([
       meal('dinner',
         entry('first-course', '2026-09-23T19:00:00Z'),
@@ -70,9 +70,24 @@ describe('buildMealTimeline', () => {
     ])
 
     expect(timeline.map(group => [group.type, group.entries.map(item => item.id)])).toEqual([
-      ['dinner', ['first-course']],
       ['snack', ['snack']],
-      ['dinner', ['dessert']],
+      ['dinner', ['dessert', 'first-course']],
     ])
+  })
+
+  it('does not move an afternoon snack when lunch gets a late addition or mutate stored order', () => {
+    const meals = [
+      meal('lunch', entry('lunch', '2026-09-23T12:00:00Z'), entry('late-lunch-addition', '2026-09-23T22:00:00Z')),
+      meal('dinner', entry('dinner', '2026-09-23T20:00:00Z')),
+      meal('snack', entry('afternoon-snack', '2026-09-23T16:00:00Z')),
+    ]
+    const original = structuredClone(meals)
+    expect(buildMealTimeline(meals).map(group => [group.type, group.entries.map(item => item.id)])).toEqual([
+      ['dinner', ['dinner']],
+      ['snack', ['afternoon-snack']],
+      ['lunch', ['late-lunch-addition', 'lunch']],
+    ])
+    expect(meals).toEqual(original)
+    expect(buildMealTimeline([])).toEqual([])
   })
 })

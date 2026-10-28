@@ -39,6 +39,22 @@ The existing `OPENAI_API_KEY` and `OPENAI_VISION_MODEL` secrets were present. `O
 
 No schema or grant changes were needed for this feature: `ai_meal_photo` is stored in the existing source text field and the existing diary RPCs handle registration and edits. This Edge Function release is separate from the shared keepalive migration above. See [the meal-photo guide](../docs/pasti-da-foto.md) for behavior, test results and release status.
 
+## Meal-photo extended nutrients — 2026-10-28
+
+The updated `analyze-meal-photo` function was deployed to
+`nitbisweytddtigoebeh` before the frontend push. It now requests and validates
+per-component fibre, total sugars and salt alongside calories/macros. The
+existing nutrition columns and diary RPCs persist these estimates; no schema
+migration or new grants are needed. Deploying the function first keeps the
+previous frontend compatible while preparing the new response fields.
+
+The linked migration list showed every version aligned, and
+`supabase db push --linked --dry-run` returned **Remote database is up to date**.
+The endpoint returned `OPTIONS 200` and `POST 401` with the expected invalid-session
+message for an anonymous request. No photos or authenticated OpenAI requests
+were sent in this probe. Local validation passed 339 tests, frontend build/lint
+and a TypeScript check of the meal-photo function with minimal Deno declarations.
+
 ## Workout distance — 2026-10-14
 
 `20261014120000_workout_distance` was applied to the hosted project after a dry-run listing only this migration. It adds nullable `workouts.distance_km` with a positive/maximum-1000 constraint; NULL preserves existing rows and duration-only clients. No RPC, grant or ownership policy changes are required. The SQL is mirrored in Trackr.

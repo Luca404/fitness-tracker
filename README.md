@@ -69,7 +69,9 @@ Keep the OpenAI key in Edge Function secrets, never in a `VITE_` variable. The o
 
 Occasional meal photos use the separate `analyze-meal-photo` function, which validates the user's session through Supabase Auth. `OPENAI_MEAL_PHOTO_MODEL` can override the vision model for this task. Photo estimates use cooked/ready-to-eat quantities and are reviewed before direct diary registration. No recipe, prepared batch or stored photo is created. See [meal photos](docs/pasti-da-foto.md) for setup and behavior.
 
-In the Italian UI, choose a meal → **Occasionale** → **Da foto**. Calories and macros appear first; expandable ingredient details allow corrections. Select how much you ate before registering directly in the diary. **Stimato da foto** remains visible on entries containing photo-estimated ingredients, and later edits apply to the already logged portion.
+In the Italian UI, use the fixed **Aggiungi pasto** button → choose a meal → **Da foto**, or **Da ingredienti** for single foods, composed dishes and reusable recipes. Photo estimates include calories, macros, fibre, total sugars and salt; expandable ingredient details allow corrections. Select how much you ate before registering directly in the diary. **Stimato da foto** remains visible on entries containing photo-estimated ingredients, and later edits apply to the already logged portion. Deploy the updated `analyze-meal-photo` function before this frontend update; no schema migration is needed.
+
+**Pasti** is the central navigation tab. The diary shows the latest meal moments and dishes first; each main meal remains a single section even when more dishes are logged after a snack. The confusing **Fatto** close button has been replaced with **✕**. The basic-food catalog adds twelve cheeses with [documented reference sources](docs/ingredienti-formaggi.md).
 
 ## Development checks
 

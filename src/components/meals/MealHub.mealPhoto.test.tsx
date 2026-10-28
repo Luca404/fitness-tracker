@@ -24,8 +24,8 @@ beforeEach(() => {
   mocks.analyzeMealPhoto.mockResolvedValue({
     name: 'Risotto ai funghi', confidence: 'medium', warnings: ['Burro ipotizzato.'],
     items: [
-      { food_name: 'Riso cotto', quantity_g: 200, category: 'grain', calories: 260, protein_g: 5, carbs_g: 56, fat_g: 1, assumed: false, note: null },
-      { food_name: 'Burro', quantity_g: 10, category: 'fat', calories: 75, protein_g: 0, carbs_g: 0, fat_g: 8, assumed: true, note: 'Ricetta del risotto.' },
+      { food_name: 'Riso cotto', quantity_g: 200, category: 'grain', calories: 260, protein_g: 5, carbs_g: 56, fat_g: 1, fiber_g: 1.5, sugars_g: 0.3, salt_g: 0.6, assumed: false, note: null },
+      { food_name: 'Burro', quantity_g: 10, category: 'fat', calories: 75, protein_g: 0, carbs_g: 0, fat_g: 8, fiber_g: 0, sugars_g: 0, salt_g: 0.01, assumed: true, note: 'Ricetta del risotto.' },
     ],
   })
 })
@@ -40,7 +40,6 @@ describe('occasional meal photo flow', () => {
   it('reviews a photo and logs the eaten share without creating a recipe or preparation', async () => {
     const onAddEntry = vi.fn().mockResolvedValue(undefined)
     render(<TestHub onAddEntry={onAddEntry} />)
-    fireEvent.click(screen.getByRole('button', { name: /Occasionale/ }))
     fireEvent.click(screen.getByRole('button', { name: /Da foto/ }))
     expect(screen.getByText(/Per Live Photo e Motion Photo viene usata solo la parte fotografica/)).toBeTruthy()
     const gallery = screen.getByLabelText('Scegli foto del piatto') as HTMLInputElement
@@ -58,19 +57,18 @@ describe('occasional meal photo flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Metà' }))
     fireEvent.click(screen.getByRole('button', { name: 'Registra nel diario' }))
     await waitFor(() => expect(onAddEntry).toHaveBeenCalledWith('Risotto ai funghi', [
-      expect.objectContaining({ food_name: 'Riso cotto', quantity_g: 100, calories: 130, pantry_item_id: null, source: 'ai_meal_photo' }),
+      expect.objectContaining({ food_name: 'Riso cotto', quantity_g: 100, calories: 130, fiber_g: 0.75, sugars_g: 0.15, salt_g: 0.3, pantry_item_id: null, source: 'ai_meal_photo' }),
       expect.objectContaining({ food_name: 'Burro', quantity_g: 5, calories: 37.5, fat_g: 4 }),
     ]))
     expect(mocks.createPreparedBatch).not.toHaveBeenCalled()
     expect(mocks.createDish).not.toHaveBeenCalled()
-    expect(await screen.findByRole('button', { name: /Occasionale/ })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: /Da foto/ })).toBeTruthy()
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:meal-photo')
   })
 
   it('keeps the photo and description for a retry after an analysis error', async () => {
     mocks.analyzeMealPhoto.mockRejectedValueOnce(new Error('Foto non leggibile'))
     render(<TestHub onAddEntry={vi.fn()} />)
-    fireEvent.click(screen.getByRole('button', { name: /Occasionale/ }))
     fireEvent.click(screen.getByRole('button', { name: /Da foto/ }))
     fireEvent.change(screen.getByLabelText('Scatta foto del piatto'), { target: { files: [new File(['photo'], 'meal.jpg', { type: 'image/jpeg' })] } })
     fireEvent.click(screen.getByRole('button', { name: 'Analizza piatto' }))

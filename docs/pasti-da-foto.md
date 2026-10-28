@@ -1,6 +1,6 @@
 # Pasti occasionali da foto
 
-Dal diario: scegli il pasto → **Occasionale** → **Da foto**. L'inserimento manuale resta disponibile nello stesso punto.
+Dal diario: **Aggiungi pasto** → scegli il pasto → **Da foto**. **Da ingredienti** riunisce alimento singolo, composizione di un piatto e creazione di una ricetta.
 
 La funzione è pubblicata dall'8 ottobre 2026. Se nell'app installata compare **È disponibile una nuova versione di fitTrackr.**, premi **Aggiorna** per caricare il rilascio.
 
@@ -18,13 +18,18 @@ I test di preparazione simulano la decodifica del browser e verificano firme dei
 
 ## Revisione e registrazione
 
-La revisione mostra subito calorie e macro. **Ingredienti e quantità** è chiuso inizialmente: aprendolo si possono cambiare nomi, categorie, pesi, calorie e macro, rimuovere componenti e aggiungere ingredienti. I condimenti dedotti sono indicati come **Ipotizzato** durante la revisione. Gli avvisi espongono le incertezze del modello senza percentuali di accuratezza.
+La revisione mostra subito calorie, macro, fibre, zuccheri e sale. **Ingredienti e quantità** è chiuso inizialmente: aprendolo si possono cambiare nomi, categorie, pesi, calorie e macro, rimuovere componenti e aggiungere ingredienti. Ogni ingrediente ha anche i dettagli modificabili **Fibre, zuccheri e sale**. I condimenti dedotti sono indicati come **Ipotizzato** durante la revisione. Gli avvisi espongono le incertezze del modello senza percentuali di accuratezza.
 
-I pesi proposti sono quelli del cibo già pronto, non degli ingredienti crudi. La modifica del peso scala calorie e macro in proporzione; una correzione manuale dei nutrienti diventa la nuova base per le successive modifiche del peso. La percentuale mangiata (1–100%, con scorciatoie Tutto/¾/Metà) si applica una sola volta al momento della registrazione. Il riepilogo mostra la quantità che verrà registrata, mentre i dettagli si riferiscono all'intera porzione fotografata.
+I pesi proposti sono quelli del cibo già pronto, non degli ingredienti crudi. La modifica del peso scala calorie, macro e i tre nutrienti aggiuntivi in proporzione; una correzione manuale dei nutrienti diventa la nuova base per le successive modifiche del peso. La percentuale mangiata (1–100%, con scorciatoie Tutto/¾/Metà) si applica una sola volta al momento della registrazione. Il riepilogo mostra la quantità che verrà registrata, mentre i dettagli si riferiscono all'intera porzione fotografata.
 
 **Registra nel diario** usa la normale registrazione atomica del pasto senza salvare ricette o creare lotti preparati. Nessun ingrediente proposto è collegato al catalogo personale; gli ingredienti aggiunti dalla ricerca vengono anch'essi scollegati dal catalogo. Le voci stimate usano `source: ai_meal_photo`, distinto da `ai_photo` usato per trascrivere le etichette. Questo campo testuale è già supportato dal database e dalle RPC: non servono migrazioni.
 
-Il diario mostra **Stimato da foto** per le registrazioni che contengono almeno una voce con quella provenienza. Le successive modifiche usano la stessa revisione, applicata alle quantità già registrate, senza una nuova percentuale. Foto, descrizione, avvisi e singole motivazioni delle ipotesi non vengono conservati; restano nome, ingredienti, quantità, nutrienti e provenienza. Fibre, zuccheri e sale non stimati restano sconosciuti, non zero.
+Il diario mostra **Stimato da foto** per le registrazioni che contengono almeno una voce con quella provenienza. Le successive modifiche usano la stessa revisione, applicata alle quantità già registrate, senza una nuova percentuale. Foto, descrizione, avvisi e singole motivazioni delle ipotesi non vengono conservati; restano nome, ingredienti, quantità, nutrienti e provenienza. OpenAI stima fibre, zuccheri totali e sale totale per ciascun componente. Il sale comprende quello già presente e quello aggiunto plausibile ed è espresso come sale, non sodio. Quando non stimabili, i valori restano sconosciuti (`null`); anche un campo cancellato in revisione torna sconosciuto. I pasti storici non vengono rianalizzati. Zuccheri superiori ai carboidrati, valori negativi/non finiti e masse nutrizionali impossibili vengono rifiutati.
+
+L'estensione del 28 ottobre richiede il frontend e la
+funzione `analyze-meal-photo` aggiornata (prima la funzione, poi il frontend).
+Usa le colonne e le RPC esistenti, senza migrazioni. I test simulano OpenAI:
+non misurano l'accuratezza dei nuovi nutrienti su foto reali.
 
 Anche aprendo il pasto registrato, i dettagli degli ingredienti sono inizialmente chiusi. **Modifica piatto** permette di correggere quantità e nutrienti anche quando la stima contiene un solo componente. Se tutti i componenti stimati vengono rimossi e sostituiti con alimenti inseriti manualmente, l'indicazione **Stimato da foto** non compare più.
 
@@ -59,6 +64,26 @@ Dopo l’aggiornamento del secret da parte dell’utente, una nuova prova minima
 ## Verifica
 
 I test coprono input invalidi, sessione mancante, rifiuti/errori del modello, stime impossibili, revisione espandibile, correzioni e quantità mangiata, ingredienti scollegati, retry e registrazione diretta. Le risposte OpenAI e le scritture Supabase sono simulate nei test: la precisione nutrizionale su foto reali richiede valutazione separata.
+
+Il 28 ottobre 2026 sono passati **339 test in 58 file**, build e lint con
+Node 22. È passato anche il controllo TypeScript della funzione piatto con
+dichiarazioni minime dell'ambiente Deno. Le verifiche includono i nuovi
+nutrienti, correzioni e percentuali, valori sconosciuti rispetto a zero,
+ricerca dei formaggi e il caso cena → spuntino → aggiunta alla cena, con
+intestazione unica, totale e ordine corretti. Resta il controllo visivo
+nell'app da parte dell'utente.
+
+### Pubblicazione della funzione — 28 ottobre 2026
+
+La funzione `analyze-meal-photo` aggiornata è stata pubblicata nel progetto
+`nitbisweytddtigoebeh` prima del push del frontend su `main`. La verifica remota
+ha restituito `OPTIONS 200` e `POST 401` con il messaggio di sessione non valida
+per una richiesta anonima. Non sono state inviate foto o eseguite analisi OpenAI
+in questo controllo. Vercel distribuisce il frontend dai push su `main`.
+
+`supabase migration list --linked` ha mostrato tutte le versioni allineate e
+`supabase db push --linked --dry-run` ha confermato **Remote database is up to
+date**: nessuna migrazione da applicare per questo rilascio.
 
 ## Pubblicazione verificata — 8 ottobre 2026
 

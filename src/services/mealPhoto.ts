@@ -10,7 +10,7 @@ export function mealPhotoItems(analysis: MealPhotoAnalysis): DishItemDraft[] {
     food_name: item.food_name.trim(), quantity_g: item.quantity_g, unit: 'g',
     category: item.category, calories: item.calories,
     protein_g: item.protein_g, carbs_g: item.carbs_g, fat_g: item.fat_g,
-    fiber_g: null, sugars_g: null, salt_g: null,
+    fiber_g: item.fiber_g ?? null, sugars_g: item.sugars_g ?? null, salt_g: item.salt_g ?? null,
     source: 'ai_meal_photo', food_key: null, pantry_item_id: null,
     off_food_id: null, dish_item_id: null, is_customization: false,
   }))

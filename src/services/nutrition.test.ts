@@ -52,6 +52,11 @@ describe('local basic-food catalog', () => {
     ['friarielli', 'cime-rapa'],
     ['prugna fresca', 'susine'],
     ['caffe', 'caffe-nero'],
+    ['pecorino grattugiato', 'pecorino-romano'],
+    ['cottage cheese', 'fiocchi-latte'],
+    ['scamorza affumicata', 'scamorza'],
+    ['gorgonzola', 'gorgonzola'],
+    ['robiola', 'robiola'],
   ])('finds %s locally, including aliases and unaccented queries', (query, expectedId) => {
     expect(searchBasicFoods(query).some(food => food.id === expectedId)).toBe(true)
   })

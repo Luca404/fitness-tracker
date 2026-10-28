@@ -214,6 +214,19 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   'grana-padano': [0, 0, 1.5],
   ricotta: [0, 3.3, 0.1],
   'formaggio-spalmabile': [0, 1.4, 1.2],
+  // Sources and sodium-to-salt conversion: docs/ingredienti-formaggi.md.
+  gorgonzola: [0, 1, 1.5],
+  taleggio: [0, 0.9, 2.18],
+  fontina: [0, 0.8, 1.72],
+  'pecorino-romano': [0, 1.8, 4.5],
+  provolone: [0, 2, 2.15],
+  brie: [0, 0.2, 1.75],
+  feta: [0, 1.5, 3.6],
+  'fiocchi-latte': [0, 3.2, 0.73],
+  crescenza: [0, 2, 0.8],
+  stracchino: [0, 1.6, 0.9],
+  robiola: [0, 1.5, 0.66],
+  scamorza: [0, 1.8, 1.8],
 
   // Oli e grassi
   'olio-evo': [0, 0, 0],

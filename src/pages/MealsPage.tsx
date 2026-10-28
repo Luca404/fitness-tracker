@@ -162,7 +162,7 @@ export default function MealsPage() {
     && !selectedEntry.dish_id && !selectedEntry.prepared_batch_id && !isMealPhotoEntry(selectedEntry)
 
   return (
-    <div className="p-4 pb-24 space-y-4">
+    <div className="p-4 space-y-4" style={{ paddingBottom: 'calc(10rem + env(safe-area-inset-bottom))' }}>
       <DaySelector date={selectedDate} onChange={setSelectedDate} />
 
       {/* Summary card: ring + stats */}
@@ -207,18 +207,21 @@ export default function MealsPage() {
       )}
 
       {/* Add meal button */}
-      <button
-        type="button"
-        className="group flex w-full select-none items-center gap-3 rounded-2xl border border-primary-500/25 bg-gradient-to-r from-primary-600/15 to-emerald-400/5 px-4 py-4 text-left transition hover:border-primary-500/50"
-        onClick={openNewMeal}
-      >
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-500 text-2xl font-light text-white shadow-lg shadow-primary-900/30">+</div>
-        <div className="flex-1">
-          <p className="font-semibold">Registra ciò che hai consumato</p>
-          <p className="text-xs text-gray-400">Ingrediente, piatto o bevanda</p>
-        </div>
-        <span className="text-gray-600 transition group-hover:translate-x-0.5 group-hover:text-primary-400">→</span>
-      </button>
+      <div className="fixed left-1/2 z-30 w-full max-w-md -translate-x-1/2 px-4"
+        style={{ bottom: 'calc(4.75rem + env(safe-area-inset-bottom))' }}>
+        <button
+          type="button"
+          className="group flex w-full select-none items-center gap-3 rounded-2xl bg-primary-600 px-4 py-3 text-left shadow-xl shadow-black/40 ring-1 ring-primary-400/40 transition hover:bg-primary-500"
+          onClick={openNewMeal}
+        >
+          <div aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-2xl font-light text-white">+</div>
+          <div className="flex-1">
+            <p className="font-semibold">Aggiungi pasto</p>
+            <p className="text-xs text-primary-100">Da foto, ingredienti o piatti salvati</p>
+          </div>
+          <span aria-hidden="true" className="transition group-hover:translate-x-0.5">→</span>
+        </button>
+      </div>
 
       {/* Meal section — single card */}
       {loading ? (
@@ -287,7 +290,7 @@ export default function MealsPage() {
               <div className="flex items-center gap-2">
                 <button type="button" onClick={() => {
                   if (hubMode === 'list') setModalStep('meal-type')
-                  else if (hubMode === 'oneoff-photo' || hubMode === 'oneoff-manual') setHubMode('oneoff')
+                  else if (hubMode === 'oneoff-manual' || hubMode === 'ingredient' || hubMode === 'new') setHubMode('ingredients')
                   else setHubMode('list')
                 }} className="text-gray-400 text-lg leading-none" aria-label="Indietro">←</button>
                 <span className="text-sm font-medium text-gray-300">{activeMealLabel}</span>
@@ -295,9 +298,10 @@ export default function MealsPage() {
               <button
                 type="button"
                 onClick={() => setFoodSearchOpen(false)}
-                className="px-4 py-1.5 bg-primary-600 hover:bg-primary-500 rounded-lg text-sm font-medium transition-colors"
+                className="flex h-10 w-10 items-center justify-center rounded-xl text-xl text-gray-400 hover:bg-gray-700"
+                aria-label="Chiudi"
               >
-                Fatto
+                ✕
               </button>
             </div>
             <MealHub onAddEntry={handleAddDishEntry} onDishUpdated={() => fetchForDate(selectedDate)}

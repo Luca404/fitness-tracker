@@ -34,6 +34,15 @@ superata non sostituiscono quelli della ricerca corrente. I pulsanti di
 annullamento e salvataggio sono condivisi tra i principali editor, inclusa
 la revisione dei [pasti da foto](pasti-da-foto.md).
 
+## Inserimento dal diario
+
+Nel diario il pulsante fisso **Aggiungi pasto** apre prima la scelta del
+momento della giornata, poi due modalità: **Da foto** e **Da ingredienti**.
+La seconda riunisce **Un alimento**, **Componi un piatto** e **Crea una ricetta**,
+con la stessa grafica e una descrizione di ciò che verrà salvato. Le ricette
+già salvate e i piatti pronti sono accessibili direttamente. Il catalogo
+include anche [12 nuovi formaggi con fonti](ingredienti-formaggi.md).
+
 ## Shot, distillati e digestivi
 
 Il catalogo bevande include vodka e tequila in shot da 40 ml, gin, rum, whisky,

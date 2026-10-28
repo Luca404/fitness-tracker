@@ -10,8 +10,8 @@ import { analyzeMealPhoto, mealPhotoItems } from './mealPhoto'
 const analysis: MealPhotoAnalysis = {
   name: 'Pasta al pomodoro', confidence: 'medium', warnings: ['Quantità di olio ipotizzata.'],
   items: [
-    { food_name: 'Pasta cotta', quantity_g: 200, category: 'grain', calories: 300, protein_g: 10, carbs_g: 60, fat_g: 2, assumed: false, note: null },
-    { food_name: 'Olio', quantity_g: 10, category: 'fat', calories: 90, protein_g: 0, carbs_g: 0, fat_g: 10, assumed: true, note: 'Condimento non distinguibile.' },
+    { food_name: 'Pasta cotta', quantity_g: 200, category: 'grain', calories: 300, protein_g: 10, carbs_g: 60, fat_g: 2, fiber_g: 4, sugars_g: 2, salt_g: 0.6, assumed: false, note: null },
+    { food_name: 'Olio', quantity_g: 10, category: 'fat', calories: 90, protein_g: 0, carbs_g: 0, fat_g: 10, fiber_g: 0, sugars_g: 0, salt_g: null, assumed: true, note: 'Condimento non distinguibile.' },
   ],
 }
 
@@ -31,13 +31,13 @@ describe('meal photo analysis', () => {
     } })
   })
 
-  it('keeps cooked portions detached from the pantry, unknown nutrients and label-photo provenance', () => {
+  it('keeps cooked portions detached from the pantry and scales estimated nutrients and unknowns', () => {
     const items = mealPhotoItems(analysis)
     expect(items[0]).toMatchObject({ quantity_g: 200, calories: 300, source: 'ai_meal_photo',
-      fiber_g: null, sugars_g: null, salt_g: null, pantry_item_id: null, food_key: null, dish_item_id: null })
+      fiber_g: 4, sugars_g: 2, salt_g: 0.6, pantry_item_id: null, food_key: null, dish_item_id: null })
     const half = consumedPhotoItems(items, 50)
-    expect(half[0]).toMatchObject({ quantity_g: 100, calories: 150, carbs_g: 30, fiber_g: null })
-    expect(half[1]).toMatchObject({ quantity_g: 5, calories: 45, fat_g: 5 })
+    expect(half[0]).toMatchObject({ quantity_g: 100, calories: 150, carbs_g: 30, fiber_g: 2, sugars_g: 1, salt_g: 0.3 })
+    expect(half[1]).toMatchObject({ quantity_g: 5, calories: 45, fat_g: 5, fiber_g: 0, sugars_g: 0, salt_g: null })
     expect(items[0].quantity_g).toBe(200)
   })
 
@@ -57,6 +57,8 @@ describe('meal photo analysis', () => {
     for (const change of [
       { quantity_g: 0 }, { quantity_g: NaN }, { quantity_g: 10001 }, { quantity_g: 1 },
       { calories: Infinity }, { calories: 0 }, { carbs_g: -1 }, { assumed: 'false' }, { category: 'unknown' },
+      { fiber_g: -1 }, { sugars_g: 61 }, { salt_g: Infinity }, { fiber_g: 200 }, { salt_g: 200 },
+      { fiber_g: '4' }, { sugars_g: undefined },
     ]) expect(isMealPhotoAnalysis({ ...analysis, items: [{ ...analysis.items[0], ...change }] })).toBe(false)
   })
 

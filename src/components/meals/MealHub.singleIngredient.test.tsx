@@ -39,14 +39,15 @@ describe('single ingredient meal flow', () => {
     const onAddEntry = vi.fn().mockResolvedValue(undefined)
     render(<TestHub onAddEntry={onAddEntry} />)
 
-    fireEvent.click(screen.getByRole('button', { name: /Ingrediente singolo/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Da ingredienti/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Un alimento/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Seleziona mela' }))
 
     await waitFor(() => expect(onAddEntry).toHaveBeenCalledWith('Mela', [expect.objectContaining({
       quantity_g: 150, calories: 78,
     })]))
     expect(mocks.createPreparedBatch).not.toHaveBeenCalled()
-    expect(await screen.findByRole('button', { name: /Ingrediente singolo/ })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: /Da ingredienti/ })).toBeTruthy()
   })
 })
 

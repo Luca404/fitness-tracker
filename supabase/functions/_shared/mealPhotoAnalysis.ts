@@ -14,6 +14,9 @@ export interface MealPhotoIngredient {
   protein_g: number
   carbs_g: number
   fat_g: number
+  fiber_g: number | null
+  sugars_g: number | null
+  salt_g: number | null
   assumed: boolean
   note: string | null
 }
@@ -45,10 +48,13 @@ export const mealPhotoSchema = {
           protein_g: { type: 'number', minimum: 0 },
           carbs_g: { type: 'number', minimum: 0 },
           fat_g: { type: 'number', minimum: 0 },
+          fiber_g: { type: ['number', 'null'], minimum: 0, description: 'Fibre totali in grammi della quantità indicata; null solo se non stimabili.' },
+          sugars_g: { type: ['number', 'null'], minimum: 0, description: 'Zuccheri totali, inclusi quelli naturalmente presenti, non superiori ai carboidrati; null se non stimabili.' },
+          salt_g: { type: ['number', 'null'], minimum: 0, description: 'Sale totale in grammi, non sodio: include sale naturale e aggiunto plausibile; null se non stimabile.' },
           assumed: { type: 'boolean', description: 'True per ingredienti dedotti e non distinguibili nella foto, come olio o burro.' },
           note: { type: ['string', 'null'], description: 'Breve motivazione di una supposizione o quantità incerta.' },
         },
-        required: ['food_name', 'quantity_g', 'category', 'calories', 'protein_g', 'carbs_g', 'fat_g', 'assumed', 'note'],
+        required: ['food_name', 'quantity_g', 'category', 'calories', 'protein_g', 'carbs_g', 'fat_g', 'fiber_g', 'sugars_g', 'salt_g', 'assumed', 'note'],
       },
     },
   },
@@ -67,6 +73,10 @@ function nonNegative(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0
 }
 
+function nullableNonNegative(value: unknown): value is number | null {
+  return value === null || nonNegative(value)
+}
+
 export function isMealPhotoAnalysis(value: unknown): value is MealPhotoAnalysis {
   if (!record(value) || !boundedText(value.name, 160)
     || typeof value.confidence !== 'string' || !['high', 'medium', 'low'].includes(value.confidence)
@@ -80,11 +90,14 @@ export function isMealPhotoAnalysis(value: unknown): value is MealPhotoAnalysis 
       || !MEAL_PHOTO_CATEGORIES.includes(item.category as MealPhotoIngredient['category'])
       || !nonNegative(item.calories) || !nonNegative(item.protein_g)
       || !nonNegative(item.carbs_g) || !nonNegative(item.fat_g)
+      || !nullableNonNegative(item.fiber_g) || !nullableNonNegative(item.sugars_g) || !nullableNonNegative(item.salt_g)
       || typeof item.assumed !== 'boolean'
       || !(item.note === null || boundedText(item.note, 500))) return false
     // Reject impossible nutrient mass or energy density, allowing for rounding.
     const macroEnergy = item.protein_g * 4 + item.carbs_g * 4 + item.fat_g * 9
-    return item.protein_g + item.carbs_g + item.fat_g <= item.quantity_g * 1.1
+    const nutrientMass = item.protein_g + item.carbs_g + item.fat_g + (item.fiber_g ?? 0) + (item.salt_g ?? 0)
+    return (item.sugars_g === null || item.sugars_g <= item.carbs_g)
+      && nutrientMass <= item.quantity_g * 1.1
       && item.calories <= item.quantity_g * 10
       && Math.abs(item.calories - macroEnergy) <= Math.max(15, macroEnergy * 0.3)
   })

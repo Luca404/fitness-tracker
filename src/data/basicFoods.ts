@@ -226,6 +226,19 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'grana-padano', name: 'Grana Padano', category: 'dairy', calories: 396, protein_g: 33, carbs_g: 0, fat_g: 28 },
   { id: 'ricotta', name: 'Ricotta', category: 'dairy', calories: 146, protein_g: 8.8, carbs_g: 3.5, fat_g: 10.9 },
   { id: 'formaggio-spalmabile', name: 'Formaggio spalmabile', category: 'dairy', calories: 250, protein_g: 6.0, carbs_g: 4.0, fat_g: 24 },
+  // CREA and producer reference values per 100 g; sources: docs/ingredienti-formaggi.md.
+  { id: 'gorgonzola', name: 'Gorgonzola', aliases: ['formaggio erborinato'], category: 'dairy', calories: 324, protein_g: 19.1, carbs_g: 1, fat_g: 27.1 },
+  { id: 'taleggio', name: 'Taleggio', category: 'dairy', calories: 315, protein_g: 19, carbs_g: 0.9, fat_g: 26.2 },
+  { id: 'fontina', name: 'Fontina', category: 'dairy', calories: 361, protein_g: 24.5, carbs_g: 0.8, fat_g: 28.9 },
+  { id: 'pecorino-romano', name: 'Pecorino romano', aliases: ['pecorino', 'pecorino grattugiato'], category: 'dairy', calories: 409, protein_g: 26, carbs_g: 1.8, fat_g: 33.1 },
+  { id: 'provolone', name: 'Provolone', category: 'dairy', calories: 374, protein_g: 28.1, carbs_g: 2, fat_g: 28.2 },
+  { id: 'brie', name: 'Brie', category: 'dairy', calories: 320, protein_g: 19.3, carbs_g: 0.2, fat_g: 26.9 },
+  { id: 'feta', name: 'Feta', aliases: ['formaggio greco'], category: 'dairy', calories: 250, protein_g: 15.6, carbs_g: 1.5, fat_g: 20.2 },
+  { id: 'fiocchi-latte', name: 'Fiocchi di latte', aliases: ['cottage cheese', 'fiocchi di formaggio magro'], category: 'dairy', calories: 115, protein_g: 9.7, carbs_g: 3.2, fat_g: 7.1 },
+  { id: 'crescenza', name: 'Crescenza', category: 'dairy', calories: 274, protein_g: 12, carbs_g: 2.5, fat_g: 24 },
+  { id: 'stracchino', name: 'Stracchino', category: 'dairy', calories: 314, protein_g: 14, carbs_g: 2.6, fat_g: 27 },
+  { id: 'robiola', name: 'Robiola', category: 'dairy', calories: 327, protein_g: 6.4, carbs_g: 3.1, fat_g: 32 },
+  { id: 'scamorza', name: 'Scamorza', aliases: ['scamorza bianca', 'scamorza affumicata'], category: 'dairy', calories: 320, protein_g: 22, carbs_g: 1.8, fat_g: 25 },
 
   // Oli e grassi
   { id: 'olio-evo', name: 'Olio extravergine d\'oliva', category: 'fat', calories: 884, protein_g: 0, carbs_g: 0, fat_g: 100 },

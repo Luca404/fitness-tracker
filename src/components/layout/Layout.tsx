@@ -4,9 +4,9 @@ import AppErrorBoundary from '../common/AppErrorBoundary'
 import PageLoading from '../common/PageLoading'
 
 const NAV = [
-  { to: '/meals',   label: 'Pasti',    icon: '🍽️' },
-  { to: '/kitchen', label: 'Cucina',   icon: '🍳' },
   { to: '/fitness', label: 'Fitness',   icon: '💪' },
+  { to: '/kitchen', label: 'Cucina',   icon: '🍳' },
+  { to: '/meals',   label: 'Pasti',    icon: '🍽️' },
   { to: '/wellbeing', label: 'Benessere', icon: '🌿' },
   { to: '/history', label: 'Storico',  icon: '📈' },
 ]
@@ -59,7 +59,9 @@ export default function Layout() {
                 }`
               }
             >
-              <span className="text-2xl mb-1" aria-hidden="true">{icon}</span>
+              <span className={to === '/meals'
+                ? 'mb-0.5 flex h-9 w-12 items-center justify-center rounded-2xl bg-primary-500/15 text-2xl ring-1 ring-primary-500/25'
+                : 'text-2xl mb-1'} aria-hidden="true">{icon}</span>
               <span className="text-xs">{label}</span>
             </NavLink>
           ))}

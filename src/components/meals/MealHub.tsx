@@ -40,7 +40,7 @@ function referenceWeight(dish: Dish): number {
 
 function totalKcal(dish: Dish): number { return dishTotals(dish).calories }
 
-export type MealHubMode = 'list' | 'ingredient' | 'new' | 'oneoff' | 'oneoff-manual' | 'oneoff-photo' | 'edit' | 'pick' | 'prepare' | 'prepared-pick'
+export type MealHubMode = 'list' | 'ingredients' | 'ingredient' | 'new' | 'oneoff-manual' | 'oneoff-photo' | 'edit' | 'pick' | 'prepare' | 'prepared-pick'
 
 export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beveragesOnly = false, mode, setMode, mealType, date }: Props) {
   const { user } = useAuth()
@@ -357,7 +357,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           requireName
           saveLabel="Salva e prepara"
           onSave={handleSaveNewDish}
-          onCancel={() => setMode('list')}
+          onCancel={() => setMode('ingredients')}
         />
       </div>
     )
@@ -366,7 +366,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   if (mode === 'ingredient') {
     return <div className="space-y-5">
       <ComposerHeader icon="🍎" eyebrow="Inserimento veloce" title="Registra un ingrediente" />
-      <FoodSearch hideHeader onClose={() => setMode('list')}
+      <FoodSearch hideHeader onClose={() => setMode('ingredients')}
         addLabel="Registra ingrediente" saving={addingIngredient}
         onAdd={item => { void addSingleIngredient(item) }} />
     </div>
@@ -390,27 +390,23 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     )
   }
 
-  if (mode === 'oneoff') {
+  if (mode === 'ingredients') {
     return <div className="space-y-4">
-      <ComposerHeader icon="✨" eyebrow="Inserimento veloce" title="Piatto occasionale" />
-      <p className="text-sm text-gray-400">Un piatto al ristorante, da asporto o una preparazione che non vuoi salvare tra le ricette.</p>
-      <button type="button" onClick={() => setMode('oneoff-photo')}
-        className="flex w-full items-center gap-3 rounded-2xl border border-primary-500/30 bg-primary-950/20 p-4 text-left">
-        <span className="text-2xl">📸</span><span><span className="block font-semibold">Da foto</span>
-          <span className="mt-1 block text-xs text-gray-400">Stima il piatto e registra quanto hai mangiato</span></span>
-      </button>
-      <button type="button" onClick={() => setMode('oneoff-manual')}
-        className="flex w-full items-center gap-3 rounded-2xl border border-gray-700 p-4 text-left">
-        <span className="text-2xl">✍️</span><span><span className="block font-semibold">Inserimento manuale</span>
-          <span className="mt-1 block text-xs text-gray-400">Componi il piatto con ingredienti e quantità</span></span>
-      </button>
+      <ComposerHeader icon="🥕" eyebrow="Aggiungi pasto" title="Da ingredienti" />
+      <p className="text-sm text-gray-400">Cerca nel catalogo, scansiona un codice a barre o inserisci i valori a mano.</p>
+      <EntryMethod icon="🍎" title="Un alimento" description="Scegli la quantità e registralo subito nel diario."
+        onClick={() => setMode('ingredient')} />
+      <EntryMethod icon="🍲" title="Componi un piatto" description="Unisci più ingredienti e indica la porzione mangiata."
+        onClick={() => setMode('oneoff-manual')} />
+      <EntryMethod icon="📖" title="Crea una ricetta" description="Componi il piatto e salvalo in Cucina per riutilizzarlo."
+        onClick={() => setMode('new')} />
     </div>
   }
 
   if (mode === 'oneoff-photo') {
     return <div className="space-y-5">
-      <ComposerHeader icon="📸" eyebrow="Piatto occasionale" title="Registra da foto" />
-      <MealPhotoCapture onCancel={() => setMode('oneoff')} onSave={async (name, items) => {
+      <ComposerHeader icon="📸" eyebrow="Aggiungi pasto" title="Registra da foto" />
+      <MealPhotoCapture onCancel={() => setMode('list')} onSave={async (name, items) => {
         await onAddEntry(name, items)
         setMode('list')
       }} />
@@ -420,7 +416,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   if (mode === 'oneoff-manual') {
     return (
       <div className="space-y-5">
-        <ComposerHeader icon="✨" eyebrow="Inserimento veloce" title="Piatto occasionale" />
+        <ComposerHeader icon="🍲" eyebrow="Da ingredienti" title="Componi un piatto" />
         <DishEditor
           initialName=""
           initialItems={[]}
@@ -428,7 +424,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           requireName
           saveLabel="Prepara il piatto"
           onSave={handleSaveOneoff}
-          onCancel={() => setMode('oneoff')}
+          onCancel={() => setMode('ingredients')}
         />
       </div>
     )
@@ -639,22 +635,12 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-2.5">
-        <button type="button" onClick={() => setMode('new')}
-          className="flex min-h-24 min-w-0 flex-col items-center justify-center gap-2 rounded-2xl border border-amber-400/25 bg-gradient-to-b from-amber-400/10 to-gray-900/60 px-2 py-3 text-center shadow-sm shadow-black/20 transition hover:-translate-y-0.5 hover:border-amber-400/60 hover:bg-amber-400/15 active:translate-y-0">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-400/15 text-xl">🍳</span>
-          <span className="text-xs font-semibold leading-tight sm:text-sm">Nuova ricetta</span>
-        </button>
-        <button type="button" onClick={() => setMode('oneoff')}
-          className="flex min-h-24 min-w-0 flex-col items-center justify-center gap-2 rounded-2xl border border-violet-400/25 bg-gradient-to-b from-violet-400/10 to-gray-900/60 px-2 py-3 text-center shadow-sm shadow-black/20 transition hover:-translate-y-0.5 hover:border-violet-400/60 hover:bg-violet-400/15 active:translate-y-0">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-400/15 text-xl">✨</span>
-          <span className="text-xs font-semibold leading-tight sm:text-sm">Occasionale</span>
-        </button>
-        <button type="button" onClick={() => setMode('ingredient')}
-          className="flex min-h-24 min-w-0 flex-col items-center justify-center gap-2 rounded-2xl border border-emerald-400/25 bg-gradient-to-b from-emerald-400/10 to-gray-900/60 px-2 py-3 text-center shadow-sm shadow-black/20 transition hover:-translate-y-0.5 hover:border-emerald-400/60 hover:bg-emerald-400/15 active:translate-y-0">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400/15 text-xl">🍎</span>
-          <span className="text-xs font-semibold leading-tight sm:text-sm">Ingrediente singolo</span>
-        </button>
+      <div className="space-y-2.5">
+        <h3 className="text-lg font-bold">Come vuoi aggiungerlo?</h3>
+        <EntryMethod icon="📸" title="Da foto" description="Fotografa il piatto e controlla la stima nutrizionale."
+          onClick={() => setMode('oneoff-photo')} />
+        <EntryMethod icon="🥕" title="Da ingredienti" description="Cerca un alimento o componi un piatto con le quantità."
+          onClick={() => setMode('ingredients')} />
       </div>
 
       <div>
@@ -697,6 +683,18 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
       {iconPicker}
     </div>
   )
+}
+
+function EntryMethod({ icon, title, description, onClick }: {
+  icon: string; title: string; description: string; onClick: () => void
+}) {
+  return <button type="button" onClick={onClick}
+    className="flex w-full items-center gap-3 rounded-2xl border border-gray-700 bg-gray-900/35 p-4 text-left transition hover:border-primary-500/60 hover:bg-primary-950/20">
+    <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-2xl">{icon}</span>
+    <span className="min-w-0 flex-1"><span className="block font-semibold">{title}</span>
+      <span className="mt-1 block text-xs leading-relaxed text-gray-400">{description}</span></span>
+    <span aria-hidden="true" className="text-gray-500">→</span>
+  </button>
 }
 
 function ComposerHeader({ icon, eyebrow, title }: {

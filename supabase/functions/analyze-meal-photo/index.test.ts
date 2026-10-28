@@ -12,7 +12,7 @@ import { handleRequest } from './index'
 const fetchMock = vi.fn()
 const estimate = {
   name: 'Riso', confidence: 'medium', warnings: [],
-  items: [{ food_name: 'Riso cotto', quantity_g: 200, category: 'grain', calories: 260, protein_g: 5, carbs_g: 56, fat_g: 1, assumed: false, note: null }],
+  items: [{ food_name: 'Riso cotto', quantity_g: 200, category: 'grain', calories: 260, protein_g: 5, carbs_g: 56, fat_g: 1, fiber_g: 1.5, sugars_g: 0.3, salt_g: 0.6, assumed: false, note: null }],
 }
 const body = { image_base64: 'YQ==', mime_type: 'image/jpeg', description: 'Riso al ristorante' }
 const request = (payload: unknown = body) => new Request('https://example.test/analyze-meal-photo', {
@@ -44,6 +44,8 @@ describe('analyze-meal-photo endpoint', () => {
     expect(sent.input[0].content[1].image_url).toBe('data:image/jpeg;base64,YQ==')
     expect(sent.input[0].content[0].text).toContain(body.description)
     expect(sent.instructions).toContain('COTTO/GIÀ PRONTO')
+    expect(sent.text.format.schema.properties.items.items.required).toEqual(expect.arrayContaining(['fiber_g', 'sugars_g', 'salt_g']))
+    expect(sent.instructions).toContain('sale in grammi, non sodio')
   })
 
   it('rejects unauthenticated requests without spending an OpenAI call', async () => {

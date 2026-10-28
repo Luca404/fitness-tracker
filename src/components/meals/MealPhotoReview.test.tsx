@@ -46,6 +46,37 @@ describe('meal photo review', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalledWith('Pasta al pomodoro', [expect.objectContaining({ quantity_g: 50, calories: 90, carbs_g: 15 })]))
   })
 
+  it('scales estimated fibre, sugars and salt after corrections and persists the eaten portion', async () => {
+    const onSave = setup({ initialItems: [{ ...pasta, fiber_g: 4, sugars_g: 2, salt_g: 0.8 }] })
+    expect(screen.getByText('Fibre')).toBeTruthy()
+    expect(screen.getByText('Zuccheri')).toBeTruthy()
+    expect(screen.getByText('Sale')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Sale (g) ingrediente 1'), { target: { value: '1.2' } })
+    fireEvent.change(screen.getByLabelText('Quantità ingrediente 1 (g)'), { target: { value: '100' } })
+    expect((screen.getByLabelText('Sale (g) ingrediente 1') as HTMLInputElement).value).toBe('0.6')
+    expect((screen.getByLabelText('Fibre (g) ingrediente 1') as HTMLInputElement).value).toBe('2')
+    fireEvent.click(screen.getByRole('button', { name: 'Metà' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Registra nel diario' }))
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith('Pasta al pomodoro', [expect.objectContaining({
+      quantity_g: 50, fiber_g: 1, sugars_g: 0.5, salt_g: 0.3,
+    })]))
+  })
+
+  it('blocks negative optional nutrients and sugars above carbs, preserving unknown versus zero', async () => {
+    const onSave = setup()
+    const save = screen.getByRole('button', { name: 'Registra nel diario' }) as HTMLButtonElement
+    fireEvent.change(screen.getByLabelText('Zuccheri (g) ingrediente 1'), { target: { value: '61' } })
+    expect(save.disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText('Zuccheri (g) ingrediente 1'), { target: { value: '' } })
+    fireEvent.change(screen.getByLabelText('Sale (g) ingrediente 1'), { target: { value: '-1' } })
+    expect(save.disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText('Sale (g) ingrediente 1'), { target: { value: '0' } })
+    fireEvent.click(save)
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith('Pasta al pomodoro', [expect.objectContaining({
+      fiber_g: null, sugars_g: null, salt_g: 0,
+    })]))
+  })
+
   it('blocks incomplete quantities, negative macros and invalid percentages without losing density', async () => {
     const onSave = setup()
     const save = screen.getByRole('button', { name: 'Registra nel diario' }) as HTMLButtonElement

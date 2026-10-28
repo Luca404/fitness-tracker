@@ -4,7 +4,9 @@ import type { DishItemDraft, FoodCategory } from '../../types'
 import type { MealPhotoAnalysis } from '../../services/mealPhoto'
 import { FOOD_CATEGORIES } from '../../data/foodCategories'
 import { consumedPhotoItems } from '../../utils/mealPhoto'
-import { nutritionTotals, scaleIngredient } from '../../utils/nutrition'
+import { nutritionTotals, nutritionValidationError, scaleIngredient } from '../../utils/nutrition'
+import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
+import ExtendedNutrition from './ExtendedNutrition'
 import { formatDecimal } from '../../utils/decimal'
 import FoodSearch from './FoodSearch'
 
@@ -12,8 +14,14 @@ const nutrientLabels = {
   calories: 'Calorie (kcal)', protein_g: 'Proteine (g)',
   carbs_g: 'Carboidrati (g)', fat_g: 'Grassi (g)',
 } as const
-type Nutrient = keyof typeof nutrientLabels
-const nutrientKeys = Object.keys(nutrientLabels) as Nutrient[]
+const extendedLabels = { fiber_g: 'Fibre (g)', sugars_g: 'Zuccheri (g)', salt_g: 'Sale (g)' } as const
+type Nutrient = keyof typeof nutrientLabels | keyof typeof extendedLabels
+const nutrientKeys = Object.keys(nutrientLabels) as (keyof typeof nutrientLabels)[]
+const extendedKeys = Object.keys(extendedLabels) as (keyof typeof extendedLabels)[]
+
+function nutrientInputs(item: DishItemDraft): Record<Nutrient, string> {
+  return Object.fromEntries([...nutrientKeys, ...extendedKeys].map(key => [key, item[key] == null ? '' : String(item[key])])) as Record<Nutrient, string>
+}
 
 interface ReviewRow {
   id: number
@@ -29,7 +37,7 @@ interface ReviewRow {
 function createRow(item: DishItemDraft, id: number, assumption?: MealPhotoAnalysis['items'][number]): ReviewRow {
   return {
     id, reference: item, name: item.food_name, amount: String(item.quantity_g), category: item.category,
-    nutrients: { calories: String(item.calories), protein_g: String(item.protein_g), carbs_g: String(item.carbs_g), fat_g: String(item.fat_g) },
+    nutrients: nutrientInputs(item),
     assumed: assumption?.assumed ?? false, note: assumption?.note ?? null,
   }
 }
@@ -40,11 +48,15 @@ function rowItem(row: ReviewRow): DishItemDraft | null {
     || !Number.isFinite(quantity) || quantity < 0.1 || quantity > 10000
     || nutrientKeys.some(key => !row.nutrients[key].trim()
       || !Number.isFinite(Number(row.nutrients[key])) || Number(row.nutrients[key]) < 0)) return null
-  return {
+  const item = {
     ...scaleIngredient(row.reference, quantity), food_name: row.name.trim(), category: row.category,
     calories: Number(row.nutrients.calories), protein_g: Number(row.nutrients.protein_g),
     carbs_g: Number(row.nutrients.carbs_g), fat_g: Number(row.nutrients.fat_g),
+    fiber_g: row.nutrients.fiber_g.trim() ? Number(row.nutrients.fiber_g) : null,
+    sugars_g: row.nutrients.sugars_g.trim() ? Number(row.nutrients.sugars_g) : null,
+    salt_g: row.nutrients.salt_g.trim() ? Number(row.nutrients.salt_g) : null,
   }
+  return nutritionValidationError(item) ? null : item
 }
 
 interface Props {
@@ -80,10 +92,7 @@ export default function MealPhotoReview({ initialName, initialItems, analysis, e
       const quantity = Number(amount)
       if (!amount.trim() || !Number.isFinite(quantity) || quantity < 0.1 || quantity > 10000) return { ...row, amount }
       const scaled = scaleIngredient(row.reference, quantity)
-      return { ...row, amount, nutrients: {
-        calories: String(scaled.calories), protein_g: String(scaled.protein_g),
-        carbs_g: String(scaled.carbs_g), fat_g: String(scaled.fat_g),
-      } }
+      return { ...row, amount, nutrients: nutrientInputs(scaled) }
     }))
   }
 
@@ -125,6 +134,7 @@ export default function MealPhotoReview({ initialName, initialItems, analysis, e
               <p className="text-xs text-gray-400">{label}</p><p className="mt-1 font-semibold">{formatDecimal(value, 0)} g</p>
             </div>)}
           </div>
+          <ExtendedNutrition totals={getExtendedNutritionTotals(consumed)} />
         </div>
       </div>
       {!editing && <section className="rounded-2xl border border-gray-700 p-4">
@@ -177,6 +187,16 @@ export default function MealPhotoReview({ initialName, initialItems, analysis, e
                   onChange={event => changeNutrient(row.id, key, event.target.value)} className={inputClass} />
               </label>)}
             </div>
+            <details className="mt-3 rounded-xl border border-gray-700 p-3">
+              <summary className="cursor-pointer text-xs font-medium text-gray-300">Fibre, zuccheri e sale</summary>
+              <p className="mt-2 text-xs text-gray-500">Valori della quantità indicata. Un campo vuoto resta sconosciuto.</p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {extendedKeys.map(key => <label key={key} className="min-w-0 text-xs text-gray-400">{extendedLabels[key]}
+                  <input aria-label={`${extendedLabels[key]} ingrediente ${index + 1}`} type="number" min="0" step="any" inputMode="decimal" value={row.nutrients[key]}
+                    onChange={event => changeNutrient(row.id, key, event.target.value)} className={inputClass} />
+                </label>)}
+              </div>
+            </details>
           </div>)}
         </div>
         <button type="button" onClick={() => setAdding(current => !current)} className="mt-4 w-full rounded-xl border border-gray-700 py-2.5 text-sm text-primary-300">
