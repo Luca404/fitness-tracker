@@ -7,7 +7,7 @@ const NAV = [
   { to: '/fitness', label: 'Fitness',   icon: '💪' },
   { to: '/kitchen', label: 'Cucina',   icon: '🍳' },
   { to: '/meals',   label: 'Pasti',    icon: '🍽️' },
-  { to: '/wellbeing', label: 'Benessere', icon: '🌿' },
+  { to: '/weight', label: 'Peso', icon: '⚖️' },
   { to: '/history', label: 'Storico',  icon: '📈' },
 ]
 

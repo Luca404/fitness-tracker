@@ -4,12 +4,12 @@ import { MemoryRouter } from 'react-router-dom'
 import type { GymPlan, GymSession } from '../../types'
 
 const mocks = vi.hoisted(() => ({
-  selectedDate: '2026-10-01', getGymPlans: vi.fn(), getRecentGymSessions: vi.fn(), reorderGymPlans: vi.fn(),
+  selectedDate: '2026-10-01', getGymPlans: vi.fn(), getGymTrainingSessions: vi.fn(), reorderGymPlans: vi.fn(),
   getLatestWeightLog: vi.fn(), getWeightLogs: vi.fn(), showToast: vi.fn(),
   getCustomGymExercises: vi.fn(), saveGymPlan: vi.fn(),
 }))
 vi.mock('../../services/gymApi', () => ({
-  getGymPlans: mocks.getGymPlans, getRecentGymSessions: mocks.getRecentGymSessions, reorderGymPlans: mocks.reorderGymPlans,
+  getGymPlans: mocks.getGymPlans, getGymTrainingSessions: mocks.getGymTrainingSessions, reorderGymPlans: mocks.reorderGymPlans,
   getCustomGymExercises: mocks.getCustomGymExercises, saveGymPlan: mocks.saveGymPlan,
 }))
 vi.mock('../../services/api', () => ({
@@ -37,7 +37,7 @@ beforeEach(() => {
   mocks.getGymPlans.mockResolvedValue([])
   mocks.getCustomGymExercises.mockResolvedValue([])
   mocks.saveGymPlan.mockResolvedValue('new-plan')
-  mocks.getRecentGymSessions.mockResolvedValue([session])
+  mocks.getGymTrainingSessions.mockResolvedValue([session])
   mocks.getLatestWeightLog.mockResolvedValue({ date: '2026-10-01', weight_kg: 78 })
   mocks.getWeightLogs.mockResolvedValue([])
 })

@@ -50,11 +50,20 @@ export async function deleteGymPlan(id: string): Promise<void> {
 
 async function hydrateGymSessions(rows: Omit<GymSession, 'sets'>[]): Promise<GymSession[]> {
   if (rows.length === 0) return []
-  const { data: sets, error } = await supabase.from('gym_sets').select('*')
-    .in('session_id', rows.map(row => row.id))
-    .order('exercise_position').order('set_number')
-  if (error) throw error
-  const setsBySession = groupBy(sets ?? [], set => set.session_id)
+  // Thirty sessions can exceed the API's per-request row limit. Use a stable
+  // order across pages so progress and session summaries include every set.
+  const sets: GymSet[] = []
+  const pageSize = 1000
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase.from('gym_sets').select('*')
+      .in('session_id', rows.map(row => row.id))
+      .order('session_id').order('exercise_position').order('set_number').order('id')
+      .range(offset, offset + pageSize - 1)
+    if (error) throw error
+    sets.push(...(data ?? []) as GymSet[])
+    if (!data || data.length < pageSize) break
+  }
+  const setsBySession = groupBy(sets, set => set.session_id)
   return rows.map(row => ({
     ...row,
     sets: setsBySession.get(row.id) ?? [],
@@ -74,21 +83,27 @@ export async function getGymSessionsForRange(from: string, to: string): Promise<
   return hydrateGymSessions((data ?? []) as Omit<GymSession, 'sets'>[])
 }
 
-export async function getRecentGymSessions(date: string): Promise<GymSession[]> {
-  const [recentResult, activeResult, dateResult] = await Promise.all([
-    supabase.from('gym_sessions').select('*').order('started_at', { ascending: false }).limit(30),
+export async function getGymTrainingSessions(date: string): Promise<GymSession[]> {
+  const [activeResult, dateResult] = await Promise.all([
     supabase.from('gym_sessions').select('*').is('completed_at', null).maybeSingle(),
     supabase.from('gym_sessions').select('*').eq('date', date),
   ])
-  if (recentResult.error) throw recentResult.error
   if (activeResult.error) throw activeResult.error
   if (dateResult.error) throw dateResult.error
   const rows = [...new Map([
     ...(activeResult.data ? [activeResult.data] : []),
     ...(dateResult.data ?? []),
-    ...(recentResult.data ?? []),
   ].map(row => [row.id, row])).values()]
   return hydrateGymSessions(rows as Omit<GymSession, 'sets'>[])
+}
+
+// Bound the progress view to the latest 30 completed sessions, including same-day sessions.
+export async function getCompletedGymSessions(): Promise<GymSession[]> {
+  const { data, error } = await supabase.from('gym_sessions').select('*')
+    .not('completed_at', 'is', null).order('date', { ascending: false })
+    .order('started_at', { ascending: false }).order('id', { ascending: false }).limit(30)
+  if (error) throw error
+  return hydrateGymSessions((data ?? []) as Omit<GymSession, 'sets'>[])
 }
 
 export async function getGymSession(id: string): Promise<GymSession> {

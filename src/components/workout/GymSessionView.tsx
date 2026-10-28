@@ -137,9 +137,10 @@ function GymSetRow({ set, draft, onDraftChange, onSaved, onDeleted, canDelete }:
   </div>
 }
 
-export default function GymSessionView({ session, onBack, onCompleted, onDeleted }: {
+export default function GymSessionView({ session, onBack, onCompleted, onDeleted, backLabel = '← Allenamenti' }: {
   session: GymSession
   onBack: () => void
+  backLabel?: string
   onCompleted: () => Promise<void>
   onDeleted: () => Promise<void>
 }) {
@@ -250,7 +251,7 @@ export default function GymSessionView({ session, onBack, onCompleted, onDeleted
   }
 
   return <div className="space-y-5">
-    <button type="button" onClick={onBack} className="text-sm text-gray-400">← Allenamenti</button>
+    <button type="button" onClick={onBack} className="text-sm text-gray-400">{backLabel}</button>
     <div className="rounded-2xl bg-primary-950/20 p-4 ring-1 ring-primary-800/30">
       <p className="text-xs uppercase tracking-wide text-primary-400">{session.completed_at ? 'Allenamento completato' : 'Allenamento in corso'}</p>
       <h2 className="mt-1 text-xl font-bold">{session.plan_name}</h2>

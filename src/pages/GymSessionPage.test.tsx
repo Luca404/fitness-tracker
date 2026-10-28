@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import type { GymSession } from '../types'
 
 const mocks = vi.hoisted(() => ({ getGymSession: vi.fn(), showToast: vi.fn() }))
@@ -21,6 +21,7 @@ const session: GymSession = {
 }
 
 afterEach(cleanup)
+function ProgressDestination() { return <p>Progressi disponibili{useLocation().search}</p> }
 
 describe('GymSessionPage', () => {
   it('loads a session directly and returns to Fitness from the focused view', async () => {
@@ -38,5 +39,15 @@ describe('GymSessionPage', () => {
     expect(screen.queryByRole('tablist', { name: 'Sezioni Fitness' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '← Allenamenti' }))
     expect(await screen.findByText('Fitness home')).toBeTruthy()
+  })
+
+  it('returns to Progressi when a session was opened from exercise history', async () => {
+    mocks.getGymSession.mockResolvedValue({ ...session, completed_at: '2026-10-01T11:00:00Z' })
+    render(<MemoryRouter initialEntries={['/fitness/session/session-1?from=progress']}><Routes>
+      <Route path="/fitness/session/:sessionId" element={<GymSessionPage />} />
+      <Route path="/fitness" element={<ProgressDestination />} />
+    </Routes></MemoryRouter>)
+    fireEvent.click(await screen.findByRole('button', { name: '← Progressi' }))
+    expect(await screen.findByText('Progressi disponibili?tab=progress')).toBeTruthy()
   })
 })

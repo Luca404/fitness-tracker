@@ -64,6 +64,7 @@ it('shows progress through tile fill without visible numbers in the meal recap',
   current.date = '2026-10-04'
   Object.assign(current.entries[0].items[0], { sugars_g: 20, salt_g: 10 })
   render(<MemoryRouter><GoodHabits selectedDate="2026-10-04" currentMeals={[current]} compact /></MemoryRouter>)
+  expect(screen.getByRole('link', { name: 'Apri il dettaglio delle buone abitudini' }).getAttribute('href')).toBe('/meals/wellbeing')
   const sugarTile = await screen.findByLabelText(/Zuccheri totali: in linea, 20 g, limite 75 g/)
   const saltTile = screen.getByLabelText(/Sale: da migliorare, 10 g, limite 5 g.*2x del limite/)
   expect((sugarTile.firstElementChild as HTMLElement).style.height).toBe('27%')

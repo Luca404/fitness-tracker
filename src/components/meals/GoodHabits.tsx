@@ -47,7 +47,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
     const summary = summarizeHabitRows(rows)
     return (
       <Link
-        to="/wellbeing"
+        to="/meals/wellbeing"
         className="group block rounded-2xl border border-gray-700/70 bg-gray-800/55 px-4 py-3 transition hover:border-primary-700 hover:bg-gray-800"
         aria-label="Apri il dettaglio delle buone abitudini"
       >

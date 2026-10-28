@@ -8,12 +8,14 @@ import WorkoutDrawer from '../components/workout/WorkoutDrawer'
 import WorkoutRow from '../components/workout/WorkoutRow'
 import DaySelector from '../components/common/DaySelector'
 import GymTraining from '../components/workout/GymTraining'
+import Modal from '../components/common/Modal'
 
 export default function WorkoutPage({ embedded = false }: { embedded?: boolean }) {
   const { user } = useAuth()
   const { workouts, currentWeightKg, addWorkout, removeWorkout, showToast } = useData()
   const { selectedDate, setSelectedDate } = useSettings()
   const [selectedActivity, setSelectedActivity] = useState<string | null>(null)
+  const [activityPickerOpen, setActivityPickerOpen] = useState(false)
 
   const totalBurned = workouts.reduce((s, w) => s + w.calories_burned, 0)
 
@@ -48,13 +50,14 @@ export default function WorkoutPage({ embedded = false }: { embedded?: boolean }
     <div className={embedded ? 'space-y-6' : 'space-y-6 p-4 pb-24'}>
       <DaySelector date={selectedDate} onChange={setSelectedDate} />
 
-      <GymTraining />
+      <button type="button" onClick={() => setActivityPickerOpen(true)}
+        className="flex w-full items-center gap-3 rounded-2xl border border-primary-500/30 bg-primary-950/25 p-4 text-left transition hover:bg-primary-950/40">
+        <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-500/15 text-2xl">+</span>
+        <span><span className="block font-semibold">Altre attività</span>
+          <span className="mt-1 block text-xs text-gray-400">Registra camminata, corsa, ciclismo e altro</span></span>
+      </button>
 
-      <details className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
-        <summary className="cursor-pointer font-semibold">Altre attività</summary>
-        <p className="mt-2 text-xs text-gray-500">Registra durata, distanza facoltativa e calorie stimate. Per serie e carichi usa una scheda palestra.</p>
-        <div className="mt-4"><ActivityGrid onSelect={setSelectedActivity} /></div>
-      </details>
+      <GymTraining />
 
       {/* Other logged activities for the selected day */}
       {workouts.length > 0 && (
@@ -70,6 +73,10 @@ export default function WorkoutPage({ embedded = false }: { embedded?: boolean }
       )}
 
       {/* Drawer */}
+      <Modal open={activityPickerOpen} onClose={() => setActivityPickerOpen(false)} title="Altre attività">
+        <p className="mb-4 text-sm text-gray-400">Scegli l’attività: potrai inserire durata e, quando prevista, distanza.</p>
+        <ActivityGrid onSelect={key => { setActivityPickerOpen(false); setSelectedActivity(key) }} />
+      </Modal>
       <WorkoutDrawer
         activityKey={selectedActivity}
         weightKg={currentWeightKg ?? 70}

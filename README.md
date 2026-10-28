@@ -9,9 +9,9 @@ Part of the **Trackrs ecosystem**, alongside [Trackr](https://github.com/Luca404
 - **Meals:** daily calories and macros, saved recipes, single foods, drinks, editable recipe additions and occasional meals estimated from photos with editable ingredient details.
 - **Kitchen:** personal ingredients, recipe categories, custom icons and prepared batches with cooked-weight estimates and remaining portions.
 - **Food import:** basic-food search, Open Food Facts, barcode scanning, nutrition-label photos and manual entry through shared ingredient forms with expandable optional nutrients.
-- **Fitness:** reusable gym plans with saved ordering, exercise search, set logging, rest timers and estimated session calories; activity logging with optional kilometres for walking, running, cycling and treadmill.
+- **Fitness:** separate Training and Progress sections, reusable gym plans, set logging, rest timers, recent sessions and exercise load/repetition charts; other activities are accessible above the plans, with optional kilometres for walking, running, cycling and treadmill.
 - **Goals and weight:** personalized calorie and macro targets, a weight history and automatic recalculation from a seven-day average after a change of at least 2%.
-- **Wellbeing:** daily habits, including total sugars and alcohol units, plus rolling seven-day totals and daily averages for legumes and fish; drinks support editable volume and alcohol strength.
+- **Meal habit detail:** the recap in Meals opens daily habits, including total sugars and alcohol units, plus rolling seven-day totals and daily averages for legumes and fish; drinks support editable volume and alcohol strength.
 - **History and PWA:** calorie/workout trends, installation on mobile or desktop, an update prompt and page-load recovery.
 
 The Kitchen category buttons appear in one row above search. Select breakfast, lunch, dinner or snack to filter recipes and prepared batches; tap the active category again to clear it. With no selection, all categories are shown. Text search continues to filter recipes.
@@ -72,6 +72,8 @@ Occasional meal photos use the separate `analyze-meal-photo` function, which val
 In the Italian UI, use the fixed **Aggiungi pasto** button → choose a meal → **Da foto**, or **Da ingredienti** for single foods, composed dishes and reusable recipes. Photo estimates include calories, macros, fibre, total sugars and salt; expandable ingredient details allow corrections. Select how much you ate before registering directly in the diary. **Stimato da foto** remains visible on entries containing photo-estimated ingredients, and later edits apply to the already logged portion. Deploy the updated `analyze-meal-photo` function before this frontend update; no schema migration is needed.
 
 **Pasti** is the central navigation tab. The diary shows the latest meal moments and dishes first; each main meal remains a single section even when more dishes are logged after a snack. The confusing **Fatto** close button has been replaced with **✕**. The basic-food catalog adds twelve cheeses with [documented reference sources](docs/ingredienti-formaggi.md).
+
+The main navigation is **Fitness · Cucina · Pasti · Peso · Storico**. Weight is a standalone page again; habit details live under Meals with a return link. Existing `/wellbeing` and `/fitness?tab=weight` bookmarks redirect to their new destinations. Fitness → **Progressi** uses the latest 30 completed gym sessions, keeping equipment, bench angles, per-side repetitions and bodyweight/loaded variants separate. It compares the best recorded set per session, displays the latest and period-best sets, and charts load or bodyweight repetitions. See [the gym guide](docs/allenamenti-palestra.md).
 
 ## Development checks
 

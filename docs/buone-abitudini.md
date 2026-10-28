@@ -1,13 +1,17 @@
 # Buone abitudini
 
-Revisione del 6 ottobre 2026.
+Revisione della navigazione del 28 ottobre 2026; calcoli invariati dal 6 ottobre.
 
 ## Recap nella pagina Pasti
 
 Il recap mostra otto quadratini: verdura, frutta, legumi, pesce, fibre,
 zuccheri totali, unità alcoliche e sale. Dentro ogni quadratino compaiono solo
 l’icona e il simbolo di stato, senza quantità, medie o moltiplicatori numerici.
-Toccando il recap si apre il dettaglio in **Benessere**.
+Toccando il recap si apre il dettaglio **Buone abitudini**, una pagina
+secondaria di Pasti con il collegamento **← Pasti**. Benessere non è più
+una scheda della barra principale: al suo posto compare **Peso**.
+Il vecchio indirizzo `/wellbeing` reindirizza a `/meals/wellbeing`, dove
+rimane selezionata l'icona Pasti. La data selezionata è condivisa con il diario.
 
 Il colore riempie il quadratino dal basso, in proporzione al rapporto tra
 valore registrato e target, fino al riempimento completo. Questo vale sia
@@ -27,7 +31,7 @@ Per esempio, con un limite di 5 g, un valore di 2,5 g riempie metà quadratino;
 arancione. Il rapporto è rappresentato dal colore, senza numeri nel quadratino.
 Un limite pari a zero resta vuoto a zero e diventa pieno se il valore è positivo.
 
-## Dettaglio in Benessere
+## Dettaglio delle buone abitudini
 
 La pagina dedicata mostra quantità, unità, target e barre di avanzamento.
 Per un limite superato indica anche il rapporto rispetto alla soglia:

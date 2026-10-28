@@ -1,6 +1,7 @@
 # Distanza delle attività e calorie nello storico
 
-In **Fitness → Allenamenti**, Camminata, Corsa, Ciclismo e Tapis roulant
+In **Fitness → Allenamenti → Altre attività** (pulsante in alto, prima delle
+schede palestra), Camminata, Corsa, Ciclismo e Tapis roulant
 permettono di inserire anche la **Distanza (km, facoltativa)**. La durata resta
 obbligatoria; lasciando vuoti i chilometri si usa la stima precedente basata
 sul tipo di attività, sulla durata e sul peso corporeo.

@@ -1,5 +1,63 @@
 # Schede e allenamenti in palestra
 
+## Navigazione e attività — 28 ottobre 2026
+
+La barra principale mostra **Fitness · Cucina · Pasti · Peso · Storico**.
+**Peso** torna a essere una pagina autonoma; Fitness ha due schede secondarie:
+**Allenamenti** e **Progressi**. I vecchi collegamenti a
+`/fitness?tab=weight` vengono reindirizzati a `/weight`.
+
+In **Allenamenti**, il pulsante **Altre attività** è subito sotto il selettore
+del giorno, prima delle schede palestra. Apre una finestra con le attività:
+la scelta porta al modulo di durata/distanza e salva nella data selezionata.
+Le attività già registrate e le sessioni palestra del giorno restano visibili.
+Una sessione ancora aperta può essere ripresa anche se iniziata in un altro
+giorno. Sessioni recenti e progressi sono nella scheda dedicata.
+
+## Progressi per esercizio
+
+**Fitness → Progressi** legge le ultime **30 sessioni completate**, ordinate
+per data dell'allenamento e orario di avvio. Le sessioni aperte non consumano
+il limite. Non è uno storico completo: «Migliore nel periodo» si riferisce
+soltanto a queste sessioni, non a un record assoluto su tutti gli allenamenti.
+Le serie vengono lette a pagine per evitare di troncare storici con oltre
+1000 serie tra le sessioni selezionate.
+
+Il selettore distingue esercizio, attrezzo, inclinazione panca (anche vuota
+rispetto a 0°), ripetizioni per lato e carico registrato rispetto al corpo
+libero. Ogni sessione contribuisce con una serie di riferimento: il carico
+più alto e, a pari carico, il maggior numero di ripetizioni. A corpo libero
+si usa la serie con più ripetizioni. Le serie non completate o con valori
+non validi non entrano nei confronti. Un peso registrato pari a zero resta
+distinto dal peso non indicato.
+
+La pagina mostra ultima sessione, migliore serie nel periodo e differenza di
+carico (o ripetizioni a corpo libero) rispetto alla sessione precedente.
+Il grafico usa un punto per sessione, anche quando ce ne sono due nello
+stesso giorno. Con una sola sessione spiega che serve una seconda rilevazione.
+Il carico dei manubri è per singolo manubrio, come nel modulo di inserimento.
+Non viene calcolato un massimale stimato né un punteggio che mescola carichi
+e ripetizioni diverse.
+
+Le **Sessioni recenti** mostrano subito le ultime tre; un pulsante espande
+il resto delle 30 caricate. Ogni sessione si apre nella vista dedicata e il
+ritorno riapre **Progressi**. Durata totale e stima delle calorie mantengono
+lo stesso calcolo delle sessioni del giorno. Gli errori di caricamento hanno
+un pulsante **Riprova** e restano distinti da uno storico vuoto.
+
+La riorganizzazione usa tabelle, permessi e dati già esistenti; non richiede
+migrazioni o nuove RPC.
+
+Verifica del 28 ottobre: **357 test in 63 file**, build e lint superati con
+Node 22. I test coprono navigazione e vecchi indirizzi, apertura/ritorno dalle
+sessioni, inserimento delle altre attività, serie di riferimento, varianti,
+grafici a corpo libero, più sessioni nello stesso giorno, errori/retry,
+richieste superate da un cambio account e caricamento oltre 1000 serie.
+Le API e i grafici sono simulati nei test; il controllo visivo su telefono
+resta a cura dell'utente.
+
+## Creazione delle schede
+
 In **Fitness → Allenamenti**, crea una scheda per ogni giornata (per esempio
 Upper A, Lower A, Upper B e Lower B). Cerca un esercizio per nome italiano,
 inglese o attrezzo; se manca, aggiungilo come esercizio personalizzato. Ogni
@@ -44,7 +102,7 @@ le sessioni recenti. Modificare o eliminare una scheda non riscrive le sessioni
 già registrate.
 
 La sessione si apre in una schermata dedicata all'allenamento: durante
-l'esecuzione non compaiono le schede Allenamenti/Peso, il selettore del giorno
+l'esecuzione non compaiono le schede Allenamenti/Progressi, il selettore del giorno
 e l'elenco delle altre attività. Viene mostrato un esercizio alla volta. Le
 frecce portano all'esercizio precedente o successivo; il riposo parte dopo
 ogni serie segnata come fatta, anche dopo l'ultima. Puoi scegliere 1, 1½, 2 o 3

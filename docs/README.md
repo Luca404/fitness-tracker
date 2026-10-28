@@ -1,5 +1,10 @@
 # Documentazione fitTrackr
 
+Il 28 ottobre 2026 la navigazione diventa **Fitness · Cucina · Pasti · Peso ·
+Storico**. Le buone abitudini sono un dettaglio aperto dal recap di Pasti;
+Fitness ha le schede Allenamenti e Progressi, con attività accessibili in
+alto e grafici delle prestazioni delle ultime 30 sessioni completate.
+
 Revisione del 16 ottobre 2026: Storico esclude il giorno corrente da grafici e medie e segnala i giorni mancanti, oltre ai miglioramenti all'editor delle schede palestra (catalogo personale, serie cancellabili e inclinazione panca), distanza delle attività, palestra nello storico e moduli ingredienti condivisi. La migrazione palestra è stata verificata in isolamento e applicata al database online il 15 ottobre; l’istanza locale resta separata. L'app usa un ID di build generato da Vite per gli aggiornamenti PWA; non ha una versione applicativa numerica da incrementare nelle guide.
 
 | Documento | Contenuto |

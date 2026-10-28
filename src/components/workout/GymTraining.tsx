@@ -5,69 +5,10 @@ import { useSettings } from '../../contexts/SettingsContext'
 import { useNavigate } from 'react-router-dom'
 import * as gymApi from '../../services/gymApi'
 import { getLatestWeightLog, getWeightLogs } from '../../services/api'
-import type { GymPlan, GymSession, GymSet, WeightLog } from '../../types'
-import { formatDecimal } from '../../utils/decimal'
-import { estimateGymSessionCalories, formatGymDuration, sessionDurationMinutes, weightForSessionDate } from '../../utils/gymSessionSummary'
+import type { GymPlan, GymSession, WeightLog } from '../../types'
+import GymSessionCard from './GymSessionCard'
 import GymPlanEditor from './GymPlanEditor'
 import type { GymExerciseDefinition } from '../../data/gymExercises'
-
-function formatPerformance(set: GymSet): string {
-  return `${set.weight_kg == null ? 'Corpo libero' : `${formatDecimal(set.weight_kg)} kg`} × ${set.reps} rip.`
-}
-
-function gymProgress(sessions: GymSession[]) {
-  const history = new Map<string, { name: string; equipment: string; last: GymSet; best: GymSet }>()
-  const completed = sessions.filter(session => session.completed_at)
-    .sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? ''))
-  for (const session of completed) {
-    for (const set of session.sets.filter(item => item.done).sort((a, b) => b.set_number - a.set_number)) {
-      const key = `${set.exercise_key ?? set.exercise_name.toLowerCase()}:${set.equipment.toLowerCase()}:${set.bench_angle ?? 'unspecified'}`
-      const previous = history.get(key)
-      if (!previous) {
-        history.set(key, { name: set.exercise_name, equipment: set.equipment, last: set, best: set })
-      } else if ((set.weight_kg ?? 0) > (previous.best.weight_kg ?? 0)
-        || ((set.weight_kg ?? 0) === (previous.best.weight_kg ?? 0) && (set.reps ?? 0) > (previous.best.reps ?? 0))) {
-        previous.best = set
-      }
-    }
-  }
-  return [...history.values()]
-}
-
-function CompletedSessionRow({ session, weightLogs, fallbackWeightKg, showDate, onOpen }: {
-  session: GymSession
-  weightLogs: WeightLog[]
-  fallbackWeightKg: number | null
-  showDate?: boolean
-  onOpen: () => void
-}) {
-  const duration = sessionDurationMinutes(session)
-  const bodyWeightKg = weightForSessionDate(session.date, weightLogs, fallbackWeightKg)
-  const calories = estimateGymSessionCalories(session, bodyWeightKg)
-
-  return <button type="button" onClick={onOpen}
-    className="w-full rounded-2xl border border-gray-700 bg-gray-800/70 p-4 text-left transition hover:border-primary-700">
-    <div className="flex items-start justify-between gap-3">
-      <span className="font-semibold">{session.plan_name}{showDate && <span className="ml-2 text-xs font-normal text-gray-400">{session.date}</span>}</span>
-      <span className="shrink-0 text-primary-400" aria-hidden="true">›</span>
-    </div>
-    <p className="mt-1 text-xs text-gray-400">{session.sets.filter(set => set.done).length} serie completate</p>
-    <div className="mt-3 grid grid-cols-2 gap-2">
-      <span className="rounded-xl bg-gray-900/70 px-3 py-2">
-        <span className="block text-xs text-gray-400">⏱ Durata totale</span>
-        <span className="mt-0.5 block font-semibold text-white">{duration === null ? 'Non disponibile' : formatGymDuration(duration)}</span>
-      </span>
-      <span className="rounded-xl bg-gray-900/70 px-3 py-2">
-        <span className="block text-xs text-gray-400">🔥 Calorie stimate</span>
-        <span className="mt-0.5 block font-semibold text-orange-400">{calories === null ? 'Non disponibili' : `≈ ${calories} kcal`}</span>
-      </span>
-    </div>
-    <p className="mt-2 text-xs text-gray-500">{calories !== null && bodyWeightKg !== null
-      ? `Da esercizi, carichi e peso corporeo usato nella stima (${formatDecimal(bodyWeightKg)} kg).`
-      : bodyWeightKg === null ? 'Serve un peso corporeo registrato per stimare le calorie.'
-        : 'Durata non disponibile per la stima delle calorie.'}</p>
-  </button>
-}
 
 export default function GymTraining() {
   const { user } = useAuth()
@@ -108,7 +49,7 @@ export default function GymTraining() {
     setLoading(true)
     try {
       const [nextPlans, nextSessions] = await Promise.all([
-        gymApi.getGymPlans(), gymApi.getRecentGymSessions(selectedDate),
+        gymApi.getGymPlans(), gymApi.getGymTrainingSessions(selectedDate),
       ])
       if (revision === orderRevision.current && !orderInProgress.current) setPlans(nextPlans)
       setSessions(nextSessions)
@@ -185,9 +126,7 @@ export default function GymTraining() {
 
   const active = sessions.find(session => !session.completed_at)
   const daySessions = sessions.filter(session => session.date === selectedDate && session.completed_at)
-  const recentSessions = sessions.filter(session => session.completed_at && session.date !== selectedDate)
-    .sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? '')).slice(0, 10)
-  const progress = gymProgress(sessions)
+    .sort((a, b) => b.started_at.localeCompare(a.started_at) || b.id.localeCompare(a.id))
 
   return <div className="space-y-6">
     <div className="flex items-center justify-between">
@@ -235,27 +174,9 @@ export default function GymTraining() {
     </div>}
     {daySessions.length > 0 && <section className="space-y-2">
       <h3 className="text-sm font-semibold text-gray-300">Sessioni del giorno</h3>
-      {daySessions.map(session => <CompletedSessionRow key={session.id} session={session}
+      {daySessions.map(session => <GymSessionCard key={session.id} session={session}
         weightLogs={weightLogs} fallbackWeightKg={currentWeightKg}
         onOpen={() => navigate(`/fitness/session/${session.id}`)} />)}
     </section>}
-    {recentSessions.length > 0 && <details className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
-      <summary className="cursor-pointer font-semibold">Sessioni recenti</summary>
-      <div className="mt-3 space-y-2">
-        {recentSessions.map(session => <CompletedSessionRow key={session.id} session={session}
-          weightLogs={weightLogs} fallbackWeightKg={currentWeightKg} showDate
-          onOpen={() => navigate(`/fitness/session/${session.id}`)} />)}
-      </div>
-    </details>}
-    {progress.length > 0 && <details className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
-      <summary className="cursor-pointer font-semibold">Progressi per esercizio</summary>
-      <p className="mt-2 text-xs text-gray-500">Dalle ultime 30 sessioni</p>
-      <div className="mt-3 space-y-3">
-        {progress.map(item => <div key={`${item.name}:${item.equipment}:${item.last.bench_angle ?? 'unspecified'}`} className="border-t border-gray-700 pt-3 text-sm">
-          <p className="font-medium">{item.name} <span className="text-xs font-normal text-gray-500">· {item.equipment}{item.last.bench_angle != null ? ` · panca ${item.last.bench_angle}°` : ''}</span></p>
-          <p className="mt-1 text-xs text-gray-400">Ultima: {formatPerformance(item.last)} · Migliore: {formatPerformance(item.best)}</p>
-        </div>)}
-      </div>
-    </details>}
   </div>
 }
