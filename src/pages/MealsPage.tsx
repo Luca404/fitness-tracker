@@ -211,7 +211,7 @@ export default function MealsPage() {
         style={{ bottom: 'calc(4.75rem + env(safe-area-inset-bottom))' }}>
         <button
           type="button"
-          className="group flex w-full select-none items-center gap-3 rounded-2xl bg-primary-600 px-4 py-3 text-left shadow-xl shadow-black/40 ring-1 ring-primary-400/40 transition hover:bg-primary-500"
+          className="flex w-full select-none items-center gap-3 rounded-2xl bg-primary-600 px-4 py-3 text-left shadow-xl shadow-black/40 ring-1 ring-primary-400/40 transition hover:bg-primary-500"
           onClick={openNewMeal}
         >
           <div aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-2xl font-light text-white">+</div>
@@ -219,7 +219,6 @@ export default function MealsPage() {
             <p className="font-semibold">Aggiungi pasto</p>
             <p className="text-xs text-primary-100">Da foto, ingredienti o piatti salvati</p>
           </div>
-          <span aria-hidden="true" className="transition group-hover:translate-x-0.5">→</span>
         </button>
       </div>
 

@@ -59,10 +59,11 @@ export default function Layout() {
                 }`
               }
             >
-              <span className={to === '/meals'
-                ? 'mb-0.5 flex h-9 w-12 items-center justify-center rounded-2xl bg-primary-500/15 text-2xl ring-1 ring-primary-500/25'
-                : 'text-2xl mb-1'} aria-hidden="true">{icon}</span>
-              <span className="text-xs">{label}</span>
+              {({ isActive }) => <>
+                <span className={`mb-0.5 flex h-9 w-12 items-center justify-center rounded-2xl text-2xl transition-colors ${isActive ? 'bg-primary-500/15 ring-1 ring-primary-500/25' : ''}`}
+                  aria-hidden="true">{icon}</span>
+                <span className="text-xs">{label}</span>
+              </>}
             </NavLink>
           ))}
         </div>
