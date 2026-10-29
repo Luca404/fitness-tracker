@@ -15,15 +15,18 @@ invece ingredienti freschi, in scatola, ammollati o sgocciolati. Per le
 bevande vegetali il riferimento è **100 ml**.
 
 Coscia (fuso) e sovracoscia hanno voci separate. L'ID storico `coscia-pollo`
-e i suoi valori restano disponibili; l'alias generico «sovracoscia di pollo»
-è rimosso da quella voce perché ora esistono due riferimenti specifici.
+è conservato; il suo profilo è allineato alla scheda CREA 106410 del fuso
+crudo senza pelle, come descritto nella correzione sotto. L'alias generico
+«sovracoscia di pollo» è rimosso da quella voce perché ora esistono due
+riferimenti specifici.
 Le ricerche riconoscono anche cosce, fusi, sovracosce e alette.
 
-La voce storica `seitan`, da 370 kcal e 75 g di proteine, è ora denominata
+La voce storica `seitan`, da 370 kcal e 75,16 g di proteine, è ora denominata
 «Seitan, glutine di frumento secco», nella categoria Proteine vegetali.
 Il nuovo «Seitan fresco» ha un proprio ID e profilo per il prodotto idratato.
-Gli ID e i valori nutrizionali delle voci esistenti sono conservati;
-l'ampliamento non riscrive ingredienti già salvati, ricette o pasti.
+Gli ID esistenti sono conservati. La correzione del profilo della coscia
+senza pelle riguarda il catalogo per le nuove selezioni; non riscrive
+ingredienti personali, ricette o pasti già salvati.
 
 I prodotti in salamoia, sott'olio e trasformati sono riferimenti generici:
 il sale può variare molto tra marche. Per il prodotto acquistato usare
@@ -52,6 +55,26 @@ Le bevande USAV sono espresse originariamente per 100 g: ogni nutriente
 è moltiplicato per la densità della stessa riga (soia **1,03 g/ml**;
 avena, mandorla e riso **1,05 g/ml**) e arrotondato a due decimali,
 per ottenere valori coerenti con l'inserimento in millilitri.
+
+## Correzione cosce di pollo — 29 ottobre 2026
+
+La prima pubblicazione manteneva il vecchio profilo generico della coscia
+senza pelle (125 kcal, 19,7 g di proteine, 4,8 g di grassi e 0,20 g di sale),
+accanto al nuovo riferimento CREA con pelle, anch'esso da 125 kcal.
+Il confronto mescolava riferimenti diversi. Ora entrambe le voci usano
+schede CREA dello stesso taglio (fuso), crude e per 100 g di parte edibile:
+
+| Variante | kcal | Proteine (g) | Grassi (g) | Fonte |
+| --- | ---: | ---: | ---: | --- |
+| Senza pelle | 107 | 18,5 | 3,7 | [CREA 106410](https://www.alimentinutrizione.it/tabelle-nutrizionali/106410) |
+| Con pelle | 125 | 18,4 | 5,7 | [CREA 106400](https://www.alimentinutrizione.it/tabelle-nutrizionali/106400) |
+
+Per la voce senza pelle anche fibre, zuccheri (entrambi zero) e sale
+(0,22 g, da 86 mg di sodio) provengono dalla stessa scheda. Il test della
+ricerca verifica entrambi i profili, la conservazione del `food_key`
+storico, il calcolo della porzione e la differenza di calorie e grassi.
+La correzione ha superato i 69 test di catalogo e peso cotto, la build
+di produzione e il lint con Node 22.
 
 ## Riferimenti per ingrediente
 
@@ -168,3 +191,10 @@ di produzione e lint superati. Il confronto con i riferimenti scaricati
 ha verificato tutti e sette i nutrienti delle 84 aggiunte e la conservazione
 di tutti gli ID precedenti. La pubblicazione del frontend segue il normale
 deploy automatico dopo il push su `main`.
+
+La [verifica completa delle 86 voci interessate](verifica-ingredienti-base.md)
+riporta i profili finali, le fonti e le correzioni successive: coscia senza
+pelle, macro del glutine secco e sei arrotondamenti del sale. Per il glutine
+USDA si sottraggono 0,60 g di fibre dai 13,79 g di carboidrati totali,
+ottenendo 13,19 g di carboidrati disponibili. I profili originali sono
+conservati nella fixture dei test; il confronto si ripete automaticamente.

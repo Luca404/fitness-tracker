@@ -61,6 +61,17 @@ describe('local basic-food catalog', () => {
     expect(calcNutrition(drumstick, 200)).toMatchObject({
       calories: 250, protein_g: 36.8, fat_g: 11.4, salt_g: 0.44,
     })
+    const skinlessDrumstick = searchBasicFoods('fuso di pollo senza pelle')[0]
+    expect(skinlessDrumstick).toMatchObject({
+      id: 'coscia-pollo', food_key: 'basic:coscia-pollo', quantity_unit: 'g',
+      calories_100g: 107, protein_100g: 18.5, carbs_100g: 0, fat_100g: 3.7,
+      fiber_100g: 0, sugars_100g: 0, salt_100g: 0.22,
+    })
+    expect(calcNutrition(skinlessDrumstick, 200)).toMatchObject({
+      calories: 214, protein_g: 37, fat_g: 7.4, salt_g: 0.44,
+    })
+    expect(drumstick.calories_100g).toBeGreaterThan(skinlessDrumstick.calories_100g)
+    expect(drumstick.fat_100g).toBeGreaterThan(skinlessDrumstick.fat_100g)
   })
 
   it('distinguishes dry gluten, hydrated seitan and salted nuts', () => {

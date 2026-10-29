@@ -83,7 +83,7 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   'lenticchie-rosse-secche': [18.2, 1.8, 0],
 
   // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
-  'piselli-scatola-scolati': [5.1, 3.9, 0.6],
+  'piselli-scatola-scolati': [5.1, 3.9, 0.61],
   'piselli-surgelati': [6.3, 4, 0.32],
   'fagioli-borlotti-freschi': [4.8, 1.2, 0.01],
   'fagioli-occhio-secchi': [12.7, 4, 0.04],
@@ -203,7 +203,8 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
 
   // Carne
   'petto-pollo': [0, 0, 0.1],
-  'coscia-pollo': [0, 0, 0.2],
+  // CREA 106410: sodio 86 mg/100 g, convertito in sale.
+  'coscia-pollo': [0, 0, 0.22],
   'pollo-intero': [0, 0, 0.2],
   'petto-tacchino': [0, 0, 0.2],
   'coscia-tacchino': [0, 0, 0.2],
@@ -227,7 +228,7 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   'sovracoscia-pollo-con-pelle': [0, 0, 0.18],
   'sovracoscia-pollo-senza-pelle': [0, 0, 0.17],
   'ali-pollo-con-pelle': [0, 0, 0.25],
-  'pollo-intero-senza-pelle': [0, 0, 0.17],
+  'pollo-intero-senza-pelle': [0, 0, 0.18],
   'manzo-filetto': [0, 0, 0.1],
   'maiale-spalla': [0, 0, 0.18],
   'salsiccia-suino-fresca': [0, 0.6, 2.75],
@@ -297,11 +298,11 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
   'tuorlo-uovo': [0, 0, 0.11],
   'latte-scremato': [0, 5.3, 0.13],
-  'yogurt-bianco-magro': [0, 4, 0.14],
+  'yogurt-bianco-magro': [0, 4, 0.15],
   'ricotta-pecora': [0, 4.2, 0.21],
-  'mascarpone': [0, 0.3, 0.21],
-  'cheddar': [0, 0.5, 1.52],
-  'emmental': [0, 3.6, 1.12],
+  'mascarpone': [0, 0.3, 0.22],
+  'cheddar': [0, 0.5, 1.53],
+  'emmental': [0, 3.6, 1.13],
 
   // Oli e grassi
   'olio-evo': [0, 0, 0],

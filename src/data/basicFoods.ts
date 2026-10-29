@@ -85,7 +85,8 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'fave', name: 'Fave', aliases: ['fave fresche'], category: 'legume', calories: 88, protein_g: 7.9, carbs_g: 17.6, fat_g: 0.7 },
   { id: 'hummus', name: 'Hummus', category: 'legume', calories: 166, protein_g: 7.9, carbs_g: 14, fat_g: 9.6 },
   { id: 'tofu', name: 'Tofu', category: 'legume', calories: 76, protein_g: 8.0, carbs_g: 1.9, fat_g: 4.8 },
-  { id: 'seitan', name: 'Seitan, glutine di frumento secco', aliases: ['glutine vitale', 'glutine di frumento in polvere'], category: 'plant_protein', calories: 370, protein_g: 75, carbs_g: 14, fat_g: 1.9 },
+  // USDA 168147: carboidrati disponibili = totali 13.79 - fibre 0.6.
+  { id: 'seitan', name: 'Seitan, glutine di frumento secco', aliases: ['glutine vitale', 'glutine di frumento in polvere'], category: 'plant_protein', calories: 370, protein_g: 75.16, carbs_g: 13.19, fat_g: 1.85 },
   { id: 'edamame', name: 'Edamame', aliases: ['fagioli di soia verdi'], category: 'legume', calories: 121, protein_g: 11.9, carbs_g: 8.9, fat_g: 5.2 },
   { id: 'lupini-secchi', name: 'Lupini secchi', category: 'legume', calories: 371, protein_g: 36.2, carbs_g: 40.4, fat_g: 9.7 },
   { id: 'fagioli-neri-secchi', name: 'Fagioli neri secchi', category: 'legume', calories: 341, protein_g: 21.6, carbs_g: 62.4, fat_g: 1.4 },
@@ -216,7 +217,8 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
 
   // Carne
   { id: 'petto-pollo', name: 'Petto di pollo', aliases: ['pollo'], category: 'meat', calories: 120, protein_g: 22.5, carbs_g: 0, fat_g: 2.6 },
-  { id: 'coscia-pollo', name: 'Coscia di pollo senza pelle', aliases: ['cosce di pollo senza pelle', 'fuso di pollo senza pelle', 'fusi di pollo senza pelle'], category: 'meat', calories: 125, protein_g: 19.7, carbs_g: 0, fat_g: 4.8 },
+  // CREA 106410: stesso taglio e stato crudo della variante con pelle (106400).
+  { id: 'coscia-pollo', name: 'Coscia di pollo senza pelle', aliases: ['cosce di pollo senza pelle', 'fuso di pollo senza pelle', 'fusi di pollo senza pelle'], category: 'meat', calories: 107, protein_g: 18.5, carbs_g: 0, fat_g: 3.7 },
   { id: 'pollo-intero', name: 'Pollo intero con pelle', category: 'meat', calories: 190, protein_g: 18.1, carbs_g: 0, fat_g: 13.1 },
   { id: 'petto-tacchino', name: 'Petto di tacchino', category: 'meat', calories: 107, protein_g: 24, carbs_g: 0, fat_g: 1.2 },
   { id: 'coscia-tacchino', name: 'Coscia di tacchino senza pelle', category: 'meat', calories: 114, protein_g: 20.5, carbs_g: 0, fat_g: 3.2 },
