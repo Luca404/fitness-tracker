@@ -42,6 +42,9 @@ La seconda riunisce **Un alimento**, **Componi un piatto** e **Crea una ricetta*
 con la stessa grafica e una descrizione di ciò che verrà salvato. Le ricette
 già salvate e i piatti pronti sono accessibili direttamente. Il catalogo
 include anche [12 nuovi formaggi con fonti](ingredienti-formaggi.md).
+L'[ampliamento degli ingredienti di base](ingredienti-base.md) aggiunge altre
+84 voci in 17 categorie, incluse cosce e sovracosce di pollo con pelle,
+con riferimenti nutrizionali e varianti distinte.
 
 ## Shot, distillati e digestivi
 

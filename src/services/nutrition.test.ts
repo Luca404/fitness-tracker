@@ -45,6 +45,47 @@ describe('local basic-food catalog', () => {
     }
   })
 
+  it('distinguishes chicken thighs by cut and skin without reusing the old alias', () => {
+    const thighs = searchBasicFoods('sovracoscia di pollo')
+    expect(thighs.map(food => food.id).sort()).toEqual([
+      'sovracoscia-pollo-con-pelle', 'sovracoscia-pollo-senza-pelle',
+    ])
+    expect(thighs.find(food => food.id === 'sovracoscia-pollo-con-pelle')).toMatchObject({
+      food_key: 'basic:sovracoscia-pollo-con-pelle', calories_100g: 196, fat_100g: 14,
+    })
+    expect(thighs.find(food => food.id === 'sovracoscia-pollo-senza-pelle')).toMatchObject({
+      calories_100g: 132, fat_100g: 6.3,
+    })
+    const drumstick = searchBasicFoods('fuso di pollo con pelle')[0]
+    expect(drumstick.id).toBe('coscia-pollo-con-pelle')
+    expect(calcNutrition(drumstick, 200)).toMatchObject({
+      calories: 250, protein_g: 36.8, fat_g: 11.4, salt_g: 0.44,
+    })
+  })
+
+  it('distinguishes dry gluten, hydrated seitan and salted nuts', () => {
+    expect(searchBasicFoods('glutine vitale')[0]).toMatchObject({
+      id: 'seitan', name: 'Seitan, glutine di frumento secco', calories_100g: 370,
+    })
+    expect(searchBasicFoods('seitan fresco')[0]).toMatchObject({
+      id: 'seitan-fresco', category: 'plant_protein', calories_100g: 193, protein_100g: 28,
+    })
+    expect(searchBasicFoods('arachidi tostate salate')[0]).toMatchObject({ salt_100g: 1.3 })
+    expect(searchBasicFoods('arachidi tostate senza sale')[0]).toMatchObject({ salt_100g: 0 })
+  })
+
+  it('uses per-100ml nutrition for plant drinks and keeps cooking coconut milk in grams', () => {
+    const soy = searchBasicFoods('latte di soia')[0]
+    expect(soy).toMatchObject({ id: 'bevanda-soia', category: 'beverage', quantity_unit: 'ml' })
+    expect(calcNutrition(soy, 200)).toEqual({
+      calories: 82.4, protein_g: 7.42, carbs_g: 3.1, fat_g: 4.32,
+      fiber_g: 1.24, sugars_g: 2.88, salt_g: 0.2,
+    })
+    expect(searchBasicFoods('latte di cocco')[0]).toMatchObject({
+      id: 'latte-cocco-cucina', category: 'sauce', quantity_unit: 'g', calories_100g: 214,
+    })
+  })
+
   it.each([
     ['cavolo cappuccio', 'cavolo-cappuccio'],
     ['cappuccio', 'cavolo-cappuccio'],
@@ -57,6 +98,25 @@ describe('local basic-food catalog', () => {
     ['scamorza affumicata', 'scamorza'],
     ['gorgonzola', 'gorgonzola'],
     ['robiola', 'robiola'],
+    ['cosce di pollo con pelle', 'coscia-pollo-con-pelle'],
+    ['sovracosce di pollo senza pelle', 'sovracoscia-pollo-senza-pelle'],
+    ['alette di pollo', 'ali-pollo-con-pelle'],
+    ['riso nero', 'riso-venere'],
+    ['maizena', 'amido-mais'],
+    ['pane grattugiato', 'pangrattato'],
+    ['black eyed beans', 'fagioli-occhio-secchi'],
+    ['funghi ostrica', 'funghi-pleurotus'],
+    ['albicocche secche', 'albicocche-secche'],
+    ['filetto di bovino', 'manzo-filetto'],
+    ['tonno sottolio', 'tonno-olio-sgocciolato'],
+    ['rosso d’uovo', 'tuorlo-uovo'],
+    ['emmenthal', 'emmental'],
+    ['silken tofu', 'tofu-setoso'],
+    ['olio di semi di girasole', 'olio-girasole'],
+    ['capperi sotto aceto', 'capperi-sottaceto'],
+    ['radice di zenzero', 'zenzero-fresco'],
+    ['cacao in polvere', 'cacao-amaro'],
+    ['latte di avena', 'bevanda-avena'],
   ])('finds %s locally, including aliases and unaccented queries', (query, expectedId) => {
     expect(searchBasicFoods(query).some(food => food.id === expectedId)).toBe(true)
   })

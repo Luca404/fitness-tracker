@@ -3,6 +3,9 @@
 // Per gli ingredienti da cuocere, peso e valori si riferiscono all'alimento crudo
 // (o secco, nel caso di cereali e legumi), salvo diversa indicazione nel nome.
 // Fonte: valori medi indicativi (uso da tracker personale, non clinico).
+// Ampliamento del 29 ottobre 2026: CREA e Banca dati svizzera v7.1;
+// riferimenti per ingrediente e conversioni in docs/ingredienti-base.md.
+// Il peso è della parte edibile: escludere ossa, gusci e altri scarti.
 import type { FoodCategory } from '../types'
 import { ALCOHOLIC_DRINKS } from './alcoholicDrinks'
 import { BASIC_FOOD_EXTENDED_NUTRITION } from './basicFoodExtendedNutrition'
@@ -45,6 +48,29 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'farina-00', name: 'Farina 00', category: 'grain', calories: 340, protein_g: 10, carbs_g: 76, fat_g: 1.0 },
   { id: 'patate-fritte', name: 'Patate fritte', category: 'grain', calories: 312, protein_g: 3.4, carbs_g: 41, fat_g: 15 },
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  { id: 'riso-venere', name: 'Riso Venere', aliases: ['riso nero'], category: 'grain', calories: 355, protein_g: 7.8, carbs_g: 80.4, fat_g: 1.3 },
+  { id: 'riso-parboiled', name: 'Riso parboiled', category: 'grain', calories: 338, protein_g: 7.4, carbs_g: 81.3, fat_g: 0.3 },
+  { id: 'miglio', name: 'Miglio decorticato', aliases: ['miglio'], category: 'grain', calories: 342, protein_g: 11, carbs_g: 67.8, fat_g: 4.2 },
+  { id: 'farina-0', name: 'Farina 0', aliases: ['farina tipo 0'], category: 'grain', calories: 321, protein_g: 11.5, carbs_g: 69.5, fat_g: 1 },
+  { id: 'farina-integrale', name: 'Farina integrale di frumento', aliases: ['farina integrale'], category: 'grain', calories: 313, protein_g: 11.9, carbs_g: 61.8, fat_g: 1.9 },
+  { id: 'farina-avena', name: 'Farina d\'avena', aliases: ['farina di avena'], category: 'grain', calories: 378, protein_g: 12.6, carbs_g: 66.3, fat_g: 7.1 },
+  { id: 'farina-mais', name: 'Farina di mais', aliases: ['farina per polenta', 'polenta cruda'], category: 'grain', calories: 341, protein_g: 8.7, carbs_g: 73.5, fat_g: 2.7 },
+  { id: 'farina-riso', name: 'Farina di riso', category: 'grain', calories: 332, protein_g: 7.3, carbs_g: 79.1, fat_g: 0.5 },
+  { id: 'semola', name: 'Semola di grano duro', aliases: ['semola rimacinata'], category: 'grain', calories: 346, protein_g: 11.5, carbs_g: 76.9, fat_g: 0.5 },
+  { id: 'amido-mais', name: 'Amido di mais', aliases: ['maizena'], category: 'grain', calories: 328, protein_g: 0.3, carbs_g: 87, fat_g: 0 },
+  { id: 'gnocchi-patate', name: 'Gnocchi di patate, freschi', aliases: ['gnocchi crudi'], category: 'grain', calories: 164, protein_g: 3.9, carbs_g: 37.9, fat_g: 0.3 },
+  { id: 'corn-flakes', name: 'Corn flakes', aliases: ['fiocchi di mais'], category: 'grain', calories: 367, protein_g: 6.6, carbs_g: 87.4, fat_g: 0.8 },
+  { id: 'muesli', name: 'Muesli', category: 'grain', calories: 374, protein_g: 9.7, carbs_g: 71.7, fat_g: 6 },
+  { id: 'pane-segale', name: 'Pane di segale', aliases: ['pane nero di segale'], category: 'bakery', calories: 228, protein_g: 8.3, carbs_g: 45.4, fat_g: 1.7 },
+  { id: 'pangrattato', name: 'Pangrattato', aliases: ['pane grattugiato'], category: 'bakery', calories: 357, protein_g: 10.1, carbs_g: 77.8, fat_g: 2.1 },
+  { id: 'cracker-integrali', name: 'Cracker integrali', aliases: ['crackers integrali'], category: 'bakery', calories: 402, protein_g: 12, carbs_g: 61.7, fat_g: 11.4 },
+  { id: 'grano-saraceno', name: 'Grano saraceno', category: 'grain', calories: 341, protein_g: 13.1, carbs_g: 62.4, fat_g: 3.1 },
+  { id: 'fecola-patate', name: 'Fecola di patate', category: 'grain', calories: 336, protein_g: 0.6, carbs_g: 83.1, fat_g: 0.1 },
+  { id: 'pane-croccante-integrale', name: 'Pane croccante integrale', aliases: ['knackebrot'], category: 'bakery', calories: 325, protein_g: 12, carbs_g: 57.9, fat_g: 1.7 },
+  { id: 'gallette-riso-integrale', name: 'Gallette di riso integrale', aliases: ['gallette di riso'], category: 'bakery', calories: 390, protein_g: 7.7, carbs_g: 81.5, fat_g: 2.8 },
+  { id: 'gallette-mais', name: 'Gallette di mais', category: 'bakery', calories: 387, protein_g: 7.4, carbs_g: 83.5, fat_g: 1.9 },
+
   // Legumi
   { id: 'ceci-secchi', name: 'Ceci secchi', aliases: ['ceci crudi'], category: 'legume', calories: 378, protein_g: 20.5, carbs_g: 62.9, fat_g: 6.0 },
   { id: 'fagioli-borlotti-secchi', name: 'Fagioli borlotti secchi', aliases: ['borlotti crudi'], category: 'legume', calories: 335, protein_g: 23, carbs_g: 60, fat_g: 1.2 },
@@ -59,7 +85,7 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'fave', name: 'Fave', aliases: ['fave fresche'], category: 'legume', calories: 88, protein_g: 7.9, carbs_g: 17.6, fat_g: 0.7 },
   { id: 'hummus', name: 'Hummus', category: 'legume', calories: 166, protein_g: 7.9, carbs_g: 14, fat_g: 9.6 },
   { id: 'tofu', name: 'Tofu', category: 'legume', calories: 76, protein_g: 8.0, carbs_g: 1.9, fat_g: 4.8 },
-  { id: 'seitan', name: 'Seitan', category: 'legume', calories: 370, protein_g: 75, carbs_g: 14, fat_g: 1.9 },
+  { id: 'seitan', name: 'Seitan, glutine di frumento secco', aliases: ['glutine vitale', 'glutine di frumento in polvere'], category: 'plant_protein', calories: 370, protein_g: 75, carbs_g: 14, fat_g: 1.9 },
   { id: 'edamame', name: 'Edamame', aliases: ['fagioli di soia verdi'], category: 'legume', calories: 121, protein_g: 11.9, carbs_g: 8.9, fat_g: 5.2 },
   { id: 'lupini-secchi', name: 'Lupini secchi', category: 'legume', calories: 371, protein_g: 36.2, carbs_g: 40.4, fat_g: 9.7 },
   { id: 'fagioli-neri-secchi', name: 'Fagioli neri secchi', category: 'legume', calories: 341, protein_g: 21.6, carbs_g: 62.4, fat_g: 1.4 },
@@ -68,6 +94,15 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'fagioli-mung-secchi', name: 'Fagioli mung secchi', aliases: ['fagioli verdi mung'], category: 'legume', calories: 347, protein_g: 23.9, carbs_g: 62.6, fat_g: 1.2 },
   { id: 'soia-gialla-secca', name: 'Soia gialla secca', category: 'legume', calories: 446, protein_g: 36.5, carbs_g: 30.2, fat_g: 19.9 },
   { id: 'lenticchie-rosse-secche', name: 'Lenticchie rosse secche', aliases: ['lenticchie decorticate'], category: 'legume', calories: 358, protein_g: 23.9, carbs_g: 63.1, fat_g: 2.2 },
+
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  { id: 'piselli-scatola-scolati', name: 'Piselli in scatola, scolati', aliases: ['piselli in lattina'], category: 'legume', calories: 78, protein_g: 5.3, carbs_g: 11.1, fat_g: 0.6 },
+  { id: 'piselli-surgelati', name: 'Piselli surgelati', category: 'legume', calories: 61, protein_g: 5.4, carbs_g: 6.5, fat_g: 0.3 },
+  { id: 'fagioli-borlotti-freschi', name: 'Fagioli borlotti freschi', aliases: ['borlotti freschi'], category: 'legume', calories: 143, protein_g: 10.2, carbs_g: 22.7, fat_g: 0.8 },
+  { id: 'fagioli-occhio-secchi', name: 'Fagioli dall\'occhio secchi', aliases: ['fagioli occhio', 'black eyed beans'], category: 'legume', calories: 318, protein_g: 22.4, carbs_g: 50.9, fat_g: 1.4 },
+  { id: 'seitan-fresco', name: 'Seitan fresco', aliases: ['seitan pronto'], category: 'plant_protein', calories: 193, protein_g: 28, carbs_g: 3, fat_g: 7.2 },
+  { id: 'tempeh', name: 'Tempeh al naturale', aliases: ['tempeh'], category: 'plant_protein', calories: 157, protein_g: 17.6, carbs_g: 7.9, fat_g: 4.7 },
+  { id: 'tofu-setoso', name: 'Tofu setoso', aliases: ['silken tofu', 'tofu morbido'], category: 'plant_protein', calories: 53, protein_g: 5, carbs_g: 1.5, fat_g: 2.9 },
 
   // Verdure
   { id: 'zucchine', name: 'Zucchine', category: 'vegetable', calories: 17, protein_g: 1.2, carbs_g: 3.1, fat_g: 0.3 },
@@ -125,6 +160,12 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'funghi-porcini', name: 'Funghi porcini', aliases: ['porcini'], category: 'vegetable', calories: 34, protein_g: 3.1, carbs_g: 5.1, fat_g: 0.5 },
   { id: 'funghi-shiitake', name: 'Funghi shiitake', aliases: ['shiitake'], category: 'vegetable', calories: 34, protein_g: 2.2, carbs_g: 6.8, fat_g: 0.5 },
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  { id: 'funghi-pleurotus', name: 'Funghi pleurotus', aliases: ['orecchioni', 'funghi ostrica'], category: 'vegetable', calories: 37, protein_g: 2.2, carbs_g: 5.6, fat_g: 0.3 },
+  { id: 'mais-scatola-scolato', name: 'Mais dolce in scatola, scolato', aliases: ['mais in lattina'], category: 'vegetable', calories: 105, protein_g: 3.4, carbs_g: 20.5, fat_g: 1.3 },
+  { id: 'sedano-rapa', name: 'Sedano rapa', category: 'vegetable', calories: 32, protein_g: 1.4, carbs_g: 4, fat_g: 0.3 },
+  { id: 'pomodori-secchi', name: 'Pomodori secchi', category: 'vegetable', calories: 282, protein_g: 14.1, carbs_g: 43.5, fat_g: 3 },
+
   // Frutta
   { id: 'mela', name: 'Mela', category: 'fruit', calories: 52, protein_g: 0.3, carbs_g: 14, fat_g: 0.2 },
   { id: 'banana', name: 'Banana', category: 'fruit', calories: 89, protein_g: 1.1, carbs_g: 23, fat_g: 0.3 },
@@ -169,9 +210,13 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'fichi-secchi', name: 'Fichi secchi', category: 'fruit', calories: 249, protein_g: 3.3, carbs_g: 64, fat_g: 0.9 },
   { id: 'uva-passa', name: 'Uva passa', aliases: ['uvetta', 'uva sultanina'], category: 'fruit', calories: 299, protein_g: 3.1, carbs_g: 79, fat_g: 0.5 },
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  { id: 'amarene', name: 'Amarene fresche', aliases: ['amarene'], category: 'fruit', calories: 44, protein_g: 0.8, carbs_g: 10.2, fat_g: 0 },
+  { id: 'albicocche-secche', name: 'Albicocche secche', category: 'fruit', calories: 286, protein_g: 5, carbs_g: 66.5, fat_g: 0.5 },
+
   // Carne
   { id: 'petto-pollo', name: 'Petto di pollo', aliases: ['pollo'], category: 'meat', calories: 120, protein_g: 22.5, carbs_g: 0, fat_g: 2.6 },
-  { id: 'coscia-pollo', name: 'Coscia di pollo senza pelle', aliases: ['sovracoscia di pollo'], category: 'meat', calories: 125, protein_g: 19.7, carbs_g: 0, fat_g: 4.8 },
+  { id: 'coscia-pollo', name: 'Coscia di pollo senza pelle', aliases: ['cosce di pollo senza pelle', 'fuso di pollo senza pelle', 'fusi di pollo senza pelle'], category: 'meat', calories: 125, protein_g: 19.7, carbs_g: 0, fat_g: 4.8 },
   { id: 'pollo-intero', name: 'Pollo intero con pelle', category: 'meat', calories: 190, protein_g: 18.1, carbs_g: 0, fat_g: 13.1 },
   { id: 'petto-tacchino', name: 'Petto di tacchino', category: 'meat', calories: 107, protein_g: 24, carbs_g: 0, fat_g: 1.2 },
   { id: 'coscia-tacchino', name: 'Coscia di tacchino senza pelle', category: 'meat', calories: 114, protein_g: 20.5, carbs_g: 0, fat_g: 3.2 },
@@ -189,6 +234,20 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'prosciutto-crudo', name: 'Prosciutto crudo', category: 'meat', calories: 268, protein_g: 25, carbs_g: 0, fat_g: 18 },
   { id: 'prosciutto-cotto', name: 'Prosciutto cotto', category: 'meat', calories: 145, protein_g: 18, carbs_g: 1.5, fat_g: 7.0 },
   { id: 'bresaola', name: 'Bresaola', category: 'meat', calories: 151, protein_g: 32, carbs_g: 0.5, fat_g: 2.6 },
+
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  { id: 'coscia-pollo-con-pelle', name: 'Coscia di pollo con pelle', aliases: ['cosce di pollo con pelle', 'fuso di pollo con pelle', 'fusi di pollo con pelle'], category: 'meat', calories: 125, protein_g: 18.4, carbs_g: 0, fat_g: 5.7 },
+  { id: 'sovracoscia-pollo-con-pelle', name: 'Sovracoscia di pollo con pelle', aliases: ['sovracosce di pollo con pelle'], category: 'meat', calories: 196, protein_g: 17.4, carbs_g: 0, fat_g: 14 },
+  { id: 'sovracoscia-pollo-senza-pelle', name: 'Sovracoscia di pollo senza pelle', aliases: ['sovracosce di pollo senza pelle'], category: 'meat', calories: 132, protein_g: 18.7, carbs_g: 0, fat_g: 6.3 },
+  { id: 'ali-pollo-con-pelle', name: 'Ali di pollo con pelle', aliases: ['ala di pollo', 'alette di pollo'], category: 'meat', calories: 196, protein_g: 16.7, carbs_g: 0, fat_g: 14.3 },
+  { id: 'pollo-intero-senza-pelle', name: 'Pollo intero senza pelle', category: 'meat', calories: 110, protein_g: 19.4, carbs_g: 0, fat_g: 3.6 },
+  { id: 'manzo-filetto', name: 'Filetto di manzo', aliases: ['filetto di bovino'], category: 'meat', calories: 127, protein_g: 20.5, carbs_g: 0, fat_g: 5 },
+  { id: 'maiale-spalla', name: 'Spalla di maiale', aliases: ['spalla di suino'], category: 'meat', calories: 133, protein_g: 19, carbs_g: 0, fat_g: 6.3 },
+  { id: 'salsiccia-suino-fresca', name: 'Salsiccia di suino fresca', aliases: ['salsiccia di maiale', 'salsicce fresche'], category: 'meat', calories: 304, protein_g: 15.4, carbs_g: 0.6, fat_g: 26.7 },
+  { id: 'pancetta-tesa', name: 'Pancetta tesa', aliases: ['pancetta a cubetti'], category: 'meat', calories: 337, protein_g: 20.9, carbs_g: 0, fat_g: 28.1 },
+  { id: 'fegato-bovino', name: 'Fegato di bovino', aliases: ['fegato di manzo'], category: 'meat', calories: 142, protein_g: 20, carbs_g: 5.9, fat_g: 4.4 },
+  { id: 'mortadella', name: 'Mortadella', category: 'meat', calories: 306, protein_g: 15.7, carbs_g: 0.8, fat_g: 26.6 },
+  { id: 'salame', name: 'Salame', category: 'meat', calories: 367, protein_g: 24.1, carbs_g: 0, fat_g: 30.1 },
 
   // Pesce
   { id: 'salmone', name: 'Salmone fresco', aliases: ['salmone'], category: 'fish', calories: 208, protein_g: 20.4, carbs_g: 0, fat_g: 13.4 },
@@ -211,6 +270,14 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'cozze', name: 'Cozze', aliases: ['mitili'], category: 'fish', calories: 86, protein_g: 11.9, carbs_g: 3.7, fat_g: 2.2 },
   { id: 'vongole', name: 'Vongole', category: 'fish', calories: 74, protein_g: 12.8, carbs_g: 2.6, fat_g: 1.0 },
   { id: 'salmone-affumicato', name: 'Salmone affumicato', category: 'fish', calories: 117, protein_g: 18, carbs_g: 0, fat_g: 4.3 },
+
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  { id: 'tonno-olio-sgocciolato', name: 'Tonno sott\'olio, sgocciolato', aliases: ['tonno in olio', 'tonno sottolio'], category: 'fish', calories: 192, protein_g: 25.2, carbs_g: 0, fat_g: 10.1 },
+  { id: 'aringa', name: 'Aringa fresca', aliases: ['aringa'], category: 'fish', calories: 216, protein_g: 16.5, carbs_g: 0, fat_g: 16.7 },
+  { id: 'rombo', name: 'Rombo', category: 'fish', calories: 81, protein_g: 16.3, carbs_g: 1.2, fat_g: 1.3 },
+  { id: 'dentice', name: 'Dentice', category: 'fish', calories: 101, protein_g: 16.7, carbs_g: 0.7, fat_g: 3.5 },
+  { id: 'cefalo', name: 'Cefalo', aliases: ['muggine'], category: 'fish', calories: 127, protein_g: 15.8, carbs_g: 0.7, fat_g: 6.8 },
+  { id: 'acciughe-olio', name: 'Acciughe sott\'olio', aliases: ['alici sott\'olio', 'acciughe sottolio'], category: 'fish', calories: 206, protein_g: 25.9, carbs_g: 0.2, fat_g: 11.3 },
 
   // Uova e latticini
   { id: 'uovo-intero', name: 'Uovo intero', category: 'egg', calories: 155, protein_g: 13, carbs_g: 1.1, fat_g: 11 },
@@ -240,11 +307,27 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'robiola', name: 'Robiola', category: 'dairy', calories: 327, protein_g: 6.4, carbs_g: 3.1, fat_g: 32 },
   { id: 'scamorza', name: 'Scamorza', aliases: ['scamorza bianca', 'scamorza affumicata'], category: 'dairy', calories: 320, protein_g: 22, carbs_g: 1.8, fat_g: 25 },
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  { id: 'tuorlo-uovo', name: 'Tuorlo d\'uovo', aliases: ['rosso d\'uovo', 'tuorlo'], category: 'egg', calories: 325, protein_g: 15.8, carbs_g: 0, fat_g: 29.1 },
+  { id: 'latte-scremato', name: 'Latte scremato', category: 'dairy', calories: 36, protein_g: 3.6, carbs_g: 5.3, fat_g: 0.2 },
+  { id: 'yogurt-bianco-magro', name: 'Yogurt bianco magro', aliases: ['yogurt scremato'], category: 'dairy', calories: 36, protein_g: 3.3, carbs_g: 4, fat_g: 0.9 },
+  { id: 'ricotta-pecora', name: 'Ricotta di pecora', category: 'dairy', calories: 157, protein_g: 9.5, carbs_g: 4.2, fat_g: 11.5 },
+  { id: 'mascarpone', name: 'Mascarpone', category: 'dairy', calories: 455, protein_g: 7.6, carbs_g: 0.3, fat_g: 47 },
+  { id: 'cheddar', name: 'Cheddar', category: 'dairy', calories: 388, protein_g: 26.7, carbs_g: 0.5, fat_g: 31 },
+  { id: 'emmental', name: 'Emmental', aliases: ['emmenthal'], category: 'dairy', calories: 403, protein_g: 28.5, carbs_g: 3.6, fat_g: 30.6 },
+
   // Oli e grassi
   { id: 'olio-evo', name: 'Olio extravergine d\'oliva', category: 'fat', calories: 884, protein_g: 0, carbs_g: 0, fat_g: 100 },
   { id: 'burro', name: 'Burro', category: 'fat', calories: 717, protein_g: 0.9, carbs_g: 0.1, fat_g: 81 },
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  { id: 'olio-girasole', name: 'Olio di girasole', aliases: ['olio di semi di girasole'], category: 'fat', calories: 899, protein_g: 0, carbs_g: 0, fat_g: 99.9 },
+  { id: 'olio-arachide', name: 'Olio di arachide', aliases: ['olio di semi di arachidi'], category: 'fat', calories: 899, protein_g: 0, carbs_g: 0, fat_g: 99.9 },
+  { id: 'olio-cocco', name: 'Olio di cocco', category: 'fat', calories: 899, protein_g: 0, carbs_g: 0, fat_g: 99.9 },
+  { id: 'strutto', name: 'Strutto', aliases: ['sugna'], category: 'fat', calories: 900, protein_g: 0, carbs_g: 0, fat_g: 100 },
+
   // Frutta secca, semi e creme spalmabili
+  { id: 'castagne', name: 'Castagne fresche', aliases: ['castagne crude'], category: 'nuts_seeds', calories: 174, protein_g: 2.9, carbs_g: 36.7, fat_g: 1.7 },
   { id: 'mandorle', name: 'Mandorle', category: 'nuts_seeds', calories: 579, protein_g: 21, carbs_g: 22, fat_g: 50 },
   { id: 'noci', name: 'Noci', category: 'nuts_seeds', calories: 654, protein_g: 15, carbs_g: 14, fat_g: 65 },
   { id: 'arachidi', name: 'Arachidi', category: 'nuts_seeds', calories: 567, protein_g: 26, carbs_g: 16, fat_g: 49 },
@@ -266,6 +349,10 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'crema-nocciole', name: 'Crema di nocciole 100%', category: 'spread', calories: 650, protein_g: 15, carbs_g: 17, fat_g: 62 },
   { id: 'tahina', name: 'Tahina', aliases: ['crema di sesamo'], category: 'spread', calories: 595, protein_g: 17, carbs_g: 21.2, fat_g: 53.8 },
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  { id: 'arachidi-tostate-salate', name: 'Arachidi tostate salate', category: 'nuts_seeds', calories: 631, protein_g: 26.2, carbs_g: 15, fat_g: 50 },
+  { id: 'arachidi-tostate-senza-sale', name: 'Arachidi tostate senza sale', category: 'nuts_seeds', calories: 637, protein_g: 26.8, carbs_g: 11.3, fat_g: 51.9 },
+
   // Salse e sughi
   { id: 'passata-pomodoro', name: 'Passata di pomodoro', category: 'sauce', calories: 29, protein_g: 1.4, carbs_g: 4.8, fat_g: 0.2 },
   { id: 'polpa-pomodoro', name: 'Polpa di pomodoro', category: 'sauce', calories: 26, protein_g: 1.2, carbs_g: 4.2, fat_g: 0.2 },
@@ -281,6 +368,16 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'salsa-soia', name: 'Salsa di soia', category: 'sauce', calories: 53, protein_g: 8.1, carbs_g: 4.9, fat_g: 0.6 },
   { id: 'brodo-vegetale', name: 'Brodo vegetale', category: 'sauce', calories: 7, protein_g: 0.3, carbs_g: 1, fat_g: 0.2 },
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  { id: 'concentrato-pomodoro', name: 'Concentrato di pomodoro', aliases: ['conserva di pomodoro'], category: 'sauce', calories: 100, protein_g: 3.9, carbs_g: 20.4, fat_g: 0.4 },
+  { id: 'pomodori-secchi-olio', name: 'Pomodori secchi sott\'olio, sgocciolati', aliases: ['pomodori secchi in olio'], category: 'condiment', calories: 187, protein_g: 4.3, carbs_g: 13.4, fat_g: 11.7 },
+  { id: 'olive-verdi', name: 'Olive verdi in salamoia, sgocciolate', aliases: ['olive verdi'], category: 'condiment', calories: 154, protein_g: 1.3, carbs_g: 0, fat_g: 15.7 },
+  { id: 'olive-nere', name: 'Olive nere', category: 'condiment', calories: 176, protein_g: 1.4, carbs_g: 0.8, fat_g: 17.2 },
+  { id: 'aceto', name: 'Aceto', category: 'condiment', calories: 21, protein_g: 0.1, carbs_g: 0.7, fat_g: 0 },
+  { id: 'capperi-sottaceto', name: 'Capperi sottaceto', aliases: ['capperi sotto aceto'], category: 'condiment', calories: 38, protein_g: 2.2, carbs_g: 3.5, fat_g: 0.9 },
+  { id: 'cetriolini-sottaceto', name: 'Cetriolini sottaceto', aliases: ['cetriolini sotto aceto'], category: 'condiment', calories: 14, protein_g: 0.7, carbs_g: 2.1, fat_g: 0.1 },
+  { id: 'latte-cocco-cucina', name: 'Latte di cocco da cucina', aliases: ['latte di cocco'], category: 'sauce', calories: 214, protein_g: 2.4, carbs_g: 3.1, fat_g: 21.3 },
+
   // Spezie ed erbe aromatiche
   { id: 'sale', name: 'Sale', category: 'seasoning', calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 },
   { id: 'pepe-nero', name: 'Pepe nero', category: 'seasoning', calories: 251, protein_g: 10, carbs_g: 64, fat_g: 3.3 },
@@ -290,6 +387,13 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'rosmarino', name: 'Rosmarino', category: 'seasoning', calories: 131, protein_g: 3.3, carbs_g: 21, fat_g: 5.9 },
   { id: 'aglio', name: 'Aglio', category: 'seasoning', calories: 149, protein_g: 6.4, carbs_g: 33, fat_g: 0.5 },
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  { id: 'salvia', name: 'Salvia fresca', aliases: ['salvia'], category: 'seasoning', calories: 132, protein_g: 3.9, carbs_g: 15.6, fat_g: 4.6 },
+  { id: 'menta', name: 'Menta fresca', aliases: ['menta'], category: 'seasoning', calories: 49, protein_g: 3.8, carbs_g: 5.3, fat_g: 0.7 },
+  { id: 'peperoncino-fresco', name: 'Peperoncino fresco', aliases: ['peperoncini freschi'], category: 'seasoning', calories: 30, protein_g: 1.8, carbs_g: 3.8, fat_g: 0.5 },
+  { id: 'zenzero-fresco', name: 'Zenzero fresco', aliases: ['radice di zenzero'], category: 'seasoning', calories: 33, protein_g: 1.1, carbs_g: 3.4, fat_g: 1.1 },
+  { id: 'paprika', name: 'Paprika', aliases: ['paprica'], category: 'seasoning', calories: 358, protein_g: 14.8, carbs_g: 34.9, fat_g: 13 },
+
   // Dolci
   { id: 'cioccolato-fondente-70', name: 'Cioccolato fondente 70%', category: 'sweet', calories: 598, protein_g: 8.0, carbs_g: 45, fat_g: 43 },
   { id: 'cioccolato-latte', name: 'Cioccolato al latte', category: 'sweet', calories: 535, protein_g: 7.6, carbs_g: 59, fat_g: 30 },
@@ -298,6 +402,9 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'marmellata', name: 'Marmellata', category: 'spread', calories: 250, protein_g: 0.4, carbs_g: 63, fat_g: 0.1 },
   { id: 'gelato-crema', name: 'Gelato alla crema', category: 'sweet', calories: 207, protein_g: 3.5, carbs_g: 24, fat_g: 11 },
   { id: 'biscotti-secchi', name: 'Biscotti secchi', category: 'sweet', calories: 430, protein_g: 7.0, carbs_g: 75, fat_g: 12 },
+
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  { id: 'cacao-amaro', name: 'Cacao amaro in polvere', aliases: ['cacao in polvere', 'cacao amaro'], category: 'sweet', calories: 380, protein_g: 22.4, carbs_g: 11.6, fat_g: 20.6 },
 
   // Bevande e alcolici
   { id: 'acqua-naturale', name: 'Acqua naturale', category: 'beverage', calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 },
@@ -311,6 +418,11 @@ const BASIC_FOODS_BASE: Omit<BasicFood, 'fiber_g' | 'sugars_g' | 'salt_g'>[] = [
   { id: 'succo-arancia', name: 'Succo d\'arancia', category: 'beverage', calories: 45, protein_g: 0.7, carbs_g: 10, fat_g: 0.2 },
   { id: 'te-freddo', name: 'Tè freddo', category: 'beverage', calories: 28, protein_g: 0, carbs_g: 7, fat_g: 0 },
   { id: 'caffe-nero', name: 'Caffè (nero)', category: 'beverage', calories: 1, protein_g: 0.1, carbs_g: 0, fat_g: 0 },
+  // Bevande vegetali: valori convertiti per 100 ml con la densità della fonte.
+  { id: 'bevanda-soia', name: 'Bevanda di soia al naturale', aliases: ['latte di soia'], category: 'beverage', calories: 41.2, protein_g: 3.71, carbs_g: 1.55, fat_g: 2.16 },
+  { id: 'bevanda-avena', name: 'Bevanda di avena al naturale', aliases: ['latte di avena'], category: 'beverage', calories: 49.35, protein_g: 0.53, carbs_g: 8.19, fat_g: 1.58 },
+  { id: 'bevanda-mandorla', name: 'Bevanda di mandorla al naturale', aliases: ['latte di mandorla'], category: 'beverage', calories: 34.65, protein_g: 1.16, carbs_g: 1.37, fat_g: 2.73 },
+  { id: 'bevanda-riso', name: 'Bevanda di riso al naturale', aliases: ['latte di riso'], category: 'beverage', calories: 56.7, protein_g: 0.21, carbs_g: 10.82, fat_g: 1.37 },
 ]
 
 export const BASIC_FOODS: BasicFood[] = [...BASIC_FOODS_BASE, ...ALCOHOLIC_DRINKS].map((food) => {

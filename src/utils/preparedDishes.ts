@@ -13,6 +13,7 @@ const BOILED_YIELD: Record<string, number> = {
   'lenticchie-rosse-secche': 2.47,
   'pasta-semola': 1.99, 'pasta-integrale': 1.99, 'pasta-uovo': 2.99,
   'riso-bianco': 2.6, 'riso-basmati': 3, 'riso-integrale': 2.6,
+  'riso-parboiled': 2.36, 'riso-venere': 2.1, 'gnocchi-patate': 1.06,
   'couscous': 2.25, quinoa: 3.12, farro: 2.28, 'orzo-perlato': 2.67,
   agretti: 0.86, asparagi: 0.96, bietole: 0.86, carciofi: 0.74,
   cardi: 0.6, carote: 0.87, cavolfiore: 0.93,
@@ -28,6 +29,7 @@ const PAN_YIELD: Record<string, number> = {
   carote: 0.38, peperoni: 0.6, zucchine: 0.76, melanzane: 0.8,
   cipolla: 0.44, patate: 0.64, sedano: 0.32,
   'funghi-champignon': 0.53,
+  'funghi-pleurotus': 0.85,
   'petto-tacchino': 0.85, 'fesa-tacchino': 0.85,
   'petto-pollo': 0.83,
   // For tomatoes, use a cautious estimate: the retained sauce varies widely.
@@ -40,8 +42,8 @@ function basicId(item: Ingredient): string | null {
 
 function isAlreadyCooked(item: Ingredient): boolean {
   const id = basicId(item) ?? ''
-  return /scatola|cotti|cotte|fritte|^(hummus|tofu|seitan|prosciutto-crudo|prosciutto-cotto|bresaola|salmone-affumicato|tonno-naturale)$/.test(id)
-    || /\b(cott[oaie]|pront[oaie]|bollit[oaie]|less[oaie]|scatola|lattina|scolat[oaie]|affumicat[oaie]|prosciutto|bresaola)\b/i.test(item.food_name)
+  return /scatola|cotti|cotte|fritte|^(hummus|tofu|seitan|seitan-fresco|prosciutto-crudo|prosciutto-cotto|bresaola|salmone-affumicato|tonno-naturale|acciughe-olio|mortadella|salame|pancetta-tesa)$/.test(id)
+    || /\b(cott[oaie]|pront[oaie]|bollit[oaie]|less[oaie]|scatola|lattina|scolat[oaie]|sgocciolat[oaie]|affumicat[oaie]|prosciutto|bresaola)\b/i.test(item.food_name)
 }
 
 function isDryLegume(item: Ingredient): boolean {
@@ -66,7 +68,7 @@ function estimatedVegetableYield(item: Ingredient, method: CookingMethod): numbe
 export function defaultCookingMethod(item: Ingredient): CookingMethod {
   if (item.unit === 'ml' || isAlreadyCooked(item)) return 'raw'
   if (isDryLegume(item)) return 'boiled'
-  if (item.category === 'grain' && /^(riso|pasta|couscous|quinoa|farro|orzo)/.test(basicId(item) ?? item.food_name.toLowerCase())) return 'boiled'
+  if (item.category === 'grain' && /^(riso|pasta|couscous|quinoa|farro|orzo|miglio|grano.saraceno|gnocchi)/.test(basicId(item) ?? item.food_name.toLowerCase())) return 'boiled'
   if (item.category === 'meat' || item.category === 'fish') return 'pan'
   if (item.category === 'egg' || item.category === 'plant_protein') return 'pan'
   if (item.category === 'sauce' && /pomodoro|passata|polpa|pelati/.test(basicId(item) ?? item.food_name.toLowerCase())) return 'pan'

@@ -21,6 +21,7 @@ Revisione del 16 ottobre 2026: Storico esclude il giorno corrente da grafici e m
 | [Attività e storico](attivita-e-storico.md) | Chilometri facoltativi, fasce di velocità e palestra nei grafici |
 | [Inserimento ingredienti](inserimento-ingredienti.md) | Moduli comuni, revisione unica, dettagli espandibili e quantità |
 | [Formaggi di base](ingredienti-formaggi.md) | Dodici nuovi formaggi, fonti CREA/produttori e conversione del sodio in sale |
+| [Ampliamento ingredienti di base](ingredienti-base.md) | 84 ingredienti in 17 categorie, tagli con/senza pelle e fonti CREA/USAV |
 | [Rapporto di revisione](rapporto-semplificazione-2026-09-29.md) | Cambiamenti implementati, verifiche datate e aggiornamenti successivi |
 
 I documenti sotto `superpowers/plans/` e `superpowers/specs/` conservano i piani alle rispettive date. Il vecchio nome CalTrackr, gli scaffold iniziali, le funzioni di scorte/suggerimenti e gli esempi SQL storici possono differire dall'app attuale. La Cucina corrente usa un catalogo di ingredienti; le quantità di confezione sono metadati, mentre i piatti preparati mantengono porzioni atomiche. Per schema e setup usare le migrazioni versionate e le guide sopra.

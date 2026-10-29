@@ -6,6 +6,8 @@
 // affine; per i prodotti composti è una media, non un'etichetta di marca.
 // https://naehrwertdaten.ch/it/downloads/
 // https://fdc.nal.usda.gov/download-datasets/
+// Le aggiunte del 29 ottobre 2026 usano profili completi CREA o svizzeri:
+// riferimenti e conversioni in docs/ingredienti-base.md.
 import { ALCOHOLIC_DRINKS } from './alcoholicDrinks'
 
 export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: number, sugars: number, salt: number]> = {
@@ -29,6 +31,29 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   cracker: [2.1, 0, 1.5],
   'farina-00': [4.3, 0.6, 0],
   'patate-fritte': [3.8, 0.3, 0.5],
+
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  'riso-venere': [5.1, 2.2, 0],
+  'riso-parboiled': [0.5, 0.3, 0.02],
+  'miglio': [3.1, 4.9, 0],
+  'farina-0': [2.9, 1.8, 0.01],
+  'farina-integrale': [8.4, 2.1, 0.01],
+  'farina-avena': [7.6, 1.2, 0.08],
+  'farina-mais': [3.1, 1.5, 0],
+  'farina-riso': [1, 0, 0.01],
+  'semola': [3.6, 1.9, 0.03],
+  'amido-mais': [0, 1.5, 0],
+  'gnocchi-patate': [1.9, 1.4, 0.02],
+  'corn-flakes': [2.8, 10.4, 1.25],
+  'muesli': [6.4, 26.2, 0.95],
+  'pane-segale': [4.6, 1.8, 1.45],
+  'pangrattato': [3.2, 5, 1],
+  'cracker-integrali': [10, 2.1, 1.76],
+  'grano-saraceno': [5.8, 0.9, 0],
+  'fecola-patate': [0.1, 0, 0],
+  'pane-croccante-integrale': [14.8, 1.1, 1.5],
+  'gallette-riso-integrale': [4.2, 1.5, 0.8],
+  'gallette-mais': [3, 0.7, 0.4],
 
   // Legumi
   'ceci-secchi': [21, 2.4, 0],
@@ -56,6 +81,15 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   'fagioli-mung-secchi': [16.3, 6.6, 0.04],
   'soia-gialla-secca': [22, 6.8, 0],
   'lenticchie-rosse-secche': [18.2, 1.8, 0],
+
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  'piselli-scatola-scolati': [5.1, 3.9, 0.6],
+  'piselli-surgelati': [6.3, 4, 0.32],
+  'fagioli-borlotti-freschi': [4.8, 1.2, 0.01],
+  'fagioli-occhio-secchi': [12.7, 4, 0.04],
+  'seitan-fresco': [2.3, 0.7, 1.3],
+  'tempeh': [6.2, 0.2, 0.1],
+  'tofu-setoso': [0.6, 1.1, 0],
 
   // Verdure
   zucchine: [1.1, 1.8, 0],
@@ -113,6 +147,12 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   'funghi-porcini': [6, 0.1, 0],
   'funghi-shiitake': [2.5, 2.4, 0.02],
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  'funghi-pleurotus': [2.4, 5.6, 0.02],
+  'mais-scatola-scolato': [1.4, 5.3, 0.68],
+  'sedano-rapa': [3.8, 1.6, 0.1],
+  'pomodori-secchi': [12.3, 37.6, 5.3],
+
   // Frutta
   mela: [1.4, 11.5, 0],
   banana: [2.7, 15.6, 0],
@@ -157,6 +197,10 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   'fichi-secchi': [10, 55.9, 0.3],
   'uva-passa': [4.2, 70.3, 0.1],
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  'amarene': [1.1, 10.2, 0.01],
+  'albicocche-secche': [6, 66.5, 0.07],
+
   // Carne
   'petto-pollo': [0, 0, 0.1],
   'coscia-pollo': [0, 0, 0.2],
@@ -177,6 +221,20 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   'prosciutto-crudo': [0, 0, 4.4],
   'prosciutto-cotto': [0, 0.7, 2.4],
   bresaola: [0, 0, 6.8],
+
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  'coscia-pollo-con-pelle': [0, 0, 0.22],
+  'sovracoscia-pollo-con-pelle': [0, 0, 0.18],
+  'sovracoscia-pollo-senza-pelle': [0, 0, 0.17],
+  'ali-pollo-con-pelle': [0, 0, 0.25],
+  'pollo-intero-senza-pelle': [0, 0, 0.17],
+  'manzo-filetto': [0, 0, 0.1],
+  'maiale-spalla': [0, 0, 0.18],
+  'salsiccia-suino-fresca': [0, 0.6, 2.75],
+  'pancetta-tesa': [0, 0, 2.54],
+  'fegato-bovino': [0, 5.9, 0.2],
+  'mortadella': [0, 0.8, 2.1],
+  'salame': [0, 0, 3.9],
 
   // Pesce e frutti di mare
   salmone: [0, 0, 0.1],
@@ -199,6 +257,14 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   cozze: [0, 0, 0.7],
   vongole: [0, 0, 0.6],
   'salmone-affumicato': [0, 0, 4.1],
+
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  'tonno-olio-sgocciolato': [0, 0, 0.79],
+  'aringa': [0, 0, 0.24],
+  'rombo': [0, 1.2, 0.32],
+  'dentice': [0, 0.7, 0.32],
+  'cefalo': [0, 0.7, 0.17],
+  'acciughe-olio': [0, 0.2, 1.2],
 
   // Uova e latticini
   'uovo-intero': [0, 0.3, 0.4],
@@ -228,11 +294,27 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   robiola: [0, 1.5, 0.66],
   scamorza: [0, 1.8, 1.8],
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  'tuorlo-uovo': [0, 0, 0.11],
+  'latte-scremato': [0, 5.3, 0.13],
+  'yogurt-bianco-magro': [0, 4, 0.14],
+  'ricotta-pecora': [0, 4.2, 0.21],
+  'mascarpone': [0, 0.3, 0.21],
+  'cheddar': [0, 0.5, 1.52],
+  'emmental': [0, 3.6, 1.12],
+
   // Oli e grassi
   'olio-evo': [0, 0, 0],
   burro: [0, 0.1, 0],
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  'olio-girasole': [0, 0, 0],
+  'olio-arachide': [0, 0, 0],
+  'olio-cocco': [0, 0, 0],
+  'strutto': [0, 0, 0],
+
   // Frutta secca, semi e creme spalmabili
+  'castagne': [4.7, 8.9, 0.02],
   mandorle: [10.6, 6.6, 0],
   noci: [6.7, 3, 0],
   arachidi: [8.6, 5.9, 0],
@@ -254,6 +336,10 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   'crema-nocciole': [9.7, 3, 0], // Nocciole 100%, non crema al cioccolato.
   tahina: [9.3, 0.5, 0.3],
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  'arachidi-tostate-salate': [8, 4.2, 1.3],
+  'arachidi-tostate-senza-sale': [8.7, 2.5, 0],
+
   // Salse e sughi
   'passata-pomodoro': [1.5, 3.6, 0.1],
   'polpa-pomodoro': [1.5, 3.6, 0.1],
@@ -269,6 +355,16 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   'salsa-soia': [0.8, 0.4, 14],
   'brodo-vegetale': [0, 0.2, 1],
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  'concentrato-pomodoro': [2, 20.4, 1.9],
+  'pomodori-secchi-olio': [5.6, 6.5, 2.6],
+  'olive-verdi': [3.6, 0, 3.2],
+  'olive-nere': [6.2, 0.8, 1.8],
+  'aceto': [0, 0.3, 0],
+  'capperi-sottaceto': [3.6, 0.4, 4.1],
+  'cetriolini-sottaceto': [1, 1.9, 1.8],
+  'latte-cocco-cucina': [0.1, 1.7, 0],
+
   // Spezie ed erbe aromatiche
   sale: [0, 0, 100],
   'pepe-nero': [25.3, 0.6, 0.05],
@@ -278,6 +374,13 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   rosmarino: [2.9, 7.6, 0],
   aglio: [5.8, 1.6, 0],
 
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  'salvia': [8.2, 15.6, 0.01],
+  'menta': [3.8, 5.3, 0.04],
+  'peperoncino-fresco': [2, 1.5, 0.02],
+  'zenzero-fresco': [2.7, 1, 0],
+  'paprika': [20.9, 33.2, 0.1],
+
   // Dolci
   'cioccolato-fondente-70': [10.9, 24, 0.03],
   'cioccolato-latte': [1.9, 55.2, 0.5],
@@ -286,6 +389,9 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   marmellata: [2.2, 58.7, 0],
   'gelato-crema': [0, 21.9, 0.2],
   'biscotti-secchi': [2.3, 20.6, 0.5],
+
+  // Ampliamento 2026-10-29: fonti e stati in docs/ingredienti-base.md.
+  'cacao-amaro': [29.5, 0.9, 0.1],
 
   // Bevande e alcolici
   'acqua-naturale': [0, 0, 0],
@@ -299,4 +405,9 @@ export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: numb
   'succo-arancia': [0.3, 9.6, 0],
   'te-freddo': [0, 7, 0],
   'caffe-nero': [0, 0, 0],
+  // Bevande vegetali, per 100 ml.
+  'bevanda-soia': [0.62, 1.44, 0.1],
+  'bevanda-avena': [0.21, 3.78, 0.11],
+  'bevanda-mandorla': [0.32, 1.37, 0.11],
+  'bevanda-riso': [0.11, 2.94, 0],
 }

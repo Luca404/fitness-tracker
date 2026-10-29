@@ -45,6 +45,19 @@ describe('prepared dish portions', () => {
     expect(estimateCookedWeight([canned], ['pan'])).toBe(85)
   })
 
+  it.each([
+    ['Riso Venere', 'riso-venere', 210],
+    ['Riso parboiled', 'riso-parboiled', 236],
+    ['Gnocchi di patate, freschi', 'gnocchi-patate', 106],
+    ['Grano saraceno', 'grano-saraceno', 250],
+    ['Miglio decorticato', 'miglio', 250],
+  ])('hydrates %s using its specific or estimated yield', (name, id, cookedGrams) => {
+    const item = { ...ingredient(name, 100, 350, 'grain'), food_key: `basic:${id}` }
+    expect(defaultCookingMethod(item)).toBe('boiled')
+    expect(estimateCookedWeight([item])).toBe(cookedGrams)
+    expect(estimateCookedWeight([item], ['pan'])).toBe(cookedGrams)
+  })
+
   it('provides a finite cooked-weight estimate for every basic food and cooking choice', () => {
     for (const food of BASIC_FOODS) {
       const item = { ...ingredient(food.name, 100, food.calories, food.category), food_key: `basic:${food.id}` }
@@ -60,6 +73,12 @@ describe('prepared dish portions', () => {
     for (const [name, key, category] of [
       ['Prosciutto crudo', 'basic:prosciutto-crudo', 'meat'],
       ['Tonno al naturale (sgocciolato)', 'basic:tonno-naturale', 'fish'],
+      ["Tonno sott'olio, sgocciolato", 'basic:tonno-olio-sgocciolato', 'fish'],
+      ["Acciughe sott'olio", 'basic:acciughe-olio', 'fish'],
+      ['Mortadella', 'basic:mortadella', 'meat'],
+      ['Salame', 'basic:salame', 'meat'],
+      ['Pancetta tesa', 'basic:pancetta-tesa', 'meat'],
+      ['Seitan fresco', 'basic:seitan-fresco', 'plant_protein'],
     ] as const) {
       const item = { ...ingredient(name, 100, 150, category), food_key: key }
       expect(defaultCookingMethod(item)).toBe('raw')
