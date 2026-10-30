@@ -12,6 +12,7 @@ Revisione del 16 ottobre 2026: Storico esclude il giorno corrente da grafici e m
 | [README del progetto](../README.md) | Funzioni attuali, Node 22, variabili, controlli e deploy |
 | [Note per lo sviluppo](../CLAUDE.md) | Architettura, tabelle, RPC e convenzioni correnti |
 | [Database condiviso](../supabase/README.md) | Distinzione locale/remoto, storico, grant e test isolati |
+| [Autenticazione](autenticazione.md) | Accesso, registrazione, email già usate, recupero password e configurazione Google/SMTP |
 | [Aggiornamento della sicurezza](../supabase/README-trackr-security-sync.md) | Migrazioni già applicate, correzione meal-item e commit pubblicato |
 | [Ordine del diario](meal-diary-order.md) | Registrazioni, ingredienti, icone e posizioni |
 | [Pasti da foto](pasti-da-foto.md) | Uso, ingredienti espandibili, porzione mangiata, configurazione e pubblicazione verificata |

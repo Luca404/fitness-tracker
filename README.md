@@ -46,6 +46,10 @@ npm run dev
 
 The development server runs at `http://localhost:5173`. Supabase must have this repository's schema and email/password authentication configured.
 
+The redesigned authentication screens include password confirmation, Italian error messages and email password recovery at `/reset-password`. Google sign-in appears automatically when enabled in Supabase. Production requires the app's redirect URLs and a working SMTP service; email-confirmation settings affect account-enumeration protection across the shared Trackrs project. See [authentication setup and behavior](docs/autenticazione.md).
+
+Hosted Auth uses Brevo SMTP with sender name **Trackrs** and a shared limit of 30 emails per hour, configured on 2026-10-30. A recovery request was accepted and receipt confirmed by the authorized recipient. This verifies email delivery separately from releasing the new login/reset frontend. SMTP credentials stay in the private, Git-ignored `.env.smtp.local` file and Supabase Auth settings.
+
 ### Database and Edge Functions
 
 With the Supabase CLI authenticated:

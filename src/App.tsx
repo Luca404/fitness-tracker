@@ -1,9 +1,11 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import { useData } from './contexts/DataContext'
 import Layout from './components/layout/Layout'
 import LoginPage from './pages/LoginPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
+import { PASSWORD_RECOVERY_PATH } from './utils/auth'
 import OnboardingPage from './pages/OnboardingPage'
 import Toast from './components/common/Toast'
 import PageLoading from './components/common/PageLoading'
@@ -26,12 +28,18 @@ function LoadingScreen() {
 }
 
 function AppRoutes() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, isPasswordRecovery } = useAuth()
   const { profile, profileStatus, profileUserId, fetchProfile } = useData()
+  const location = useLocation()
 
-  if (authLoading || (user && (
+  if (authLoading) return <LoadingScreen />
+
+  // A recovery session is authenticated, but must reach password reset before profile/onboarding.
+  if (isPasswordRecovery || location.pathname === PASSWORD_RECOVERY_PATH) return <ResetPasswordPage />
+
+  if (user && (
     profileUserId !== user.id || profileStatus === 'idle' || profileStatus === 'loading'
-  ))) {
+  )) {
     return <LoadingScreen />
   }
 

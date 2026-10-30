@@ -1,5 +1,54 @@
 # Shared Supabase workflow
 
+## Brevo SMTP — 2026-10-30
+
+Brevo was configured on hosted project `nitbisweytddtigoebeh` through the
+Management API using the authenticated CLI session. The relay is
+`smtp-relay.brevo.com:587` (STARTTLS), with sender name **Trackrs**. The shared
+Auth email limit was raised from 2 to the documented custom-SMTP default of
+30 messages per hour. The verified sender, SMTP login and SMTP key were read
+from the private, Git-ignored `.env.smtp.local` file (permissions 600); no
+credentials were added to frontend variables or tracked configuration.
+
+SMTP fields and the rate limit were read back. The shared Site URL, redirect
+allowlist, email confirmation, Google provider and Send Email hook were
+preserved. One recovery email was requested for the recipient explicitly
+authorized in the conversation: the endpoint returned 200, a read-only check
+confirmed the existing account's recovery-send timestamp, and the recipient
+confirmed receipt. The reset link was not used to change a password in this
+verification. No application user or migration was created.
+
+A preliminary SMTP authentication check from the local computer returned
+`525` (unauthorized IP). Brevo's IP protection was not changed by this setup;
+the subsequent recovery request from hosted Auth was accepted and received.
+Only actual sending-server addresses should be authorized if later requests
+are blocked; the local check does not establish which IP hosted Auth uses.
+
+This configures the shared email service. The login/reset frontend changes
+remain a separate release; email receipt does not verify that a deployed
+frontend shows the new password-reset screen.
+
+## Authentication redirects — 2026-10-30
+
+The hosted Auth configuration was inspected from the terminal using the saved
+Supabase CLI session. Email confirmation was already enabled; Google had no
+configured credentials and was disabled. Custom SMTP was absent, with the
+default two-emails-per-hour limit. A subsequent check also found the Send Email
+hook disabled and confirmed that production uses this same project. Supabase
+documents restrictions on the default sender, but the owner reports successful
+signup emails to non-team users. No delivery test was performed; inspect an
+authorized recovery send before treating external SMTP as an observed requirement.
+
+Only `uri_allow_list` was patched to add
+`https://fitness-tracker-delta-kohl.vercel.app/` and
+`https://fitness-tracker-delta-kohl.vercel.app/reset-password`. The existing
+`https://trackr-dusky.vercel.app/**` redirect and shared Trackr Site URL were
+preserved. The result was read back and verified; SMTP, Google and email
+confirmation settings were unchanged. No database migration was needed.
+See [the authentication guide](../docs/autenticazione.md).
+
+## Database workflow
+
 Reviewed on 2026-10-14. FitTrackr and `../trackr/` link to hosted project `nitbisweytddtigoebeh`. Auth users, database roles/default grants and migration history are shared; FitTrackr application tables have user ownership policies. A frontend URL at `http://127.0.0.1:54321` uses a separate local database.
 
 Before changing the hosted schema:

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import type { GymSession, MealItem, UserHealthProfile } from '../types'
 
 const mocks = vi.hoisted(() => ({
+  isPasswordRecovery: false,
   getHealthProfile: vi.fn(),
   getUserGoals: vi.fn(),
   getLatestWeightLog: vi.fn(),
@@ -20,7 +21,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('./AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'user-1' } }),
+  useAuth: () => ({ user: { id: 'user-1' }, isPasswordRecovery: mocks.isPasswordRecovery }),
 }))
 
 vi.mock('../services/api', () => mocks)
@@ -67,6 +68,7 @@ const gymSession: GymSession = {
 describe('DataProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.isPasswordRecovery = false
     mocks.getHealthProfile.mockResolvedValue(profile)
     mocks.getUserGoals.mockResolvedValue(null)
     mocks.getLatestWeightLog.mockResolvedValue(null)
@@ -77,6 +79,19 @@ describe('DataProvider', () => {
     mocks.getMealsForRange.mockResolvedValue([])
     mocks.getWorkoutsForDate.mockResolvedValue([])
     mocks.getGymSessionsForDate.mockResolvedValue([])
+  })
+
+  it('loads private data only after password recovery is finished', async () => {
+    mocks.isPasswordRecovery = true
+    const { result, rerender } = renderHook(() => useTestData(), { wrapper: Wrapper })
+    await waitFor(() => expect(result.current.profileStatus).toBe('idle'))
+    expect(mocks.getHealthProfile).not.toHaveBeenCalled()
+    expect(mocks.getMealsForDate).not.toHaveBeenCalled()
+    expect(mocks.getUserGoals).not.toHaveBeenCalled()
+    mocks.isPasswordRecovery = false
+    rerender()
+    await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
+    expect(mocks.getHealthProfile).toHaveBeenCalledTimes(1)
   })
 
   it('includes completed gym sessions in daily burned calories using the historical body weight', async () => {

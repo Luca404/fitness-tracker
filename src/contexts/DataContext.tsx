@@ -64,9 +64,9 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | null>(null)
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
+  const { user, isPasswordRecovery } = useAuth()
   const { selectedDate } = useSettings()
-  const userId = user?.id
+  const userId = isPasswordRecovery ? undefined : user?.id
   const [profile, setProfile] = useState<UserHealthProfile | null>(null)
   const [profileStatus, setProfileStatus] = useState<ProfileStatus>('idle')
   const [profileUserId, setProfileUserId] = useState<string | null>(null)

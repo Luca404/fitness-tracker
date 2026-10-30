@@ -35,7 +35,7 @@
       ]
     },
     {
-      "source": "/(meals|kitchen|fitness|wellbeing|history|settings|onboarding|login|pantry|weight|workout)",
+      "source": "/(meals|kitchen|fitness|wellbeing|history|settings|onboarding|login|pantry|weight|workout|reset-password)",
       "headers": [
         {
           "key": "Cache-Control",
