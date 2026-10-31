@@ -90,7 +90,7 @@ export default function WeightPage() {
 
   return (
     <div className="desktop-page desktop-weight space-y-4 p-4 pb-24">
-      <h1 className="text-xl font-bold text-white">Peso corporeo</h1>
+      <h1 className="text-xl font-bold text-white lg:hidden">Peso corporeo</h1>
 
       {/* Summary card */}
       {latest && (
@@ -139,29 +139,31 @@ export default function WeightPage() {
         ) : logs.length < 2 ? (
           <p className="text-sm text-gray-600 text-center py-8">Inserisci almeno 2 misurazioni per vedere il grafico</p>
         ) : (
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-              <YAxis domain={[yMin, yMax]} tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={value => formatDecimal(Number(value))} />
-              <Tooltip
-                contentStyle={{ background: '#1f2937', border: 'none', borderRadius: 8 }}
-                labelStyle={{ color: '#e5e7eb', fontSize: 12 }}
-                formatter={(v: unknown) => [`${formatDecimal(Number(v))} kg`, 'Peso']}
-              />
-              {target && (
-                <ReferenceLine y={target} stroke="#10b981" strokeDasharray="4 4" label={{ value: `obiettivo ${formatDecimal(target)}kg`, fill: '#10b981', fontSize: 10 }} />
-              )}
-              <Line
-                type="monotone"
-                dataKey="kg"
-                stroke="#10b981"
-                strokeWidth={2}
-                dot={{ fill: '#10b981', r: 3 }}
-                activeDot={{ r: 5 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="weight-chart-canvas h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                <YAxis domain={[yMin, yMax]} tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={value => formatDecimal(Number(value))} />
+                <Tooltip
+                  contentStyle={{ background: '#1f2937', border: 'none', borderRadius: 8 }}
+                  labelStyle={{ color: '#e5e7eb', fontSize: 12 }}
+                  formatter={(v: unknown) => [`${formatDecimal(Number(v))} kg`, 'Peso']}
+                />
+                {target && (
+                  <ReferenceLine y={target} stroke="#10b981" strokeDasharray="4 4" label={{ value: `obiettivo ${formatDecimal(target)}kg`, fill: '#10b981', fontSize: 10 }} />
+                )}
+                <Line
+                  type="monotone"
+                  dataKey="kg"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  dot={{ fill: '#10b981', r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </div>
 

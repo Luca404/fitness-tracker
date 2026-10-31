@@ -47,7 +47,7 @@ export default function WorkoutPage({ embedded = false }: { embedded?: boolean }
   }
 
   return (
-    <div className={embedded ? 'space-y-6' : 'space-y-6 p-4 pb-24'}>
+    <div className={embedded ? 'desktop-workout space-y-6' : 'desktop-page desktop-workout space-y-6 p-4 pb-24'}>
       <div className="desktop-date"><DaySelector date={selectedDate} onChange={setSelectedDate} /></div>
 
       <button type="button" onClick={() => setActivityPickerOpen(true)}
@@ -57,11 +57,11 @@ export default function WorkoutPage({ embedded = false }: { embedded?: boolean }
           <span className="mt-1 block text-xs text-gray-400">Registra camminata, corsa, ciclismo e altro</span></span>
       </button>
 
-      <GymTraining />
+      <div className="workout-plans"><GymTraining /></div>
 
       {/* Other logged activities for the selected day */}
       {workouts.length > 0 && (
-        <div>
+        <div className="workout-activities">
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-semibold text-gray-300">Altre attività del giorno</h3>
             <span className="text-sm text-orange-400">🔥 {formatDecimal(totalBurned, 0)} kcal</span>

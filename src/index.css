@@ -69,26 +69,198 @@
 }
 
 @media (min-width: 1024px) {
-  .desktop-page { padding: 24px 32px 32px; }
-  .desktop-tabs, .desktop-date { max-width: 448px; }
-  .desktop-activity-action { max-width: 520px; }
-
-  .meals-page {
+  .app-shell {
     display: grid;
-    grid-template-columns: 360px minmax(0, 1fr);
-    align-items: start;
-    gap: 24px;
-    padding: 24px 32px 32px;
+    grid-template-columns: 224px minmax(0, 1fr);
   }
-  .meals-page > :not([hidden]) { margin-top: 0; }
-  .meals-date { grid-column: 1 / -1; width: 360px; }
-  .meals-overview { min-width: 0; }
-  .meal-add-action {
+
+  .app-sidebar {
+    min-height: 0;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 32px;
+    overflow-y: auto;
+    border-bottom: 0;
+    border-right: 1px solid #1f2937;
+    padding: 28px 16px;
+  }
+
+  .app-brand {
+    flex-shrink: 0;
+    padding-inline: 8px;
+    font-size: 24px;
+  }
+
+  .app-navigation {
     position: static;
     width: 100%;
     max-width: none;
+    transform: none;
+    border: 0;
+    padding-bottom: 0;
+  }
+
+  .app-nav-list {
+    height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .app-nav-link,
+  .app-settings {
+    flex: none;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 14px;
+    width: 100%;
+    height: 50px;
+    border-radius: 12px;
+    padding: 0 16px;
+    color: #9ca3af;
+    font-weight: 500;
+  }
+
+  .app-nav-link:hover,
+  .app-settings:hover {
+    background: #1f2937;
+    color: #f3f4f6;
+  }
+
+  .app-nav-link[aria-current='page'],
+  .app-settings[aria-current='page'] {
+    background: rgb(16 185 129 / 10%);
+    color: #6ee7b7;
+    box-shadow: inset 3px 0 0 #10b981;
+  }
+
+  .app-settings {
+    margin-top: auto;
+  }
+
+  .app-sidebar a:focus-visible,
+  .app-brand:focus-visible {
+    outline: 2px solid #34d399;
+    outline-offset: 4px;
+  }
+
+  .desktop-main {
+    background: #0d1523;
+    scrollbar-color: #374151 transparent;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+  }
+
+  .app-content {
+    position: relative;
+    max-width: 1440px;
+    margin-inline: auto;
+  }
+
+  .desktop-page-heading {
+    margin-inline: 24px;
+    border-bottom: 1px solid #1f2937;
+    padding-block: 32px 24px;
+  }
+
+  .app-content-meals .desktop-page-heading { padding-right: 344px; }
+
+  .desktop-page { padding: 24px 24px 40px; }
+  .desktop-tabs { max-width: 400px; }
+  .desktop-date { max-width: 360px; }
+  .desktop-activity-action { max-width: 440px; }
+
+  .desktop-main .card {
+    border: 1px solid rgb(55 65 81 / 55%);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 8%);
+  }
+
+  .meals-page {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 20px;
+    padding: 24px 24px 40px;
+  }
+  .meals-page > :not([hidden]),
+  .meals-overview > :not([hidden]) { margin-top: 0; }
+  .meals-date {
+    position: absolute;
+    top: 38px;
+    right: 24px;
+    width: 320px;
+  }
+  .meals-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+    gap: 20px;
+    min-width: 0;
+  }
+  .meals-energy { grid-column: 1; grid-row: 1; }
+  .meals-energy > div > :first-child { flex-shrink: 0; }
+  .meals-macros {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .meals-macros > div > :not(:first-child) { margin-top: 20px; }
+  .meals-habits { grid-column: 1 / -1; }
+
+  .habit-summary {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 24px;
+    row-gap: 12px;
+    padding: 16px 20px;
+  }
+  .habit-summary-heading {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+  }
+  .habit-summary-status { grid-column: 2; margin-left: 0; }
+  .habit-summary-tiles { margin-top: 0; }
+  .habit-summary-tiles > span { aspect-ratio: auto; height: 44px; }
+  .habit-summary-note { grid-column: 1 / -1; margin-top: 0; }
+
+  .meal-add-action {
+    position: static;
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    width: 100%;
+    max-width: none;
+    margin-top: 8px;
     padding-inline: 0;
     transform: none;
+  }
+  .meal-add-action > button {
+    width: auto;
+    min-width: 280px;
+    box-shadow: none;
+  }
+
+  .desktop-workout {
+    display: grid;
+    grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+    align-items: center;
+    gap: 24px;
+  }
+  .desktop-workout > :not([hidden]) { min-width: 0; margin-top: 0; }
+  .desktop-workout > .desktop-activity-action { justify-self: end; }
+  .workout-plans,
+  .workout-activities { grid-column: 1 / -1; }
+
+  .history-chart-canvas,
+  .weight-chart-canvas {
+    height: 320px;
   }
 
   .desktop-plan-list, .desktop-pantry-groups, .desktop-dish-list {
@@ -103,12 +275,14 @@
 
   .desktop-weight {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-columns: minmax(0, 1fr) 300px;
     align-items: start;
     gap: 24px;
   }
   .desktop-weight > :not([hidden]) { min-width: 0; margin-top: 0; }
   .desktop-weight > h1, .weight-summary, .weight-history { grid-column: 1 / -1; }
+  .weight-form { align-self: start; }
+  .weight-form > .flex { flex-direction: column; }
 
   .desktop-settings {
     display: grid;
@@ -118,10 +292,35 @@
   }
   .desktop-settings > :not([hidden]) { min-width: 0; margin-top: 0; }
   .desktop-settings > :not(.settings-profile):not(.settings-goals) { grid-column: 1 / -1; }
-  .settings-goals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }
+  .settings-goals {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+    border: 1px solid rgb(55 65 81 / 55%);
+    border-radius: 16px;
+    background: #1f2937;
+    padding: 20px;
+  }
   .settings-goals > :not(.settings-goal-field) { grid-column: 1 / -1; }
+  .desktop-settings > button { width: auto; min-width: 180px; justify-self: start; padding-inline: 24px; }
 }
 
-@media (min-width: 1024px) and (min-height: 900px) {
-  .meals-overview { position: sticky; top: 24px; }
+@media (min-width: 1280px) {
+  .app-shell { grid-template-columns: 248px minmax(0, 1fr); }
+  .app-sidebar { padding: 32px 20px; gap: 40px; }
+  .desktop-page-heading { margin-inline: 40px; padding-top: 40px; }
+  .meals-date { top: 46px; right: 40px; }
+  .desktop-page,
+  .meals-page { padding: 28px 40px 48px; }
+  .meals-page,
+  .meals-overview { gap: 24px; }
+  .desktop-main .card { padding: 24px; }
+  .habit-summary { grid-template-columns: 180px minmax(0, 1fr) 160px; }
+  .habit-summary-note {
+    grid-column: auto;
+    border-left: 1px solid #374151;
+    padding-left: 20px;
+  }
+  .desktop-weight { grid-template-columns: minmax(0, 1fr) 340px; }
+  .settings-goals { padding: 24px; }
 }

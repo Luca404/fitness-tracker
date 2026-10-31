@@ -67,7 +67,7 @@ export default function HistoryPage() {
 
   return (
     <div className="desktop-page p-4 pb-24 space-y-6">
-      <div className="flex gap-2">
+      <div className="desktop-tabs flex gap-2">
         {([7, 30] as Range[]).map(r => (
           <button key={r} type="button" onClick={() => setRange(r)}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -88,31 +88,33 @@ export default function HistoryPage() {
         </div>
       ) : (
         <div className="card">
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartData}>
-              <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} tickFormatter={value => formatDecimal(Number(value), 0)} />
-              <Tooltip
-                filterNull={false}
-                contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: 8 }}
-                labelStyle={{ color: '#f3f4f6' }}
-                formatter={(value: unknown) => value == null ? 'Dati mancanti' : `${formatDecimal(Number(value), 0)} kcal`}
-              />
-              <Legend />
-              {goals && (
-                <Line
-                  type="monotone"
-                  dataKey={() => goals.calorie_target}
-                  stroke="#6b7280"
-                  strokeDasharray="4 4"
-                  dot={false}
-                  name="Target"
+          <div className="history-chart-canvas h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} tickFormatter={value => formatDecimal(Number(value), 0)} />
+                <Tooltip
+                  filterNull={false}
+                  contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: 8 }}
+                  labelStyle={{ color: '#f3f4f6' }}
+                  formatter={(value: unknown) => value == null ? 'Dati mancanti' : `${formatDecimal(Number(value), 0)} kcal`}
                 />
-              )}
-              <Line type="monotone" dataKey="Mangiato" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
-              <Line type="monotone" dataKey="Bruciato" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
-            </LineChart>
-          </ResponsiveContainer>
+                <Legend />
+                {goals && (
+                  <Line
+                    type="monotone"
+                    dataKey={() => goals.calorie_target}
+                    stroke="#6b7280"
+                    strokeDasharray="4 4"
+                    dot={false}
+                    name="Target"
+                  />
+                )}
+                <Line type="monotone" dataKey="Mangiato" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
+                <Line type="monotone" dataKey="Bruciato" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 

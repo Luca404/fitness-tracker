@@ -48,19 +48,19 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
     return (
       <Link
         to="/meals/wellbeing"
-        className="group block rounded-2xl border border-gray-700/70 bg-gray-800/55 px-4 py-3 transition hover:border-primary-700 hover:bg-gray-800"
+        className="habit-summary group block rounded-2xl border border-gray-700/70 bg-gray-800/55 px-4 py-3 transition hover:border-primary-700 hover:bg-gray-800"
         aria-label="Apri il dettaglio delle buone abitudini"
       >
-        <span className="flex items-center gap-2">
+        <span className="habit-summary-heading flex items-center gap-2">
           <span className="text-base" aria-hidden="true">🌿</span>
           <span className="text-sm font-semibold text-gray-200">Buone abitudini</span>
-          <span className="ml-auto truncate text-[11px] text-gray-500">
+          <span className="habit-summary-status ml-auto truncate text-[11px] text-gray-500">
             {loading
               ? 'Aggiorno…'
               : `${summary.ok} su ${rows.filter(row => row.direction !== 'info').length} in linea`}
           </span>
         </span>
-        <span className="mt-2 grid grid-cols-8 gap-1 sm:gap-1.5">
+        <span className="habit-summary-tiles mt-2 grid grid-cols-8 gap-1 sm:gap-1.5">
           {rows.map(row => {
             const weekly = row.period === 'ultimi 7 giorni'
             const status = habitStatus(row)
@@ -94,7 +94,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
             )
           })}
         </span>
-        <span className="mt-2 block text-[10px] text-gray-500">Legumi e pesce: media degli ultimi 7 giorni</span>
+        <span className="habit-summary-note mt-2 block text-[10px] text-gray-500">Legumi e pesce: media degli ultimi 7 giorni</span>
       </Link>
     )
   }

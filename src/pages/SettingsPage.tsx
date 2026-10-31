@@ -91,7 +91,7 @@ export default function SettingsPage() {
 
   return (
     <div className="desktop-page desktop-settings p-4 pb-24 space-y-6">
-      <h1 className="text-xl font-bold">Impostazioni</h1>
+      <h1 className="text-xl font-bold lg:hidden">Impostazioni</h1>
 
       {profile && (
         <div className="card settings-profile space-y-2 text-sm">

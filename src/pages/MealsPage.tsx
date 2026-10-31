@@ -167,37 +167,41 @@ export default function MealsPage() {
 
       <div className="meals-overview space-y-4">
         {/* Summary card: ring + stats */}
-        <div className="card flex items-center gap-5">
-          <CalorieRing consumed={daySummary.calories} target={target} />
-          <div className="flex-1 space-y-2.5 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-400">Consumate</span>
-              <span className="font-semibold">{formatDecimal(daySummary.calories, 0)} kcal</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Obiettivo</span>
-              <span className="font-semibold">{formatDecimal(target, 0)} kcal</span>
-            </div>
-            {totalBurned > 0 && (
+        <div className="card meals-energy">
+          <h2 className="mb-4 hidden text-lg font-semibold lg:block">Energia della giornata</h2>
+          <div className="flex items-center gap-5">
+            <CalorieRing consumed={daySummary.calories} target={target} />
+            <div className="flex-1 space-y-2.5 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-400">🔥 Bruciate</span>
-                <span className="text-orange-400 font-semibold">{formatDecimal(totalBurned, 0)} kcal</span>
+                <span className="text-gray-400">Consumate</span>
+                <span className="font-semibold">{formatDecimal(daySummary.calories, 0)} kcal</span>
               </div>
-            )}
-            <div className="flex justify-between border-t border-gray-700 pt-2">
-              <span className="text-gray-400">Rimanenti</span>
-              <span className={`font-bold ${isOver ? 'text-orange-400' : 'text-primary-400'}`}>
-                {isOver ? `+${formatDecimal(Math.abs(remaining), 0)}` : formatDecimal(remaining, 0)} kcal
-              </span>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Obiettivo</span>
+                <span className="font-semibold">{formatDecimal(target, 0)} kcal</span>
+              </div>
+              {totalBurned > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-400">🔥 Bruciate</span>
+                  <span className="text-orange-400 font-semibold">{formatDecimal(totalBurned, 0)} kcal</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-gray-700 pt-2">
+                <span className="text-gray-400">Rimanenti</span>
+                <span className={`font-bold ${isOver ? 'text-orange-400' : 'text-primary-400'}`}>
+                  {isOver ? `+${formatDecimal(Math.abs(remaining), 0)}` : formatDecimal(remaining, 0)} kcal
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        <GoodHabits selectedDate={selectedDate} currentMeals={meals} compact />
+        <div className="meals-habits"><GoodHabits selectedDate={selectedDate} currentMeals={meals} compact /></div>
 
         {/* Macro bars */}
         {goals && (
-          <div className="card">
+          <div className="card meals-macros">
+            <h2 className="mb-4 hidden text-lg font-semibold lg:block">Macronutrienti</h2>
             <MacroBars
               protein={daySummary.protein_g}
               carbs={daySummary.carbs_g}
@@ -209,6 +213,7 @@ export default function MealsPage() {
 
         {/* Add meal button */}
         <div className="meal-add-action fixed left-1/2 z-30 w-full max-w-md -translate-x-1/2 px-4">
+          <h2 className="hidden text-xl font-bold lg:block">Pasti registrati</h2>
           <button
             type="button"
             className="flex w-full select-none items-center gap-3 rounded-2xl bg-primary-600 px-4 py-3 text-left shadow-xl shadow-black/40 ring-1 ring-primary-400/40 transition hover:bg-primary-500"
