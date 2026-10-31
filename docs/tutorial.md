@@ -1,62 +1,107 @@
-# Guida rapida
+# Tour interattivo
 
-Implementazione del 31 ottobre 2026.
+Aggiornamento del 31 ottobre 2026. Sostituisce la precedente guida a schermate
+di testo con un percorso dimostrativo dentro le pagine effettive dell’app.
 
-Dopo il salvataggio iniziale di profilo e obiettivi, un nuovo utente viene
-indirizzato a `/tutorial`. La guida contiene sei tappe: ingredienti da codice
-a barre, foto dell’etichetta o inserimento manuale; ricette salvate e porzioni
-preparate; registrazione del cibo consumato e stime da foto del pasto; peso;
-schede palestra, sessioni e altre attività; buone abitudini.
+## Esperienza
 
-Ogni tappa offre **Salta tutorial**. Sono disponibili Avanti, Indietro e gli
-indicatori per passare direttamente a un argomento. L’ultima azione è
-**Inizia a usare fitTrackr**. Non vengono creati alimenti, pasti o allenamenti
-di esempio. La guida distingue la foto dell’etichetta dalla foto di un pasto
-e la preparazione di un piatto dalla registrazione di una porzione consumata.
+Il tour oscura la pagina, evidenzia il controllo da usare e affianca una breve
+spiegazione. Si può premere il pulsante reale illuminato oppure l’azione
+equivalente nella guida. I salvataggi avanzano soltanto quando l’operazione
+dimostrativa ha prodotto il risultato, senza usare attese artificiali.
 
-**Impostazioni → Guida rapida → Rivedi il tutorial** apre sempre la stessa
-guida da capo. Completandola o saltandola si ritorna alle impostazioni;
-al primo utilizzo si entra invece in Pasti. Il recupero password e la
-configurazione del profilo mantengono la precedenza sulla guida.
+I sei argomenti sono selezionabili dal menu della guida:
 
-## Stato sul profilo
+1. **Ingredienti:** catalogo, codice a barre, foto della confezione/etichetta,
+   ricerca e inserimento manuale. Si salva uno yogurt di esempio e lo si vede
+   comparire nell’elenco.
+2. **Piatti:** creazione di una ricetta con ingredienti, quantità e categorie
+   dei pasti. Si salva del riso con zucchine.
+3. **Pasti:** scelta del pasto, menu per singolo alimento, composizione e
+   ricette, selezione di un piatto salvato, preparazione senza consumo immediato,
+   ripresa del piatto pronto e registrazione di una porzione. Il risultato
+   compare nel diario, mentre il resto rimane disponibile. Si mostra anche
+   il risultato di un’analisi da foto del pasto, già preparato per la demo.
+4. **Peso:** registrazione di una pesata di esempio e relativo riepilogo.
+5. **Fitness:** creazione di una scheda, spiegazione delle sessioni palestra
+   con carichi, serie e ripetizioni e registrazione di una camminata.
+6. **Benessere:** apertura dei quadratini delle Buone abitudini e del dettaglio
+   con obiettivi giornalieri, finestre di sette giorni e dati incompleti.
 
-La migrazione `20261031120000_quick_tutorial.sql` aggiunge
-`user_health_profiles.tutorial_seen`: `true` per i profili già esistenti,
-`false` come default per le nuove righe. Non modifica utenti Auth, tabelle
-finanziarie, policy o RPC. L’RPC esistente di onboarding omette questo campo:
-la creazione usa il default, le successive modifiche del profilo preservano
-la preferenza.
+**Salta** rimane sempre disponibile; Escape chiude il tour. **Indietro**
+ricostruisce il passaggio precedente. Il menu permette di cambiare argomento
+senza completare i precedenti: gli esempi necessari vengono predisposti
+localmente. Se un elemento non compare entro otto secondi, la guida offre
+**Prosegui** e mantiene disponibile l’uscita.
 
-Saltare o completare imposta il campo a `true`, con un UPDATE limitato allo
-user ID corrente e soggetto alle policy esistenti. La preferenza è quindi
-condivisa fra dispositivi. Un profilo con campo assente è trattato come
-preesistente, per compatibilità durante il rilascio.
+Il posizionamento segue scorrimento, ridimensionamento e viewport visiva.
+La scheda di spiegazione può scorrere internamente quando lo spazio è poco.
+La tastiera resta tra guida, campi evidenziati e controllo consentito;
+le azioni estranee al passaggio sono bloccate. Le animazioni rispettano
+la preferenza di movimento ridotto.
 
-La chiusura aggiorna subito lo stato locale per non bloccare l’accesso
-all’app. Se la scrittura fallisce, un messaggio segnala che la guida potrebbe
-riapparire al prossimo accesso. Un’eventuale riapertura manuale non azzera
-la preferenza salvata.
+## Dati temporanei e isolamento
 
-## Verifica e rilascio
+Le schermate sono gli stessi componenti di produzione, con un contesto
+opzionale che sostituisce i servizi soltanto durante il tour. Un nuovo store
+in memoria contiene ingredienti, ricette, preparazioni, pasti, peso, schede
+ed attività dimostrative. Non si usa localStorage e non si salvano gli esempi
+su Supabase. Un’operazione non supportata dalla demo viene rifiutata;
+non ricade sui servizi reali.
 
-I test React coprono navigazione iniziale, recupero password prioritario,
-profili preesistenti, salto, avanzamento, ritorno indietro, navigazione per
-tappa, focus del titolo, riapertura dalle impostazioni e chiusura con errore
-di rete. Il test SQL `supabase/tests/quick_tutorial.sql` usa una fixture minima
-in un database vuoto `fittrackr_tutorial_test_*`: verifica i due default,
-la conservazione del flag durante un upsert, il vincolo NOT NULL e
-l’isolamento degli UPDATE tramite una policy di proprietà equivalente.
+La foto del pasto usa una stima di esempio: non apre la fotocamera, non
+carica immagini e non invoca l’AI. I pulsanti di scansione e foto degli
+ingredienti sono mostrati e spiegati; il percorso pratico usa l’inserimento
+manuale. I valori del profilo e dei target durante il tour sono anch’essi
+esempi, distinti da quelli dell’utente.
 
-Applicare la migrazione prima del frontend. La verifica grafica di desktop,
-mobile, altezza ridotta e ingrandimento del testo resta manuale, come previsto
-dal repository. Il contenuto della guida scorre separatamente dai controlli,
-con spazi per le safe area e indicatori utilizzabili da tastiera.
+Durante il tour un MemoryRouter sostituisce il router principale, senza
+annidarlo: la navigazione interna non cambia l’indirizzo `/tutorial` né
+aggiunge pagine alla cronologia del browser. Anche la data selezionata ha
+un contesto separato. Chiudendo, tutto lo stato dimostrativo viene eliminato.
 
-Verifica del 31 ottobre: **529 test frontend passati**, build e lint riusciti.
-Il test SQL è passato in un container PostgreSQL 17 temporaneo senza rete,
-con la directory Supabase montata in sola lettura. La migrazione è stata
-applicata al progetto ospitato dopo un dry-run che elencava soltanto questo
-file ed è stata copiata identica nel repository Trackr per tenere allineato
-lo storico condiviso. Nessun database applicativo locale è stato aggiornato.
-Il frontend non è stato pubblicato in questa sessione.
+## Avvio, riapertura e preferenza
+
+Dopo la configurazione iniziale di profilo e obiettivi, un nuovo utente arriva
+a `/tutorial`. **Impostazioni → Guida rapida → Rivedi il tutorial** lo riapre
+sempre da capo. Al termine o al salto si ritorna a Impostazioni per una
+riapertura manuale, oppure a Pasti per il primo utilizzo. Il tasto Indietro
+del browser esce dalla dimostrazione rispettando l’indirizzo raggiunto.
+Il recupero password mantiene la precedenza e interrompe il tour.
+
+Rimane invariata la preferenza `user_health_profiles.tutorial_seen`, aggiunta
+con la migrazione `20261031120000_quick_tutorial.sql`: true per i profili
+preesistenti alla migrazione, false come default per quelli nuovi. Saltare
+o completare salva true sul profilo corrente, con le policy di proprietà
+già esistenti. Questa preferenza è l’unica scrittura reale legata al tour;
+la chiusura non dipende dal successo della scrittura. Un errore avvisa che
+la guida potrebbe riapparire al prossimo accesso.
+
+Non serve una nuova migrazione per il tour interattivo. La migrazione iniziale
+è già applicata al progetto ospitato e copiata identica in Trackr. Il database
+applicativo locale mantiene il proprio schema separato.
+
+## Verifica
+
+Il test di integrazione attraversa l’intero percorso sui componenti reali,
+controlla ingredienti e piatti comparsi nelle pagine e vieta chiamate HTTP,
+Supabase e AI. Altri test coprono clic sul controllo illuminato, cambio
+argomento, ritorno indietro, Escape, uscita dal browser, percorso di ritorno
+alle impostazioni, priorità del recupero password, focus e ripristino delle
+descrizioni accessibili, ricalcolo dopo lo scroll e recupero con target assente.
+
+I test dello store verificano catalogo distinto dal consumo, porzioni e
+rimanenze, ripetizione degli esempi senza duplicati, ripartenza con store
+vuoto e rifiuto delle operazioni non supportate. I test geometrici verificano
+la collocazione su desktop, navigazione mobile, altezza ridotta e spazio
+limitato accanto al controllo.
+
+La verifica grafica resta manuale, secondo le istruzioni del repository:
+controllare su telefono e desktop che il pannello non copra i pulsanti,
+che i moduli scorrano correttamente e che i testi siano leggibili anche con
+l’ingrandimento attivo. In questa implementazione non è stato aperto un browser.
+
+Validazione locale del 31 ottobre: suite completa di **542 test in 75 file**
+passata; dopo la rifinitura dei bersagli evidenziati sono passati anche
+**35 test mirati**, build di produzione e lint senza avvisi. La pubblicazione
+del frontend segue il deploy del branch main.

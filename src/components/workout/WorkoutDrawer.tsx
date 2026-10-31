@@ -75,6 +75,7 @@ function WorkoutForm({ activityKey, weightKg, onSave, onClose }: Props & { activ
         {saveError && <p role="alert" className="text-sm text-red-300">Salvataggio non riuscito. Riprova.</p>}
         <button
           type="button"
+          data-tour="activity-save"
           onClick={() => void save()}
           disabled={!valid || saving}
           className="w-full py-4 bg-primary-600 rounded-xl font-semibold text-lg"

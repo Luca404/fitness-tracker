@@ -48,6 +48,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
     return (
       <Link
         to="/meals/wellbeing"
+        data-tour="habits-open"
         className="habit-summary group block rounded-2xl border border-gray-700/70 bg-gray-800/55 px-4 py-3 transition hover:border-primary-700 hover:bg-gray-800"
         aria-label="Apri il dettaglio delle buone abitudini"
       >
@@ -139,7 +140,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
 
   return (
     <section>
-      <div className="mb-3 flex items-end justify-between px-1">
+      <div data-tour="habits-detail" className="mb-3 flex items-end justify-between px-1">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Alimentazione</p>
           <h2 className="mt-0.5 text-lg font-bold">Buone abitudini</h2>

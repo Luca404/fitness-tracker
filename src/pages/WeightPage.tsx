@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
-import { getWeightLogs, upsertWeightLog, deleteWeightLog } from '../services/api'
+import * as productionApi from '../services/api'
+import { useAppService, useTutorialEnvironment } from '../contexts/TutorialEnvironment'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts'
@@ -15,6 +16,8 @@ function toLocalISODate(d: Date) {
 }
 
 export default function WeightPage() {
+  const { getWeightLogs, upsertWeightLog, deleteWeightLog } = useAppService('api', productionApi)
+  const tutorial = useTutorialEnvironment()
   const { user } = useAuth()
   const { profile, refreshCurrentWeight, showToast } = useData()
 
@@ -23,7 +26,7 @@ export default function WeightPage() {
   const [loading, setLoading] = useState(true)
 
   const [date, setDate] = useState(toLocalISODate(new Date()))
-  const [weightInput, setWeightInput] = useState('')
+  const [weightInput, setWeightInput] = useState(tutorial ? '72.4' : '')
   const [saving, setSaving] = useState(false)
 
   const fetchLogs = useCallback(async () => {
@@ -39,7 +42,7 @@ export default function WeightPage() {
     } finally {
       setLoading(false)
     }
-  }, [range, showToast])
+  }, [getWeightLogs, range, showToast])
 
   useEffect(() => { fetchLogs() }, [fetchLogs])
 
@@ -94,7 +97,7 @@ export default function WeightPage() {
 
       {/* Summary card */}
       {latest && (
-        <div className="card weight-summary flex items-center justify-between">
+        <div data-tour="weight-summary" className="card weight-summary flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-400">Peso attuale</p>
             <p className="text-3xl font-bold text-white">{formatDecimal(latest.weight_kg)} <span className="text-lg text-gray-400">kg</span></p>
@@ -168,7 +171,7 @@ export default function WeightPage() {
       </div>
 
       {/* Add entry */}
-      <div className="card weight-form space-y-3">
+      <div data-tour="weight-form" className="card weight-form space-y-3">
         <span className="text-sm font-semibold text-gray-300">Registra peso</span>
         <div className="flex gap-3">
           <input
@@ -198,6 +201,7 @@ export default function WeightPage() {
           </div>
         </div>
         <button
+          data-tour="weight-save"
           type="button"
           onClick={handleSave}
           disabled={saving || !weightInput}

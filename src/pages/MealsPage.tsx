@@ -22,7 +22,8 @@ import PreparedPortionInput from '../components/meals/PreparedPortionInput'
 import SingleIngredientEditor from '../components/meals/SingleIngredientEditor'
 import MealPhotoReview from '../components/meals/MealPhotoReview'
 import { isMealPhotoEntry } from '../utils/mealPhoto'
-import * as api from '../services/api'
+import * as productionApi from '../services/api'
+import { useAppService, useTutorialEnvironment } from '../contexts/TutorialEnvironment'
 import { formatDecimal } from '../utils/decimal'
 
 const MEAL_TYPES: { type: MealType; label: string }[] = [
@@ -59,6 +60,9 @@ function mealItemToDraft(item: MealEntry['items'][number]): DishItemDraft {
 }
 
 export default function MealsPage() {
+  const api = useAppService('api', productionApi)
+  const tutorial = useTutorialEnvironment()
+  const tutorialMealFlow = tutorial && ['meal-type', 'meal-hub', 'meal-ingredient-options', 'dish-pick', 'dish-prepare', 'prepared-list', 'prepared-pick', 'photo-method', 'photo-review'].includes(tutorial.scene)
   const { user } = useAuth()
   const {
     meals, goals, daySummary, loading, fetchForDate,
@@ -66,10 +70,19 @@ export default function MealsPage() {
   } = useData()
   const { selectedDate, setSelectedDate } = useSettings()
 
-  const [foodSearchOpen, setFoodSearchOpen] = useState(false)
+  const [foodSearchOpen, setFoodSearchOpen] = useState(Boolean(tutorialMealFlow))
   const [activeMealType, setActiveMealType] = useState<MealType>('lunch')
-  const [modalStep, setModalStep] = useState<'meal-type' | 'meal-hub' | 'view-entry' | 'edit-entry'>('meal-type')
-  const [hubMode, setHubMode] = useState<MealHubMode>('list')
+  const [modalStep, setModalStep] = useState<'meal-type' | 'meal-hub' | 'view-entry' | 'edit-entry'>(tutorialMealFlow && tutorial.scene !== 'meal-type' ? 'meal-hub' : 'meal-type')
+  const [hubMode, setHubMode] = useState<MealHubMode>(() => {
+    switch (tutorial?.scene) {
+      case 'meal-ingredient-options': return 'ingredients'
+      case 'dish-pick': return 'pick'
+      case 'dish-prepare': return 'prepare'
+      case 'prepared-pick': return 'prepared-pick'
+      case 'photo-review': return 'oneoff-photo'
+      default: return 'list'
+    }
+  })
   const [selectedEntry, setSelectedEntry] = useState<MealEntry | null>(null)
   const [preparedAmounts, setPreparedAmounts] = useState<{ total_cooked_g: number; remaining_g: number } | null>(null)
   const [preparedEditG, setPreparedEditG] = useState(0)
@@ -216,6 +229,7 @@ export default function MealsPage() {
           <h2 className="hidden text-xl font-bold lg:block">Pasti registrati</h2>
           <button
             type="button"
+            data-tour="meals-add"
             className="flex w-full select-none items-center gap-3 rounded-2xl bg-primary-600 px-4 py-3 text-left shadow-xl shadow-black/40 ring-1 ring-primary-400/40 transition hover:bg-primary-500"
             onClick={openNewMeal}
           >
@@ -228,7 +242,7 @@ export default function MealsPage() {
         </div>
       </div>
 
-      <section className="meals-diary min-w-0" aria-label="Pasti registrati">
+      <section data-tour="meal-diary" className="meals-diary min-w-0" aria-label="Pasti registrati">
         {/* Meal section — single card */}
         {loading ? (
           <div className="h-32 bg-gray-800 rounded-xl animate-pulse" />
@@ -283,6 +297,7 @@ export default function MealsPage() {
                 <button
                   key={type}
                   type="button"
+                  data-tour={`meal-type-${type}`}
                   onClick={() => { setActiveMealType(type); setHubMode('list'); setModalStep('meal-hub') }}
                   className={`rounded-2xl border border-gray-700 bg-gray-900/35 px-3 py-5 text-center font-medium transition hover:border-primary-600 hover:bg-primary-950/20 ${index === MEAL_TYPES.length - 1 ? 'col-span-2' : ''}`}
                 >

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import * as api from '../../services/api'
+import * as productionApi from '../../services/api'
+import { useAppService } from '../../contexts/TutorialEnvironment'
 import { useData } from '../../contexts/DataContext'
 import { useSettings } from '../../contexts/SettingsContext'
 import type { DishMealType, PreparedBatch } from '../../types'
@@ -16,6 +17,7 @@ export default function PreparedDishesPanel({ mealType, onConsumed, compact = fa
   onCountChange?: (count: number) => void
   onSelect?: (batch: PreparedBatch) => void
 }) {
+  const api = useAppService('api', productionApi)
   const { selectedDate } = useSettings()
   const { fetchForDate, showToast } = useData()
   const [batches, setBatches] = useState<PreparedBatch[]>([])
@@ -32,7 +34,7 @@ export default function PreparedDishesPanel({ mealType, onConsumed, compact = fa
     } catch {
       showToast('Errore caricamento piatti preparati')
     }
-  }, [showToast, onCountChange, mealType])
+  }, [api, showToast, onCountChange, mealType])
 
   useEffect(() => { void refresh() }, [refresh])
 
@@ -76,7 +78,7 @@ export default function PreparedDishesPanel({ mealType, onConsumed, compact = fa
       <p className="text-xs text-gray-500">Preparazioni con una quantità rimasta</p>
     </div>}
     {visibleBatches.map(batch => <div key={batch.id} className={`rounded-2xl border ${compact ? 'border-gray-700/70 bg-gray-900/30 p-2 transition hover:border-primary-600' : 'border-primary-700/40 bg-primary-950/20 p-3'}`}>
-      <button type="button" onClick={() => { if (onSelect) onSelect(batch); else { setSelected(batch); setGrams(0) } }}
+      <button type="button" data-tour="prepared-dish" onClick={() => { if (onSelect) onSelect(batch); else { setSelected(batch); setGrams(0) } }}
         className={`flex w-full items-center text-left ${compact ? 'gap-3 rounded-xl p-2' : 'gap-3'}`}>
         <span className={compact ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-xl' : 'text-2xl'}>{getDishIcon(batch.dish)}</span>
         <span className="min-w-0 flex-1">

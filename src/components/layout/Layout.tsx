@@ -61,6 +61,7 @@ export default function Layout() {
               <NavLink
                 key={to}
                 to={to}
+                data-tour={`nav-${to.slice(1)}`}
                 className={({ isActive }) =>
                   `app-nav-link flex flex-col items-center justify-center flex-1 h-full transition-colors ${
                     isActive ? 'text-primary-400' : 'text-gray-500'

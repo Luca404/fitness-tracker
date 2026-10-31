@@ -59,6 +59,23 @@
   animation: slide-up 0.3s ease-out;
 }
 
+.tutorial-spotlight {
+  box-shadow: 0 0 0 4px rgb(16 185 129 / 18%), 0 0 28px rgb(52 211 153 / 24%);
+}
+
+.tutorial-coach {
+  animation: tutorial-appear 160ms ease-out;
+}
+
+@keyframes tutorial-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-coach { animation: none; }
+}
+
 /* Preserve the mobile layout; only desktop uses the extra horizontal space. */
 .meals-page {
   padding-bottom: calc(10rem + env(safe-area-inset-bottom));

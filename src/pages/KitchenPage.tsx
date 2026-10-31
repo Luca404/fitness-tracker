@@ -21,7 +21,7 @@ export default function KitchenPage() {
           className={`rounded-xl py-2.5 text-sm font-semibold transition ${tab === 'pantry' ? 'bg-primary-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>
           🧺 Ingredienti
         </button>
-        <button type="button" role="tab" aria-selected={tab === 'dishes'} onClick={() => selectTab('dishes')}
+        <button type="button" data-tour="kitchen-dishes" role="tab" aria-selected={tab === 'dishes'} onClick={() => selectTab('dishes')}
           className={`rounded-xl py-2.5 text-sm font-semibold transition ${tab === 'dishes' ? 'bg-primary-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>
           🍲 Piatti
         </button>

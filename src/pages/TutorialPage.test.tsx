@@ -1,41 +1,27 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ dismissTutorial: vi.fn() }))
-vi.mock('../contexts/DataContext', () => ({ useData: () => mocks }))
+vi.mock('../components/onboarding/QuickTutorial', () => ({ default: ({ onFinish }: { onFinish: () => void }) => <>
+  <h1>Tour dimostrativo</h1><button onClick={onFinish}>Salta</button>
+</> }))
 import TutorialPage from './TutorialPage'
 
-beforeEach(() => { mocks.dismissTutorial.mockReset().mockResolvedValue(undefined) })
 afterEach(cleanup)
 
-function renderPage(path: string) {
-  render(<MemoryRouter initialEntries={[path]}><Routes>
-    <Route path="/tutorial" element={<TutorialPage />} />
-    <Route path="/meals" element={<h1>Pasti</h1>} />
-    <Route path="/settings" element={<h1>Impostazioni</h1>} />
-  </Routes></MemoryRouter>)
-}
-
-describe('TutorialPage', () => {
-  it('enters the diary after skipping the first-run guide', () => {
-    renderPage('/tutorial')
-    fireEvent.click(screen.getByRole('button', { name: 'Salta tutorial' }))
-    expect(screen.getByRole('heading', { name: 'Pasti' })).toBeTruthy()
-    expect(mocks.dismissTutorial).toHaveBeenCalledOnce()
+describe('TutorialPage lifecycle', () => {
+  it('lets the parent close the isolated router', () => {
+    const onFinish = vi.fn()
+    render(<TutorialPage onFinish={onFinish} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Salta' }))
+    expect(onFinish).toHaveBeenCalledOnce()
   })
-
-  it('returns to settings after completing a replay', () => {
-    renderPage('/tutorial?from=settings')
-    fireEvent.click(screen.getByRole('button', { name: 'Tappa 6: Non solo calorie' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Inizia a usare fitTrackr' }))
-    expect(screen.getByRole('heading', { name: 'Impostazioni' })).toBeTruthy()
-    expect(mocks.dismissTutorial).toHaveBeenCalledOnce()
-  })
-
-  it('never uses an arbitrary return URL', () => {
-    renderPage('/tutorial?from=https://example.org')
-    fireEvent.click(screen.getByRole('button', { name: 'Salta tutorial' }))
-    expect(screen.getByRole('heading', { name: 'Pasti' })).toBeTruthy()
+  it('handles browser back and removes its listener on unmount', () => {
+    const onFinish = vi.fn()
+    const { unmount } = render(<TutorialPage onFinish={onFinish} />)
+    act(() => window.dispatchEvent(new PopStateEvent('popstate')))
+    expect(onFinish).toHaveBeenCalledOnce()
+    unmount()
+    act(() => window.dispatchEvent(new PopStateEvent('popstate')))
+    expect(onFinish).toHaveBeenCalledOnce()
   })
 })

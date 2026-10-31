@@ -15,7 +15,7 @@ import { useSettings } from './SettingsContext'
 
 type ProfileStatus = 'idle' | 'loading' | 'missing' | 'ready' | 'error'
 
-interface DataContextType {
+export interface DataContextType {
   profile: UserHealthProfile | null
   profileStatus: ProfileStatus
   profileUserId: string | null
@@ -63,6 +63,10 @@ interface DataContextType {
 }
 
 const DataContext = createContext<DataContextType | null>(null)
+
+export function DataSnapshotProvider({ value, children }: { value: DataContextType; children: ReactNode }) {
+  return <DataContext.Provider value={value}>{children}</DataContext.Provider>
+}
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const { user, isPasswordRecovery } = useAuth()

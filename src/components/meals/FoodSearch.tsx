@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { searchBasicFoods, searchFood, calcNutrition } from '../../services/nutrition'
-import * as api from '../../services/api'
+import * as productionNutrition from '../../services/nutrition'
+import * as productionApi from '../../services/api'
+import { useAppService } from '../../contexts/TutorialEnvironment'
 import { useData } from '../../contexts/DataContext'
 import { FOOD_CATEGORIES } from '../../data/foodCategories'
 import type { FoodResult, FoodSource, PantryItem, FoodCategory, PieceSize } from '../../types'
@@ -57,6 +58,8 @@ interface Props {
 }
 
 export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntry = true, addLabel = '+ Aggiungi ingrediente', saving = false, resetAfterAdd = false }: Props) {
+  const api = useAppService('api', productionApi)
+  const { searchBasicFoods, searchFood, calcNutrition } = useAppService('nutrition', productionNutrition)
   const { showToast } = useData()
   const [query, setQuery] = useState('')
   const [offResults, setOffResults] = useState<FoodResult[]>([])
@@ -93,9 +96,9 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
     api.getPantryItems().then(setPantryItems).catch(() => {
       showToast('Ingredienti salvati non disponibili')
     })
-  }, [showToast])
+  }, [api, showToast])
 
-  const basicResults = useMemo(() => searchBasicFoods(query), [query])
+  const basicResults = useMemo(() => searchBasicFoods(query), [query, searchBasicFoods])
 
   const pantryResults = useMemo(() => {
     const q = query.trim().toLowerCase()

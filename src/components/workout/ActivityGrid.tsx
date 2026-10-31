@@ -12,6 +12,7 @@ export default function ActivityGrid({ onSelect }: Props) {
         return (
         <button
           key={key}
+          data-tour={`activity-${key}`}
           type="button"
           onClick={() => onSelect(key)}
           className="flex flex-col items-center p-3 bg-gray-800 rounded-xl hover:bg-gray-700 transition-colors"

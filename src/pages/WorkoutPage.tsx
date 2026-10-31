@@ -9,13 +9,15 @@ import WorkoutRow from '../components/workout/WorkoutRow'
 import DaySelector from '../components/common/DaySelector'
 import GymTraining from '../components/workout/GymTraining'
 import Modal from '../components/common/Modal'
+import { useTutorialEnvironment } from '../contexts/TutorialEnvironment'
 
 export default function WorkoutPage({ embedded = false }: { embedded?: boolean }) {
+  const tutorial = useTutorialEnvironment()
   const { user } = useAuth()
   const { workouts, currentWeightKg, addWorkout, removeWorkout, showToast } = useData()
   const { selectedDate, setSelectedDate } = useSettings()
-  const [selectedActivity, setSelectedActivity] = useState<string | null>(null)
-  const [activityPickerOpen, setActivityPickerOpen] = useState(false)
+  const [selectedActivity, setSelectedActivity] = useState<string | null>(tutorial?.scene === 'activity-form' ? 'walking' : null)
+  const [activityPickerOpen, setActivityPickerOpen] = useState(tutorial?.scene === 'activity-picker')
 
   const totalBurned = workouts.reduce((s, w) => s + w.calories_burned, 0)
 
@@ -50,7 +52,7 @@ export default function WorkoutPage({ embedded = false }: { embedded?: boolean }
     <div className={embedded ? 'desktop-workout space-y-6' : 'desktop-page desktop-workout space-y-6 p-4 pb-24'}>
       <div className="desktop-date"><DaySelector date={selectedDate} onChange={setSelectedDate} /></div>
 
-      <button type="button" onClick={() => setActivityPickerOpen(true)}
+      <button type="button" data-tour="activity-new" onClick={() => setActivityPickerOpen(true)}
         className="desktop-activity-action flex w-full items-center gap-3 rounded-2xl border border-primary-500/30 bg-primary-950/25 p-4 text-left transition hover:bg-primary-950/40">
         <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-500/15 text-2xl">+</span>
         <span><span className="block font-semibold">Altre attività</span>

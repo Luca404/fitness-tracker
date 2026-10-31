@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { searchGymExercises, type GymExerciseDefinition } from '../../data/gymExercises'
 import type { GymPlan } from '../../types'
 import type { GymPlanExerciseInput } from '../../services/gymApi'
+import { useTutorialEnvironment } from '../../contexts/TutorialEnvironment'
 
 function optionalNumber(value: string): number | null {
   return value === '' ? null : Number(value)
@@ -21,8 +22,10 @@ export default function GymPlanEditor({ plan, customExercises = [], catalogError
   onSave: (name: string, exercises: GymPlanExerciseInput[]) => Promise<void>
   onCancel: () => void
 }) {
-  const [name, setName] = useState(plan?.name ?? '')
-  const [exercises, setExercises] = useState<ExerciseDraft[]>(plan?.exercises.map(exercise => ({
+  const tutorial = useTutorialEnvironment()
+  const initialPlan = plan ?? tutorial?.examples.plan
+  const [name, setName] = useState(initialPlan?.name ?? '')
+  const [exercises, setExercises] = useState<ExerciseDraft[]>(initialPlan?.exercises.map(exercise => ({
     exercise_key: exercise.exercise_key,
     exercise_name: exercise.exercise_name,
     equipment: exercise.equipment,
@@ -183,7 +186,7 @@ export default function GymPlanEditor({ plan, customExercises = [], catalogError
       + Aggiungi esercizio
     </button>}
     {error && <p className="text-sm text-red-400">Impossibile salvare la scheda. Riprova.</p>}
-    <button type="button" onClick={() => void save()} disabled={saving || !valid}
+    <button type="button" data-tour="gym-plan-save" onClick={() => void save()} disabled={saving || !valid}
       className="w-full rounded-xl bg-primary-500 py-3 font-semibold disabled:opacity-40">
       {saving ? 'Salvataggio…' : 'Salva scheda'}
     </button>

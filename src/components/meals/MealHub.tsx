@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
-import * as api from '../../services/api'
+import * as productionApi from '../../services/api'
+import { useAppService, useTutorialEnvironment } from '../../contexts/TutorialEnvironment'
 import DishEditor, { type DishItemDraft } from './DishEditor'
 import DishIconChoices from '../kitchen/DishIconChoices'
 import Modal from '../common/Modal'
@@ -43,12 +44,14 @@ function totalKcal(dish: Dish): number { return dishTotals(dish).calories }
 export type MealHubMode = 'list' | 'ingredients' | 'ingredient' | 'new' | 'oneoff-manual' | 'oneoff-photo' | 'edit' | 'pick' | 'prepare' | 'prepared-pick'
 
 export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beveragesOnly = false, mode, setMode, mealType, date }: Props) {
+  const api = useAppService('api', productionApi)
+  const tutorial = useTutorialEnvironment()
   const { user } = useAuth()
   const { showToast, setDishIcon } = useData()
   const [dishes, setDishes] = useState<Dish[]>([])
   const [loading, setLoading] = useState(true)
   const [editingDish, setEditingDish] = useState<Dish | null>(null)
-  const [pickingDish, setPickingDish] = useState<Dish | null>(null)
+  const [pickingDish, setPickingDish] = useState<Dish | null>(tutorial?.scene === 'dish-pick' ? tutorial.examples.dish : null)
   const [iconDish, setIconDish] = useState<Dish | null>(null)
   const [iconSaving, setIconSaving] = useState(false)
   const [itemQuantities, setItemQuantities] = useState<Record<string, string>>({})
@@ -56,17 +59,20 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   const [pieceOverrides, setPieceOverrides] = useState<Record<string, { size: PieceSize; count: number } | null>>({})
   const [pendingPreparation, setPendingPreparation] = useState<{
     name: string; items: DishItemDraft[]; sourceDishId: string | null; icon: string | null
-  } | null>(null)
+  } | null>(tutorial?.scene === 'dish-prepare' ? {
+    name: tutorial.examples.dish.name, items: tutorial.examples.dishItems,
+    sourceDishId: tutorial.examples.dish.id, icon: tutorial.examples.dish.icon,
+  } : null)
   const [cookedWeightOverride, setCookedWeightOverride] = useState<number | null>(null)
-  const [cookingMethods, setCookingMethods] = useState<CookingMethod[]>([])
+  const [cookingMethods, setCookingMethods] = useState<CookingMethod[]>(tutorial?.scene === 'dish-prepare' ? tutorial.examples.dishItems.map(defaultCookingMethod) : [])
   const [rememberedYieldRatio, setRememberedYieldRatio] = useState<number | null>(null)
-  const [firstPortionG, setFirstPortionG] = useState<number | null>(null)
+  const [firstPortionG, setFirstPortionG] = useState<number | null>(tutorial ? 0 : null)
   const [preparing, setPreparing] = useState(false)
   const [addingIngredient, setAddingIngredient] = useState(false)
   const [loggingDish, setLoggingDish] = useState(false)
   const [preparedCount, setPreparedCount] = useState(0)
-  const [selectedBatch, setSelectedBatch] = useState<PreparedBatch | null>(null)
-  const [preparedGrams, setPreparedGrams] = useState(0)
+  const [selectedBatch, setSelectedBatch] = useState<PreparedBatch | null>(tutorial?.scene === 'prepared-pick' ? tutorial.examples.batch : null)
+  const [preparedGrams, setPreparedGrams] = useState(tutorial?.scene === 'prepared-pick' ? Math.min(200, tutorial.examples.batch.remaining_g) : 0)
   const [consumingPrepared, setConsumingPrepared] = useState(false)
   const [extraItems, setExtraItems] = useState<DishItemDraft[]>([])
   const [extraKeys, setExtraKeys] = useState<number[]>([])
@@ -83,7 +89,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     } finally {
       setLoading(false)
     }
-  }, [showToast])
+  }, [api, showToast])
 
   async function saveDishIcon(icon: string | null) {
     if (!iconDish || iconSaving) return
@@ -391,7 +397,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   }
 
   if (mode === 'ingredients') {
-    return <div className="space-y-4">
+    return <div data-tour="meal-ingredient-options" className="space-y-4">
       <ComposerHeader icon="🥕" eyebrow="Aggiungi pasto" title="Da ingredienti" />
       <p className="text-sm text-gray-400">Cerca nel catalogo, scansiona un codice a barre o inserisci i valori a mano.</p>
       <EntryMethod icon="🍎" title="Un alimento" description="Scegli la quantità e registralo subito nel diario."
@@ -478,7 +484,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
       </div>
       <PreparedPortionInput totalCookedG={totalCookedG} remainingG={totalCookedG}
         value={portionG} onChange={setFirstPortionG} allowZero />
-      <button type="button" onClick={() => void savePreparation()}
+      <button type="button" data-tour="preparation-save" onClick={() => void savePreparation()}
         disabled={preparing || !Number.isFinite(totalCookedG) || totalCookedG <= 0
           || !Number.isFinite(portionG) || portionG < 0 || portionG > totalCookedG}
         className="w-full rounded-xl bg-primary-500 py-3 font-semibold disabled:opacity-40">
@@ -525,7 +531,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
         }} />
       <PreparedPortionInput totalCookedG={selectedBatch.total_cooked_g} remainingG={selectedBatch.remaining_g}
         value={preparedGrams} onChange={setPreparedGrams} />
-      <button type="button" onClick={() => void consumeSelectedBatch()}
+      <button type="button" data-tour="portion-save" onClick={() => void consumeSelectedBatch()}
         disabled={consumingPrepared || preparedGrams <= 0 || preparedGrams > selectedBatch.remaining_g}
         className="w-full rounded-2xl bg-primary-500 py-3.5 font-semibold disabled:opacity-40">
         {consumingPrepared ? 'Registrazione…' : 'Registra porzione'}
@@ -564,7 +570,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
               className="rounded-xl bg-primary-500 px-2 py-3 text-sm font-semibold shadow-lg shadow-primary-900/30 transition hover:bg-primary-400 disabled:opacity-40">
               {loggingDish ? 'Registrazione…' : 'Registra tutto'}
             </button>
-            <button type="button" onClick={preparePickedDish} disabled={!validQuantities || loggingDish}
+            <button type="button" data-tour="dish-prepare" onClick={preparePickedDish} disabled={!validQuantities || loggingDish}
               className="rounded-xl border border-primary-500/60 bg-primary-950/40 px-2 py-3 text-sm font-semibold text-primary-100 transition hover:bg-primary-950/70 disabled:opacity-40">
               Prepara e conserva il resto
             </button>
@@ -637,9 +643,9 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     <div className="space-y-5">
       <div className="space-y-2.5">
         <h3 className="text-lg font-bold">Come vuoi aggiungerlo?</h3>
-        <EntryMethod icon="📸" title="Da foto" description="Fotografa il piatto e controlla la stima nutrizionale."
+        <EntryMethod icon="📸" title="Da foto" tourTarget="meal-photo" description="Fotografa il piatto e controlla la stima nutrizionale."
           onClick={() => setMode('oneoff-photo')} />
-        <EntryMethod icon="🥕" title="Da ingredienti" description="Cerca un alimento o componi un piatto con le quantità."
+        <EntryMethod icon="🥕" title="Da ingredienti" tourTarget="meal-ingredients" description="Cerca un alimento o componi un piatto con le quantità."
           onClick={() => setMode('ingredients')} />
       </div>
 
@@ -664,7 +670,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
                   className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-xl">
                   {getDishIcon(dish)}<span aria-hidden="true" className="absolute -bottom-1 -right-1 rounded-full bg-gray-700 px-1 text-[10px]">✎</span>
                 </button>
-                <button type="button" onClick={() => startPick(dish)}
+                <button type="button" data-tour="saved-dish" onClick={() => startPick(dish)}
                   className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-2 text-left">
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{dish.name}</span>
@@ -685,10 +691,10 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   )
 }
 
-function EntryMethod({ icon, title, description, onClick }: {
-  icon: string; title: string; description: string; onClick: () => void
+function EntryMethod({ icon, title, description, onClick, tourTarget }: {
+  icon: string; title: string; description: string; onClick: () => void; tourTarget?: string
 }) {
-  return <button type="button" onClick={onClick}
+  return <button type="button" onClick={onClick} data-tour={tourTarget}
     className="flex w-full items-center gap-3 rounded-2xl border border-gray-700 bg-gray-900/35 p-4 text-left transition hover:border-primary-500/60 hover:bg-primary-950/20">
     <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-2xl">{icon}</span>
     <span className="min-w-0 flex-1"><span className="block font-semibold">{title}</span>

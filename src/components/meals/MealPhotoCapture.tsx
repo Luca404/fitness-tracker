@@ -3,6 +3,7 @@ import { analyzeMealPhoto, mealPhotoItems, type MealPhotoAnalysis } from '../../
 import type { DishItemDraft } from '../../types'
 import MealPhotoReview from './MealPhotoReview'
 import { PHOTO_INPUT_ACCEPT } from '../../services/photoUpload'
+import { useTutorialEnvironment } from '../../contexts/TutorialEnvironment'
 
 interface Props {
   onSave: (name: string, items: DishItemDraft[]) => Promise<void>
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function MealPhotoCapture({ onSave, onCancel }: Props) {
+  const tutorial = useTutorialEnvironment()
   const cameraRef = useRef<HTMLInputElement>(null)
   const galleryRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
@@ -18,7 +20,7 @@ export default function MealPhotoCapture({ onSave, onCancel }: Props) {
   const [loading, setLoading] = useState(false)
   const analysisLock = useRef(false)
   const [error, setError] = useState<string | null>(null)
-  const [analysis, setAnalysis] = useState<MealPhotoAnalysis | null>(null)
+  const [analysis, setAnalysis] = useState<MealPhotoAnalysis | null>(tutorial?.examples.photo ?? null)
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
 
@@ -41,7 +43,7 @@ export default function MealPhotoCapture({ onSave, onCancel }: Props) {
   }
 
   if (analysis) return <MealPhotoReview initialName={analysis.name} initialItems={mealPhotoItems(analysis)}
-    analysis={analysis} onSave={onSave} onCancel={() => setAnalysis(null)} />
+    analysis={analysis} onSave={onSave} onCancel={() => tutorial ? onCancel() : setAnalysis(null)} />
 
   return <div className="space-y-4">
     <p className="text-sm text-gray-400">Fotografa il piatto intero, ben visibile. Puoi aggiungere il nome o la descrizione del menù per aiutare la stima.</p>

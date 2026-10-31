@@ -1,7 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
-import * as api from '../services/api'
+import * as productionApi from '../services/api'
+import { useAppService, useTutorialEnvironment } from '../contexts/TutorialEnvironment'
 import { searchBasicFoods } from '../services/nutrition'
 import { normalizeBarcode, resolveBarcodeProduct } from '../services/barcodeProducts'
 import { analysisToPantryDraft, barcodeProductToAnalysis, confirmBarcodeProduct } from '../services/nutritionLabel'
@@ -27,12 +28,20 @@ export default function PantryPage({ embedded = false, onSaved, onCancel, initia
   onCancel?: () => void
   initialMode?: Mode
 }) {
+  const api = useAppService('api', productionApi)
+  const tutorial = useTutorialEnvironment()
   const { user } = useAuth()
   const { showToast, refreshDiary } = useData()
   const [items, setItems] = useState<PantryItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [flow, setFlow] = useState<Flow>(() => initialMode === 'manual'
-    ? { mode: 'quantity', pending: emptyManualFood(), editingItemId: null } : { mode: initialMode })
+  const [flow, setFlow] = useState<Flow>(() => {
+    if (tutorial?.scene === 'ingredient-review') {
+      return { mode: 'quantity', pending: { ...tutorial.examples.ingredient }, editingItemId: null }
+    }
+    if (tutorial?.scene === 'ingredient-methods') return { mode: 'choose' }
+    return initialMode === 'manual'
+      ? { mode: 'quantity', pending: emptyManualFood(), editingItemId: null } : { mode: initialMode }
+  })
   const mode = flow.mode
   const pending = flow.mode === 'quantity' ? flow.pending : null
   const editingItemId = flow.mode === 'quantity' ? flow.editingItemId : null
@@ -61,7 +70,7 @@ export default function PantryPage({ embedded = false, onSaved, onCancel, initia
     } finally {
       setLoading(false)
     }
-  }, [showToast])
+  }, [api, showToast])
 
   useEffect(() => { refresh() }, [refresh])
 
@@ -291,7 +300,7 @@ export default function PantryPage({ embedded = false, onSaved, onCancel, initia
 
       {mode === 'list' && (
         <>
-          <button type="button" onClick={() => setMode('choose')}
+          <button type="button" data-tour="pantry-add" onClick={() => setMode('choose')}
             className="w-full rounded-2xl bg-primary-500 py-3.5 lg:w-auto lg:px-6 font-semibold shadow-lg shadow-primary-950/30 hover:bg-primary-400">
             + Aggiungi ingrediente
           </button>
@@ -324,7 +333,7 @@ export default function PantryPage({ embedded = false, onSaved, onCancel, initia
           ) : visibleItems.length === 0 ? (
             <p className="py-8 text-center text-sm text-gray-500">Nessun ingrediente corrisponde ai filtri.</p>
           ) : (
-            <div className="desktop-pantry-groups space-y-5">
+            <div data-tour="pantry-items" className="desktop-pantry-groups space-y-5">
               {groupedItems.map(group => (
                 <section key={group.id}>
                   <div className="mb-2 flex items-center justify-between px-1">

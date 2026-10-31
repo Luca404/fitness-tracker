@@ -14,7 +14,11 @@ vi.mock('./pages/ResetPasswordPage', () => ({ default: () => <h1>Reimposta passw
 vi.mock('./pages/OnboardingPage', () => ({ default: () => <h1>Configura il profilo</h1> }))
 vi.mock('./pages/MealsPage', () => ({ default: () => <p>Diario pasti</p> }))
 vi.mock('./pages/WeightPage', () => ({ default: () => <h1>Peso corporeo</h1> }))
+vi.mock('./pages/SettingsPage', () => ({ default: () => <h1>Impostazioni</h1> }))
 vi.mock('./pages/WellbeingPage', () => ({ default: () => <h1>Dettaglio buone abitudini</h1> }))
+vi.mock('./pages/TutorialPage', () => ({ default: ({ onFinish }: { onFinish: () => void }) => <>
+  <h1>Scopri l’app, un clic alla volta</h1><button onClick={onFinish}>Salta</button>
+</> }))
 import App from './App'
 beforeEach(() => {
   mocks.auth.user = { id: 'user-1' }
@@ -31,13 +35,42 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('main navigation', () => {
+  it('returns to settings after replaying the isolated guide', async () => {
+    window.history.replaceState({}, '', '/tutorial?from=settings')
+    mocks.data.profile = { tutorial_seen: true }
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Scopri l’app, un clic alla volta' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Salta' }))
+    expect(await screen.findByRole('heading', { name: 'Impostazioni' })).toBeTruthy()
+    expect(window.location.pathname).toBe('/settings')
+  })
+
+  it('uses the diary as return path for an unrecognized source', async () => {
+    window.history.replaceState({}, '', '/tutorial?from=https://example.org')
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Scopri l’app, un clic alla volta' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Salta' }))
+    expect(await screen.findByText('Diario pasti')).toBeTruthy()
+    expect(window.location.pathname).toBe('/meals')
+  })
+
+  it('interrupts the demo when password recovery starts', async () => {
+    window.history.replaceState({}, '', '/tutorial')
+    const { rerender } = render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Scopri l’app, un clic alla volta' })).toBeTruthy()
+    mocks.auth.isPasswordRecovery = true
+    rerender(<App />)
+    expect(screen.getByRole('heading', { name: 'Reimposta password' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Scopri l’app, un clic alla volta' })).toBeNull()
+  })
+
   it('opens the guide after initial profile setup and skipping leads to meals', async () => {
     window.history.replaceState({}, '', '/onboarding')
     mocks.data.profile = { tutorial_seen: false }
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Parti dagli ingredienti' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Scopri l’app, un clic alla volta' })).toBeTruthy()
     expect(window.location.pathname).toBe('/tutorial')
-    fireEvent.click(screen.getByRole('button', { name: 'Salta tutorial' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Salta' }))
     expect(await screen.findByText('Diario pasti')).toBeTruthy()
     expect(window.location.pathname).toBe('/meals')
     expect(mocks.data.dismissTutorial).toHaveBeenCalled()
@@ -49,7 +82,7 @@ describe('main navigation', () => {
     mocks.data.profile = null
     render(<App />)
     expect(screen.getByRole('heading', { name: 'Configura il profilo' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Salta tutorial' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Salta' })).toBeNull()
   })
 
   it.each([{}, { tutorial_seen: true }])('does not interrupt an existing profile: %j', async profile => {
@@ -57,7 +90,7 @@ describe('main navigation', () => {
     mocks.data.profile = profile
     render(<App />)
     expect(await screen.findByText('Diario pasti')).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: 'Parti dagli ingredienti' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Scopri l’app, un clic alla volta' })).toBeNull()
   })
 
   it('keeps wellbeing as a meal detail and redirects its existing address', async () => {

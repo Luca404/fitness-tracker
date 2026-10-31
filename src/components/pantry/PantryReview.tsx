@@ -22,7 +22,7 @@ export default function PantryReview({ pending, setPending, editingItemId, analy
 }) {
   const nutritionError = manualNutritionError(pending)
   return (
-    <div className="space-y-4">
+    <div data-tour="pantry-review" className="space-y-4">
       <div className="rounded-2xl bg-gray-800 p-4">
         <p className="text-xs text-gray-500">{FOOD_CATEGORY_BY_ID[pending.category]?.icon ?? FOOD_CATEGORY_BY_ID.other.icon} {FOOD_CATEGORY_BY_ID[pending.category]?.label ?? FOOD_CATEGORY_BY_ID.other.label}</p>
         <label className="mt-2 block text-sm text-gray-400" htmlFor="pending-food-name">Nome alimento</label>
@@ -133,7 +133,7 @@ export default function PantryReview({ pending, setPending, editingItemId, analy
           )}
         </div>
       )}
-      <div className="rounded-2xl border border-gray-700 p-4">
+      <div data-tour="pantry-nutrition" className="rounded-2xl border border-gray-700 p-4">
         <PendingNutritionFields food={pending} disabled={savingItem}
           onChange={(key, value) => setPending({ ...pending, [key]: value })} />
         {nutritionError && <p role="alert" className="mt-3 text-xs text-amber-300">{nutritionError}</p>}

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
-import * as api from '../../services/api'
+import * as productionApi from '../../services/api'
+import { useAppService, useTutorialEnvironment } from '../../contexts/TutorialEnvironment'
 import Modal from '../common/Modal'
 import DishEditor, { type DishItemDraft } from '../meals/DishEditor'
 import DishIconChoices from './DishIconChoices'
@@ -18,13 +19,15 @@ import { dishTotals, dishItemToDraft } from '../../utils/dishes'
 type EditorMode = 'closed' | 'create' | 'detail' | 'edit' | 'icon'
 
 export default function KitchenDishes() {
+  const api = useAppService('api', productionApi)
+  const tutorial = useTutorialEnvironment()
   const { user } = useAuth()
   const { showToast, setDishIcon, refreshDiary } = useData()
   const [dishes, setDishes] = useState<Dish[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<DishMealType | 'all'>('all')
-  const [mode, setMode] = useState<EditorMode>('closed')
+  const [mode, setMode] = useState<EditorMode>(tutorial?.scene === 'dish-editor' ? 'create' : 'closed')
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null)
   const [iconReturnMode, setIconReturnMode] = useState<'closed' | 'detail'>('closed')
   const [iconSaving, setIconSaving] = useState(false)
@@ -38,7 +41,7 @@ export default function KitchenDishes() {
     } finally {
       setLoading(false)
     }
-  }, [showToast])
+  }, [api, showToast])
 
   useEffect(() => { refresh() }, [refresh])
 
@@ -124,7 +127,7 @@ export default function KitchenDishes() {
   return (
     <div className="space-y-6">
       <PreparedDishesPanel mealType={category === 'all' ? undefined : category} />
-      <button type="button" onClick={() => { setSelectedDish(null); setMode('create') }}
+      <button type="button" data-tour="dish-new" onClick={() => { setSelectedDish(null); setMode('create') }}
         className="flex w-full items-center gap-3 rounded-2xl bg-primary-500 px-4 lg:w-auto lg:pr-6 py-3.5 text-left font-semibold shadow-lg shadow-primary-950/30 hover:bg-primary-400">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-xl">+</span>
         <span><span className="block">Crea un nuovo piatto</span><span className="block text-xs font-normal text-primary-100">Componi la ricetta ingrediente per ingrediente</span></span>
@@ -197,7 +200,7 @@ export default function KitchenDishes() {
         ) : mode === 'create' ? (
           <div className="space-y-5">
             <div className="pr-12 lg:pr-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Nuova ricetta</p><h2 className="text-xl font-bold">Crea il tuo piatto</h2></div>
-            <DishEditor initialName="" initialItems={[]} initialMealTypes={category === 'all' ? [] : [category]} onSave={createDish} onCancel={() => setMode('closed')} saveLabel="Salva piatto" />
+            <DishEditor initialName={tutorial?.examples.dish.name ?? ''} initialItems={tutorial?.examples.dishItems ?? []} initialMealTypes={tutorial ? ['lunch', 'dinner'] : category === 'all' ? [] : [category]} onSave={createDish} onCancel={() => setMode('closed')} saveLabel="Salva piatto" />
           </div>
         ) : mode === 'edit' && selectedDish ? (
           <div className="space-y-5">

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { PreparedBatch } from '../../types'
 import { useData } from '../../contexts/DataContext'
-import { correctPreparedBatchWeight } from '../../services/api'
+import * as productionApi from '../../services/api'
+import { useAppService } from '../../contexts/TutorialEnvironment'
 import { formatDecimal, roundToTwo } from '../../utils/decimal'
 
 export default function PreparedWeightCorrection({ batch, disabled, onBusyChange, onCorrected }: {
@@ -11,6 +12,7 @@ export default function PreparedWeightCorrection({ batch, disabled, onBusyChange
   onCorrected: (batch: PreparedBatch) => void | Promise<void>
 }) {
   const { refreshDiary, showToast } = useData()
+  const { correctPreparedBatchWeight } = useAppService('api', productionApi)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const [saving, setSaving] = useState(false)

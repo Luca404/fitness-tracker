@@ -127,7 +127,7 @@ export default function DishEditor({
         </div>
       </section>
 
-      <section className="space-y-2">
+      <section data-tour="dish-composition" className="space-y-2">
         {items.length > 0 && (
           <p className="px-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Composizione</p>
         )}

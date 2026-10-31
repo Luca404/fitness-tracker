@@ -3,14 +3,18 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
 import { useSettings } from '../../contexts/SettingsContext'
 import { useNavigate } from 'react-router-dom'
-import * as gymApi from '../../services/gymApi'
-import { getLatestWeightLog, getWeightLogs } from '../../services/api'
+import * as productionGymApi from '../../services/gymApi'
+import { useAppService, useTutorialEnvironment } from '../../contexts/TutorialEnvironment'
+import * as productionApi from '../../services/api'
 import type { GymPlan, GymSession, WeightLog } from '../../types'
 import GymSessionCard from './GymSessionCard'
 import GymPlanEditor from './GymPlanEditor'
 import type { GymExerciseDefinition } from '../../data/gymExercises'
 
 export default function GymTraining() {
+  const gymApi = useAppService('gym', productionGymApi)
+  const { getLatestWeightLog, getWeightLogs } = useAppService('api', productionApi)
+  const tutorial = useTutorialEnvironment()
   const { user } = useAuth()
   const { showToast, currentWeightKg } = useData()
   const { selectedDate } = useSettings()
@@ -20,7 +24,7 @@ export default function GymTraining() {
   const [catalogError, setCatalogError] = useState(false)
   const [sessions, setSessions] = useState<GymSession[]>([])
   const [weightLogs, setWeightLogs] = useState<WeightLog[]>([])
-  const [editingPlan, setEditingPlan] = useState<{ plan: GymPlan | null } | null>(null)
+  const [editingPlan, setEditingPlan] = useState<{ plan: GymPlan | null } | null>(tutorial?.scene === 'gym-editor' ? { plan: null } : null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [ordering, setOrdering] = useState(false)
@@ -72,7 +76,7 @@ export default function GymTraining() {
     } finally {
       setLoading(false)
     }
-  }, [selectedDate, showToast])
+  }, [getLatestWeightLog, getWeightLogs, gymApi, selectedDate, showToast])
 
   useEffect(() => { void refresh() }, [refresh])
 
@@ -83,10 +87,10 @@ export default function GymTraining() {
     } catch {
       setCatalogError(true)
     }
-  }, [])
+  }, [gymApi])
   useEffect(() => { void refreshCatalog() }, [refreshCatalog])
 
-  async function savePlan(name: string, exercises: gymApi.GymPlanExerciseInput[]) {
+  async function savePlan(name: string, exercises: productionGymApi.GymPlanExerciseInput[]) {
     if (!user) return
     await gymApi.saveGymPlan(user.id, editingPlan?.plan?.id ?? null, name, exercises)
     setEditingPlan(null)
@@ -132,7 +136,7 @@ export default function GymTraining() {
     <div className="flex items-center justify-between">
       <div><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Palestra</p>
         <h2 className="text-lg font-bold">Le tue schede</h2></div>
-      <button type="button" disabled={ordering || busy} onClick={() => setEditingPlan({ plan: null })}
+      <button type="button" data-tour="gym-plan-new" disabled={ordering || busy} onClick={() => setEditingPlan({ plan: null })}
         className="rounded-xl bg-primary-500 px-3 py-2 text-sm font-semibold disabled:opacity-40">+ Nuova scheda</button>
     </div>
     {active && <button type="button" onClick={() => navigate(`/fitness/session/${active.id}`)}
@@ -145,7 +149,7 @@ export default function GymTraining() {
       <p className="rounded-2xl border border-dashed border-gray-700 p-5 text-sm text-gray-400">
         Crea una scheda e aggiungi gli esercizi che fai in palestra.
       </p>
-    ) : <div className="desktop-plan-list space-y-3">
+    ) : <div data-tour="gym-plans" className="desktop-plan-list space-y-3">
       {ordering && <p style={{ gridColumn: '1 / -1' }} role="status" className="text-xs text-gray-500">Salvo l’ordine…</p>}
       {plans.map((plan, index) => <div key={plan.id} className="rounded-2xl border border-gray-700 bg-gray-900/35 p-4">
         <div className="flex items-start justify-between gap-3">

@@ -119,7 +119,7 @@ export default function MealPhotoReview({ initialName, initialItems, analysis, e
 
   return <div className="space-y-4">
     <fieldset disabled={saving} className="min-w-0 space-y-4">
-      <div className="rounded-2xl border border-primary-500/25 bg-primary-950/20 p-4">
+      <div data-tour="meal-photo-estimate" className="rounded-2xl border border-primary-500/25 bg-primary-950/20 p-4">
         <span className="text-xs font-semibold text-primary-300">📸 Stimato da foto</span>
         <label className="mt-3 block text-xs text-gray-400">Nome del piatto
           <input value={name} maxLength={160} onChange={event => setName(event.target.value)} className={inputClass} />

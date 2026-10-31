@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import { useData } from './contexts/DataContext'
@@ -28,7 +28,13 @@ function LoadingScreen() {
   )
 }
 
-function AppRoutes() {
+function TutorialLauncher({ onStart }: { onStart: (returnToSettings: boolean) => void }) {
+  const { search } = useLocation()
+  useEffect(() => { onStart(new URLSearchParams(search).get('from') === 'settings') }, [search, onStart])
+  return <LoadingScreen />
+}
+
+function AppRoutes({ onStartTutorial }: { onStartTutorial: (returnToSettings: boolean) => void }) {
   const { user, loading: authLoading, isPasswordRecovery } = useAuth()
   const { profile, profileStatus, profileUserId, fetchProfile } = useData()
   const location = useLocation()
@@ -80,20 +86,37 @@ function AppRoutes() {
       </Route>
       <Route path="/fitness/session/:sessionId" element={<GymSessionPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
-      <Route path="/tutorial" element={<TutorialPage key={user.id} />} />
+      <Route path="/tutorial" element={<TutorialLauncher onStart={onStartTutorial} />} />
       <Route path="*" element={<Navigate to="/meals" replace />} />
     </Routes>
   )
 }
 
 export default function App() {
-  const { toast } = useData()
+  const { toast, dismissTutorial, profileStatus, profileUserId } = useData()
+  const { user, loading, isPasswordRecovery } = useAuth()
+  const [tutorial, setTutorial] = useState<{ userId: string; returnTo: string } | null>(null)
+  const startTutorial = useCallback((returnToSettings: boolean) => {
+    if (user) setTutorial({ userId: user.id, returnTo: returnToSettings ? '/settings' : '/meals' })
+  }, [user])
+  const finishTutorial = useCallback(() => {
+    void dismissTutorial()
+    if (window.location.pathname === '/tutorial') {
+      window.history.replaceState(window.history.state, '', tutorial?.returnTo ?? '/meals')
+    }
+    setTutorial(null)
+  }, [dismissTutorial, tutorial])
+  const tutorialActive = tutorial !== null && tutorial.userId === user?.id && !loading && !isPasswordRecovery
+    && window.location.pathname !== PASSWORD_RECOVERY_PATH && profileStatus === 'ready' && profileUserId === user?.id
+
   return (
-    <BrowserRouter>
+    <>
       <Suspense fallback={<LoadingScreen />}>
-        <AppRoutes />
+        {tutorialActive ? <TutorialPage key={tutorial.userId} onFinish={finishTutorial} /> : (
+          <BrowserRouter><AppRoutes onStartTutorial={startTutorial} /></BrowserRouter>
+        )}
       </Suspense>
       {toast && <Toast message={toast} />}
-    </BrowserRouter>
+    </>
   )
 }

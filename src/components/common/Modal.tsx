@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { useTutorialEnvironment } from '../../contexts/TutorialEnvironment'
 
 interface Props {
   open: boolean
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function Modal({ open, onClose, children, title, fullScreenOnMobile = false }: Props) {
+  const tutorial = useTutorialEnvironment()
   const panelRef = useRef<HTMLDivElement>(null)
   const onCloseRef = useRef(onClose)
 
@@ -19,7 +21,7 @@ export default function Modal({ open, onClose, children, title, fullScreenOnMobi
   }, [onClose])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || tutorial) return
     const previouslyFocused = document.activeElement as HTMLElement | null
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -61,7 +63,7 @@ export default function Modal({ open, onClose, children, title, fullScreenOnMobi
       document.body.style.overflow = previousOverflow
       previouslyFocused?.focus()
     }
-  }, [open])
+  }, [open, tutorial])
 
   if (!open) return null
   return createPortal(
@@ -70,7 +72,7 @@ export default function Modal({ open, onClose, children, title, fullScreenOnMobi
       <div
         ref={panelRef}
         role="dialog"
-        aria-modal="true"
+        aria-modal={tutorial ? undefined : true}
         aria-label={title ?? 'Finestra di dialogo'}
         tabIndex={-1}
         className={`relative z-10 w-full overflow-y-auto overscroll-contain px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl shadow-black/50 lg:max-h-[92dvh] ${fullScreenOnMobile ? 'lg:max-w-2xl' : 'lg:max-w-xl'} lg:rounded-[2rem] lg:border lg:border-gray-700/80 lg:bg-gray-800/95 lg:p-6 ${fullScreenOnMobile ? 'h-[100dvh] bg-gray-800 pt-[max(2rem,env(safe-area-inset-top))] lg:h-auto' : 'max-h-[92dvh] max-w-md rounded-t-[2rem] border border-gray-700/80 bg-gray-800/95 pt-3'}`}
