@@ -18,6 +18,7 @@ const FitnessPage = lazy(() => import('./pages/FitnessPage'))
 const GymSessionPage = lazy(() => import('./pages/GymSessionPage'))
 const WellbeingPage = lazy(() => import('./pages/WellbeingPage'))
 const WeightPage = lazy(() => import('./pages/WeightPage'))
+const TutorialPage = lazy(() => import('./pages/TutorialPage'))
 
 function LoadingScreen() {
   return (
@@ -58,6 +59,10 @@ function AppRoutes() {
 
   if (profileStatus === 'missing' || profile === null) return <OnboardingPage />
 
+  if (profile.tutorial_seen === false && location.pathname !== '/tutorial') {
+    return <Navigate to="/tutorial" replace />
+  }
+
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -75,6 +80,7 @@ function AppRoutes() {
       </Route>
       <Route path="/fitness/session/:sessionId" element={<GymSessionPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
+      <Route path="/tutorial" element={<TutorialPage key={user.id} />} />
       <Route path="*" element={<Navigate to="/meals" replace />} />
     </Routes>
   )

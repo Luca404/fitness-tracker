@@ -28,6 +28,7 @@ export interface UserHealthProfile {
   target_date: string | null   // ISO date string YYYY-MM-DD
   body_fat_pct: number | null
   bmr_override: number | null
+  tutorial_seen?: boolean // Missing on profiles loaded before the tutorial migration.
   created_at: string
   updated_at: string
 }

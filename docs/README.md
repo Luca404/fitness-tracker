@@ -17,6 +17,7 @@ Revisione del 16 ottobre 2026: Storico esclude il giorno corrente da grafici e m
 | [Ordine del diario](meal-diary-order.md) | Registrazioni, ingredienti, icone e posizioni |
 | [Pasti da foto](pasti-da-foto.md) | Uso, ingredienti espandibili, porzione mangiata, configurazione e pubblicazione verificata |
 | [Buone abitudini](buone-abitudini.md) | Quadratini a riempimento, limiti e media sugli ultimi 7 giorni |
+| [Guida rapida](tutorial.md) | Tutorial iniziale saltabile, riavvio dalle impostazioni e stato sul profilo |
 | [Peso dei piatti preparati](peso-piatti-preparati.md) | Cottura, stime, peso misurato e ricalcolo delle porzioni passate |
 | [Allenamenti in palestra](allenamenti-palestra.md) | Schede, riordino, sessioni, calorie stimate ed esempi |
 | [Attività e storico](attivita-e-storico.md) | Chilometri facoltativi, fasce di velocità e palestra nei grafici |

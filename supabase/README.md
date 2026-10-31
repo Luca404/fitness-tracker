@@ -1,5 +1,23 @@
 # Shared Supabase workflow
 
+## Quick tutorial — 2026-10-31
+
+`20261031120000_quick_tutorial` was applied to the hosted project after a
+dry-run listing only that migration. It adds
+`user_health_profiles.tutorial_seen`: existing profiles get `true`, while
+new profiles default to `false`. Completing or skipping the frontend guide
+updates the owner profile using existing SELECT/UPDATE grants and RLS; no
+new RPC, Auth change or finance-table change is involved. Existing profile
+upserts preserve the preference. The identical migration is mirrored in
+`../trackr/supabase/migrations/`.
+
+`tests/quick_tutorial.sql` passed in a disposable, network-disabled
+PostgreSQL 17 container with a minimal fixture. It checks old/new profile
+defaults, preservation across legacy-shaped upserts, NOT NULL and owner
+isolation. Frontend validation passed 529 tests, build and lint. The local
+application database was not upgraded and the frontend was not deployed.
+See [the tutorial guide](../docs/tutorial.md).
+
 ## Brevo SMTP — 2026-10-30
 
 Brevo was configured on hosted project `nitbisweytddtigoebeh` through the

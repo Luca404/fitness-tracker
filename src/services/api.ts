@@ -56,6 +56,17 @@ export async function getHealthProfile(): Promise<UserHealthProfile | null> {
   } as UserHealthProfile
 }
 
+export async function markTutorialSeen(userId: string): Promise<void> {
+  const { data, error } = await supabase
+    .from('user_health_profiles')
+    .update({ tutorial_seen: true })
+    .eq('user_id', userId)
+    .select('user_id')
+    .single()
+  if (error) throw error
+  if (!data) throw new Error('Profile not found')
+}
+
 // --- Goals ---
 
 export async function getUserGoals(): Promise<UserGoals | null> {

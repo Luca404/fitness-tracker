@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { calculateNutritionGoals, type NutritionGoalRecommendation } from '../utils/bmr'
@@ -156,6 +157,14 @@ export default function SettingsPage() {
           className="w-full btn-primary py-3">
           Salva goal
         </button>
+      </div>
+
+      <div className="card space-y-3">
+        <h2 className="font-semibold">Guida rapida</h2>
+        <p className="text-sm text-gray-400">Ripassa ingredienti, piatti, pasti e le altre funzioni dell’app.</p>
+        <Link to="/tutorial?from=settings" className="btn-secondary inline-flex min-h-12 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary-400">
+          Rivedi il tutorial
+        </Link>
       </div>
 
       <button type="button" onClick={handleSignOut}

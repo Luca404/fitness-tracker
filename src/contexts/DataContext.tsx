@@ -35,6 +35,7 @@ interface DataContextType {
     p: Omit<UserHealthProfile, 'created_at' | 'updated_at'>,
     g: SuggestedGoals
   ) => Promise<void>
+  dismissTutorial: () => Promise<void>
   saveGoals: (g: Omit<UserGoals, 'updated_at'>) => Promise<void>
   saveProfileAndRecalculate: (p: UserHealthProfile) => Promise<UserGoals>
   addMealEntry: (
@@ -190,19 +191,37 @@ export function DataProvider({ children }: { children: ReactNode }) {
   ) => {
     const goalsWithUser = { user_id: p.user_id, ...g, calculation_weight_kg: p.weight_kg }
     await api.completeOnboarding(p, goalsWithUser)
-    setProfile({ ...p, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    setProfile({
+      ...p,
+      tutorial_seen: profile ? (profile.tutorial_seen ?? true) : false,
+      created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    })
     setGoals({ ...goalsWithUser, updated_at: new Date().toISOString() })
     setCurrentWeightKg(p.weight_kg)
     setProfileUserId(p.user_id)
     setProfileStatus('ready')
-  }, [])
+  }, [profile])
+
+  const dismissTutorial = useCallback(async () => {
+    if (!userId) return
+    const requestId = profileRequest.current
+    // Closing the guide must remain possible even if the preference cannot be saved.
+    setProfile(previous => previous?.user_id === userId ? { ...previous, tutorial_seen: true } : previous)
+    try {
+      await api.markTutorialSeen(userId)
+    } catch {
+      if (requestId === profileRequest.current) {
+        showToast('Tutorial chiuso, ma la preferenza non è stata salvata. Potrebbe riapparire al prossimo accesso.')
+      }
+    }
+  }, [showToast, userId])
 
 
   return (
     <DataContext.Provider value={{
       profile, profileStatus, profileUserId, goals, currentWeightKg, rollingWeightKg,
       rollingWeightSampleCount, ...diary, toast,
-      fetchProfile, refreshCurrentWeight, completeOnboarding, saveGoals,
+      fetchProfile, refreshCurrentWeight, completeOnboarding, dismissTutorial, saveGoals,
       saveProfileAndRecalculate,
       showToast,
     }}>

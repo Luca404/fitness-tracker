@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   updateMealEntry: vi.fn(),
   deleteMealEntry: vi.fn(),
   completeOnboarding: vi.fn(),
+  markTutorialSeen: vi.fn(),
   getMealsForDate: vi.fn(),
   getWorkoutsForDate: vi.fn(),
   getGymSessionsForDate: vi.fn(),
@@ -75,6 +76,7 @@ describe('DataProvider', () => {
     mocks.getWeightLogs.mockResolvedValue([])
     mocks.upsertUserGoals.mockResolvedValue(undefined)
     mocks.completeOnboarding.mockResolvedValue(undefined)
+    mocks.markTutorialSeen.mockResolvedValue(undefined)
     mocks.getMealsForDate.mockResolvedValue([])
     mocks.getMealsForRange.mockResolvedValue([])
     mocks.getWorkoutsForDate.mockResolvedValue([])
@@ -252,6 +254,40 @@ describe('DataProvider', () => {
     expect(mocks.completeOnboarding).toHaveBeenCalledTimes(1)
     expect(result.current.profileStatus).toBe('ready')
     expect(result.current.profileUserId).toBe('user-1')
+    expect(result.current.profile?.tutorial_seen).toBe(false)
+  })
+
+  it('closes the guide immediately and persists dismissal on the account', async () => {
+    mocks.getHealthProfile.mockResolvedValue({ ...profile, tutorial_seen: false })
+    let finishSaving!: () => void
+    mocks.markTutorialSeen.mockReturnValue(new Promise<void>(resolve => { finishSaving = resolve }))
+    const { result } = renderHook(() => useTestData(), { wrapper: Wrapper })
+    await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
+
+    let saving!: Promise<void>
+    act(() => { saving = result.current.dismissTutorial() })
+    expect(result.current.profile?.tutorial_seen).toBe(true)
+    expect(mocks.markTutorialSeen).toHaveBeenCalledWith('user-1')
+    await act(async () => { finishSaving(); await saving })
+  })
+
+  it('does not trap the user in the guide when saving fails', async () => {
+    mocks.getHealthProfile.mockResolvedValue({ ...profile, tutorial_seen: false })
+    mocks.markTutorialSeen.mockRejectedValue(new Error('Offline'))
+    const { result } = renderHook(() => useTestData(), { wrapper: Wrapper })
+    await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
+    await act(async () => { await result.current.dismissTutorial() })
+    expect(result.current.profile?.tutorial_seen).toBe(true)
+    expect(result.current.toast).toContain('Potrebbe riapparire al prossimo accesso')
+  })
+
+  it('does not restart the guide when an existing profile is configured again', async () => {
+    const { result } = renderHook(() => useTestData(), { wrapper: Wrapper })
+    await waitFor(() => expect(result.current.profileStatus).toBe('ready'))
+    await act(async () => {
+      await result.current.completeOnboarding(profile, { calorie_target: 2400, protein_g: 180, carbs_g: 240, fat_g: 80 })
+    })
+    expect(result.current.profile?.tutorial_seen).toBe(true)
   })
 
   it('saves profile changes and recalculates the complete goal pipeline', async () => {
