@@ -145,8 +145,8 @@ export default function GymTraining() {
       <p className="rounded-2xl border border-dashed border-gray-700 p-5 text-sm text-gray-400">
         Crea una scheda e aggiungi gli esercizi che fai in palestra.
       </p>
-    ) : <div className="space-y-3">
-      {ordering && <p role="status" className="text-xs text-gray-500">Salvo l’ordine…</p>}
+    ) : <div className="desktop-plan-list space-y-3">
+      {ordering && <p style={{ gridColumn: '1 / -1' }} role="status" className="text-xs text-gray-500">Salvo l’ordine…</p>}
       {plans.map((plan, index) => <div key={plan.id} className="rounded-2xl border border-gray-700 bg-gray-900/35 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1"><h3 className="font-semibold">{plan.name}</h3>

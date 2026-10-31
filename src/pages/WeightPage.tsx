@@ -89,12 +89,12 @@ export default function WeightPage() {
   const yMax = allWeights.length ? Math.ceil(Math.max(...allWeights, target ?? -Infinity) + 1) : 'auto'
 
   return (
-    <div className="space-y-4 p-4 pb-24">
+    <div className="desktop-page desktop-weight space-y-4 p-4 pb-24">
       <h1 className="text-xl font-bold text-white">Peso corporeo</h1>
 
       {/* Summary card */}
       {latest && (
-        <div className="card flex items-center justify-between">
+        <div className="card weight-summary flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-400">Peso attuale</p>
             <p className="text-3xl font-bold text-white">{formatDecimal(latest.weight_kg)} <span className="text-lg text-gray-400">kg</span></p>
@@ -115,7 +115,7 @@ export default function WeightPage() {
       )}
 
       {/* Chart */}
-      <div className="card space-y-3">
+      <div className="card weight-chart space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-gray-300">Andamento</span>
           <div className="flex gap-1">
@@ -166,7 +166,7 @@ export default function WeightPage() {
       </div>
 
       {/* Add entry */}
-      <div className="card space-y-3">
+      <div className="card weight-form space-y-3">
         <span className="text-sm font-semibold text-gray-300">Registra peso</span>
         <div className="flex gap-3">
           <input
@@ -174,9 +174,9 @@ export default function WeightPage() {
             max={toLocalISODate(new Date())}
             value={date}
             onChange={e => setDate(e.target.value)}
-            className="flex-1 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 outline-none focus:border-primary-500 text-sm"
+            className="min-w-0 flex-1 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 outline-none focus:border-primary-500 text-sm"
           />
-          <div className="flex items-center gap-1 flex-1 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 focus-within:border-primary-500">
+          <div className="flex min-w-0 items-center gap-1 flex-1 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 focus-within:border-primary-500">
             <input
               type="number"
               step="0.1"
@@ -189,7 +189,7 @@ export default function WeightPage() {
                 if (weightInput !== '' && Number.isFinite(value)) setWeightInput(formatDecimal(value))
               }}
               placeholder="es. 75.5"
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="min-w-0 flex-1 bg-transparent outline-none text-sm"
               onKeyDown={e => e.key === 'Enter' && handleSave()}
             />
             <span className="text-gray-500 text-sm">kg</span>
@@ -207,7 +207,7 @@ export default function WeightPage() {
 
       {/* History list */}
       {logs.length > 0 && (
-        <div className="card space-y-1">
+        <div className="card weight-history space-y-1">
           <span className="text-sm font-semibold text-gray-300 block mb-2">Storico</span>
           {[...logs].reverse().map(l => (
             <div key={l.id} className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">

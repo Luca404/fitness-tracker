@@ -292,7 +292,7 @@ export default function PantryPage({ embedded = false, onSaved, onCancel, initia
       {mode === 'list' && (
         <>
           <button type="button" onClick={() => setMode('choose')}
-            className="w-full rounded-2xl bg-primary-500 py-3.5 font-semibold shadow-lg shadow-primary-950/30 hover:bg-primary-400">
+            className="w-full rounded-2xl bg-primary-500 py-3.5 lg:w-auto lg:px-6 font-semibold shadow-lg shadow-primary-950/30 hover:bg-primary-400">
             + Aggiungi ingrediente
           </button>
 
@@ -324,7 +324,7 @@ export default function PantryPage({ embedded = false, onSaved, onCancel, initia
           ) : visibleItems.length === 0 ? (
             <p className="py-8 text-center text-sm text-gray-500">Nessun ingrediente corrisponde ai filtri.</p>
           ) : (
-            <div className="space-y-5">
+            <div className="desktop-pantry-groups space-y-5">
               {groupedItems.map(group => (
                 <section key={group.id}>
                   <div className="mb-2 flex items-center justify-between px-1">

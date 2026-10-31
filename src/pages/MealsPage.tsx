@@ -162,101 +162,104 @@ export default function MealsPage() {
     && !selectedEntry.dish_id && !selectedEntry.prepared_batch_id && !isMealPhotoEntry(selectedEntry)
 
   return (
-    <div className="p-4 space-y-4" style={{ paddingBottom: 'calc(10rem + env(safe-area-inset-bottom))' }}>
-      <DaySelector date={selectedDate} onChange={setSelectedDate} />
+    <div className="meals-page p-4 space-y-4">
+      <div className="meals-date"><DaySelector date={selectedDate} onChange={setSelectedDate} /></div>
 
-      {/* Summary card: ring + stats */}
-      <div className="card flex items-center gap-5">
-        <CalorieRing consumed={daySummary.calories} target={target} />
-        <div className="flex-1 space-y-2.5 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-400">Consumate</span>
-            <span className="font-semibold">{formatDecimal(daySummary.calories, 0)} kcal</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Obiettivo</span>
-            <span className="font-semibold">{formatDecimal(target, 0)} kcal</span>
-          </div>
-          {totalBurned > 0 && (
+      <div className="meals-overview space-y-4">
+        {/* Summary card: ring + stats */}
+        <div className="card flex items-center gap-5">
+          <CalorieRing consumed={daySummary.calories} target={target} />
+          <div className="flex-1 space-y-2.5 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-400">🔥 Bruciate</span>
-              <span className="text-orange-400 font-semibold">{formatDecimal(totalBurned, 0)} kcal</span>
+              <span className="text-gray-400">Consumate</span>
+              <span className="font-semibold">{formatDecimal(daySummary.calories, 0)} kcal</span>
             </div>
-          )}
-          <div className="flex justify-between border-t border-gray-700 pt-2">
-            <span className="text-gray-400">Rimanenti</span>
-            <span className={`font-bold ${isOver ? 'text-orange-400' : 'text-primary-400'}`}>
-              {isOver ? `+${formatDecimal(Math.abs(remaining), 0)}` : formatDecimal(remaining, 0)} kcal
-            </span>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Obiettivo</span>
+              <span className="font-semibold">{formatDecimal(target, 0)} kcal</span>
+            </div>
+            {totalBurned > 0 && (
+              <div className="flex justify-between">
+                <span className="text-gray-400">🔥 Bruciate</span>
+                <span className="text-orange-400 font-semibold">{formatDecimal(totalBurned, 0)} kcal</span>
+              </div>
+            )}
+            <div className="flex justify-between border-t border-gray-700 pt-2">
+              <span className="text-gray-400">Rimanenti</span>
+              <span className={`font-bold ${isOver ? 'text-orange-400' : 'text-primary-400'}`}>
+                {isOver ? `+${formatDecimal(Math.abs(remaining), 0)}` : formatDecimal(remaining, 0)} kcal
+              </span>
+            </div>
           </div>
+        </div>
+
+        <GoodHabits selectedDate={selectedDate} currentMeals={meals} compact />
+
+        {/* Macro bars */}
+        {goals && (
+          <div className="card">
+            <MacroBars
+              protein={daySummary.protein_g}
+              carbs={daySummary.carbs_g}
+              fat={daySummary.fat_g}
+              targets={{ protein_g: goals.protein_g, carbs_g: goals.carbs_g, fat_g: goals.fat_g }}
+            />
+          </div>
+        )}
+
+        {/* Add meal button */}
+        <div className="meal-add-action fixed left-1/2 z-30 w-full max-w-md -translate-x-1/2 px-4">
+          <button
+            type="button"
+            className="flex w-full select-none items-center gap-3 rounded-2xl bg-primary-600 px-4 py-3 text-left shadow-xl shadow-black/40 ring-1 ring-primary-400/40 transition hover:bg-primary-500"
+            onClick={openNewMeal}
+          >
+            <div aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-2xl font-light text-white">+</div>
+            <div className="flex-1">
+              <p className="font-semibold">Aggiungi pasto</p>
+              <p className="text-xs text-primary-100">Da foto, ingredienti o piatti salvati</p>
+            </div>
+          </button>
         </div>
       </div>
 
-      <GoodHabits selectedDate={selectedDate} currentMeals={meals} compact />
-
-      {/* Macro bars */}
-      {goals && (
-        <div className="card">
-          <MacroBars
-            protein={daySummary.protein_g}
-            carbs={daySummary.carbs_g}
-            fat={daySummary.fat_g}
-            targets={{ protein_g: goals.protein_g, carbs_g: goals.carbs_g, fat_g: goals.fat_g }}
-          />
-        </div>
-      )}
-
-      {/* Add meal button */}
-      <div className="fixed left-1/2 z-30 w-full max-w-md -translate-x-1/2 px-4"
-        style={{ bottom: 'calc(4.75rem + env(safe-area-inset-bottom))' }}>
-        <button
-          type="button"
-          className="flex w-full select-none items-center gap-3 rounded-2xl bg-primary-600 px-4 py-3 text-left shadow-xl shadow-black/40 ring-1 ring-primary-400/40 transition hover:bg-primary-500"
-          onClick={openNewMeal}
-        >
-          <div aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-2xl font-light text-white">+</div>
-          <div className="flex-1">
-            <p className="font-semibold">Aggiungi pasto</p>
-            <p className="text-xs text-primary-100">Da foto, ingredienti o piatti salvati</p>
+      <section className="meals-diary min-w-0" aria-label="Pasti registrati">
+        {/* Meal section — single card */}
+        {loading ? (
+          <div className="h-32 bg-gray-800 rounded-xl animate-pulse" />
+        ) : (
+          <div className="card">
+            {mealTimeline.length === 0 ? (
+              <div className="py-7 text-center">
+                <span className="text-3xl">🍽️</span>
+                <p className="mt-2 text-sm font-medium text-gray-400">Nessun piatto registrato</p>
+                <p className="mt-1 text-xs text-gray-600">Aggiungi ciò che hai mangiato in questa giornata</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {mealTimeline.map(({ type, entries }) => {
+                  const label = MEAL_TYPES.find(mealType => mealType.type === type)?.label ?? type
+                  const total = entries.reduce((sum, entry) =>
+                    sum + entry.items.reduce((itemSum, item) => itemSum + item.calories, 0), 0)
+                  return (
+                    <div key={entries[0].id}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-semibold text-gray-400">{label}</span>
+                        <span className="text-xs text-gray-600">{formatDecimal(total, 0)} kcal</span>
+                      </div>
+                      <div className="space-y-2">
+                        {entries.map(entry => (
+                          <MealEntryCard key={entry.id} entry={entry} onOpen={() => openEntry(entry, type)} />
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
-        </button>
-      </div>
-
-      {/* Meal section — single card */}
-      {loading ? (
-        <div className="h-32 bg-gray-800 rounded-xl animate-pulse" />
-      ) : (
-        <div className="card">
-          {mealTimeline.length === 0 ? (
-            <div className="py-7 text-center">
-              <span className="text-3xl">🍽️</span>
-              <p className="mt-2 text-sm font-medium text-gray-400">Nessun piatto registrato</p>
-              <p className="mt-1 text-xs text-gray-600">Aggiungi ciò che hai mangiato in questa giornata</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {mealTimeline.map(({ type, entries }) => {
-                const label = MEAL_TYPES.find(mealType => mealType.type === type)?.label ?? type
-                const total = entries.reduce((sum, entry) =>
-                  sum + entry.items.reduce((itemSum, item) => itemSum + item.calories, 0), 0)
-                return (
-                  <div key={entries[0].id}>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-semibold text-gray-400">{label}</span>
-                      <span className="text-xs text-gray-600">{formatDecimal(total, 0)} kcal</span>
-                    </div>
-                    <div className="space-y-2">
-                      {entries.map(entry => (
-                        <MealEntryCard key={entry.id} entry={entry} onOpen={() => openEntry(entry, type)} />
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </section>
 
       {/* Meal modal */}
       <Modal open={foodSearchOpen} onClose={() => setFoodSearchOpen(false)}>

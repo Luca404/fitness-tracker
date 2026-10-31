@@ -149,12 +149,12 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
       <div className="space-y-5">
         <div>
           <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Oggi</p>
-          <div className="grid grid-cols-2 gap-2">{renderRows(dailyRows)}</div>
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 lg:gap-4">{renderRows(dailyRows)}</div>
         </div>
         <div>
           <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Ultimi 7 giorni</p>
           <p className="mb-2 px-1 text-xs text-gray-500">Fino alla data selezionata · target settimanale, media su 7 giorni</p>
-          <div className="grid grid-cols-2 gap-2">{renderRows(weeklyRows)}</div>
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 lg:gap-4">{renderRows(weeklyRows)}</div>
         </div>
       </div>
     </section>

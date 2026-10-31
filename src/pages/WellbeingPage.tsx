@@ -9,7 +9,7 @@ export default function WellbeingPage() {
   const { selectedDate, setSelectedDate } = useSettings()
 
   return (
-    <div className="space-y-5 p-4 pb-24">
+    <div className="desktop-page space-y-5 p-4 pb-24">
       <Link to="/meals" className="inline-block py-2 text-sm text-primary-400">← Pasti</Link>
       <DaySelector date={selectedDate} onChange={setSelectedDate} />
       {loading ? (

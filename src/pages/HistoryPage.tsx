@@ -66,7 +66,7 @@ export default function HistoryPage() {
   const missingDays = chartData.filter(day => day.Mangiato === null || day.Bruciato === null)
 
   return (
-    <div className="p-4 pb-24 space-y-6">
+    <div className="desktop-page p-4 pb-24 space-y-6">
       <div className="flex gap-2">
         {([7, 30] as Range[]).map(r => (
           <button key={r} type="button" onClick={() => setRange(r)}

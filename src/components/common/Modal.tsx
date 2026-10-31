@@ -73,7 +73,7 @@ export default function Modal({ open, onClose, children, title, fullScreenOnMobi
         aria-modal="true"
         aria-label={title ?? 'Finestra di dialogo'}
         tabIndex={-1}
-        className={`relative z-10 w-full overflow-y-auto overscroll-contain px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl shadow-black/50 lg:max-h-[92dvh] lg:max-w-md lg:rounded-[2rem] lg:border lg:border-gray-700/80 lg:bg-gray-800/95 lg:p-6 ${fullScreenOnMobile ? 'h-[100dvh] bg-gray-800 pt-[max(2rem,env(safe-area-inset-top))] lg:h-auto' : 'max-h-[92dvh] max-w-md rounded-t-[2rem] border border-gray-700/80 bg-gray-800/95 pt-3'}`}
+        className={`relative z-10 w-full overflow-y-auto overscroll-contain px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl shadow-black/50 lg:max-h-[92dvh] ${fullScreenOnMobile ? 'lg:max-w-2xl' : 'lg:max-w-xl'} lg:rounded-[2rem] lg:border lg:border-gray-700/80 lg:bg-gray-800/95 lg:p-6 ${fullScreenOnMobile ? 'h-[100dvh] bg-gray-800 pt-[max(2rem,env(safe-area-inset-top))] lg:h-auto' : 'max-h-[92dvh] max-w-md rounded-t-[2rem] border border-gray-700/80 bg-gray-800/95 pt-3'}`}
       >
         {!fullScreenOnMobile && <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-gray-600 lg:hidden" aria-hidden="true" />}
         {title && (

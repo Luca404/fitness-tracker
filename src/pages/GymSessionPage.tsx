@@ -30,8 +30,8 @@ export default function GymSessionPage() {
     navigate(fromProgress ? '/fitness?tab=progress' : '/fitness')
   }
 
-  return <div className="mx-auto flex h-dvh max-w-md flex-col bg-gray-900 text-white">
-    <main className="flex-1 overflow-y-auto overscroll-none p-4 pb-8 safe-area-pb">
+  return <div className="mx-auto flex h-dvh max-w-md lg:max-w-4xl flex-col bg-gray-900 text-white">
+    <main className="flex-1 overflow-y-auto overscroll-none p-4 pb-8 safe-area-pb lg:p-8">
       {error || !sessionId ? <div className="space-y-4 rounded-2xl border border-gray-700 p-5">
         <p className="text-sm text-gray-300">Impossibile caricare la sessione.</p>
         <button type="button" onClick={back} className="text-sm font-semibold text-primary-400">{backLabel}</button>

@@ -48,10 +48,10 @@ export default function WorkoutPage({ embedded = false }: { embedded?: boolean }
 
   return (
     <div className={embedded ? 'space-y-6' : 'space-y-6 p-4 pb-24'}>
-      <DaySelector date={selectedDate} onChange={setSelectedDate} />
+      <div className="desktop-date"><DaySelector date={selectedDate} onChange={setSelectedDate} /></div>
 
       <button type="button" onClick={() => setActivityPickerOpen(true)}
-        className="flex w-full items-center gap-3 rounded-2xl border border-primary-500/30 bg-primary-950/25 p-4 text-left transition hover:bg-primary-950/40">
+        className="desktop-activity-action flex w-full items-center gap-3 rounded-2xl border border-primary-500/30 bg-primary-950/25 p-4 text-left transition hover:bg-primary-950/40">
         <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-500/15 text-2xl">+</span>
         <span><span className="block font-semibold">Altre attività</span>
           <span className="mt-1 block text-xs text-gray-400">Registra camminata, corsa, ciclismo e altro</span></span>

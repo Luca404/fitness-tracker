@@ -58,3 +58,70 @@
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
 }
+
+/* Preserve the mobile layout; only desktop uses the extra horizontal space. */
+.meals-page {
+  padding-bottom: calc(10rem + env(safe-area-inset-bottom));
+}
+
+.meal-add-action {
+  bottom: calc(4.75rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 1024px) {
+  .desktop-page { padding: 24px 32px 32px; }
+  .desktop-tabs, .desktop-date { max-width: 448px; }
+  .desktop-activity-action { max-width: 520px; }
+
+  .meals-page {
+    display: grid;
+    grid-template-columns: 360px minmax(0, 1fr);
+    align-items: start;
+    gap: 24px;
+    padding: 24px 32px 32px;
+  }
+  .meals-page > :not([hidden]) { margin-top: 0; }
+  .meals-date { grid-column: 1 / -1; width: 360px; }
+  .meals-overview { min-width: 0; }
+  .meal-add-action {
+    position: static;
+    width: 100%;
+    max-width: none;
+    padding-inline: 0;
+    transform: none;
+  }
+
+  .desktop-plan-list, .desktop-pantry-groups, .desktop-dish-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 16px;
+  }
+  .desktop-plan-list > :not([hidden]),
+  .desktop-pantry-groups > :not([hidden]),
+  .desktop-dish-list > :not([hidden]) { min-width: 0; margin-top: 0; }
+
+  .desktop-weight {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: start;
+    gap: 24px;
+  }
+  .desktop-weight > :not([hidden]) { min-width: 0; margin-top: 0; }
+  .desktop-weight > h1, .weight-summary, .weight-history { grid-column: 1 / -1; }
+
+  .desktop-settings {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    align-items: start;
+    gap: 24px;
+  }
+  .desktop-settings > :not([hidden]) { min-width: 0; margin-top: 0; }
+  .desktop-settings > :not(.settings-profile):not(.settings-goals) { grid-column: 1 / -1; }
+  .settings-goals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }
+  .settings-goals > :not(.settings-goal-field) { grid-column: 1 / -1; }
+}
+
+@media (min-width: 1024px) and (min-height: 900px) {
+  .meals-overview { position: sticky; top: 24px; }
+}

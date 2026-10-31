@@ -16,19 +16,40 @@ export default function Layout() {
   const location = useLocation()
 
   return (
-    <div className="flex flex-col bg-gray-900 text-white max-w-md mx-auto" style={{ height: '100dvh' }}>
+    <div className="flex flex-col bg-gray-900 text-white max-w-md mx-auto lg:max-w-6xl" style={{ height: '100dvh' }}>
       {/* Header */}
       <header className="bg-gray-900 border-b border-gray-800 flex-shrink-0 z-10">
-        <div className="px-4 py-4 flex items-center justify-between">
+        <div className="px-4 py-4 flex items-center justify-between lg:px-8">
           <button
             onClick={() => navigate('/meals')}
             className="font-display text-xl font-bold text-primary-400 hover:text-primary-300 transition-colors"
           >
             fitTrackr
           </button>
+          <nav aria-label="Navigazione principale" className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-gray-900 border-t border-gray-800 z-40 safe-area-pb lg:static lg:mx-6 lg:w-auto lg:max-w-none lg:flex-1 lg:translate-x-0 lg:border-t-0">
+            <div className="flex justify-around items-center h-16 lg:h-12 lg:gap-2">
+              {NAV.map(({ to, label, icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    `flex flex-col items-center justify-center flex-1 h-full transition-colors lg:flex-row lg:gap-2 lg:rounded-xl ${
+                      isActive ? 'text-primary-400' : 'text-gray-500'
+                    }`
+                  }
+                >
+                  {({ isActive }) => <>
+                    <span className={`mb-0.5 flex h-9 w-12 items-center justify-center rounded-2xl text-2xl transition-colors ${isActive ? 'bg-primary-500/15 ring-1 ring-primary-500/25' : ''}`}
+                      aria-hidden="true">{icon}</span>
+                    <span className="text-xs lg:text-sm">{label}</span>
+                  </>}
+                </NavLink>
+              ))}
+            </div>
+          </nav>
           <button
             onClick={() => navigate('/settings')}
-            className="inline-flex h-6 w-6 items-center justify-center text-gray-400 hover:text-gray-200 transition-colors"
+            className="inline-flex h-6 w-6 items-center justify-center text-gray-400 lg:h-10 lg:w-10 hover:text-gray-200 transition-colors"
             title="Impostazioni"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -39,35 +60,13 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto overscroll-none">
+      <main className="desktop-main min-h-0 flex-1 overflow-y-auto overscroll-none">
         <AppErrorBoundary key={`${location.pathname}${location.search}`}>
           <Suspense fallback={<PageLoading />}>
             <Outlet />
           </Suspense>
         </AppErrorBoundary>
       </main>
-
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-gray-900 border-t border-gray-800 z-40 safe-area-pb">
-        <div className="flex justify-around items-center h-16">
-          {NAV.map(({ to, label, icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-                  isActive ? 'text-primary-400' : 'text-gray-500'
-                }`
-              }
-            >
-              {({ isActive }) => <>
-                <span className={`mb-0.5 flex h-9 w-12 items-center justify-center rounded-2xl text-2xl transition-colors ${isActive ? 'bg-primary-500/15 ring-1 ring-primary-500/25' : ''}`}
-                  aria-hidden="true">{icon}</span>
-                <span className="text-xs">{label}</span>
-              </>}
-            </NavLink>
-          ))}
-        </div>
-      </nav>
     </div>
   )
 }

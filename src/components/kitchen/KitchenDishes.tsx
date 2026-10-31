@@ -125,7 +125,7 @@ export default function KitchenDishes() {
     <div className="space-y-6">
       <PreparedDishesPanel mealType={category === 'all' ? undefined : category} />
       <button type="button" onClick={() => { setSelectedDish(null); setMode('create') }}
-        className="flex w-full items-center gap-3 rounded-2xl bg-primary-500 px-4 py-3.5 text-left font-semibold shadow-lg shadow-primary-950/30 hover:bg-primary-400">
+        className="flex w-full items-center gap-3 rounded-2xl bg-primary-500 px-4 lg:w-auto lg:pr-6 py-3.5 text-left font-semibold shadow-lg shadow-primary-950/30 hover:bg-primary-400">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-xl">+</span>
         <span><span className="block">Crea un nuovo piatto</span><span className="block text-xs font-normal text-primary-100">Componi la ricetta ingrediente per ingrediente</span></span>
       </button>
@@ -157,7 +157,7 @@ export default function KitchenDishes() {
             <p className="mt-2 text-sm text-gray-500">{dishes.length === 0 ? 'Nessun piatto salvato' : query.trim() ? 'Nessun risultato' : 'Nessun piatto in questa categoria'}</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="desktop-dish-list space-y-2">
             {visibleDishes.map(dish => {
               const totals = dishTotals(dish)
               return (

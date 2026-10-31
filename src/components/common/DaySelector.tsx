@@ -16,7 +16,7 @@ export default function DaySelector({ date, onChange }: Props) {
   const dateLabel = cap(format(parsed, 'd MMMM yyyy', { locale: it }))
 
   return (
-    <div className="relative bg-gray-800 rounded-lg border border-gray-700 py-3 px-16 text-center">
+    <div className="relative lg:max-w-md bg-gray-800 rounded-lg border border-gray-700 py-3 px-16 text-center">
       <button
         type="button"
         onClick={() => onChange(format(subDays(parsed, 1), 'yyyy-MM-dd'))}

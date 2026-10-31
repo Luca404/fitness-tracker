@@ -90,11 +90,11 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-4 pb-24 space-y-6">
+    <div className="desktop-page desktop-settings p-4 pb-24 space-y-6">
       <h1 className="text-xl font-bold">Impostazioni</h1>
 
       {profile && (
-        <div className="card space-y-2 text-sm">
+        <div className="card settings-profile space-y-2 text-sm">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-semibold">Profilo</h2>
             <button type="button" onClick={() => setEditingProfile(true)} className="text-xs text-primary-400">
@@ -111,7 +111,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="settings-goals space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="font-semibold">Goal calorici</h2>
           <button type="button" onClick={handleRecalculate}
@@ -144,7 +144,7 @@ export default function SettingsPage() {
           { label: 'Carboidrati (g)', val: carbs, set: setCarbs },
           { label: 'Grassi (g)', val: fat, set: setFat },
         ].map(({ label, val, set }) => (
-          <div key={label}>
+          <div key={label} className="settings-goal-field">
             <label className="text-sm text-gray-400 mb-1 block">{label}</label>
             <input type="number" min={label.startsWith('Calorie') ? 1 : 0} step={label.startsWith('Calorie') ? 1 : 0.1} value={val === 0 ? '' : formatDecimal(val)}
               onChange={e => set(label.startsWith('Calorie') ? parseInt(e.target.value) || 0 : roundToTwo(Number(e.target.value) || 0))}

@@ -20,8 +20,8 @@ export default function FitnessPage() {
   if (searchParams.get('tab') === 'weight') return <Navigate to="/weight" replace />
 
   return (
-    <div className="space-y-5 p-4 pb-24">
-      <div className="grid grid-cols-2 rounded-2xl bg-gray-800/80 p-1 ring-1 ring-gray-700/70" role="tablist" aria-label="Sezioni Fitness">
+    <div className="desktop-page space-y-5 p-4 pb-24">
+      <div className="desktop-tabs grid grid-cols-2 rounded-2xl bg-gray-800/80 p-1 ring-1 ring-gray-700/70" role="tablist" aria-label="Sezioni Fitness">
         <button
           type="button"
           role="tab"
