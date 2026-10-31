@@ -1,4 +1,3 @@
-import PageHeader from '../components/common/PageHeader'
 import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
@@ -90,12 +89,12 @@ export default function WeightPage() {
   const yMax = allWeights.length ? Math.ceil(Math.max(...allWeights, target ?? -Infinity) + 1) : 'auto'
 
   return (
-    <div className="app-page weight-page space-y-6">
-      <PageHeader title="Peso corporeo" subtitle="Osserva il tuo percorso nel tempo." />
+    <div className="space-y-4 p-4 pb-24">
+      <h1 className="text-xl font-bold text-white">Peso corporeo</h1>
 
       {/* Summary card */}
       {latest && (
-        <div className="card weight-summary flex items-center justify-between">
+        <div className="card flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-400">Peso attuale</p>
             <p className="text-3xl font-bold text-white">{formatDecimal(latest.weight_kg)} <span className="text-lg text-gray-400">kg</span></p>
@@ -116,7 +115,7 @@ export default function WeightPage() {
       )}
 
       {/* Chart */}
-      <div className="card weight-chart space-y-3">
+      <div className="card space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-gray-300">Andamento</span>
           <div className="flex gap-1">
@@ -142,23 +141,23 @@ export default function WeightPage() {
         ) : (
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#343c34" />
-              <XAxis dataKey="date" tick={{ fill: '#aab4a5', fontSize: 10 }} />
-              <YAxis domain={[yMin, yMax]} tick={{ fill: '#aab4a5', fontSize: 10 }} tickFormatter={value => formatDecimal(Number(value))} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+              <YAxis domain={[yMin, yMax]} tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={value => formatDecimal(Number(value))} />
               <Tooltip
-                contentStyle={{ background: '#1d241d', border: 'none', borderRadius: 8 }}
+                contentStyle={{ background: '#1f2937', border: 'none', borderRadius: 8 }}
                 labelStyle={{ color: '#e5e7eb', fontSize: 12 }}
                 formatter={(v: unknown) => [`${formatDecimal(Number(v))} kg`, 'Peso']}
               />
               {target && (
-                <ReferenceLine y={target} stroke="#d4e6a3" strokeDasharray="4 4" label={{ value: `obiettivo ${formatDecimal(target)}kg`, fill: '#d4e6a3', fontSize: 10 }} />
+                <ReferenceLine y={target} stroke="#10b981" strokeDasharray="4 4" label={{ value: `obiettivo ${formatDecimal(target)}kg`, fill: '#10b981', fontSize: 10 }} />
               )}
               <Line
                 type="monotone"
                 dataKey="kg"
-                stroke="#d4e6a3"
+                stroke="#10b981"
                 strokeWidth={2}
-                dot={{ fill: '#d4e6a3', r: 3 }}
+                dot={{ fill: '#10b981', r: 3 }}
                 activeDot={{ r: 5 }}
               />
             </LineChart>
@@ -167,12 +166,11 @@ export default function WeightPage() {
       </div>
 
       {/* Add entry */}
-      <div className="card weight-form space-y-3">
+      <div className="card space-y-3">
         <span className="text-sm font-semibold text-gray-300">Registra peso</span>
         <div className="flex gap-3">
           <input
             type="date"
-            aria-label="Data della pesata"
             max={toLocalISODate(new Date())}
             value={date}
             onChange={e => setDate(e.target.value)}
@@ -190,7 +188,6 @@ export default function WeightPage() {
                 const value = Number(weightInput)
                 if (weightInput !== '' && Number.isFinite(value)) setWeightInput(formatDecimal(value))
               }}
-              aria-label="Peso in chilogrammi"
               placeholder="es. 75.5"
               className="flex-1 bg-transparent outline-none text-sm"
               onKeyDown={e => e.key === 'Enter' && handleSave()}
@@ -210,7 +207,7 @@ export default function WeightPage() {
 
       {/* History list */}
       {logs.length > 0 && (
-        <div className="card weight-log space-y-1">
+        <div className="card space-y-1">
           <span className="text-sm font-semibold text-gray-300 block mb-2">Storico</span>
           {[...logs].reverse().map(l => (
             <div key={l.id} className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">

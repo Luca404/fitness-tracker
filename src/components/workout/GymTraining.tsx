@@ -1,4 +1,3 @@
-import Icon from '../common/Icon'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
@@ -131,9 +130,10 @@ export default function GymTraining() {
 
   return <div className="space-y-6">
     <div className="flex items-center justify-between">
-      <h2 className="section-title">Le tue schede</h2>
+      <div><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Palestra</p>
+        <h2 className="text-lg font-bold">Le tue schede</h2></div>
       <button type="button" disabled={ordering || busy} onClick={() => setEditingPlan({ plan: null })}
-        className="btn-secondary">+ Nuova scheda</button>
+        className="rounded-xl bg-primary-500 px-3 py-2 text-sm font-semibold disabled:opacity-40">+ Nuova scheda</button>
     </div>
     {active && <button type="button" onClick={() => navigate(`/fitness/session/${active.id}`)}
       className="w-full rounded-2xl border border-primary-600/50 bg-primary-950/30 p-4 text-left">
@@ -142,11 +142,9 @@ export default function GymTraining() {
       <span className="text-xs text-gray-400">{active.sets.filter(set => set.done).length}/{active.sets.length} serie completate</span>
     </button>}
     {loading ? <div className="h-28 animate-pulse rounded-2xl bg-gray-800" /> : plans.length === 0 ? (
-      <div className="empty-training">
-        <Icon name="fitness" />
-        <strong>Nessuna scheda creata</strong>
-        <p>Crea la tua prima scheda per iniziare ad allenarti.</p>
-      </div>
+      <p className="rounded-2xl border border-dashed border-gray-700 p-5 text-sm text-gray-400">
+        Crea una scheda e aggiungi gli esercizi che fai in palestra.
+      </p>
     ) : <div className="space-y-3">
       {ordering && <p role="status" className="text-xs text-gray-500">Salvo l’ordine…</p>}
       {plans.map((plan, index) => <div key={plan.id} className="rounded-2xl border border-gray-700 bg-gray-900/35 p-4">

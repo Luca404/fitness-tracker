@@ -156,7 +156,7 @@ export default function DishEditor({
       {items.length > 0 && <p className="text-xs text-gray-500">Per correggere i valori nutrizionali di un ingrediente salvato, modificalo in Cucina → Ingredienti.</p>}
 
       {items.length > 0 && (
-        <div className="rounded-xl border border-gray-700 bg-gray-900 p-4 ring-1 ring-primary-500/20">
+        <div className="rounded-3xl bg-gradient-to-r from-primary-600/20 to-emerald-400/5 p-4 ring-1 ring-primary-500/20">
           <div className="flex items-end justify-between">
             <div><p className="text-xs text-gray-500">Totale piatto</p><p className="text-2xl font-bold">{formatDecimal(totalKcal)} <span className="text-sm font-normal text-primary-400">kcal</span></p></div>
             <p className="text-sm text-gray-400">

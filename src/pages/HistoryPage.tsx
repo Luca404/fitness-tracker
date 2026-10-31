@@ -1,4 +1,3 @@
-import PageHeader from '../components/common/PageHeader'
 import { useEffect, useState, useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useData } from '../contexts/DataContext'
@@ -67,8 +66,7 @@ export default function HistoryPage() {
   const missingDays = chartData.filter(day => day.Mangiato === null || day.Bruciato === null)
 
   return (
-    <div className="app-page space-y-6">
-      <PageHeader title="Storico" subtitle="Una prospettiva sulle tue giornate." />
+    <div className="p-4 pb-24 space-y-6">
       <div className="flex gap-2">
         {([7, 30] as Range[]).map(r => (
           <button key={r} type="button" onClick={() => setRange(r)}
@@ -92,11 +90,11 @@ export default function HistoryPage() {
         <div className="card">
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={chartData}>
-              <XAxis dataKey="date" tick={{ fill: '#aab4a5', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#aab4a5', fontSize: 11 }} tickFormatter={value => formatDecimal(Number(value), 0)} />
+              <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} tickFormatter={value => formatDecimal(Number(value), 0)} />
               <Tooltip
                 filterNull={false}
-                contentStyle={{ backgroundColor: '#1d241d', border: 'none', borderRadius: 8 }}
+                contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: 8 }}
                 labelStyle={{ color: '#f3f4f6' }}
                 formatter={(value: unknown) => value == null ? 'Dati mancanti' : `${formatDecimal(Number(value), 0)} kcal`}
               />
@@ -111,8 +109,8 @@ export default function HistoryPage() {
                   name="Target"
                 />
               )}
-              <Line type="monotone" dataKey="Mangiato" stroke="#d4e6a3" strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
-              <Line type="monotone" dataKey="Bruciato" stroke="#c79278" strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
+              <Line type="monotone" dataKey="Mangiato" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
+              <Line type="monotone" dataKey="Bruciato" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>

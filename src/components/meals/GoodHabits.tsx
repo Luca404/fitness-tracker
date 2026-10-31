@@ -5,12 +5,6 @@ import { getGuideline } from '../../data/nutritionGuidelines'
 import { calculateHabitRows, habitExcessLabel, habitStatus, habitTileFill, habitWindow, summarizeHabitRows } from '../../utils/goodHabits'
 import type { Meal } from '../../types'
 import { formatDecimal } from '../../utils/decimal'
-import Icon, { type IconName } from '../common/Icon'
-
-const HABIT_ICONS: Record<string, IconName> = {
-  Verdura: 'vegetable', Frutta: 'fruit', Legumi: 'legumes', Pesce: 'fish',
-  Fibre: 'fiber', 'Zuccheri totali': 'sugar', 'Unità alcoliche': 'alcohol', Sale: 'salt',
-}
 
 interface Props {
   selectedDate: string
@@ -54,19 +48,19 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
     return (
       <Link
         to="/meals/wellbeing"
-        className="habit-strip"
+        className="group block rounded-2xl border border-gray-700/70 bg-gray-800/55 px-4 py-3 transition hover:border-primary-700 hover:bg-gray-800"
         aria-label="Apri il dettaglio delle buone abitudini"
       >
-        <span className="habit-intro">
-          <Icon name="leaf" />
-          <span><strong>Buone abitudini</strong>
-          <small>
+        <span className="flex items-center gap-2">
+          <span className="text-base" aria-hidden="true">🌿</span>
+          <span className="text-sm font-semibold text-gray-200">Buone abitudini</span>
+          <span className="ml-auto truncate text-[11px] text-gray-500">
             {loading
               ? 'Aggiorno…'
               : `${summary.ok} su ${rows.filter(row => row.direction !== 'info').length} in linea`}
-          </small></span>
+          </span>
         </span>
-        <span className="habit-tiles">
+        <span className="mt-2 grid grid-cols-8 gap-1 sm:gap-1.5">
           {rows.map(row => {
             const weekly = row.period === 'ultimi 7 giorni'
             const status = habitStatus(row)
@@ -83,7 +77,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
             const tileLabel = `${row.label}: ${statusLabel}${row.direction === 'max' ? `, ${valueLabel}${limitLabel}` : weeklyLabel}${progressLabel}${excessLabel && row.target! > 0 ? `, ${excessLabel} del limite` : ''}`
             return (
               <span key={row.label}
-                className={`habit-tile relative flex aspect-square min-w-0 flex-col items-center justify-center overflow-hidden rounded-lg border ${
+                className={`relative flex aspect-square min-w-0 flex-col items-center justify-center overflow-hidden rounded-lg border ${
                   status === 'ok' ? 'border-emerald-700/50 bg-emerald-500/10' :
                     status === 'attention' ? 'border-amber-700/50 bg-amber-500/10' : 'border-gray-700 bg-gray-900/40'
                 }`}
@@ -92,7 +86,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
               >
                 {fill > 0 && <span className={`absolute inset-x-0 bottom-0 transition-all ${overMaximum ? 'bg-orange-500/35' : 'bg-primary-500/25'}`}
                   style={{ height: `${fill}%` }} aria-hidden="true" />}
-                <Icon name={HABIT_ICONS[row.label] ?? 'leaf'} className="habit-glyph relative" />
+                <span className="relative text-sm leading-none sm:text-base" aria-hidden="true">{row.icon}</span>
                 <span className={`relative mt-0.5 text-[10px] font-bold leading-none sm:text-xs ${
                   status === 'ok' ? 'text-emerald-400' : status === 'attention' ? 'text-amber-400' : 'text-gray-500'
                 }`} aria-hidden="true">{status === 'ok' ? '✓' : status === 'attention' ? '×' : status === 'informative' ? 'i' : '–'}</span>
@@ -100,8 +94,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
             )
           })}
         </span>
-        <span className="habit-note">Legumi e pesce: media degli ultimi 7 giorni</span>
-        <Icon name="chevron-right" className="habit-chevron" />
+        <span className="mt-2 block text-[10px] text-gray-500">Legumi e pesce: media degli ultimi 7 giorni</span>
       </Link>
     )
   }
@@ -118,7 +111,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
       return (
         <div key={row.label} className="rounded-2xl border border-gray-800 bg-gray-800/55 p-3">
           <div className="flex items-center gap-2">
-            <Icon name={HABIT_ICONS[row.label] ?? 'leaf'} className="h-6 w-6 text-primary-400" />
+            <span className="text-lg">{row.icon}</span>
             <span className="text-sm font-semibold">{row.label}</span>
           </div>
           <p className="mt-2 text-xs text-gray-500">
@@ -145,10 +138,11 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
   }
 
   return (
-    <section className="wellbeing-detail">
+    <section>
       <div className="mb-3 flex items-end justify-between px-1">
         <div>
-          <h2 className="section-title">Buone abitudini</h2>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Alimentazione</p>
+          <h2 className="mt-0.5 text-lg font-bold">Buone abitudini</h2>
         </div>
         {loading && <span className="text-xs text-gray-600">Aggiorno…</span>}
       </div>

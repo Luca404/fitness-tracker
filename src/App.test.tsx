@@ -25,13 +25,13 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('main navigation', () => {
-  it('opens wellbeing from its existing address and highlights its desktop navigation entry', async () => {
+  it('keeps wellbeing as a meal detail and redirects its existing address', async () => {
     window.history.replaceState({}, '', '/wellbeing')
     render(<App />)
     expect(await screen.findByText('Dettaglio buone abitudini')).toBeTruthy()
     expect(window.location.pathname).toBe('/meals/wellbeing')
-    expect(screen.getByRole('link', { name: 'Pasti' }).getAttribute('aria-current')).toBeNull()
-    expect(screen.getByRole('link', { name: 'Benessere' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('link', { name: 'Pasti' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.queryByRole('link', { name: 'Benessere' })).toBeNull()
     fireEvent.click(screen.getByRole('link', { name: 'Peso' }))
     expect(await screen.findByRole('heading', { name: 'Peso corporeo' })).toBeTruthy()
     expect(window.location.pathname).toBe('/weight')

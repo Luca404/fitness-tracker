@@ -22,16 +22,16 @@ export default function MealEntryCard({ entry, onOpen }: Props) {
     <button
       type="button"
       onClick={onOpen}
-      className="group meal-entry"
+      className="group w-full rounded-2xl border border-gray-700/80 bg-gray-800/80 p-3.5 text-left transition hover:border-primary-700 hover:bg-gray-700/60 active:scale-[0.99]"
     >
       <div className="flex items-center gap-3">
-        <div className="meal-entry-icon" aria-hidden="true">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary-500/10 text-xl ring-1 ring-primary-500/20">
           {entry.dish_icon || getFoodIcon(entry.items)}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3">
-            <p className="meal-entry-name">{entry.name}</p>
-            <span className="meal-entry-calories">{formatDecimal(totals.calories)} kcal</span>
+            <p className="truncate font-semibold text-gray-100">{entry.name}</p>
+            <span className="shrink-0 font-semibold text-primary-400">{formatDecimal(totals.calories)} kcal</span>
           </div>
           <p className="mt-1 text-xs text-gray-500">
             {quantityLabel}{strength != null && <> · {formatDecimal(strength)}% vol</>} · P {formatDecimal(totals.protein)}g · C {formatDecimal(totals.carbs)}g · G {formatDecimal(totals.fat)}g

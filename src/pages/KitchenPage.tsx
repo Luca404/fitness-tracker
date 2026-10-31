@@ -1,4 +1,3 @@
-import PageHeader from '../components/common/PageHeader'
 import { lazy, Suspense } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import KitchenDishes from '../components/kitchen/KitchenDishes'
@@ -16,16 +15,15 @@ export default function KitchenPage() {
   }
 
   return (
-    <div className="app-page kitchen-page space-y-5">
-      <PageHeader title="Cucina" subtitle="Ingredienti e piatti, a modo tuo." />
-      <div className="section-tabs" role="tablist" aria-label="Sezioni Cucina">
+    <div className="space-y-5 p-4 pb-24">
+      <div className="grid grid-cols-2 rounded-2xl bg-gray-800/80 p-1 ring-1 ring-gray-700/70" role="tablist" aria-label="Sezioni Cucina">
         <button type="button" role="tab" aria-selected={tab === 'pantry'} onClick={() => selectTab('pantry')}
-          >
-          Ingredienti
+          className={`rounded-xl py-2.5 text-sm font-semibold transition ${tab === 'pantry' ? 'bg-primary-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>
+          🧺 Ingredienti
         </button>
         <button type="button" role="tab" aria-selected={tab === 'dishes'} onClick={() => selectTab('dishes')}
-          >
-          Piatti
+          className={`rounded-xl py-2.5 text-sm font-semibold transition ${tab === 'dishes' ? 'bg-primary-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>
+          🍲 Piatti
         </button>
       </div>
 

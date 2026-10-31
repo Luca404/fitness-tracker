@@ -6,7 +6,7 @@ interface Props {
 
 export default function ActivityGrid({ onSelect }: Props) {
   return (
-    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-4 gap-3">
       {BASIC_ACTIVITY_KEYS.map(key => {
         const { label, icon } = MET_ACTIVITIES[key]
         return (

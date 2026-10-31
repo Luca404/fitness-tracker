@@ -2,9 +2,8 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { useSettings } from '../contexts/SettingsContext'
-import NutritionSummary from '../components/meals/NutritionSummary'
-import PageHeader from '../components/common/PageHeader'
-import Icon from '../components/common/Icon'
+import CalorieRing from '../components/meals/CalorieRing'
+import MacroBars from '../components/meals/MacroBars'
 import MealItemRow from '../components/meals/MealItemRow'
 import MealHub, { type MealHubMode } from '../components/meals/MealHub'
 import DishEditor, { type DishItemDraft } from '../components/meals/DishEditor'
@@ -75,6 +74,13 @@ export default function MealsPage() {
   const [preparedAmounts, setPreparedAmounts] = useState<{ total_cooked_g: number; remaining_g: number } | null>(null)
   const [preparedEditG, setPreparedEditG] = useState(0)
   const [savingPreparedEdit, setSavingPreparedEdit] = useState(false)
+
+  const totalBurned = daySummary.calories_burned
+  const target = goals?.calorie_target ?? 2000
+  // The target already derives from an activity-adjusted TDEE. Workouts remain
+  // informational here so exercise is not counted twice in the daily budget.
+  const remaining = target - daySummary.calories
+  const isOver = remaining < 0
 
   function openNewMeal() {
     setModalStep('meal-type')
@@ -156,16 +162,63 @@ export default function MealsPage() {
     && !selectedEntry.dish_id && !selectedEntry.prepared_batch_id && !isMealPhotoEntry(selectedEntry)
 
   return (
-    <div className="app-page meals-page">
-      <PageHeader title="Pasti" subtitle="Il tuo diario alimentare.">
-        <DaySelector date={selectedDate} onChange={setSelectedDate} />
-      </PageHeader>
-      <NutritionSummary summary={daySummary} goals={goals} />
+    <div className="p-4 space-y-4" style={{ paddingBottom: 'calc(10rem + env(safe-area-inset-bottom))' }}>
+      <DaySelector date={selectedDate} onChange={setSelectedDate} />
+
+      {/* Summary card: ring + stats */}
+      <div className="card flex items-center gap-5">
+        <CalorieRing consumed={daySummary.calories} target={target} />
+        <div className="flex-1 space-y-2.5 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-400">Consumate</span>
+            <span className="font-semibold">{formatDecimal(daySummary.calories, 0)} kcal</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Obiettivo</span>
+            <span className="font-semibold">{formatDecimal(target, 0)} kcal</span>
+          </div>
+          {totalBurned > 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-400">🔥 Bruciate</span>
+              <span className="text-orange-400 font-semibold">{formatDecimal(totalBurned, 0)} kcal</span>
+            </div>
+          )}
+          <div className="flex justify-between border-t border-gray-700 pt-2">
+            <span className="text-gray-400">Rimanenti</span>
+            <span className={`font-bold ${isOver ? 'text-orange-400' : 'text-primary-400'}`}>
+              {isOver ? `+${formatDecimal(Math.abs(remaining), 0)}` : formatDecimal(remaining, 0)} kcal
+            </span>
+          </div>
+        </div>
+      </div>
+
       <GoodHabits selectedDate={selectedDate} currentMeals={meals} compact />
-      <div className="diary-heading">
-        <h2 className="section-title">I pasti di oggi</h2>
-        <button type="button" className="btn-primary add-meal-button" onClick={openNewMeal}>
-          <Icon name="plus" /><span>Aggiungi pasto</span>
+
+      {/* Macro bars */}
+      {goals && (
+        <div className="card">
+          <MacroBars
+            protein={daySummary.protein_g}
+            carbs={daySummary.carbs_g}
+            fat={daySummary.fat_g}
+            targets={{ protein_g: goals.protein_g, carbs_g: goals.carbs_g, fat_g: goals.fat_g }}
+          />
+        </div>
+      )}
+
+      {/* Add meal button */}
+      <div className="fixed left-1/2 z-30 w-full max-w-md -translate-x-1/2 px-4"
+        style={{ bottom: 'calc(4.75rem + env(safe-area-inset-bottom))' }}>
+        <button
+          type="button"
+          className="flex w-full select-none items-center gap-3 rounded-2xl bg-primary-600 px-4 py-3 text-left shadow-xl shadow-black/40 ring-1 ring-primary-400/40 transition hover:bg-primary-500"
+          onClick={openNewMeal}
+        >
+          <div aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-2xl font-light text-white">+</div>
+          <div className="flex-1">
+            <p className="font-semibold">Aggiungi pasto</p>
+            <p className="text-xs text-primary-100">Da foto, ingredienti o piatti salvati</p>
+          </div>
         </button>
       </div>
 
@@ -173,10 +226,10 @@ export default function MealsPage() {
       {loading ? (
         <div className="h-32 bg-gray-800 rounded-xl animate-pulse" />
       ) : (
-        <div className="meal-diary">
+        <div className="card">
           {mealTimeline.length === 0 ? (
             <div className="py-7 text-center">
-              <Icon name="meals" className="mx-auto h-9 w-9 text-gray-500" />
+              <span className="text-3xl">🍽️</span>
               <p className="mt-2 text-sm font-medium text-gray-400">Nessun piatto registrato</p>
               <p className="mt-1 text-xs text-gray-600">Aggiungi ciò che hai mangiato in questa giornata</p>
             </div>
@@ -188,11 +241,11 @@ export default function MealsPage() {
                   sum + entry.items.reduce((itemSum, item) => itemSum + item.calories, 0), 0)
                 return (
                   <div key={entries[0].id}>
-                    <div className="meal-group-heading">
-                      <h3>{label.replace(/^\S+\s/, '')}</h3>
-                      <span>{formatDecimal(total, 0)} kcal</span>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-gray-400">{label}</span>
+                      <span className="text-xs text-gray-600">{formatDecimal(total, 0)} kcal</span>
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       {entries.map(entry => (
                         <MealEntryCard key={entry.id} entry={entry} onOpen={() => openEntry(entry, type)} />
                       ))}
@@ -204,11 +257,6 @@ export default function MealsPage() {
           )}
         </div>
       )}
-
-      <details className="extra-nutrients">
-        <summary>Nutrienti extra</summary>
-        <ExtendedNutrition totals={getExtendedNutritionTotals(meals.flatMap(meal => meal.entries.flatMap(entry => entry.items)))} />
-      </details>
 
       {/* Meal modal */}
       <Modal open={foodSearchOpen} onClose={() => setFoodSearchOpen(false)}>
@@ -275,7 +323,7 @@ export default function MealsPage() {
                   <button type="button" onClick={() => setFoodSearchOpen(false)} className="text-sm text-gray-400">← Chiudi</button>
                   <span className="rounded-full bg-gray-700 px-3 py-1 text-xs text-gray-300">{activeMealLabel}</span>
                 </div>
-                <div className="rounded-xl border border-gray-700 bg-gray-900 p-5 ring-1 ring-primary-500/20">
+                <div className="rounded-3xl bg-gradient-to-br from-primary-600/25 via-gray-800 to-gray-800 p-5 ring-1 ring-primary-500/20">
                   <div className="mb-4 flex items-start gap-4">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/15 text-3xl">{selectedEntry.dish_icon || getFoodIcon(selectedEntry.items)}</div>
                     <div className="min-w-0 flex-1">

@@ -84,9 +84,9 @@ export default function LoginPage() {
 
   return (
     <AuthShell>
-      {!isForgot && <div className="auth-tabs" aria-label="Accesso o registrazione">
+      {!isForgot && <div className="mb-7 flex rounded-xl bg-gray-950/70 p-1" aria-label="Accesso o registrazione">
         {([['login', 'Accedi'], ['signup', 'Registrati']] as const).map(([value, label]) => (
-          <button key={value} type="button" aria-pressed={mode === value} disabled={loading} onClick={() => changeMode(value)} className="transition-colors">{label}</button>
+          <button key={value} type="button" aria-pressed={mode === value} disabled={loading} onClick={() => changeMode(value)} className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${mode === value ? 'bg-gray-700 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}>{label}</button>
         ))}
       </div>}
 

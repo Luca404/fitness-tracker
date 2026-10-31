@@ -133,14 +133,14 @@ export default function GymProgressPage() {
             <p className="mb-3 text-xs font-medium text-gray-400">{selected.bodyweight ? 'Ripetizioni' : 'Carico (kg)'} della serie di riferimento · {chartData.length} sessioni</p>
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={chartData} margin={{ top: 8, right: 12, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#343c34" />
-                <XAxis dataKey="date" tick={{ fill: '#aab4a5', fontSize: 10 }} />
-                <YAxis domain={['auto', 'auto']} allowDecimals={!selected.bodyweight} tick={{ fill: '#aab4a5', fontSize: 10 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                <YAxis domain={['auto', 'auto']} allowDecimals={!selected.bodyweight} tick={{ fill: '#9ca3af', fontSize: 10 }} />
                 <Tooltip content={({ active, payload }) => active && payload?.[0] ? <div className="rounded-xl border border-gray-700 bg-gray-900 p-3 text-xs">
                   <p className="text-gray-400">{payload[0].payload.fullDate}</p>
                   <p className="mt-1 font-semibold">{payload[0].payload.performance}</p>
                 </div> : null} />
-                <Line type="linear" dataKey="value" stroke="#d4e6a3" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                <Line type="linear" dataKey="value" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
               </LineChart>
             </ResponsiveContainer>
           </div> : <p className="text-sm text-gray-400">Serve una seconda sessione con questo esercizio per mostrare l’andamento.</p>}

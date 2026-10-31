@@ -1,4 +1,3 @@
-import PageHeader from '../components/common/PageHeader'
 import DaySelector from '../components/common/DaySelector'
 import GoodHabits from '../components/meals/GoodHabits'
 import { useData } from '../contexts/DataContext'
@@ -10,11 +9,9 @@ export default function WellbeingPage() {
   const { selectedDate, setSelectedDate } = useSettings()
 
   return (
-    <div className="app-page space-y-5">
+    <div className="space-y-5 p-4 pb-24">
       <Link to="/meals" className="inline-block py-2 text-sm text-primary-400">← Pasti</Link>
-      <PageHeader title="Benessere" subtitle="Le abitudini che fanno la differenza.">
-        <DaySelector date={selectedDate} onChange={setSelectedDate} />
-      </PageHeader>
+      <DaySelector date={selectedDate} onChange={setSelectedDate} />
       {loading ? (
         <div className="grid grid-cols-2 gap-2">
           {Array.from({ length: 6 }, (_, index) => (
