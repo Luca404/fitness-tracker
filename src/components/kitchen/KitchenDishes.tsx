@@ -127,7 +127,7 @@ export default function KitchenDishes() {
       <button type="button" onClick={() => { setSelectedDish(null); setMode('create') }}
         className="flex w-full items-center gap-3 rounded-2xl bg-primary-500 px-4 py-3.5 text-left font-semibold shadow-lg shadow-primary-950/30 hover:bg-primary-400">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-xl">+</span>
-        <span><span className="block">Crea un nuovo piatto</span><span className="block text-xs font-normal text-primary-100">Componi la ricetta ingrediente per ingrediente</span></span>
+        <span><span className="block">Crea un nuovo piatto</span><span className="block text-xs font-normal text-gray-950/75">Componi la ricetta ingrediente per ingrediente</span></span>
       </button>
 
       <section>
@@ -227,7 +227,7 @@ function DishDetail({ dish, onEdit, onChangeIcon, onDelete }: {
   const extendedTotals = getExtendedNutritionTotals(dish.items)
   return (
     <div className="space-y-5">
-      <div className="rounded-3xl bg-gradient-to-br from-primary-600/25 to-gray-800 p-5 ring-1 ring-primary-500/20">
+      <div className="rounded-xl border border-gray-700 bg-gray-900 p-5 ring-1 ring-primary-500/20">
         {onChangeIcon ? (
           <button type="button" onClick={onChangeIcon} aria-label={`Cambia icona di ${dish.name}`}
             className="relative text-3xl">

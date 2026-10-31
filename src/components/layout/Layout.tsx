@@ -1,73 +1,43 @@
-import { Suspense } from 'react'
+import { Suspense, useLayoutEffect, useRef, type CSSProperties } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import AppErrorBoundary from '../common/AppErrorBoundary'
 import PageLoading from '../common/PageLoading'
+import Icon, { type IconName } from '../common/Icon'
 
-const NAV = [
-  { to: '/fitness', label: 'Fitness',   icon: '💪' },
-  { to: '/kitchen', label: 'Cucina',   icon: '🍳' },
-  { to: '/meals',   label: 'Pasti',    icon: '🍽️' },
-  { to: '/weight', label: 'Peso', icon: '⚖️' },
-  { to: '/history', label: 'Storico',  icon: '📈' },
+const NAV: { to: string; label: string; icon: IconName; order: number; desktopOnly?: boolean }[] = [
+  { to: '/fitness', label: 'Fitness', icon: 'fitness', order: 3 },
+  { to: '/kitchen', label: 'Cucina', icon: 'kitchen', order: 4 },
+  { to: '/meals', label: 'Pasti', icon: 'meals', order: 1 },
+  { to: '/meals/wellbeing', label: 'Benessere', icon: 'heart', order: 2, desktopOnly: true },
+  { to: '/weight', label: 'Peso', icon: 'weight', order: 5 },
+  { to: '/history', label: 'Storico', icon: 'history', order: 6 },
 ]
 
 export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const mainRef = useRef<HTMLElement>(null)
+  useLayoutEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0
+  }, [location.pathname])
 
-  return (
-    <div className="flex flex-col bg-gray-900 text-white max-w-md mx-auto" style={{ height: '100dvh' }}>
-      {/* Header */}
-      <header className="bg-gray-900 border-b border-gray-800 flex-shrink-0 z-10">
-        <div className="px-4 py-4 flex items-center justify-between">
-          <button
-            onClick={() => navigate('/meals')}
-            className="text-xl font-bold text-primary-400 hover:text-primary-300 transition-colors"
-          >
-            fitTrackr
-          </button>
-          <button
-            onClick={() => navigate('/settings')}
-            className="inline-flex h-6 w-6 items-center justify-center text-gray-400 hover:text-gray-200 transition-colors"
-            title="Impostazioni"
-          >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </button>
-        </div>
-      </header>
-
-      <main className="flex-1 overflow-y-auto overscroll-none">
-        <AppErrorBoundary key={`${location.pathname}${location.search}`}>
-          <Suspense fallback={<PageLoading />}>
-            <Outlet />
-          </Suspense>
-        </AppErrorBoundary>
-      </main>
-
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-gray-900 border-t border-gray-800 z-40 safe-area-pb">
-        <div className="flex justify-around items-center h-16">
-          {NAV.map(({ to, label, icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-                  isActive ? 'text-primary-400' : 'text-gray-500'
-                }`
-              }
-            >
-              {({ isActive }) => <>
-                <span className={`mb-0.5 flex h-9 w-12 items-center justify-center rounded-2xl text-2xl transition-colors ${isActive ? 'bg-primary-500/15 ring-1 ring-primary-500/25' : ''}`}
-                  aria-hidden="true">{icon}</span>
-                <span className="text-xs">{label}</span>
-              </>}
-            </NavLink>
-          ))}
-        </div>
-      </nav>
-    </div>
-  )
+  return <div className="app-shell">
+    <a href="#main-content" className="skip-link">Vai al contenuto</a>
+    <header className="app-header">
+      <button onClick={() => navigate('/meals')} className="brand" aria-label="fitTrackr"><Icon name="leaf" /><span>fitTrackr</span></button>
+      <button onClick={() => navigate('/settings')} className="mobile-settings icon-button" title="Impostazioni" aria-label="Impostazioni"><Icon name="settings" /></button>
+    </header>
+    <main ref={mainRef} id="main-content" className="app-main" tabIndex={-1}>
+      <AppErrorBoundary key={`${location.pathname}${location.search}`}>
+        <Suspense fallback={<PageLoading />}><Outlet /></Suspense>
+      </AppErrorBoundary>
+    </main>
+    <nav className="app-navigation safe-area-pb" aria-label="Navigazione principale">
+      {NAV.map(({ to, label, icon, order, desktopOnly }) => <NavLink key={to} to={to} end={to === '/meals'} style={{ '--nav-order': order } as CSSProperties}
+        className={({ isActive }) => `nav-item ${desktopOnly ? 'nav-desktop-only' : ''} ${isActive ? 'nav-item-active' : ''} ${to === '/meals' && location.pathname === '/meals/wellbeing' ? 'nav-item-parent' : ''}`}>
+        <Icon name={icon} /><span>{label}</span>
+      </NavLink>)}
+      <NavLink to="/settings" className={({ isActive }) => `nav-item nav-settings nav-desktop-only ${isActive ? 'nav-item-active' : ''}`}><Icon name="settings" /><span>Impostazioni</span></NavLink>
+    </nav>
+  </div>
 }

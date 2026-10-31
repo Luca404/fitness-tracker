@@ -495,7 +495,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     const carbs = selectedBatch.dish.items.reduce((sum, item) => sum + item.carbs_g, 0) * ratio
     const fat = selectedBatch.dish.items.reduce((sum, item) => sum + item.fat_g, 0) * ratio
     return <div className="space-y-5">
-      <div className="rounded-3xl bg-gradient-to-br from-primary-600/25 via-gray-800 to-gray-800 p-5 ring-1 ring-primary-500/20">
+      <div className="rounded-xl border border-gray-700 bg-gray-900 p-5 ring-1 ring-primary-500/20">
         <div className="flex items-center gap-4">
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary-500/15 text-3xl">{getDishIcon(selectedBatch.dish)}</span>
           <div className="min-w-0 flex-1">
@@ -545,7 +545,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     const extendedTotals = getExtendedNutritionTotals(selectedItems)
     return (
       <div className="space-y-5">
-        <div className="rounded-3xl bg-gradient-to-br from-primary-600/25 via-gray-800 to-gray-800 p-5 ring-1 ring-primary-500/20">
+        <div className="rounded-xl border border-gray-700 bg-gray-900 p-5 ring-1 ring-primary-500/20">
           <div className="flex items-center gap-4">
             <button type="button" onClick={() => setIconDish(pickingDish)}
               aria-label={`Cambia icona di ${pickingDish.name}`}

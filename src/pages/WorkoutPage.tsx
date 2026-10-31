@@ -9,6 +9,7 @@ import WorkoutRow from '../components/workout/WorkoutRow'
 import DaySelector from '../components/common/DaySelector'
 import GymTraining from '../components/workout/GymTraining'
 import Modal from '../components/common/Modal'
+import Icon from '../components/common/Icon'
 
 export default function WorkoutPage({ embedded = false }: { embedded?: boolean }) {
   const { user } = useAuth()
@@ -47,14 +48,15 @@ export default function WorkoutPage({ embedded = false }: { embedded?: boolean }
   }
 
   return (
-    <div className={embedded ? 'space-y-6' : 'space-y-6 p-4 pb-24'}>
+    <div className={embedded ? 'fitness-workout space-y-8' : 'app-page space-y-8'}>
       <DaySelector date={selectedDate} onChange={setSelectedDate} />
 
       <button type="button" onClick={() => setActivityPickerOpen(true)}
-        className="flex w-full items-center gap-3 rounded-2xl border border-primary-500/30 bg-primary-950/25 p-4 text-left transition hover:bg-primary-950/40">
-        <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-500/15 text-2xl">+</span>
+        className="activity-action">
+        <span className="activity-action-icon"><Icon name="plus" /></span>
         <span><span className="block font-semibold">Altre attività</span>
           <span className="mt-1 block text-xs text-gray-400">Registra camminata, corsa, ciclismo e altro</span></span>
+        <Icon name="chevron-right" />
       </button>
 
       <GymTraining />

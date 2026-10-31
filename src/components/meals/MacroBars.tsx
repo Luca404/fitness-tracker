@@ -11,12 +11,12 @@ interface MacroBarProps {
 function MacroBar({ label, value, target, color }: MacroBarProps) {
   const pct = target > 0 ? Math.min((value / target) * 100, 100) : 0
   return (
-    <div>
-      <div className="flex justify-between text-sm mb-1">
+    <div className="macro-row">
+      <div className="macro-labels">
         <span className="text-gray-400">{label}</span>
         <span>{formatDecimal(value, 0)}g / {formatDecimal(target, 0)}g</span>
       </div>
-      <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+      <div className="macro-track" role="progressbar" aria-label={label} aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={Math.max(Math.round(target), Math.round(value))} aria-valuetext={`${formatDecimal(value)} g su ${formatDecimal(target)} g`}>
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${pct}%`, backgroundColor: color }}
@@ -35,10 +35,10 @@ interface Props {
 
 export default function MacroBars({ protein, carbs, fat, targets }: Props) {
   return (
-    <div className="space-y-3">
-      <MacroBar label="Proteine" value={protein} target={targets.protein_g} color="#10b981" />
-      <MacroBar label="Carboidrati" value={carbs} target={targets.carbs_g} color="#3b82f6" />
-      <MacroBar label="Grassi" value={fat} target={targets.fat_g} color="#f59e0b" />
+    <div className="macro-bars">
+      <MacroBar label="Proteine" value={protein} target={targets.protein_g} color="#d4e6a3" />
+      <MacroBar label="Carboidrati" value={carbs} target={targets.carbs_g} color="#c79278" />
+      <MacroBar label="Grassi" value={fat} target={targets.fat_g} color="#d5bd75" />
     </div>
   )
 }

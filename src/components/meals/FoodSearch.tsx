@@ -278,7 +278,7 @@ export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntr
           )}
 
           {selected && (
-            <div className="space-y-4 rounded-2xl bg-gradient-to-br from-primary-600/15 to-gray-800 p-4 ring-1 ring-primary-500/20">
+            <div className="space-y-4 rounded-xl border border-gray-700 bg-gray-900 p-4 ring-1 ring-primary-500/20">
               <div className="flex justify-between">
                 <span className="font-medium text-sm">{selected.name}</span>
                 <button type="button" onClick={() => { setSelected(null); setPiece(null) }} className="text-gray-400 text-sm">Cambia</button>

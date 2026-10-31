@@ -32,9 +32,9 @@ describe('meal diary', () => {
       { ...base, id: 'meal-snack', meal_type: 'snack', entries: [entry('Spuntino serale', '20:00', 100)] },
     ]
     render(<MealsPage />)
-    const dinnerLabel = screen.getByText('🌙 Cena')
+    const dinnerLabel = screen.getByRole('heading', { name: 'Cena' })
     const dinner = dinnerLabel.parentElement!.parentElement!
-    expect(screen.getAllByText('🌙 Cena')).toHaveLength(1)
+    expect(screen.getAllByRole('heading', { name: 'Cena' })).toHaveLength(1)
     expect(within(dinner).getByText('350 kcal')).toBeTruthy()
     expect(within(dinner).getAllByRole('button').map(button => button.textContent)).toEqual([
       expect.stringContaining('Secondo'), expect.stringContaining('Primo'),
