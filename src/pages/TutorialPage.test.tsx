@@ -9,6 +9,21 @@ import TutorialPage from './TutorialPage'
 afterEach(cleanup)
 
 describe('TutorialPage lifecycle', () => {
+  it('locks document scrolling during the tour and resets it before showing the app again', () => {
+    const previousBodyOverflow = document.body.style.overflow
+    const previousRootOverflow = document.documentElement.style.overflow
+    const { unmount } = render(<TutorialPage onFinish={() => {}} />)
+    expect(document.body.style.overflow).toBe('hidden')
+    expect(document.documentElement.style.overflow).toBe('hidden')
+    document.body.scrollTop = 120
+    document.documentElement.scrollTop = 120
+    unmount()
+    expect(document.body.scrollTop).toBe(0)
+    expect(document.documentElement.scrollTop).toBe(0)
+    expect(document.body.style.overflow).toBe(previousBodyOverflow)
+    expect(document.documentElement.style.overflow).toBe(previousRootOverflow)
+  })
+
   it('lets the parent close the isolated router', () => {
     const onFinish = vi.fn()
     render(<TutorialPage onFinish={onFinish} />)

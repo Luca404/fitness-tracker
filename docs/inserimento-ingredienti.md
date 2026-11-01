@@ -1,10 +1,14 @@
 # Inserimento di ingredienti e piatti
 
-La scelta tra ricerca, codice a barre, foto dell'etichetta e inserimento
-manuale usa gli stessi nomi e pulsanti in **Cucina → Ingredienti** e nei
-moduli dei pasti. La ricerca è già visibile nei pasti. Quando crei una ricetta,
-puoi creare un ingrediente manuale direttamente nel modulo: viene salvato
-nel catalogo personale e poi selezionato per la ricetta.
+In **Cucina → Ingredienti** si aggiungono prodotti tramite codice a barre,
+foto della confezione/etichetta oppure inserimento manuale. Il pulsante
+«Cerca alimento base» è stato rimosso: gli alimenti di base si cercano già
+quando si compone un pasto o un piatto, senza doverli copiare nel catalogo.
+I prodotti di base salvati in precedenza restano modificabili.
+
+Scansione, foto e inserimento manuale usano gli stessi pulsanti nei moduli dei
+pasti. Quando crei una ricetta, puoi creare un ingrediente manuale direttamente
+nel modulo: viene salvato nel catalogo personale e poi selezionato per la ricetta.
 
 Gli ingredienti del catalogo passano da un'unica schermata di revisione e
 salvataggio, indipendentemente dalla fonte. L'inserimento manuale non richiede

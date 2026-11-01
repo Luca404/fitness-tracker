@@ -80,19 +80,13 @@ describe('PantryPage manual entry', () => {
     })))
   })
 
-  it('keeps fibre, sugars and salt when saving a basic food', async () => {
+  it('offers barcode, label photo and manual entry without copying basic foods into the catalog', () => {
     render(<PantryPage />)
     fireEvent.click(screen.getByRole('button', { name: /Aggiungi ingrediente/ }))
-    fireEvent.click(screen.getByRole('button', { name: /Cerca alimento base/ }))
-    fireEvent.change(screen.getByPlaceholderText('Cerca alimento base...'), { target: { value: 'mela' } })
-    fireEvent.click(screen.getByRole('button', { name: /Mela.*52 kcal\/100g/ }))
-
-    fireEvent.click(screen.getByRole('button', { name: 'Salva ingrediente' }))
-
-    await waitFor(() => expect(mocks.addPantryItem).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'Mela', source: 'basic', food_key: 'basic:mela',
-      fiber_100g: 1.4, sugars_100g: 11.5, salt_100g: 0,
-    })))
+    expect(screen.queryByRole('button', { name: /Cerca alimento base/ })).toBeNull()
+    expect(screen.getByRole('button', { name: /Scansiona codice a barre/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Foto confezione o etichetta/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Inserisci a mano/ })).toBeTruthy()
   })
 
   it('allows the new values to be corrected on a saved manual product', async () => {

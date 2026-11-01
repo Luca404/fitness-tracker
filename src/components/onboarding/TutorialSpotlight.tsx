@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import type { TutorialStep } from './tutorialSteps'
 import { TUTORIAL_CHAPTERS } from './tutorialSteps'
 import { spotlightCardHeight, spotlightPosition, type SpotlightRect } from './spotlightPosition'
+import { revealTutorialTarget } from './tutorialScroll'
 
 interface Props {
   step: TutorialStep
@@ -64,7 +65,7 @@ export default function TutorialSpotlight({ step, index, total, onNext, onBack, 
         resizeObserver.observe(element)
       }
       if (!scrolled) {
-        element.scrollIntoView?.({ block: 'start', inline: 'nearest', behavior: 'instant' })
+        revealTutorialTarget(element)
         scrolled = true
       }
       const bounds = element.getBoundingClientRect()
@@ -129,7 +130,11 @@ export default function TutorialSpotlight({ step, index, total, onNext, onBack, 
       if (!allowed(event.target)) { event.preventDefault(); event.stopPropagation(); return }
       if (!step.waitFor && step.action && event.target instanceof Element && event.target.closest(step.action)
         && !cardRef.current?.contains(event.target)) {
-        queueMicrotask(onNext)
+        // Own the guided action before its native default or a router's click
+        // handler can run. Advancing reconstructs the next demo scene itself.
+        event.preventDefault()
+        event.stopPropagation()
+        onNext()
       }
     }
     function keyboard(event: KeyboardEvent) {

@@ -17,7 +17,7 @@ vi.mock('./pages/WeightPage', () => ({ default: () => <h1>Peso corporeo</h1> }))
 vi.mock('./pages/SettingsPage', () => ({ default: () => <h1>Impostazioni</h1> }))
 vi.mock('./pages/WellbeingPage', () => ({ default: () => <h1>Dettaglio buone abitudini</h1> }))
 vi.mock('./pages/TutorialPage', () => ({ default: ({ onFinish }: { onFinish: () => void }) => <>
-  <h1>Scopri l’app, un clic alla volta</h1><button onClick={onFinish}>Salta</button>
+  <h1>Partiamo dalla Cucina</h1><button onClick={onFinish}>Salta</button>
 </> }))
 import App from './App'
 beforeEach(() => {
@@ -39,7 +39,7 @@ describe('main navigation', () => {
     window.history.replaceState({}, '', '/tutorial?from=settings')
     mocks.data.profile = { tutorial_seen: true }
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Scopri l’app, un clic alla volta' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Partiamo dalla Cucina' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Salta' }))
     expect(await screen.findByRole('heading', { name: 'Impostazioni' })).toBeTruthy()
     expect(window.location.pathname).toBe('/settings')
@@ -48,7 +48,7 @@ describe('main navigation', () => {
   it('uses the diary as return path for an unrecognized source', async () => {
     window.history.replaceState({}, '', '/tutorial?from=https://example.org')
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Scopri l’app, un clic alla volta' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Partiamo dalla Cucina' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Salta' }))
     expect(await screen.findByText('Diario pasti')).toBeTruthy()
     expect(window.location.pathname).toBe('/meals')
@@ -57,18 +57,18 @@ describe('main navigation', () => {
   it('interrupts the demo when password recovery starts', async () => {
     window.history.replaceState({}, '', '/tutorial')
     const { rerender } = render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Scopri l’app, un clic alla volta' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Partiamo dalla Cucina' })).toBeTruthy()
     mocks.auth.isPasswordRecovery = true
     rerender(<App />)
     expect(screen.getByRole('heading', { name: 'Reimposta password' })).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: 'Scopri l’app, un clic alla volta' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Partiamo dalla Cucina' })).toBeNull()
   })
 
   it('opens the guide after initial profile setup and skipping leads to meals', async () => {
     window.history.replaceState({}, '', '/onboarding')
     mocks.data.profile = { tutorial_seen: false }
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Scopri l’app, un clic alla volta' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Partiamo dalla Cucina' })).toBeTruthy()
     expect(window.location.pathname).toBe('/tutorial')
     fireEvent.click(screen.getByRole('button', { name: 'Salta' }))
     expect(await screen.findByText('Diario pasti')).toBeTruthy()
@@ -90,7 +90,7 @@ describe('main navigation', () => {
     mocks.data.profile = profile
     render(<App />)
     expect(await screen.findByText('Diario pasti')).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: 'Scopri l’app, un clic alla volta' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Partiamo dalla Cucina' })).toBeNull()
   })
 
   it('keeps wellbeing as a meal detail and redirects its existing address', async () => {

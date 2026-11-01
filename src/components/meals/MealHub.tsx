@@ -641,7 +641,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
 
   return (
     <div className="space-y-5">
-      <div className="space-y-2.5">
+      <div data-tour="meal-hub-options" className="space-y-2.5">
         <h3 className="text-lg font-bold">Come vuoi aggiungerlo?</h3>
         <EntryMethod icon="📸" title="Da foto" tourTarget="meal-photo" description="Fotografa il piatto e controlla la stima nutrizionale."
           onClick={() => setMode('oneoff-photo')} />

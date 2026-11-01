@@ -122,7 +122,7 @@ export default function GymPlanEditor({ plan, customExercises = [], catalogError
           <button type="button" onClick={() => setExercises(current => current.filter((_, i) => i !== index))}
             aria-label={`Rimuovi ${exercise.exercise_name}`} className="px-1 text-red-400">✕</button>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-2">
+        <div data-tour={index === 0 ? 'gym-plan-reps' : undefined} className="mt-3 grid grid-cols-3 gap-2">
           <label className="text-xs text-gray-400">Serie
             <input type="number" min={1} max={20} value={exercise.target_sets}
               onChange={event => updateExercise(index, { target_sets: event.target.value === '' ? '' : Number(event.target.value) })}

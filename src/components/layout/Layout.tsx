@@ -38,7 +38,7 @@ export default function Layout() {
       : NAV.find(item => location.pathname.startsWith(item.to)) ?? NAV[2]
 
   return (
-    <div className="app-shell flex h-dvh max-w-md flex-col mx-auto bg-gray-900 text-white lg:max-w-none">
+    <div className="app-shell fixed inset-0 flex h-dvh max-w-md flex-col mx-auto bg-gray-900 text-white lg:max-w-none">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary-600 focus:px-4 focus:py-3">
         Vai al contenuto
       </a>

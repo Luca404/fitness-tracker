@@ -28,6 +28,23 @@ function guide() {
 }
 
 describe('tutorial spotlight accessibility and recovery', () => {
+  it('cancels native navigation before advancing from a highlighted link', async () => {
+    const onNext = vi.fn()
+    render(<>
+      <a href="/kitchen" data-test-target>Cucina</a>
+      <TutorialSpotlight step={step} index={0} total={3} onNext={onNext} onBack={() => {}} onChapter={() => {}} onFinish={() => {}} />
+    </>)
+    let preventedBeforeDefault = false
+    const inspect = (event: MouseEvent) => {
+      preventedBeforeDefault = event.defaultPrevented
+      event.preventDefault() // Keep the regression test from actually navigating if it fails.
+    }
+    document.addEventListener('click', inspect, { capture: true, once: true })
+    await act(async () => { screen.getByRole('link', { name: 'Cucina' }).click() })
+    expect(preventedBeforeDefault).toBe(true)
+    expect(onNext).toHaveBeenCalledOnce()
+  })
+
   it('follows the target after scrolling and restores its original description on close', async () => {
     let top = 150
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {

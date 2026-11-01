@@ -31,6 +31,6 @@ export function spotlightCardHeight(target: SpotlightRect, viewport: { width: nu
   const beside = viewport.width >= 720 && (target.left + target.width + width + 34 <= viewport.width
     || target.left - width - 18 >= 16)
   if (beside) return viewport.height - 32
-  return Math.min(viewport.height - 32, Math.max(180, target.top - 34,
+  return Math.min(viewport.height - 32, Math.max(260, target.top - 34,
     viewport.height - target.top - target.height - 34))
 }

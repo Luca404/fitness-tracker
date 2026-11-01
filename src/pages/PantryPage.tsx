@@ -3,7 +3,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import * as productionApi from '../services/api'
 import { useAppService, useTutorialEnvironment } from '../contexts/TutorialEnvironment'
-import { searchBasicFoods } from '../services/nutrition'
 import { normalizeBarcode, resolveBarcodeProduct } from '../services/barcodeProducts'
 import { analysisToPantryDraft, barcodeProductToAnalysis, confirmBarcodeProduct } from '../services/nutritionLabel'
 import type { NutritionLabelAnalysis } from '../services/nutritionLabel'
@@ -19,7 +18,7 @@ import type { PantryItem, FoodCategory } from '../types'
 import { validAlcoholStrength } from '../utils/alcohol'
 import { formatDecimal } from '../utils/decimal'
 
-type Mode = 'list' | 'choose' | 'scan' | 'photo' | 'search' | 'manual'
+type Mode = 'list' | 'choose' | 'scan' | 'photo' | 'manual'
 type Flow = { mode: Mode } | { mode: 'quantity'; pending: PendingFood; editingItemId: string | null }
 
 export default function PantryPage({ embedded = false, onSaved, onCancel, initialMode = 'list' }: {
@@ -57,7 +56,6 @@ export default function PantryPage({ embedded = false, onSaved, onCancel, initia
   const [savingItem, setSavingItem] = useState(false)
   const addInProgressRef = useRef(false)
 
-  const [query, setQuery] = useState('')
   const [listQuery, setListQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<FoodCategory | 'all'>('all')
 
@@ -76,7 +74,6 @@ export default function PantryPage({ embedded = false, onSaved, onCancel, initia
 
   function resetAddFlow() {
     setMode('list')
-    setQuery('')
     setScanError(null)
     setScannedBarcode(null)
     setAnalysisReviewAcknowledged(false)
@@ -283,7 +280,6 @@ export default function PantryPage({ embedded = false, onSaved, onCancel, initia
     }
   }
 
-  const basicResults = query.trim() ? searchBasicFoods(query) : []
   const visibleItems = items.filter(item => {
     const matchesText = item.name.toLowerCase().includes(listQuery.trim().toLowerCase())
     const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter
@@ -366,7 +362,7 @@ export default function PantryPage({ embedded = false, onSaved, onCancel, initia
 
       {mode === 'choose' && (
         <div className="space-y-3">
-          <IngredientEntryActions onSearch={() => setMode('search')}
+          <IngredientEntryActions
             onScan={() => { setScannedBarcode(null); setMode('scan') }}
             onPhoto={() => { setScannedBarcode(null); setMode('photo') }} onManual={() => setMode('manual')} />
           <button type="button" onClick={resetAddFlow} className="text-sm text-gray-500 text-center w-full">
@@ -391,9 +387,9 @@ export default function PantryPage({ embedded = false, onSaved, onCancel, initia
                   Fotografa etichetta
                 </button>
               )}
-              <button type="button" onClick={() => setMode('search')}
+              <button type="button" onClick={() => setMode('manual')}
                 className="w-full py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">
-                Cerca manualmente
+                Inserisci a mano
               </button>
             </div>
           )}
@@ -406,37 +402,6 @@ export default function PantryPage({ embedded = false, onSaved, onCancel, initia
           onAnalysis={handlePhotoAnalysis}
           onCancel={() => setMode('choose')}
         /></Suspense>
-      )}
-
-      {mode === 'search' && (
-        <div className="space-y-3">
-          <input
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Cerca alimento base..."
-            className="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 outline-none focus:border-primary-500"
-          />
-          <div className="max-h-64 overflow-y-auto space-y-1">
-            {basicResults.map(f => (
-              <button key={f.id} type="button"
-                onClick={() => goToReview({
-                  name: f.name, calories_100g: f.calories_100g, protein_100g: f.protein_100g,
-                  carbs_100g: f.carbs_100g, fat_100g: f.fat_100g, category: f.category,
-                  alcohol_abv: f.alcohol_abv ?? null,
-                  food_key: f.food_key, source: 'basic', off_food_id: null,
-                  fiber_100g: f.fiber_100g, sugars_100g: f.sugars_100g,
-                  salt_100g: f.salt_100g,
-                })}
-                className="w-full text-left px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">
-                <span className="font-medium">{f.name}</span>
-                <span className="text-gray-500 ml-2">{formatDecimal(f.calories_100g)} kcal/100{f.quantity_unit === 'ml' ? 'ml' : 'g'}</span>
-              </button>
-            ))}
-          </div>
-          <button type="button" onClick={() => setMode('choose')} className="text-sm text-gray-500 text-center w-full">
-            Annulla
-          </button>
-        </div>
       )}
 
       {mode === 'quantity' && pending && <PantryReview pending={pending} setPending={setPending}

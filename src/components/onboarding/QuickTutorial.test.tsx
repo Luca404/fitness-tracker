@@ -39,11 +39,12 @@ async function continueStep(index: number) {
 describe('interactive tutorial on real pages', () => {
   it('walks through real forms and local results without any live API or AI calls', async () => {
     const onFinish = renderGuide()
+    expect(TUTORIAL_STEPS).toHaveLength(8)
     for (let index = 0; index < TUTORIAL_STEPS.length; index += 1) {
       await screen.findByRole('heading', { name: TUTORIAL_STEPS[index].title })
-      if (TUTORIAL_STEPS[index].id === 'ingredient-result') expect(await screen.findByText('Yogurt bianco')).toBeTruthy()
-      if (TUTORIAL_STEPS[index].id === 'meal-result') await waitFor(() => expect(document.querySelector('[data-tour="meal-diary"]')?.textContent).toContain('Riso con zucchine'))
-      if (TUTORIAL_STEPS[index].id === 'gym-result') expect(await screen.findByText('La mia scheda')).toBeTruthy()
+      if (TUTORIAL_STEPS[index].id === 'meals') {
+        expect(await screen.findByText('Pronto da mangiare')).toBeTruthy()
+      }
       await continueStep(index)
     }
     await waitFor(() => expect(onFinish).toHaveBeenCalledOnce())
@@ -57,14 +58,11 @@ describe('interactive tutorial on real pages', () => {
     const onFinish = renderGuide()
     await waitFor(() => expect(document.querySelector('[data-tour="nav-kitchen"]')?.hasAttribute('aria-describedby')).toBe(true))
     fireEvent.click(screen.getByRole('link', { name: 'Cucina' }))
-    await screen.findByRole('heading', { name: 'Il tuo catalogo di ingredienti' })
+    await screen.findByRole('heading', { name: 'Ingredienti in tre modi' })
     fireEvent.click(screen.getByRole('button', { name: 'Indietro' }))
-    await screen.findByRole('heading', { name: 'Scopri l’app, un clic alla volta' })
+    await screen.findByRole('heading', { name: 'Partiamo dalla Cucina' })
     fireEvent.change(screen.getByRole('combobox', { name: 'Argomento del tutorial' }), { target: { value: '5' } })
-    await screen.findByRole('heading', { name: 'Non solo calorie' })
-    const index = TUTORIAL_STEPS.findIndex(step => step.id === 'habits-open')
-    await continueStep(index)
-    await screen.findByRole('heading', { name: 'Il benessere, nel dettaglio' })
+    await screen.findByRole('heading', { name: 'Uno sguardo al benessere' })
     fireEvent.click(screen.getByRole('button', { name: 'Salta' }))
     expect(onFinish).toHaveBeenCalledOnce()
   })
@@ -72,10 +70,9 @@ describe('interactive tutorial on real pages', () => {
   it('blocks unrelated buttons and keeps Escape available', async () => {
     const onFinish = renderGuide()
     await continueStep(0)
-    await continueStep(1)
-    await screen.findByRole('heading', { name: 'Codice a barre, foto o a mano' })
+    await screen.findByRole('heading', { name: 'Ingredienti in tre modi' })
     fireEvent.click(screen.getByRole('button', { name: /Scansiona codice a barre/ }))
-    expect(screen.getByRole('heading', { name: 'Codice a barre, foto o a mano' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Ingredienti in tre modi' })).toBeTruthy()
     expect(screen.queryByText('Caricamento fotocamera…')).toBeNull()
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(onFinish).toHaveBeenCalledOnce()
