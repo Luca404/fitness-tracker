@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import AppErrorBoundary from '../common/AppErrorBoundary'
 import PageLoading from '../common/PageLoading'
+import PointsHeader from '../common/PointsHeader'
 
 const NAV = [
   { to: '/fitness', label: 'Fitness', icon: '💪', description: 'Allenamenti, schede e progressi.' },
@@ -31,7 +32,9 @@ function NavigationIcon({ to, className }: { to: string; className?: string }) {
 export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
-  const page = location.pathname === '/settings'
+  const page = location.pathname === '/points'
+    ? { label: 'Punti e costanza', description: 'Il riepilogo dei tuoi punti, giorno per giorno.' }
+    : location.pathname === '/settings'
     ? { label: 'Impostazioni', description: 'Il tuo profilo e i tuoi obiettivi personali.' }
     : location.pathname === '/meals/wellbeing'
       ? { label: 'Buone abitudini', description: 'Il dettaglio delle tue abitudini alimentari.' }
@@ -78,15 +81,18 @@ export default function Layout() {
             ))}
           </div>
         </nav>
-        <NavLink
-          to="/settings"
-          aria-label="Impostazioni"
-          className={({ isActive }) => `app-settings inline-flex h-6 w-6 items-center justify-center gap-3 transition-colors hover:text-gray-200 ${isActive ? 'text-primary-400' : 'text-gray-400'}`}
-          title="Impostazioni"
-        >
-          <NavigationIcon to="/settings" className="shrink-0" />
-          <span className="hidden text-sm lg:inline">Impostazioni</span>
-        </NavLink>
+        <div className="app-header-actions flex min-w-0 items-center gap-1 lg:flex-col lg:items-stretch lg:gap-3">
+          <PointsHeader />
+          <NavLink
+            to="/settings"
+            aria-label="Impostazioni"
+            className={({ isActive }) => `app-settings inline-flex h-11 w-11 items-center justify-center gap-3 transition-colors hover:text-gray-200 ${isActive ? 'text-primary-400' : 'text-gray-400'}`}
+            title="Impostazioni"
+          >
+            <NavigationIcon to="/settings" className="shrink-0" />
+            <span className="hidden text-sm lg:inline">Impostazioni</span>
+          </NavLink>
+        </div>
       </header>
 
       <main id="main-content" tabIndex={-1} className="desktop-main min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-none outline-none">

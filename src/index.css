@@ -156,6 +156,8 @@
     margin-top: auto;
   }
 
+  .app-header-actions { margin-top: auto; }
+
   .app-sidebar a:focus-visible,
   .app-brand:focus-visible {
     outline: 2px solid #34d399;

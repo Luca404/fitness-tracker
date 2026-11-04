@@ -1,5 +1,63 @@
 # Shared Supabase workflow
 
+## Automatic fitness points and streaks — 2026-11-04
+
+The three fitness-only migrations were applied to the hosted project in order,
+each after a dry-run listing only that migration, and mirrored identically in
+`../trackr/supabase/migrations/`:
+
+- `20261104120000_fitness_gamification`: settings, initial scoring, owner access
+  and a meal-item lookup index.
+- `20261104130000_fitness_points_by_default`: initialize existing fitness
+  profiles and automatically initialize new profiles on the first points read.
+- `20261104140000_automatic_fitness_points`: rules version 2; automatic diary
+  qualification/streaks, immediate movement points, daily/weekly wellbeing
+  settlement after the saved timezone's period ends, and no manual confirmation.
+
+The initial opt-in and diary-confirmation proposal is superseded. Points are
+on for every fitness account, with no activation or completion button. Three
+valid food moments qualify a recorded day immediately. Wellbeing rewards and
+excess deductions remain pending during the open day/checkpoint, then appear
+on the next read without an award job or user action. Source edits/deletions
+recalculate affected points and later streaks/checkpoints. See
+[the rules and architecture](../docs/gamification.md).
+
+Existing start dates, timezones and targets are preserved. Existing profiles
+without points start on the 2026-11-04 rollout date; future profiles start on
+their creation date, never before rollout. New defaults use Europe/Rome. The
+onboarding goals exist before lazy initialization, so new-account targets use
+those saved values. Other Trackrs accounts without health profiles are not
+enrolled; finance tables and Auth configuration are unchanged.
+
+Settings and historical confirmations retain owner SELECT policies; direct
+client writes are denied. The scorer no longer reads historical confirmations,
+and the old confirmation RPC has no authenticated execution grant. The public
+read RPC has an explicit authenticated grant, scopes all sources to auth.uid()
+and uses an empty search_path; scorer/summary helpers are inaccessible to
+clients. The old activation RPC remains idempotent for compatibility and cannot
+reset existing defaults. No score value is accepted from the browser.
+
+The self-contained `fitness_gamification.sql`, `fitness_points_by_default.sql`
+and `automatic_fitness_points.sql` checks passed with synthetic Auth/source
+fixtures and transaction rollback in separate `fittrackr_gamification_test_*`
+PostgreSQL 17 databases. They cover formulas, grants, account isolation,
+missing/partial nutrients, edits/deletions, movement rounding/caps/overlap,
+default initialization, automatic streaks and period settlement across UTC-12
+and UTC+14. These fixture tests must never target application or hosted data.
+
+Frontend validation passed **558 tests**, build and lint. Playwright used mocked
+API responses at 320/390/768/1440 px to exercise header navigation, saving a run
+and seeing immediate points, automatic wellbeing settlement on a simulated
+new day, day selection and error/retry. No activation or confirmation RPC was
+called. The deliberately simulated failed read was the only expected console
+error; no runtime errors were observed. Hosted frontend deployment has not been
+verified as part of these checks.
+
+The local application database remains on its older schema without gym tables
+and extended nutrients, so these migrations were not applied there. Do not
+replay unrelated local migrations without reviewing the complete upgrade path
+and backing up local data.
+
 ## Quick tutorial — 2026-10-31
 
 `20261031120000_quick_tutorial` was applied to the hosted project after a

@@ -12,6 +12,7 @@ Part of the **Trackrs ecosystem**, alongside [Trackr](https://github.com/Luca404
 - **Fitness:** separate Training and Progress sections, reusable gym plans, set logging, rest timers, recent sessions and exercise load/repetition charts; other activities are accessible above the plans, with optional kilometres for walking, running, cycling and treadmill.
 - **Goals and weight:** personalized calorie and macro targets, a weight history and automatic recalculation from a seven-day average after a change of at least 2%.
 - **Meal habit detail:** the recap in Meals opens daily habits, including total sugars and alcohol units, plus rolling seven-day totals and daily averages for legumes and fish; drinks support editable volume and alcohol strength.
+- **Points and streaks:** header counters open a daily recap with automatically recorded diary days, consistency bonuses, wellbeing rewards, proportional excess deductions and activity/gym points. Enabled automatically for all fitness accounts; [rules and implementation](docs/gamification.md).
 - **History and PWA:** calorie/workout trends, installation on mobile or desktop, an update prompt and page-load recovery.
 
 The Kitchen category buttons appear in one row above search. Select breakfast, lunch, dinner or snack to filter recipes and prepared batches; tap the active category again to clear it. With no selection, all categories are shown. Text search continues to filter recipes.

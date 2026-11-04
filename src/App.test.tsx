@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
 }))
 vi.mock('./contexts/AuthContext', () => ({ useAuth: () => mocks.auth }))
 vi.mock('./contexts/DataContext', () => ({ useData: () => mocks.data }))
+vi.mock('./services/fitnessPoints', () => ({ getFitnessPoints: vi.fn().mockResolvedValue({ enabled: true, total: 0, streak: 0 }) }))
 vi.mock('./pages/LoginPage', () => ({ default: () => null }))
 vi.mock('./pages/ResetPasswordPage', () => ({ default: () => <h1>Reimposta password</h1> }))
 vi.mock('./pages/OnboardingPage', () => ({ default: () => <h1>Configura il profilo</h1> }))

@@ -1,0 +1,75 @@
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import type { ActiveFitnessPoints, PointsDay } from '../services/fitnessPoints'
+const mock = vi.hoisted(() => ({ value: {} as Record<string, unknown>, setDate: vi.fn() }))
+vi.mock('../contexts/FitnessPointsContext', () => ({ useFitnessPoints: () => mock.value }))
+vi.mock('../contexts/SettingsContext', () => ({ useSettings: () => ({ setSelectedDate: mock.setDate }) }))
+import PointsPage from './PointsPage'
+import PointsHeader from '../components/common/PointsHeader'
+
+function day(): PointsDay {
+  return { date: '2026-11-03', meal_count: 2, registered: false, streak: 0, points: -5, movement_raw: 0, awards: [
+    { key: 'diary', kind: 'diary', label: 'Giornata registrata', points: 0, detail: { status: 'target' } },
+    { key: 'salt', kind: 'penalty', label: 'Sale', points: -5, detail: { value: 7.5, target: 5, unit: 'g', status: 'excess' } },
+    { key: 'sugars', kind: 'habit', label: 'Zuccheri totali', points: 0, detail: { value: null, target: 75, unit: 'g', status: 'incomplete' } },
+  ] }
+}
+function active(): ActiveFitnessPoints {
+  const d = day()
+  return { enabled: true, started_on: '2026-11-01', timezone: 'Europe/Rome', rules_version: 1,
+    today: '2026-11-04', selected_date: d.date, sugars_target: 75, alcohol_target: 1, total: 1234, net_total: 1234,
+    streak: 0, best_streak: 3, registered_days: 3, day: d, history: [d], has_older: false }
+}
+function Subject() { return <MemoryRouter initialEntries={['/points']}><PointsHeader /><Routes><Route path="/points" element={<PointsPage />} /><Route path="/meals" element={<p>Diario</p>} /></Routes></MemoryRouter> }
+beforeEach(() => {
+  vi.clearAllMocks()
+  mock.value = { data: active(), loading: false, error: null, refresh: vi.fn() }
+})
+afterEach(cleanup)
+describe('points recap', () => {
+  it('shows total and streak in the header with an accessible recap link', () => {
+    render(<Subject />)
+    const link = screen.getByRole('link', { name: `${(1234).toLocaleString('it-IT')} punti totali, streak di 0 giorni. Apri riepilogo punti` })
+    expect(link.getAttribute('href')).toBe('/points')
+    expect(screen.getByRole('heading', { name: 'Punti per giorno' })).toBeTruthy()
+    expect(screen.getByText('Dati incompleti')).toBeTruthy()
+    expect(screen.getAllByText(/−5/)).toHaveLength(3)
+  })
+  it('shows automatic diary points and pending wellbeing without confirmation controls', () => {
+    const data = active()
+    data.day = { ...data.day!, date: data.today, meal_count: 3, registered: true, points: 20,
+      awards: data.day!.awards.map(a => ({ ...a, points: a.kind === 'diary' ? 20 : 0,
+        detail: { ...a.detail, status: a.kind === 'diary' ? 'earned' : 'pending' } })) }
+    data.selected_date = data.today
+    data.history = [data.day]
+    mock.value.data = data
+    render(<Subject />)
+    expect(screen.queryByRole('checkbox')).toBeNull()
+    expect(screen.queryByRole('button', { name: /Conferma/ })).toBeNull()
+    expect(screen.getByText('Diario registrato')).toBeTruthy()
+    expect(screen.getAllByText('A fine giornata')).toHaveLength(2)
+    expect(screen.getByText(/Giornata in corso/)).toBeTruthy()
+  })
+  it('opens the diary on the day being reviewed', () => {
+    render(<Subject />)
+    fireEvent.click(screen.getByRole('link', { name: 'Completa il diario →' }))
+    expect(mock.setDate).toHaveBeenCalledWith('2026-11-03')
+    expect(screen.getByText('Diario')).toBeTruthy()
+  })
+  it('opens the recap directly with points already active', () => {
+    render(<Subject />)
+    expect(screen.getByRole('heading', { name: 'Punti per giorno' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Attiva i punti' })).toBeNull()
+    expect(screen.getByText(/I punti sono attivi automaticamente per tutti/)).toBeTruthy()
+  })
+  it('handles a read failure without displaying made-up zero scores', () => {
+    mock.value.data = null
+    mock.value.error = 'Impossible caricare i punti. Riprova.'
+    render(<Subject />)
+    expect(screen.getByRole('alert')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Riprova' }))
+    expect(mock.value.refresh).toHaveBeenCalledTimes(1)
+    expect(screen.queryByText('Punti totali')).toBeNull()
+  })
+})
