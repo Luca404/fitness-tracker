@@ -1,5 +1,34 @@
 # Shared Supabase workflow
 
+## Two food moments and goal deductions — 2026-11-05
+
+`20261105120000_fitness_points_goals_and_penalties` was applied after a dry-run
+listing only this migration and mirrored identically in Trackr. Rules version
+4 requires two valid food moments for a recorded day and its streak. A known
+missed daily minimum deducts 1 point on a valid day. Legumes/fish earn +3 when
+reached and deduct 3 when missed at the closed checkpoint of a period with at
+least one valid day. Empty diaries/periods and insufficient nutrient data do
+not create invented minimum-goal failures.
+
+Known salt/sugar/alcohol excesses always deduct at least 1 point, then one per
+whole multiple of their reference: `-max(1, floor(value / max(target, 1)))`.
+This follows the requested examples: salt 6g/5g is -1, 10g/5g is -2 and 16g/5g
+is -3. The previous rounded-to-zero deductions and cap of -3 are removed.
+With zero alcohol target any known positive quantity costs at least 1 point.
+Wellbeing still settles after the day/week ends; source edits recalculate the
+history. Existing RLS, authenticated RPC grants and private helper grants are
+preserved. The local older application database was not upgraded.
+
+`fitness_points_goals_and_penalties.sql` passed in an isolated transaction
+fixture, covering two-moment qualification, streaks, daily/weekly misses,
+strict-limit boundaries, 5.001g/6g/10g/15g/16g/20g/40g salt, other references,
+partial nutrients, zero alcohol target, period timing, source corrections,
+score sums, empty periods and account isolation. Browser fixture checks passed
+at 320/390/768/1440 px: two moments registered, 16g salt showing -3, missed
+legumes/fish showing -3 each and reached weekly goals showing +3. No runtime
+errors or horizontal overflow were observed. All 566 frontend tests, build and
+lint passed, including the updated copy and missed-goal status.
+
 ## Smaller points and stable header — 2026-11-05
 
 `20261104150000_scale_fitness_points` was applied after a dry-run listing only

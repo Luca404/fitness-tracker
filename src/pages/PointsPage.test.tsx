@@ -9,7 +9,7 @@ import PointsPage from './PointsPage'
 import PointsHeader from '../components/common/PointsHeader'
 
 function day(): PointsDay {
-  return { date: '2026-11-03', meal_count: 2, registered: false, streak: 0, points: -1, movement_raw: 0, awards: [
+  return { date: '2026-11-03', meal_count: 1, registered: false, streak: 0, points: -1, movement_raw: 0, awards: [
     { key: 'diary', kind: 'diary', label: 'Giornata registrata', points: 0, detail: { status: 'target' } },
     { key: 'salt', kind: 'penalty', label: 'Sale', points: -1, detail: { value: 7.5, target: 5, unit: 'g', status: 'excess' } },
     { key: 'sugars', kind: 'habit', label: 'Zuccheri totali', points: 0, detail: { value: null, target: 75, unit: 'g', status: 'incomplete' } },
@@ -17,7 +17,7 @@ function day(): PointsDay {
 }
 function active(): ActiveFitnessPoints {
   const d = day()
-  return { enabled: true, started_on: '2026-11-01', timezone: 'Europe/Rome', rules_version: 3,
+  return { enabled: true, started_on: '2026-11-01', timezone: 'Europe/Rome', rules_version: 4,
     today: '2026-11-04', selected_date: d.date, sugars_target: 75, alcohol_target: 1, total: 123, net_total: 123,
     streak: 0, best_streak: 3, registered_days: 3, day: d, history: [d], has_older: false }
 }
@@ -38,7 +38,7 @@ describe('points recap', () => {
   })
   it('shows automatic diary points and pending wellbeing without confirmation controls', () => {
     const data = active()
-    data.day = { ...data.day!, date: data.today, meal_count: 3, registered: true, points: 2,
+    data.day = { ...data.day!, date: data.today, meal_count: 2, registered: true, points: 2,
       awards: data.day!.awards.map(a => ({ ...a, points: a.kind === 'diary' ? 2 : 0,
         detail: { ...a.detail, status: a.kind === 'diary' ? 'earned' : 'pending' } })) }
     data.selected_date = data.today
@@ -62,6 +62,18 @@ describe('points recap', () => {
     expect(screen.getByRole('heading', { name: 'Punti per giorno' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Attiva i punti' })).toBeNull()
     expect(screen.getByText(/I punti sono attivi automaticamente per tutti/)).toBeTruthy()
+  })
+  it('explains the two-moment requirement and shows missed goals as deductions', () => {
+    const data = active()
+    data.day!.awards.push({ key: 'fruit', kind: 'penalty', label: 'Frutta', points: -1,
+      detail: { status: 'missed', value: 0, target: 360, unit: 'g' } })
+    mock.value.data = data
+    render(<Subject />)
+    expect(screen.getByText('Registra almeno due momenti alimentari')).toBeTruthy()
+    expect(screen.getByText('Obiettivo non raggiunto')).toBeTruthy()
+    expect(screen.queryByText(/tre momenti alimentari/)).toBeNull()
+    expect(screen.getByText(/da 15 g costa 3 PT/)).toBeTruthy()
+    expect(screen.getByText(/−3 PT ciascuno se mancati/)).toBeTruthy()
   })
   it('places the day selector before the heading and summary and removes the today shortcut', () => {
     render(<Subject />)

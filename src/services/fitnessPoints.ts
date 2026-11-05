@@ -6,7 +6,7 @@ export interface PointsAward {
   label: string
   points: number
   detail: {
-    status: 'earned' | 'target' | 'incomplete' | 'pending' | 'insufficient' | 'excess'
+    status: 'earned' | 'target' | 'incomplete' | 'pending' | 'insufficient' | 'excess' | 'missed'
     value?: number | null
     target?: number
     unit?: string

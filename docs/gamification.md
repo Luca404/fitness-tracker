@@ -16,7 +16,7 @@ giorno e dettaglio delle singole voci. Lo storico si sfoglia in pagine di
 | --- | --- |
 | Attività | Appena salvata |
 | Palestra | Alla conclusione di una sessione valida |
-| Diario e streak | Appena raggiunti tre momenti alimentari validi |
+| Diario e streak | Appena raggiunti due momenti alimentari validi |
 | Benessere giornaliero, incluse detrazioni | Dopo la mezzanotte nel fuso salvato |
 | Legumi e pesce | Dopo la chiusura del blocco personale di sette giorni |
 
@@ -35,12 +35,12 @@ Gli account delle altre app Trackrs senza profilo salute non sono coinvolti.
 
 ## Diario e costanza
 
-Una giornata vale **2 PT** appena contiene almeno tre momenti distinti fra
+Una giornata vale **2 PT** appena contiene almeno due momenti distinti fra
 colazione, pranzo, cena e spuntino. Ogni momento deve contenere almeno un
 alimento con quantità positiva e finita; bevande, alcolici, integratori,
 grassi, salse e soli condimenti non bastano. Non c’è un minimo calorico.
 
-La presenza di tre momenti è una regola automatica di completezza del gioco,
+La presenza di due momenti è una regola automatica di completezza del gioco,
 non una garanzia che tutti i consumi reali siano stati registrati.
 
 | Traguardo nella streak | Bonus |
@@ -50,7 +50,7 @@ non una garanzia che tutti i consumi reali siano stati registrati.
 | Trentesimo giorno consecutivo | +10 PT |
 
 Il terzo e trentesimo giorno danno un premio una volta per sequenza; quello
-settimanale ricorre ai giorni 7, 14, 21, ecc. Se oggi non ha ancora tre momenti,
+settimanale ricorre ai giorni 7, 14, 21, ecc. Se oggi non ha ancora due momenti,
 la streak resta quella di ieri. Un giorno saltato interrompe la sequenza senza
 una detrazione aggiuntiva. Correzioni o cancellazioni possono cambiare i bonus
 successivi; nessuna scadenza di correzione è imposta nella prima versione.
@@ -70,8 +70,11 @@ Tutte queste voci vengono valutate **a periodo concluso**, anche i minimi.
 | Legumi | almeno 450 g nel blocco di sette giorni | +3 PT |
 | Pesce | almeno 300 g nel blocco di sette giorni | +3 PT |
 
-I minimi danno punti se dimostrati dai dati disponibili. I premi sui limiti
-massimi richiedono almeno tre momenti alimentari validi e dati completi per
+I minimi danno +1 PT se raggiunti e −1 PT se mancati in una giornata valida,
+con dati sufficienti. Per legumi e pesce il premio è +3 PT e la mancata
+riuscita costa −3 PT per voce al checkpoint di un periodo con almeno un
+giorno valido. Giornate e settimane non registrate non accumulano penalità. I premi sui limiti
+massimi richiedono almeno due momenti alimentari validi e dati completi per
 tutti gli ingredienti. Un diario vuoto non dà premi per sale, zuccheri o alcol.
 Un nutriente sconosciuto non è zero: un totale parziale può provare un minimo
 raggiunto o un eccesso, ma non il rispetto di un massimo. Alcolici senza
@@ -82,15 +85,31 @@ Le detrazioni si applicano dopo la fine della giornata anche se il diario è
 incompleto, quando l’eccesso è già dimostrato dalle quantità note:
 
 ```text
-Detrazione per voce = −round(min(30, ceil(10 × (valore − riferimento) / max(riferimento, 1))) / 10)
+Se valore > riferimento:
+  detrazione = −max(1, floor(valore / max(riferimento, 1)))
 ```
 
-Solo per valori oltre il riferimento: sale 7,5 g o 10 g su 5 g → −1 PT;
-sale 20 g → −3 PT. Gli scostamenti piccoli possono arrotondarsi a zero.
-Gli arrotondamenti a metà vanno lontano dallo zero: +1,5 → +2; −0,5 → −1.
-La stessa voce non somma premio e detrazione. Il saldo è ricalcolato sommando
-le voci intere, con minimo visualizzato di zero e indicazione dell’eventuale
-saldo netto negativo da compensare. I singoli giorni possono essere negativi.
+Ogni superamento noto costa almeno un punto, senza arrotondamenti a zero.
+Le fasce seguono i multipli interi del riferimento, coerentemente con
+l’esempio richiesto di 16 g di sale → −3 PT:
+
+| Sale registrato, riferimento 5 g | Detrazione |
+| --- | ---: |
+| Fino a 5 g | nessuna; +1 PT se il premio è verificabile |
+| Oltre 5 g e sotto 10 g (es. 6 g) | −1 PT |
+| Da 10 g a meno di 15 g | −2 PT |
+| Da 15 g a meno di 20 g (es. 16 g) | −3 PT |
+| Da 20 g a meno di 25 g | −4 PT |
+
+Lo stesso rapporto si applica al riferimento personale di zuccheri e alcol.
+Se il riferimento alcol è zero, qualsiasi quantità nota costa almeno un punto,
+poi un punto per UA intera. Non c’è più il precedente tetto di −3 PT per voce.
+Le detrazioni per eccessi dimostrati contano anche se il diario non è valido.
+Un minimo non dimostrato con dati parziali resta invece incompleto e vale zero.
+
+La stessa voce non somma premio e detrazione. Il saldo somma le voci intere,
+con minimo visualizzato di zero e indicazione dell’eventuale saldo netto
+negativo da compensare. I singoli giorni possono essere negativi.
 
 I riferimenti per zuccheri e alcol e il peso usato per le stime palestra sono
 fissati all’inizio del conteggio, per evitare che i cambi di profilo riscrivano
@@ -145,11 +164,15 @@ Migrazioni, da applicare nell’ordine:
 4. `20261104150000_scale_fitness_points.sql`: versione 3, punti divisi per dieci
    con arrotondamento intero e ricalcolo dello storico. Le soglie nutrizionali,
    i giorni di streak e le unità fisiche rimangono invariati.
+5. `20261105120000_fitness_points_goals_and_penalties.sql`: versione 4, minimo
+   di due momenti, −1 per minimi giornalieri mancati, −3 per quelli settimanali
+   e penalità per multipli del limite
+   con almeno −1 per qualunque eccesso noto.
 
 `fitness_points_settings` conserva data iniziale, fuso e riferimenti personali.
 `get_fitness_points` inizializza i nuovi profili e restituisce il riepilogo.
 `fitness_points_summary` e `fitness_points_days` sono helper interni senza grant
-per utenti/anonimi. Il campo pubblico `registered` indica il minimo di tre
+per utenti/anonimi. Il campo pubblico `registered` indica il minimo di due
 momenti; il nome interno SQL `confirmed` è mantenuto per compatibilità della
 firma della funzione e non richiede né legge una conferma.
 
@@ -191,6 +214,9 @@ eseguiti su database applicativi o ospitati.
   del giorno e del checkpoint in fusi diversi, streak automatiche e correzioni.
 - `fitness_points_scale.sql`: scala ridotta, arrotondamenti positivi/negativi,
   coerenza fra singole voci e giorni, bonus, storico e tetto movimento a 12 PT.
+- `fitness_points_goals_and_penalties.sql`: due momenti e streak, minimi mancati,
+  obiettivi settimanali, dati incompleti, alcol con target zero e fasce del sale
+  a 5/5,001/6/10/15/16/20/40 g.
 
 Frontend: API di sola lettura, aggiornamento da pasti/attività e timer, errori,
 storico, account diversi e risposte stale. Browser con risposte fittizie a
