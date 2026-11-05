@@ -153,7 +153,7 @@ export default function KitchenDishes() {
             </button>
           ))}
         </div>
-        <DishFilters query={query} onQueryChange={setQuery} category={dishCategory} onCategoryChange={setDishCategory} />
+        <DishFilters query={query} onQueryChange={setQuery} category={dishCategory} onCategoryChange={setDishCategory} mealType={category === 'all' ? undefined : category} />
         {loading ? (
           <div className="h-32 animate-pulse rounded-2xl bg-gray-800" />
         ) : visibleDishes.length === 0 ? (
@@ -202,12 +202,12 @@ export default function KitchenDishes() {
         ) : mode === 'create' ? (
           <div className="space-y-5">
             <div className="pr-12 lg:pr-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Nuova ricetta</p><h2 className="text-xl font-bold">Crea il tuo piatto</h2></div>
-            <DishEditor initialName={tutorial?.examples.dish.name ?? ''} initialItems={tutorial?.examples.dishItems ?? []} initialMealTypes={tutorial ? ['lunch', 'dinner'] : category === 'all' ? [] : [category]} onSave={createDish} onCancel={() => setMode('closed')} saveLabel="Salva piatto" />
+            <DishEditor initialName={tutorial?.examples.dish.name ?? ''} initialItems={tutorial?.examples.dishItems ?? []} initialMealTypes={tutorial ? ['lunch', 'dinner'] : category === 'all' ? [] : [category]} preferredMealType={category === 'all' ? undefined : category} onSave={createDish} onCancel={() => setMode('closed')} saveLabel="Salva piatto" />
           </div>
         ) : mode === 'edit' && selectedDish ? (
           <div className="space-y-5">
             <div className="pr-12 lg:pr-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Modifica ricetta</p><h2 className="text-xl font-bold">{selectedDish.name}</h2></div>
-            <DishEditor initialName={selectedDish.name} initialItems={selectedDish.items.map(dishItemToDraft)} initialMealTypes={selectedDish.meal_types} initialCategories={selectedDish.categories} onSave={updateDish} onCancel={() => setMode('detail')} saveLabel="Salva modifiche" editing />
+            <DishEditor initialName={selectedDish.name} initialItems={selectedDish.items.map(dishItemToDraft)} initialMealTypes={selectedDish.meal_types} preferredMealType={category === 'all' ? undefined : category} initialCategories={selectedDish.categories} onSave={updateDish} onCancel={() => setMode('detail')} saveLabel="Salva modifiche" editing />
           </div>
         ) : selectedDish ? (
           <DishDetail

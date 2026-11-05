@@ -60,6 +60,11 @@ e record, giorni registrati e dettaglio delle singole voci della data scelta.
 Dal 5 novembre la lista duplicata **Punti per giorno** è rimossa: si passa
 fra i giorni dal selettore. Il totale comprende sempre tutto il periodo.
 
+Il dettaglio **Benessere** è una tabella compatta con voce e punti, senza
+quantità o riferimenti ripetuti per riga. I dettagli delle regole rimangono
+consultabili nel riquadro espandibile. Gli stati provvisori o incompleti
+restano disponibili alle tecnologie assistive.
+
 | Voce | Quando vengono conteggiati i punti |
 | --- | --- |
 | Attività | Appena salvata |

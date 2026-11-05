@@ -369,6 +369,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           initialName=""
           initialItems={[]}
           initialMealTypes={[mealType]}
+          preferredMealType={mealType}
           requireName
           saveLabel="Salva e prepara"
           onSave={handleSaveNewDish}
@@ -395,6 +396,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           initialName={editingDish.name}
           initialItems={editingDish.items.map(dishItemToDraft)}
           initialMealTypes={editingDish.meal_types}
+          preferredMealType={mealType}
           initialCategories={editingDish.categories}
           editing
           requireName
@@ -667,7 +669,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           </div>
           <span className="rounded-full bg-gray-700 px-2.5 py-1 text-xs text-gray-400">{visibleDishes.length + preparedCount}</span>
         </div>
-        <DishFilters query={query} onQueryChange={setQuery} category={category} onCategoryChange={setCategory} />
+        <DishFilters query={query} onQueryChange={setQuery} category={category} onCategoryChange={setCategory} mealType={mealType} />
         <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
           <PreparedDishesPanel mealType={mealType} query={query} category={category} compact onCountChange={setPreparedCount} onSelect={startPreparedPick} />
           {loading ? (

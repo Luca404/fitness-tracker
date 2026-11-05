@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { ActiveFitnessPoints, PointsDay } from '../services/fitnessPoints'
@@ -62,6 +62,18 @@ describe('points recap', () => {
     expect(screen.getAllByText('A fine giornata')).toHaveLength(2)
     expect(screen.queryByText(/Giornata in corso/)).toBeNull()
   })
+  it('summarizes wellbeing in a compact points table without amounts', () => {
+    render(<Subject />)
+    const table = screen.getByRole('table', { name: 'Punti benessere' })
+    expect(within(table).getByRole('rowheader', { name: 'Sale' })).toBeTruthy()
+    expect(within(table).getByRole('rowheader', { name: 'Zuccheri totali' })).toBeTruthy()
+    expect(within(table).getAllByRole('row')).toHaveLength(3)
+    expect(within(table).getByText('−1')).toBeTruthy()
+    expect(table.textContent).not.toContain('7.5')
+    expect(table.textContent).not.toContain('/ 5')
+    expect(table.textContent).not.toContain('/ 75')
+  })
+
   it('opens the diary on the day being reviewed', () => {
     render(<Subject />)
     fireEvent.click(screen.getByRole('link', { name: 'Completa il diario →' }))

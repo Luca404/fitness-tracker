@@ -12,7 +12,7 @@ vi.mock('../contexts/DataContext', () => ({ useData: () => ({ currentWeightKg: 6
 vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   LineChart: ({ data, children }: { data: unknown; children: ReactNode }) => <><pre data-testid="chart-data">{JSON.stringify(data)}</pre>{children}</>,
-  Line: () => null, XAxis: () => null, YAxis: () => null, Legend: () => null,
+  Line: () => null, XAxis: () => null, YAxis: () => null, Legend: () => null, CartesianGrid: () => null,
   Tooltip: ({ filterNull, formatter }: { filterNull: boolean; formatter: (value: unknown) => string }) => (
     <div data-testid="missing-tooltip">{!filterNull && formatter(null)}</div>
   ),

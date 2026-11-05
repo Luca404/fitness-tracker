@@ -2,7 +2,7 @@ import FormActions from '../common/FormActions'
 import { Fragment, useRef, useState } from 'react'
 import FoodSearch from './FoodSearch'
 import type { DishCategory, DishItemDraft, DishMealType, PieceSize } from '../../types'
-import { DISH_CATEGORIES } from '../../data/dishCategories'
+import { dishCategoriesForMeal } from '../../data/dishCategories'
 import { DISH_MEAL_TYPES } from '../../data/dishMealTypes'
 import IngredientPortionCard from './IngredientPortionCard'
 import { formatDecimal } from '../../utils/decimal'
@@ -14,6 +14,7 @@ interface Props {
   initialName: string
   initialItems: DishItemDraft[]
   initialMealTypes?: DishMealType[]
+  preferredMealType?: DishMealType
   initialCategories?: DishCategory[]
   onSave: (name: string, items: DishItemDraft[], mealTypes: DishMealType[], categories: DishCategory[]) => Promise<void>
   onCancel: () => void
@@ -25,7 +26,7 @@ interface Props {
 }
 
 export default function DishEditor({
-  initialName, initialItems, initialMealTypes = ['lunch'], initialCategories = [], onSave, onCancel,
+  initialName, initialItems, initialMealTypes = ['lunch'], preferredMealType, initialCategories = [], onSave, onCancel,
   requireName = true, saveLabel = 'Salva piatto', showMealTypes = true, separateCustomizations = false, editing = false,
 }: Props) {
   const [name, setName] = useState(initialName)
@@ -111,7 +112,7 @@ export default function DishEditor({
         <fieldset>
           <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Tipo di piatto</legend>
           <div className="flex flex-wrap gap-2">
-            {DISH_CATEGORIES.map(category => <label key={category.id}
+            {dishCategoriesForMeal(preferredMealType && mealTypes.includes(preferredMealType) ? preferredMealType : mealTypes[0]).map(category => <label key={category.id}
               className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 text-sm ${categories.includes(category.id) ? 'border-primary-500/60 bg-primary-500/15 text-white' : 'border-gray-700 text-gray-400'}`}>
               <input type="checkbox" checked={categories.includes(category.id)} className="accent-primary-500"
                 onChange={event => setCategories(current => event.target.checked ? [...current, category.id] : current.filter(value => value !== category.id))} />

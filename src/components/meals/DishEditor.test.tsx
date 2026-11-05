@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import DishEditor from './DishEditor'
 
@@ -6,6 +6,12 @@ vi.mock('./FoodSearch', () => ({ default: () => null }))
 
 describe('DishEditor', () => {
   afterEach(cleanup)
+  it('prioritizes the current meal when editing a recipe assigned to multiple meals', () => {
+    render(<DishEditor initialName="Ricetta" initialItems={[]} initialMealTypes={['breakfast', 'lunch']}
+      preferredMealType="lunch" onSave={vi.fn()} onCancel={() => {}} />)
+    const categories = within(screen.getByRole('group', { name: 'Tipo di piatto' })).getAllByRole('checkbox')
+    expect(categories.slice(0, 4).map(input => input.closest('label')!.textContent!.trim())).toEqual(['Riso', 'Pasta', 'Carne', 'Pesce'])
+  })
   it('only edits the quantity, scaling nutrients without exposing nutrient inputs', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined)
     render(<DishEditor initialName="Pasta" initialItems={[{

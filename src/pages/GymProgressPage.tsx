@@ -9,6 +9,8 @@ import type { GymSession, WeightLog } from '../types'
 import GymSessionCard from '../components/workout/GymSessionCard'
 import { buildGymProgress, exerciseDescription, formatGymPerformance } from '../utils/gymProgress'
 import { formatDecimal } from '../utils/decimal'
+import { useChartAxis } from '../hooks/useChartAxis'
+import { chartTooltipStyle } from '../utils/chartAxis'
 
 function sessionDate(date: string): string {
   return new Date(`${date}T00:00:00`).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -71,6 +73,7 @@ export default function GymProgressPage() {
     value: selected.bodyweight ? point.best.reps : point.best.weight_kg,
     performance: formatGymPerformance(point.best),
   })) ?? []
+  const { axis, onResize } = useChartAxis(chartData.map(point => point.value), { minimumStep: selected?.bodyweight ? 1 : 0.1 })
 
   function openSession(id: string) {
     navigate(`/fitness/session/${id}?from=progress`)
@@ -131,18 +134,20 @@ export default function GymProgressPage() {
           </p>}
           {chartData.length >= 2 ? <div>
             <p className="mb-3 text-xs font-medium text-gray-400">{selected.bodyweight ? 'Ripetizioni' : 'Carico (kg)'} della serie di riferimento · {chartData.length} sessioni</p>
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={chartData} margin={{ top: 8, right: 12, left: -20, bottom: 0 }}>
+            <div className="gym-progress-chart-canvas h-[200px]">
+            <ResponsiveContainer width="100%" height="100%" onResize={onResize}>
+              <LineChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                <YAxis domain={['auto', 'auto']} allowDecimals={!selected.bodyweight} tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                <Tooltip content={({ active, payload }) => active && payload?.[0] ? <div className="rounded-xl border border-gray-700 bg-gray-900 p-3 text-xs">
+                <YAxis {...axis} interval={0} width={48} axisLine={false} tickLine={false} allowDecimals={!selected.bodyweight} tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={value => formatDecimal(Number(value))} />
+                <Tooltip wrapperStyle={{ outline: 'none' }} content={({ active, payload }) => active && payload?.[0] ? <div style={chartTooltipStyle} className="p-3">
                   <p className="text-gray-400">{payload[0].payload.fullDate}</p>
                   <p className="mt-1 font-semibold">{payload[0].payload.performance}</p>
                 </div> : null} />
                 <Line type="linear" dataKey="value" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
               </LineChart>
             </ResponsiveContainer>
+            </div>
           </div> : <p className="text-sm text-gray-400">Serve una seconda sessione con questo esercizio per mostrare l’andamento.</p>}
           <button type="button" onClick={() => openSession(latest.sessionId)} className="w-full rounded-xl border border-gray-600 py-2.5 text-sm font-medium text-gray-200">Apri ultima sessione</button>
         </> : <p className="text-sm text-gray-400">Le sessioni ci sono, ma non contengono serie completate con ripetizioni valide da confrontare.</p>}

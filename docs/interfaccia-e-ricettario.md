@@ -15,20 +15,30 @@ offline. Fonte: [repository ufficiale Adobe](https://github.com/adobe-fonts/sour
 
 I momenti del giorno (colazione/pranzo/cena/spuntino) restano indipendenti dal
 **Tipo di piatto**. Una ricetta può avere più tipi: Pasta, Riso, Verdure,
-Carne, Pesce, Toast, Pizza, Legumi, Uova, Latticini, Zuppe, Dolci e Bevande.
+Carne, Pesce, Secondo piatto vegano, Toast, Yogurt, Zuppe, Dolci e Bevande.
 Le etichette sono facoltative e si scelgono nell’editor della ricetta,
 sia da Cucina sia durante l’inserimento di un pasto.
 
-Le ricette esistenti restano visibili e partono senza categorie secondarie:
-si possono classificare modificandole. Non vengono dedotte automaticamente
-dal nome o dagli ingredienti. Il filtro **Senza categoria** aiuta a trovarle.
+Le ricette senza categorie restano visibili e si possono classificare
+modificandole. Le vecchie etichette Pizza, Legumi, Uova e Latticini vengono
+rimosse senza eliminare ricette o cambiare ingredienti. Non si deduce
+automaticamente che una ricetta sia vegana o a base di yogurt. Il filtro
+**Senza categoria** aiuta a trovare quelle rimaste senza etichette.
 Le preparazioni collegate usano le categorie correnti della ricetta sorgente.
 
 La barra **Cerca un piatto** e il filtro **Tipo di piatto** funzionano sia nel
 ricettario sia nel selettore dei pasti, inclusi i piatti pronti. La ricerca
 ignora maiuscole e accenti, combina tutte le parole e cerca nel nome e nei
 tipi assegnati. I filtri si combinano con il momento della giornata e si
-conservano quando si apre un piatto e si torna alla lista.
+conservano quando si apre un piatto e si torna alla lista. Il filtro è una
+fila di pillole scorrevoli, coerente con gli ingredienti in Cucina, sotto
+la ricerca. Tutte le categorie restano disponibili; cambia solo la priorità:
+
+| Pasto | Prime categorie |
+| --- | --- |
+| Colazione | Bevande, Toast |
+| Pranzo e cena | Riso, Pasta, Carne, Pesce |
+| Spuntino | Bevande, Yogurt |
 
 ## Ordine durante l’inserimento
 
@@ -51,6 +61,14 @@ atomico e la RPC autenticata `get_recent_dish_usage()`. Le firme precedenti
 restano operative e un vecchio aggiornamento non cancella le nuove categorie.
 Le funzioni mantengono i permessi del chiamante e le RLS esistenti; i grant
 di esecuzione autenticata sono espliciti.
+
+La successiva `20261105220000_refine_dish_categories` riduce i tipi a 11 e
+normalizza i valori precedenti. I vecchi client possono ancora inviare
+etichette ritirate: vengono scartate dal salvataggio, mentre valori
+sconosciuti restano errori. I client con quattro parametri conservano le
+categorie già assegnate. Il test autonomo `refine_dish_categories.sql`
+verifica pulizia, preservazione delle ricette, nuovi tipi, compatibilità,
+vincoli e isolamento nello stesso tipo di database temporaneo.
 
 Il test SQL autonomo `supabase/tests/dish_secondary_categories_and_usage.sql`
 richiede un database vuoto `fittrackr_dish_test_*` e usa dati sintetici in

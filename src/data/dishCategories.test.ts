@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Dish } from '../types'
-import { matchesDish, orderDishesByUsage } from './dishCategories'
+import { DISH_CATEGORIES, dishCategoriesForMeal, matchesDish, orderDishesByUsage } from './dishCategories'
 const recipe = { name: 'Risò al limone', categories: ['rice', 'vegetables'] } as Pick<Dish, 'name' | 'categories'>
 describe('finding saved dishes', () => {
   it('combines secondary category with accent-insensitive multiword search', () => {
@@ -24,5 +24,22 @@ describe('finding saved dishes', () => {
     ] as Dish[]
     expect(orderDishesByUsage(dishes).map(d => d.id)).toEqual(['frequent', 'tie', 'recent', 'older', 'unused'])
     expect(dishes[0].id).toBe('unused')
+  })
+})
+
+describe('meal-aware secondary categories', () => {
+  it('puts the requested categories first without hiding other types', () => {
+    expect(dishCategoriesForMeal('breakfast').slice(0, 2).map(c => c.id)).toEqual(['beverages', 'toast'])
+    expect(dishCategoriesForMeal('snack').slice(0, 2).map(c => c.id)).toEqual(['beverages', 'yogurt'])
+    for (const meal of ['lunch', 'dinner'] as const) {
+      expect(dishCategoriesForMeal(meal).slice(0, 4).map(c => c.id)).toEqual(['rice', 'pasta', 'meat', 'fish'])
+      expect(dishCategoriesForMeal(meal).map(c => c.id)).toContain('vegan_main')
+      expect(dishCategoriesForMeal(meal)).toHaveLength(11)
+    }
+  })
+  it('removes ingredient-only labels and retains the new dish types in search', () => {
+    expect(DISH_CATEGORIES.some(c => ['legumes', 'eggs', 'dairy', 'pizza'].includes(c.id))).toBe(false)
+    expect(matchesDish({ name: 'Polpette', categories: ['vegan_main'] }, 'vegano', 'all')).toBe(true)
+    expect(matchesDish({ name: 'Ciotola', categories: ['yogurt'] }, 'yogurt', 'all')).toBe(true)
   })
 })

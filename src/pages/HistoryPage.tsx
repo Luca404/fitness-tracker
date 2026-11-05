@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from 'recharts'
 import { useData } from '../contexts/DataContext'
 import { getLatestWeightLog, getMealsForRange, getWeightLogs, getWorkoutsForRange } from '../services/api'
 import { getGymSessionsForRange } from '../services/gymApi'
@@ -8,6 +8,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { useSettings } from '../contexts/SettingsContext'
 import type { GymSession, Meal, WeightLog, Workout } from '../types'
 import { formatDecimal } from '../utils/decimal'
+import { useChartAxis } from '../hooks/useChartAxis'
+import { chartTooltipStyle } from '../utils/chartAxis'
 
 type Range = 7 | 30
 
@@ -64,6 +66,9 @@ export default function HistoryPage() {
   const avgConsumed = historyAverage(chartData, 'Mangiato')
   const avgBurned = historyAverage(chartData, 'Bruciato')
   const missingDays = chartData.filter(day => day.Mangiato === null || day.Bruciato === null)
+  const { axis, onResize } = useChartAxis([
+    ...chartData.flatMap(day => [day.Mangiato, day.Bruciato]), goals?.calorie_target,
+  ], { minimumStep: 1, includeZero: true, reservedHeight: 68 })
 
   return (
     <div className="desktop-page p-4 pb-24 space-y-6">
@@ -89,13 +94,15 @@ export default function HistoryPage() {
       ) : (
         <div className="card">
           <div className="history-chart-canvas h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
+            <ResponsiveContainer width="100%" height="100%" onResize={onResize}>
+              <LineChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 11 }} />
-                <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} tickFormatter={value => formatDecimal(Number(value), 0)} />
+                <YAxis {...axis} interval={0} width={48} axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 11 }} tickFormatter={value => formatDecimal(Number(value), 0)} />
                 <Tooltip
                   filterNull={false}
-                  contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: 8 }}
+                  contentStyle={chartTooltipStyle}
+                  wrapperStyle={{ outline: 'none' }}
                   labelStyle={{ color: '#f3f4f6' }}
                   formatter={(value: unknown) => value == null ? 'Dati mancanti' : `${formatDecimal(Number(value), 0)} kcal`}
                 />

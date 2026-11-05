@@ -12,11 +12,31 @@ import Leaderboard from '../components/points/Leaderboard'
 const signed = (value: number) => `${value > 0 ? '+' : value < 0 ? '−' : ''}${Math.abs(value).toLocaleString('it-IT')}`
 const displayDate = (value: string) => format(new Date(`${value}T12:00:00`), 'EEE d MMM', { locale: it })
 
+function awardNote({ detail: d }: PointsAward) {
+  return d.status === 'incomplete' ? 'Dati incompleti' : d.status === 'pending' ? (d.weekly ? 'A fine periodo' : 'A fine giornata') : d.status === 'insufficient' ? 'Dati del periodo insufficienti'
+    : d.status === 'missed' ? 'Obiettivo non raggiunto' : d.status === 'target' ? 'Obiettivo da raggiungere' : d.capped ? 'Tetto movimento raggiunto' : null
+}
+
+function WellbeingTable({ awards }: { awards: PointsAward[] }) {
+  return <table aria-label="Punti benessere" className="mt-6 w-full text-sm">
+    <thead><tr className="text-xs uppercase tracking-wider text-gray-400">
+      <th scope="col" className="pb-2 text-left font-semibold">Benessere</th>
+      <th scope="col" className="pb-2 text-right font-semibold">PT</th>
+    </tr></thead>
+    <tbody className="divide-y divide-gray-700/60">{awards.map(award => <tr key={award.key}>
+      <th scope="row" className="py-2 text-left font-normal text-gray-200">{award.label}</th>
+      <td className={`py-2 text-right font-bold tabular-nums ${award.points < 0 ? 'text-orange-300' : award.points > 0 ? 'text-primary-300' : 'text-gray-500'}`}>
+        {signed(award.points)}
+        {awardNote(award) && <span className="sr-only"> {awardNote(award)}</span>}
+      </td>
+    </tr>)}</tbody>
+  </table>
+}
+
 function AwardRow({ award }: { award: PointsAward }) {
   const d = award.detail
   const name = award.kind === 'activity' ? MET_ACTIVITIES[award.label]?.label ?? award.label : award.label
-  const note = d.status === 'incomplete' ? 'Dati incompleti' : d.status === 'pending' ? (d.weekly ? 'A fine periodo' : 'A fine giornata') : d.status === 'insufficient' ? 'Dati del periodo insufficienti'
-    : d.status === 'missed' ? 'Obiettivo non raggiunto' : d.status === 'target' ? 'Obiettivo da raggiungere' : d.capped ? 'Tetto movimento raggiunto' : null
+  const note = awardNote(award)
   return <li className="flex items-start justify-between gap-4 py-3">
     <div className="min-w-0">
       <p className="text-sm font-medium text-gray-200">{name}</p>
@@ -47,6 +67,7 @@ function DayDetail({ day, data }: { day: PointsDay; data: ActiveFitnessPoints })
     {!day.registered && <Link to="/meals" onClick={() => setSelectedDate(day.date)} className="mt-3 inline-flex min-h-11 items-center text-sm text-primary-300">Completa il diario →</Link>}
     {groups.map(group => {
       const awards = day.awards.filter(a => group.kinds.includes(a.kind))
+      if (group.label === 'Benessere') return <WellbeingTable key={group.label} awards={awards} />
       return <div key={group.label} className="mt-6">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">{group.label}</h3>
         {awards.length > 0 ? <ul className="mt-1 divide-y divide-gray-700/60">{awards.map(award => <AwardRow key={`${award.kind}:${award.key}`} award={award} />)}</ul>

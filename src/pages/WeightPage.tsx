@@ -8,6 +8,8 @@ import {
 } from 'recharts'
 import type { WeightLog } from '../types'
 import { formatDecimal, roundToTwo } from '../utils/decimal'
+import { useChartAxis } from '../hooks/useChartAxis'
+import { chartTooltipStyle } from '../utils/chartAxis'
 
 type Range = '7' | '30' | '90'
 
@@ -87,9 +89,7 @@ export default function WeightPage() {
     kg: l.weight_kg,
   }))
 
-  const allWeights = logs.map(l => l.weight_kg)
-  const yMin = allWeights.length ? Math.floor(Math.min(...allWeights, target ?? Infinity) - 1) : 'auto'
-  const yMax = allWeights.length ? Math.ceil(Math.max(...allWeights, target ?? -Infinity) + 1) : 'auto'
+  const { axis, onResize } = useChartAxis([...logs.map(log => log.weight_kg), target])
 
   return (
     <div className="desktop-page desktop-weight space-y-4 p-4 pb-24">
@@ -143,13 +143,14 @@ export default function WeightPage() {
           <p className="text-sm text-gray-600 text-center py-8">Inserisci almeno 2 misurazioni per vedere il grafico</p>
         ) : (
           <div className="weight-chart-canvas h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height="100%" onResize={onResize}>
+              <LineChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                <YAxis domain={[yMin, yMax]} tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={value => formatDecimal(Number(value))} />
+                <YAxis {...axis} interval={0} width={48} axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 10 }} tickFormatter={value => formatDecimal(Number(value))} />
                 <Tooltip
-                  contentStyle={{ background: '#1f2937', border: 'none', borderRadius: 8 }}
+                  contentStyle={chartTooltipStyle}
+                  wrapperStyle={{ outline: 'none' }}
                   labelStyle={{ color: '#e5e7eb', fontSize: 12 }}
                   formatter={(v: unknown) => [`${formatDecimal(Number(v))} kg`, 'Peso']}
                 />

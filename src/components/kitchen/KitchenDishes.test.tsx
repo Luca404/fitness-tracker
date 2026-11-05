@@ -31,7 +31,7 @@ describe('Kitchen dish categories', () => {
     const categoryButtons = within(screen.getByRole('group', { name: 'Categoria dei piatti' })).getAllByRole('button')
     expect(categoryButtons).toHaveLength(4)
     expect(categoryButtons.every(button => button.getAttribute('aria-pressed') === 'false')).toBe(true)
-    expect(screen.queryByRole('button', { name: 'Tutti' })).toBeNull()
+    expect(within(screen.getByRole('group', { name: 'Categoria dei piatti' })).queryByRole('button', { name: 'Tutti' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Pranzo' }))
     expect(screen.getByRole('button', { name: 'Pranzo' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.queryByText('Yogurt e frutta')).toBeNull()

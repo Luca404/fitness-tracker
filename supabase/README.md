@@ -1,5 +1,32 @@
 # Shared Supabase workflow
 
+## Refined dish types and chart presentation — 2026-11-05
+
+`20261105220000_refine_dish_categories` was applied after a dry-run listing
+only this migration and mirrored identically in Trackr (SHA-256 checked).
+There are now 11 dish types: pizza/legumes/eggs/dairy are retired, while
+vegan_main and yogurt are added. The backfill removes only retired labels;
+recipes, ingredients, meal types and usage history are preserved. No dietary
+classification is inferred. Old five-argument clients can still submit known
+retired labels, which are discarded; unknown values fail validation. The
+four-argument functions, invoker RLS and explicit authenticated grants remain.
+
+`tests/refine_dish_categories.sql` passed with synthetic fixtures and rollback
+in `fittrackr_dish_test_refine_20261105`, covering cleanup, preservation,
+new/old clients, atomic errors, table constraints and ownership. The local
+application database was not upgraded.
+
+All 596 frontend tests passed, followed by 17 targeted editor/meal tests after
+adding current-meal priority for multi-meal recipes; build and lint passed.
+Browser fixtures at 320/390/768/1440 px verified adaptive, non-overlapping
+Y labels across Weight/History/Gym Progress, dark tooltips, pointer/touch focus
+without white borders and retained green keyboard focus/arrow navigation.
+Category pills and all four meal priorities passed, as did the compact
+wellbeing points table. No runtime errors or horizontal overflow were seen;
+Recharts still emitted transient initial-size warnings before measurement.
+Hosted frontend behavior was not verified in these local checks. See
+[charts](../docs/grafici.md) and [recipe types](../docs/interfaccia-e-ricettario.md).
+
 ## Secondary dish categories and recent usage — 2026-11-05
 
 `20261105210000_dish_secondary_categories_and_usage` was applied after a

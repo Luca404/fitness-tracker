@@ -1,4 +1,4 @@
-import type { Dish, DishCategory } from '../types'
+import type { Dish, DishCategory, DishMealType } from '../types'
 
 export const DISH_CATEGORIES: { id: DishCategory; label: string }[] = [
   { id: 'pasta', label: 'Pasta' },
@@ -6,15 +6,28 @@ export const DISH_CATEGORIES: { id: DishCategory; label: string }[] = [
   { id: 'vegetables', label: 'Verdure' },
   { id: 'meat', label: 'Carne' },
   { id: 'fish', label: 'Pesce' },
+  { id: 'vegan_main', label: 'Secondo piatto vegano' },
   { id: 'toast', label: 'Toast' },
-  { id: 'pizza', label: 'Pizza' },
-  { id: 'legumes', label: 'Legumi' },
-  { id: 'eggs', label: 'Uova' },
-  { id: 'dairy', label: 'Latticini' },
+  { id: 'yogurt', label: 'Yogurt' },
   { id: 'soup', label: 'Zuppe' },
   { id: 'dessert', label: 'Dolci' },
   { id: 'beverages', label: 'Bevande' },
 ]
+
+const priorities: Record<DishMealType, DishCategory[]> = {
+  breakfast: ['beverages', 'toast'],
+  lunch: ['rice', 'pasta', 'meat', 'fish'],
+  dinner: ['rice', 'pasta', 'meat', 'fish'],
+  snack: ['beverages', 'yogurt'],
+}
+
+export function dishCategoriesForMeal(mealType?: DishMealType) {
+  const preferred = mealType ? priorities[mealType] : []
+  return [...DISH_CATEGORIES].sort((a, b) => {
+    const rank = (id: DishCategory) => preferred.includes(id) ? preferred.indexOf(id) : preferred.length
+    return rank(a.id) - rank(b.id)
+  })
+}
 
 export type DishCategoryFilter = DishCategory | 'all' | 'uncategorized'
 
