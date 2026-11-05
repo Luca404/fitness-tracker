@@ -8,7 +8,7 @@ giornata o dichiarazione sulle bevande. Le formule sono regole di gioco.
 
 Punti totali e streak compaiono a sinistra della rotella delle impostazioni;
 su desktop seguono le impostazioni nella barra laterale. Il contatore apre
-`/points`, con totale, streak attuale e record, giorni registrati, recap per
+`/points`, con selettore del giorno come primo elemento, con totale, streak attuale e record, giorni registrati, recap per
 giorno e dettaglio delle singole voci. Lo storico si sfoglia in pagine di
 30 giorni; il totale comprende tutto il periodo.
 
@@ -35,7 +35,7 @@ Gli account delle altre app Trackrs senza profilo salute non sono coinvolti.
 
 ## Diario e costanza
 
-Una giornata vale **20 PT** appena contiene almeno tre momenti distinti fra
+Una giornata vale **2 PT** appena contiene almeno tre momenti distinti fra
 colazione, pranzo, cena e spuntino. Ogni momento deve contenere almeno un
 alimento con quantità positiva e finita; bevande, alcolici, integratori,
 grassi, salse e soli condimenti non bastano. Non c’è un minimo calorico.
@@ -45,9 +45,9 @@ non una garanzia che tutti i consumi reali siano stati registrati.
 
 | Traguardo nella streak | Bonus |
 | --- | ---: |
-| Terzo giorno consecutivo | +15 PT |
-| Ogni multiplo di sette giorni consecutivi | +40 PT |
-| Trentesimo giorno consecutivo | +100 PT |
+| Terzo giorno consecutivo | +2 PT |
+| Ogni multiplo di sette giorni consecutivi | +4 PT |
+| Trentesimo giorno consecutivo | +10 PT |
 
 Il terzo e trentesimo giorno danno un premio una volta per sequenza; quello
 settimanale ricorre ai giorni 7, 14, 21, ecc. Se oggi non ha ancora tre momenti,
@@ -61,14 +61,14 @@ Tutte queste voci vengono valutate **a periodo concluso**, anche i minimi.
 
 | Voce | Riferimento | Premio |
 | --- | --- | ---: |
-| Verdura | almeno 400 g/giorno | +10 PT |
-| Frutta | almeno 360 g/giorno | +10 PT |
-| Fibre | almeno 25 g/giorno | +10 PT |
-| Sale | al massimo 5 g/giorno | +10 PT |
-| Zuccheri totali | 15% del target calorico iniziale ÷ 4 | +10 PT |
-| Alcol | riferimento personale delle buone abitudini iniziale, in UA | +10 PT |
-| Legumi | almeno 450 g nel blocco di sette giorni | +30 PT |
-| Pesce | almeno 300 g nel blocco di sette giorni | +30 PT |
+| Verdura | almeno 400 g/giorno | +1 PT |
+| Frutta | almeno 360 g/giorno | +1 PT |
+| Fibre | almeno 25 g/giorno | +1 PT |
+| Sale | al massimo 5 g/giorno | +1 PT |
+| Zuccheri totali | 15% del target calorico iniziale ÷ 4 | +1 PT |
+| Alcol | riferimento personale delle buone abitudini iniziale, in UA | +1 PT |
+| Legumi | almeno 450 g nel blocco di sette giorni | +3 PT |
+| Pesce | almeno 300 g nel blocco di sette giorni | +3 PT |
 
 I minimi danno punti se dimostrati dai dati disponibili. I premi sui limiti
 massimi richiedono almeno tre momenti alimentari validi e dati completi per
@@ -82,14 +82,15 @@ Le detrazioni si applicano dopo la fine della giornata anche se il diario è
 incompleto, quando l’eccesso è già dimostrato dalle quantità note:
 
 ```text
-Detrazione per voce = −min(30, ceil(10 × (valore − riferimento) / max(riferimento, 1)))
+Detrazione per voce = −round(min(30, ceil(10 × (valore − riferimento) / max(riferimento, 1))) / 10)
 ```
 
-Solo per valori oltre il riferimento: sale 7,5 g su 5 g → −5 PT; sale 10 g →
-−10 PT. Con riferimento alcol zero, ogni UA pesa 10 PT prima dell’arrotondamento.
-La stessa voce non somma premio e detrazione. Il saldo è ricalcolato, con un
-minimo visualizzato di zero e indicazione dell’eventuale saldo netto negativo
-da compensare. I singoli giorni possono mostrare valori negativi.
+Solo per valori oltre il riferimento: sale 7,5 g o 10 g su 5 g → −1 PT;
+sale 20 g → −3 PT. Gli scostamenti piccoli possono arrotondarsi a zero.
+Gli arrotondamenti a metà vanno lontano dallo zero: +1,5 → +2; −0,5 → −1.
+La stessa voce non somma premio e detrazione. Il saldo è ricalcolato sommando
+le voci intere, con minimo visualizzato di zero e indicazione dell’eventuale
+saldo netto negativo da compensare. I singoli giorni possono essere negativi.
 
 I riferimenti per zuccheri e alcol e il peso usato per le stime palestra sono
 fissati all’inizio del conteggio, per evitare che i cambi di profilo riscrivano
@@ -104,16 +105,16 @@ aggiorna il relativo premio senza moltiplicarlo.
 ## Attività e allenamenti
 
 ```text
-PT attività = minuti × MET / 10 + km × coefficiente
-coefficiente km: camminata 1 · corsa 2 · ciclismo 0,5 · tapis roulant 1,5
-PT palestra = 0,4 × minuti + 0,03 × kcal stimate
-Tetto complessivo movimento: 120 PT per giornata
+PT attività = minuti × MET / 100 + km × coefficiente
+coefficiente km: camminata 0,1 · corsa 0,2 · ciclismo 0,05 · tapis roulant 0,15
+PT palestra = 0,04 × minuti + 0,003 × kcal stimate
+Tetto complessivo movimento: 12 PT per giornata
 ```
 
 Le attività usano le stesse stime MET e fasce di velocità di `utils/met.ts`.
 Contributo limitato a 120 minuti e 100 km per attività. Distanze non valide,
 velocità oltre i controlli dell’app e attività sconosciute non danno punti.
-Corsa 5 km in 30 minuti → 9,3 MET → 37,9 PT prima dell’arrotondamento.
+Corsa 5 km in 30 minuti → 9,3 MET → 3,79 PT → 4 PT.
 
 La palestra richiede una sessione conclusa, di durata positiva non superiore
 a quattro ore e con almeno una serie svolta con ripetizioni valide. Sessioni
@@ -141,6 +142,9 @@ Migrazioni, da applicare nell’ordine:
 2. `20261104130000_fitness_points_by_default.sql`: inizializzazione automatica.
 3. `20261104140000_automatic_fitness_points.sql`: regole versione 2, diario e
    streak automatici, benessere a fine periodo, revoca della conferma manuale.
+4. `20261104150000_scale_fitness_points.sql`: versione 3, punti divisi per dieci
+   con arrotondamento intero e ricalcolo dello storico. Le soglie nutrizionali,
+   i giorni di streak e le unità fisiche rimangono invariati.
 
 `fitness_points_settings` conserva data iniziale, fuso e riferimenti personali.
 `get_fitness_points` inizializza i nuovi profili e restituisce il riepilogo.
@@ -166,7 +170,12 @@ RPC con grant esplicito per `authenticated`, `auth.uid()`, `search_path` vuoto e
 filtro utente su ogni sorgente. Nessun dato finanziario partecipa al calcolo.
 Il frontend evita risposte stale fra account/date e aggiorna al cambiare dei
 dati, alla navigazione, al ritorno all’app e ogni minuto per il passaggio di
-periodo. Il tutorial non usa servizi reali né guadagna punti.
+periodo. La navigazione ordinaria non forza nuove richieste: i due contatori
+restano nella cache in memoria anche durante il cambio del giorno, le letture
+in background e il ritorno da una sessione palestra. Una lettura fallita conserva
+l’ultimo dato valido. La cache è associata all’account e non mostra i valori del
+precedente utente. Non viene scritta nello storage persistente del browser.
+Il tutorial non usa servizi reali né guadagna punti.
 
 ## Verifiche
 
@@ -180,6 +189,8 @@ eseguiti su database applicativi o ospitati.
   idempotente, preservazione dei parametri e isolamento dagli altri Trackrs.
 - `automatic_fitness_points.sql`: nessuna conferma, punti immediati, chiusura
   del giorno e del checkpoint in fusi diversi, streak automatiche e correzioni.
+- `fitness_points_scale.sql`: scala ridotta, arrotondamenti positivi/negativi,
+  coerenza fra singole voci e giorni, bonus, storico e tetto movimento a 12 PT.
 
 Frontend: API di sola lettura, aggiornamento da pasti/attività e timer, errori,
 storico, account diversi e risposte stale. Browser con risposte fittizie a

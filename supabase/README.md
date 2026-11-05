@@ -1,5 +1,27 @@
 # Shared Supabase workflow
 
+## Smaller points and stable header — 2026-11-05
+
+`20261104150000_scale_fitness_points` was applied after a dry-run listing only
+this migration, and mirrored identically in Trackr. Rules version 3 divides
+points by ten with integer rounding: diary 2, daily habits 1, weekly habits 3,
+streak bonuses 2/4/10, and movement capped at 12 per day. Deductions are divided
+by ten and rounded, including negative half ties away from zero. Movement is
+rounded on its cumulative amount to preserve the split-session protection.
+Daily and lifetime scores sum the rounded award rows, and history is
+recalculated from sources in the same unit. Nutrient targets and streak lengths
+are unchanged. Existing owner policies and RPC grants remain unchanged.
+
+`fitness_points_scale.sql` passed in an isolated synthetic PostgreSQL fixture,
+covering the reduced total over 35 days, bonus/penalty rounding, period timing,
+source corrections, row/day consistency and the shared movement cap. Frontend
+checks cover cached counters on navigation, date changes, background errors,
+layout remounts and account switches. Browser checks at 320/390/768/1440 px
+confirmed uncropped, vertically centered icons; no counter placeholders during
+navigation/refresh; the day selector first; and no today shortcut. The expected
+simulated failed read was the only console error. Hosted frontend deployment
+was not verified in these local checks.
+
 ## Automatic fitness points and streaks — 2026-11-04
 
 The three fitness-only migrations were applied to the hosted project in order,

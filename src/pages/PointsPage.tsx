@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom'
-import { addDays, differenceInCalendarDays, format, subDays } from 'date-fns'
+import { addDays, differenceInCalendarDays, format, isValid, parseISO, subDays } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { useFitnessPoints } from '../contexts/FitnessPointsContext'
 import type { ActiveFitnessPoints, PointsAward, PointsDay } from '../services/fitnessPoints'
@@ -59,7 +59,7 @@ function DayDetail({ day, data }: { day: PointsDay; data: ActiveFitnessPoints })
           : <p className="mt-3 text-sm text-gray-400">Nessuna attività o allenamento concluso.</p>}
       </div>
     })}
-    {day.movement_raw > 120 && <p className="mt-3 text-xs text-gray-400">Movimento: applicato il massimo di 120 PT per giornata.</p>}
+    {day.movement_raw > 12 && <p className="mt-3 text-xs text-gray-400">Movimento: applicato il massimo di 12 PT per giornata.</p>}
     <p className="mt-4 border-t border-gray-700 pt-4 text-xs leading-relaxed text-gray-400">Le modifiche al diario ricalcolano automaticamente punti e streak, anche per i giorni successivi. Checkpoint settimanale: {displayDate(checkpoint)}.</p>
   </section>
 }
@@ -68,13 +68,13 @@ function Rules({ data }: { data?: ActiveFitnessPoints }) {
   return <details className="card">
     <summary className="min-h-6 cursor-pointer text-sm font-semibold">Come si guadagnano i punti</summary>
     <dl className="mt-4 space-y-4 text-sm">
-      <div><dt className="font-semibold text-gray-200">Diario · 20 PT al giorno</dt><dd className="mt-1 leading-relaxed text-gray-400">Punti automatici appena registri almeno tre momenti alimentari validi. Nessun minimo di calorie da mangiare.</dd></div>
-      <div><dt className="font-semibold text-gray-200">Costanza · +15 / +40 / +100 PT</dt><dd className="mt-1 leading-relaxed text-gray-400">+15 al terzo giorno consecutivo, +40 ogni sette giorni consecutivi e +100 al trentesimo. Saltare un giorno interrompe la streak e conserva i punti già ottenuti.</dd></div>
-      <div><dt className="font-semibold text-gray-200">Benessere · 10 PT per obiettivo</dt><dd className="mt-1 leading-relaxed text-gray-400">Verdura ≥400 g, frutta ≥360 g e fibre ≥25 g. Sale ≤5 g, zuccheri totali{data ? ` ≤${formatDecimal(data.sugars_target)} g` : ' entro il riferimento personale'} e alcol{data ? ` ≤${data.alcohol_target} UA` : ' entro il riferimento personale'} danno punti a fine giornata, con almeno tre momenti alimentari e dati completi. Anche verdura, frutta e fibre vengono conteggiate a fine giornata. Legumi ≥450 g e pesce ≥300 g: +30 PT ciascuno alla fine di ogni periodo di sette giorni dall’inizio del conteggio.</dd></div>
-      <div><dt className="font-semibold text-gray-200">Eccessi · fino a −30 PT per voce</dt><dd className="mt-1 leading-relaxed text-gray-400">Sale, zuccheri e alcol: −10 × quota oltre il riferimento, arrotondata per eccesso. Superarlo del 50% costa 5 PT, del 100% costa 10 PT. Le detrazioni si calcolano a fine giornata sulle quantità note, anche se il diario è incompleto; se il riferimento alcol è zero, ogni UA vale −10 PT.</dd></div>
-      <div><dt className="font-semibold text-gray-200">Attività · minuti, intensità e km</dt><dd className="mt-1 leading-relaxed text-gray-400">Minuti × MET ÷ 10, più punti per km: camminata 1, corsa 2, ciclismo 0,5, tapis roulant 1,5. I MET stimano l’intensità dal tipo di attività e, se disponibile, dalla velocità. Contributo limitato a 120 minuti e 100 km per attività.</dd></div>
-      <div><dt className="font-semibold text-gray-200">Allenamenti · tempo e calorie stimate</dt><dd className="mt-1 leading-relaxed text-gray-400">0,4 × minuti + 0,03 × kcal stimate. Serve una sessione conclusa con almeno una serie svolta. Contributo limitato a 120 minuti e 1.200 kcal; sessioni oltre quattro ore non danno punti. Gli intervalli sovrapposti fra sessioni palestra contano una sola volta.</dd></div>
-      <div><dt className="font-semibold text-gray-200">Movimento · massimo 120 PT al giorno</dt><dd className="mt-1 leading-relaxed text-gray-400">Tetto condiviso fra attività e palestra. Registra ogni allenamento una sola volta. Non ci sono penalità per il riposo, né punti per il peso perso o per mangiare meno.</dd></div>
+      <div><dt className="font-semibold text-gray-200">Diario · 2 PT al giorno</dt><dd className="mt-1 leading-relaxed text-gray-400">Punti automatici appena registri almeno tre momenti alimentari validi. Nessun minimo di calorie da mangiare.</dd></div>
+      <div><dt className="font-semibold text-gray-200">Costanza · +2 / +4 / +10 PT</dt><dd className="mt-1 leading-relaxed text-gray-400">+2 al terzo giorno consecutivo, +4 ogni sette giorni consecutivi e +10 al trentesimo. Saltare un giorno interrompe la streak e conserva i punti già ottenuti.</dd></div>
+      <div><dt className="font-semibold text-gray-200">Benessere · 1 PT per obiettivo</dt><dd className="mt-1 leading-relaxed text-gray-400">Verdura ≥400 g, frutta ≥360 g e fibre ≥25 g. Sale ≤5 g, zuccheri totali{data ? ` ≤${formatDecimal(data.sugars_target)} g` : ' entro il riferimento personale'} e alcol{data ? ` ≤${data.alcohol_target} UA` : ' entro il riferimento personale'} danno punti a fine giornata, con almeno tre momenti alimentari e dati completi. Anche verdura, frutta e fibre vengono conteggiate a fine giornata. Legumi ≥450 g e pesce ≥300 g: +3 PT ciascuno alla fine di ogni periodo di sette giorni dall’inizio del conteggio.</dd></div>
+      <div><dt className="font-semibold text-gray-200">Eccessi · fino a −3 PT per voce</dt><dd className="mt-1 leading-relaxed text-gray-400">Detrazioni proporzionali, arrotondate al punto intero. Sale 7,5 g su un riferimento di 5 g costa 1 PT; 20 g costa 3 PT. Le detrazioni si calcolano a fine giornata sulle quantità note, anche se il diario è incompleto; se il riferimento alcol è zero, ogni UA vale −1 PT.</dd></div>
+      <div><dt className="font-semibold text-gray-200">Attività · minuti, intensità e km</dt><dd className="mt-1 leading-relaxed text-gray-400">Minuti × MET ÷ 100, più punti per km: camminata 0,1, corsa 0,2, ciclismo 0,05, tapis roulant 0,15. Il risultato viene arrotondato al punto intero sul cumulato del movimento. I MET stimano l’intensità dal tipo di attività e, se disponibile, dalla velocità. Contributo limitato a 120 minuti e 100 km per attività.</dd></div>
+      <div><dt className="font-semibold text-gray-200">Allenamenti · tempo e calorie stimate</dt><dd className="mt-1 leading-relaxed text-gray-400">0,04 × minuti + 0,003 × kcal stimate, arrotondati al punto intero sul cumulato del movimento. Serve una sessione conclusa con almeno una serie svolta. Contributo limitato a 120 minuti e 1.200 kcal; sessioni oltre quattro ore non danno punti. Gli intervalli sovrapposti fra sessioni palestra contano una sola volta.</dd></div>
+      <div><dt className="font-semibold text-gray-200">Movimento · massimo 12 PT al giorno</dt><dd className="mt-1 leading-relaxed text-gray-400">Tetto condiviso fra attività e palestra. Registra ogni allenamento una sola volta. Non ci sono penalità per il riposo, né punti per il peso perso o per mangiare meno.</dd></div>
     </dl>
     <p className="mt-5 border-t border-gray-700 pt-4 text-xs leading-relaxed text-gray-400">{data ? `Punti dal ${displayDate(data.started_on)} · ${data.timezone}. ` : ''}I punti sono attivi automaticamente per tutti. I riferimenti personali sono fissati all’inizio del conteggio. Le stime non sono misure esatte; i punti non sono una valutazione della salute. Il saldo mostrato ha un minimo di zero.</p>
   </details>
@@ -82,15 +82,19 @@ function Rules({ data }: { data?: ActiveFitnessPoints }) {
 
 export default function PointsPage() {
   const points = useFitnessPoints()
-  const [, setSearchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { selectedDate } = useSettings()
   if (!points) return null
   const { data, loading, error } = points
   const active = data ?? undefined
+  const routeDate = searchParams.get('date')
+  const selectorDate = active?.selected_date ?? (routeDate && /^\d{4}-\d{2}-\d{2}$/.test(routeDate) && isValid(parseISO(routeDate)) ? routeDate : selectedDate)
   function selectDate(date: string) {
     setSearchParams({ date })
     document.getElementById('main-content')?.scrollTo({ top: 0 })
   }
   return <div className="desktop-page space-y-5 p-4 pb-24">
+    <div className="desktop-date"><DaySelector date={selectorDate} onChange={selectDate} /></div>
     <h1 className="text-xl font-bold lg:hidden">Punti e costanza</h1>
     {error ? <div role="alert" className="card space-y-3"><p className="text-sm text-orange-300">{error}</p><button className="btn-secondary min-h-11" onClick={() => void points.refresh()}>Riprova</button></div>
       : !active ? <p role="status" className="py-8 text-sm text-gray-400">Caricamento punti…</p> : <>
@@ -102,11 +106,7 @@ export default function PointsPage() {
               { label: 'Giorni registrati', value: active.registered_days.toLocaleString('it-IT'), color: 'text-gray-100' },
             ].map(metric => <div key={metric.label} className="rounded-2xl border border-gray-700/70 bg-gray-800/60 p-4"><p className="text-xs text-gray-400">{metric.label}</p><p className={`mt-2 text-2xl font-bold tabular-nums ${metric.color}`}>{metric.value}</p></div>)}
           </section>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <DaySelector date={active.selected_date} onChange={selectDate} />
-            <button type="button" onClick={() => selectDate(active.today)} className="min-h-11 px-3 text-sm text-primary-300">Vai a oggi</button>
-            {loading && <span role="status" className="text-xs text-gray-400">Aggiorno…</span>}
-          </div>
+          {loading && <span role="status" className="text-xs text-gray-400">Aggiorno…</span>}
           <div className="grid items-start gap-5 xl:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)]">
             <section className="card order-2 min-w-0 xl:order-1" aria-labelledby="points-history-title">
               <h2 id="points-history-title" className="text-lg font-bold">Punti per giorno</h2>
