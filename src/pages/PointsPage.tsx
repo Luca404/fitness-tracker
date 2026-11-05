@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom'
-import { addDays, differenceInCalendarDays, format, isValid, parseISO, subDays } from 'date-fns'
+import { addDays, differenceInCalendarDays, format, isValid, parseISO } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { useFitnessPoints } from '../contexts/FitnessPointsContext'
 import type { ActiveFitnessPoints, PointsAward, PointsDay } from '../services/fitnessPoints'
@@ -11,7 +11,6 @@ import Leaderboard from '../components/points/Leaderboard'
 
 const signed = (value: number) => `${value > 0 ? '+' : value < 0 ? '−' : ''}${Math.abs(value).toLocaleString('it-IT')}`
 const displayDate = (value: string) => format(new Date(`${value}T12:00:00`), 'EEE d MMM', { locale: it })
-const shiftDate = (value: string, days: number) => format(subDays(new Date(`${value}T12:00:00`), -days), 'yyyy-MM-dd')
 
 function AwardRow({ award }: { award: PointsAward }) {
   const d = award.detail
@@ -107,30 +106,14 @@ export default function PointsPage() {
           <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Riepilogo punti">
             {[
               { label: 'Punti totali', value: active.total.toLocaleString('it-IT'), color: 'text-primary-300' },
-              { label: 'Streak attuale', value: `${active.streak} giorni`, color: 'text-amber-300' },
-              { label: 'Record streak', value: `${active.best_streak} giorni`, color: 'text-gray-100' },
+              { label: 'Streak attuale', value: `${active.streak} ${active.streak === 1 ? 'giorno' : 'giorni'}`, color: 'text-amber-300' },
+              { label: 'Record streak', value: `${active.best_streak} ${active.best_streak === 1 ? 'giorno' : 'giorni'}`, color: 'text-gray-100' },
               { label: 'Giorni registrati', value: active.registered_days.toLocaleString('it-IT'), color: 'text-gray-100' },
             ].map(metric => <div key={metric.label} className="rounded-2xl border border-gray-700/70 bg-gray-800/60 p-4"><p className="text-xs text-gray-400">{metric.label}</p><p className={`mt-2 text-2xl font-bold tabular-nums ${metric.color}`}>{metric.value}</p></div>)}
           </section>
           {loading && <span role="status" className="text-xs text-gray-400">Aggiorno…</span>}
-          <div className="grid items-start gap-5 xl:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)]">
-            <section className="card order-2 min-w-0 xl:order-1" aria-labelledby="points-history-title">
-              <h2 id="points-history-title" className="text-lg font-bold">Punti per giorno</h2>
-              <ul className="mt-4 divide-y divide-gray-700/60">{active.history.map(day => <li key={day.date}>
-                <button type="button" onClick={() => selectDate(day.date)} aria-pressed={active.selected_date === day.date}
-                  className={`flex min-h-16 w-full items-center justify-between gap-3 rounded-lg px-2 py-3 text-left transition-colors hover:bg-gray-700/40 ${active.selected_date === day.date ? 'bg-primary-500/10' : ''}`}>
-                  <span><span className="block text-sm font-medium capitalize">{displayDate(day.date)}</span><span className="mt-1 block text-xs text-gray-400">{day.registered ? `Registrato · streak ${day.streak}` : day.meal_count > 0 ? 'Diario incompleto' : 'Diario non registrato'}</span></span>
-                  <span className={`shrink-0 font-bold tabular-nums ${day.points < 0 ? 'text-orange-300' : day.points > 0 ? 'text-primary-300' : 'text-gray-400'}`}>{signed(day.points)} <small className="text-xs font-normal">PT</small></span>
-                </button>
-              </li>)}</ul>
-              {active.history.length === 0 && <p className="mt-4 text-sm text-gray-400">Nessuna giornata in questo periodo.</p>}
-              <div className="mt-4 flex flex-wrap gap-3">
-                {active.has_older && <button type="button" className="min-h-11 text-sm text-primary-300" onClick={() => selectDate(shiftDate(active.history.at(-1)!.date,-1))}>← Giorni precedenti</button>}
-                {active.selected_date < active.today && <button type="button" className="min-h-11 text-sm text-primary-300" onClick={() => selectDate([shiftDate(active.selected_date,30),active.today].sort()[0])}>Più recenti →</button>}
-              </div>
-            </section>
-            <div className="order-1 min-w-0 xl:order-2">{active.day ? <DayDetail key={active.day.date} day={active.day} data={active} /> : <div className="card text-sm text-gray-400">Data fuori dal periodo punti. Inizio: {displayDate(active.started_on)}.</div>}</div>
-          </div>
+          {active.day ? <DayDetail key={active.day.date} day={active.day} data={active} />
+            : <div className="card text-sm text-gray-400">Data fuori dal periodo punti. Inizio: {displayDate(active.started_on)}.</div>}
           {active.net_total < 0 && <p className="text-xs text-gray-400">Saldo netto: {signed(active.net_total)} PT</p>}
         </>}
     <Rules data={active} />

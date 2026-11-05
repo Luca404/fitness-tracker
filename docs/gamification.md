@@ -55,9 +55,10 @@ errore runtime o overflow; 409 e 503 simulati sono gli errori di rete attesi.
 
 Punti totali e streak compaiono a sinistra della rotella delle impostazioni;
 su desktop seguono le impostazioni nella barra laterale. Il contatore apre
-`/points`, con selettore del giorno come primo elemento, con totale, streak attuale e record, giorni registrati, recap per
-giorno e dettaglio delle singole voci. Lo storico si sfoglia in pagine di
-30 giorni; il totale comprende tutto il periodo.
+`/points`, con selettore del giorno come primo elemento, totale, streak attuale
+e record, giorni registrati e dettaglio delle singole voci della data scelta.
+Dal 5 novembre la lista duplicata **Punti per giorno** è rimossa: si passa
+fra i giorni dal selettore. Il totale comprende sempre tutto il periodo.
 
 | Voce | Quando vengono conteggiati i punti |
 | --- | --- |

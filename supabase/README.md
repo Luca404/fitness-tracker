@@ -1,5 +1,33 @@
 # Shared Supabase workflow
 
+## Secondary dish categories and recent usage — 2026-11-05
+
+`20261105210000_dish_secondary_categories_and_usage` was applied after a
+dry-run listing only this migration and mirrored in Trackr. It adds optional
+`dishes.categories` with a validated set of 13 secondary types, independent of
+meal types. Existing recipes start uncategorized and stay visible. New
+five-argument create/update overloads save categories atomically; old signatures
+remain usable and old updates preserve the new column. Explicit authenticated
+execution grants and existing invoker/RLS behavior are preserved.
+
+`get_recent_dish_usage()` is an owner-scoped authenticated read, counting diary
+entries from the last 30 dates through today in Europe/Rome, including prepared
+portions via their source recipe. Future entries, other accounts and preparation
+snapshots are excluded. Corrections/deletions recalculate usage; no client-written
+counter or scheduled job is involved. Existing meal/entry ownership indexes are
+reused. The older local application database was not upgraded.
+
+`tests/dish_secondary_categories_and_usage.sql` passed with synthetic fixture
+data and rollback in `fittrackr_dish_test_categories_20261105`, covering atomic
+validation, old clients, ownership, the 30-day boundary, prepared sources and
+deletions. All 589 frontend tests, build and lint passed. Mocked browser checks
+at 320/390/768/1440 px covered recipe editing, combined search/type filters,
+prepared recipes, usage order before/after logging and the loaded local font.
+Points/Fitness/History/Weight/Settings also rendered at mobile size without
+overflow or runtime errors. Recharts emitted two transient initial-size warnings
+on the empty Weight fixture. Hosted frontend behavior is not verified here.
+See [the UI and recipe guide](../docs/interfaccia-e-ricettario.md).
+
 ## Consecutive leaderboard positions — 2026-11-05
 
 `20261105160000_fitness_leaderboard_positions` was applied after a dry-run

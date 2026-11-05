@@ -1,7 +1,7 @@
 // src/services/api.ts
 import { supabase } from './supabase'
 import type {
-  UserHealthProfile, UserGoals, Meal, MealEntry, MealItemInput, Workout, WeightLog, Dish, DishItem, PantryItem, DishMealType, PreparedBatch
+  UserHealthProfile, UserGoals, Meal, MealEntry, MealItemInput, Workout, WeightLog, Dish, DishCategory, DishItem, PantryItem, DishMealType, PreparedBatch
 } from '../types'
 import { orderMealItems } from '../utils/mealItemOrder'
 import { orderDishItems } from '../utils/dishOrder'
@@ -297,7 +297,7 @@ export async function getMealsForRange(from: string, to: string): Promise<Meal[]
 
 // --- Dishes (piatti salvati) ---
 
-export async function getDishes(): Promise<Dish[]> {
+export async function getDishes(options?: { recentUsage?: boolean }): Promise<Dish[]> {
   const { data: dishes, error: dError } = await supabase
     .from('dishes')
     .select('*')
@@ -307,17 +307,28 @@ export async function getDishes(): Promise<Dish[]> {
   if (!dishes || dishes.length === 0) return []
 
   const dishIds = dishes.map(d => d.id)
-  const { data: items, error: iError } = await supabase
+  const [{ data: items, error: iError }, usage] = await Promise.all([supabase
     .from('dish_items')
     .select('*')
     .in('dish_id', dishIds)
     .order('position', { ascending: true })
-    .order('id', { ascending: true })
+    .order('id', { ascending: true }),
+    options?.recentUsage ? supabase.rpc('get_recent_dish_usage') : Promise.resolve({ data: null, error: null }),
+  ])
   if (iError) throw iError
+  if (usage.error) throw usage.error
 
   const itemsByDish = groupBy((items ?? []).map(enrichLegacyFoodItem), item => item.dish_id)
+  const usageByDish = new Map<string, { recent_use_count: number; last_used_on: string | null }>(
+    (usage.data ?? []).map((row: { dish_id: string; recent_use_count: number; last_used_on: string | null }) => [row.dish_id, row]),
+  )
   return dishes.map(d => ({
     ...d,
+    categories: d.categories ?? [],
+    ...(options?.recentUsage ? {
+      recent_use_count: Number(usageByDish.get(d.id)?.recent_use_count ?? 0),
+      last_used_on: usageByDish.get(d.id)?.last_used_on ?? null,
+    } : {}),
     items: orderDishItems(itemsByDish.get(d.id) ?? []),
   })) as Dish[]
 }
@@ -327,12 +338,14 @@ export async function createDish(
   name: string,
   items: Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'>[],
   mealTypes: DishMealType[],
+  categories: DishCategory[] = [],
 ): Promise<Dish> {
   const { data, error } = await supabase.rpc('create_dish_with_categories', {
     p_user_id: userId,
     p_name: name,
     p_items: items,
     p_meal_types: mealTypes,
+    p_categories: categories,
   })
   if (error) throw error
   return data as Dish
@@ -343,12 +356,14 @@ export async function updateDish(
   name: string,
   items: Omit<DishItem, 'id' | 'dish_id' | 'position' | 'created_at'>[],
   mealTypes: DishMealType[],
+  categories?: DishCategory[],
 ): Promise<Dish> {
   const { data, error } = await supabase.rpc('update_dish_with_categories', {
     p_dish_id: dishId,
     p_name: name,
     p_items: items,
     p_meal_types: mealTypes,
+    ...(categories === undefined ? {} : { p_categories: categories }),
   })
   if (error) throw error
   return data as Dish
@@ -446,7 +461,7 @@ export async function getPreparedBatches(): Promise<PreparedBatch[]> {
   return batches.flatMap(batch => {
     const dish = dishById.get(batch.snapshot_dish_id)
     const source = batch.source_dish_id ? sourceDishes.get(batch.source_dish_id) : undefined
-    return dish ? [{ ...batch, dish: { ...dish, icon: source ? source.icon : dish.icon } } as PreparedBatch] : []
+    return dish ? [{ ...batch, dish: { ...dish, icon: source ? source.icon : dish.icon, categories: source?.categories ?? dish.categories ?? [] } } as PreparedBatch] : []
   })
 }
 

@@ -13,7 +13,9 @@ import MealPhotoCapture from './MealPhotoCapture'
 import { getDishIcon, getFoodIcon } from '../../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
 import { dishMealTypeLabels, dishesForMeal } from '../../data/dishMealTypes'
-import type { Dish, DishMealType, PieceSize, PreparedBatch } from '../../types'
+import type { Dish, DishCategory, DishMealType, PieceSize, PreparedBatch } from '../../types'
+import { dishCategoryLabels, matchesDish, orderDishesByUsage, type DishCategoryFilter } from '../../data/dishCategories'
+import DishFilters from './DishFilters'
 import ExtendedNutrition from './ExtendedNutrition'
 import PreparedPortionInput from './PreparedPortionInput'
 import PreparedWeightCorrection from './PreparedWeightCorrection'
@@ -50,6 +52,9 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   const { showToast, setDishIcon } = useData()
   const [dishes, setDishes] = useState<Dish[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  const [query, setQuery] = useState('')
+  const [category, setCategory] = useState<DishCategoryFilter>('all')
   const [editingDish, setEditingDish] = useState<Dish | null>(null)
   const [pickingDish, setPickingDish] = useState<Dish | null>(tutorial?.scene === 'dish-pick' ? tutorial.examples.dish : null)
   const [iconDish, setIconDish] = useState<Dish | null>(null)
@@ -78,13 +83,15 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
   const [extraKeys, setExtraKeys] = useState<number[]>([])
   const nextExtraKey = useRef(0)
   const [addingExtra, setAddingExtra] = useState(false)
-  const visibleDishes = dishesForMeal(dishes, mealType)
+  const visibleDishes = orderDishesByUsage(dishesForMeal(dishes, mealType).filter(dish => matchesDish(dish, query, category)))
 
   const refresh = useCallback(async () => {
     setLoading(true)
+    setLoadError(false)
     try {
-      setDishes(await api.getDishes())
+      setDishes(await api.getDishes({ recentUsage: true }))
     } catch {
+      setLoadError(true)
       showToast('Errore caricamento piatti')
     } finally {
       setLoading(false)
@@ -143,6 +150,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     try {
       await api.consumePreparedBatch(selectedBatch.id, date, mealType, preparedGrams)
       await onPrepared?.()
+      await refresh()
       setSelectedBatch(null)
       setMode('list')
       showToast('Porzione registrata')
@@ -227,6 +235,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     setLoggingDish(true)
     try {
       await onAddEntry(pickingDish.name, pickedItems(), pickingDish.id, pickingDish.icon)
+      await refresh()
       setPickingDish(null)
       setExtraItems([])
       setMode('list')
@@ -284,15 +293,15 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
       : item))
   }
 
-  async function handleSaveNewDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[]) {
+  async function handleSaveNewDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[], categories: DishCategory[]) {
     if (!user) return
-    const dish = await api.createDish(user.id, name, items, mealTypes)
+    const dish = await api.createDish(user.id, name, items, mealTypes, categories)
     beginPreparation(name, dish.items.map(dishItemToDraft), dish)
   }
 
-  async function handleSaveEditedDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[]) {
+  async function handleSaveEditedDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[], categories: DishCategory[]) {
     if (!editingDish) return
-    await api.updateDish(editingDish.id, name, items, mealTypes)
+    await api.updateDish(editingDish.id, name, items, mealTypes, categories)
     await onDishUpdated?.()
     setEditingDish(null)
     setMode('list')
@@ -386,6 +395,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           initialName={editingDish.name}
           initialItems={editingDish.items.map(dishItemToDraft)}
           initialMealTypes={editingDish.meal_types}
+          initialCategories={editingDish.categories}
           editing
           requireName
           saveLabel="Salva modifiche"
@@ -657,12 +667,18 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           </div>
           <span className="rounded-full bg-gray-700 px-2.5 py-1 text-xs text-gray-400">{visibleDishes.length + preparedCount}</span>
         </div>
+        <DishFilters query={query} onQueryChange={setQuery} category={category} onCategoryChange={setCategory} />
         <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-          <PreparedDishesPanel mealType={mealType} compact onCountChange={setPreparedCount} onSelect={startPreparedPick} />
+          <PreparedDishesPanel mealType={mealType} query={query} category={category} compact onCountChange={setPreparedCount} onSelect={startPreparedPick} />
           {loading ? (
             <p className="text-sm text-gray-500 text-center py-4">Caricamento...</p>
+          ) : loadError ? (
+            <div role="alert" className="space-y-2 py-4 text-center">
+              <p className="text-sm text-orange-300">Impossibile caricare i piatti.</p>
+              <button type="button" onClick={() => void refresh()} className="btn-secondary min-h-11">Riprova</button>
+            </div>
           ) : visibleDishes.length === 0 && preparedCount === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-4">Nessun piatto salvato per questo pasto.</p>
+            <p className="text-sm text-gray-500 text-center py-4">{query.trim() || category !== 'all' ? 'Nessun piatto trovato.' : 'Nessun piatto salvato per questo pasto.'}</p>
           ) : visibleDishes.map(dish => (
               <div key={dish.id} className="group flex items-center gap-2 rounded-2xl border border-gray-700/70 bg-gray-900/30 p-2 transition hover:border-gray-600">
                 <button type="button" onClick={() => setIconDish(dish)}
@@ -675,7 +691,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{dish.name}</span>
                     <span className="text-xs text-gray-500">{formatDecimal(totalKcal(dish))} kcal · {formatDecimal(referenceWeight(dish))} g</span>
-                    <span className="block truncate text-[11px] text-primary-400/80">{dishMealTypeLabels(dish.meal_types)}</span>
+                    <span className="block truncate text-[11px] text-primary-400/80">{dishCategoryLabels(dish.categories) || dishMealTypeLabels(dish.meal_types)}</span>
                   </span>
                 </button>
                 <button type="button" onClick={() => startEdit(dish)}

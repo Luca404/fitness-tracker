@@ -3,6 +3,9 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Source Serif 4', 'Georgia', 'Times New Roman', 'serif'],
+      },
       colors: {
         primary: {
           50:  '#ecfdf5',

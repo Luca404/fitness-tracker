@@ -36,16 +36,16 @@ describe('points recap', () => {
     expect(screen.queryByRole('button', { name: 'Giorno precedente' })).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Punti per giorno' })).toBeNull()
     fireEvent.click(screen.getByRole('link', { name: 'I miei punti' }))
-    expect(screen.getByRole('heading', { name: 'Punti per giorno' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'mar 3 nov' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Punti per giorno' })).toBeNull()
   })
   it('shows total and streak in the header with an accessible recap link', () => {
     render(<Subject />)
     const link = screen.getByRole('link', { name: `${(123).toLocaleString('it-IT')} punti totali, streak di 0 giorni. Apri riepilogo punti` })
     expect(link.getAttribute('href')).toBe('/points')
-    expect(screen.getByRole('heading', { name: 'Punti per giorno' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'mar 3 nov' })).toBeTruthy()
     expect(screen.getByText('Dati incompleti')).toBeTruthy()
-    expect(screen.getAllByText(/^−1$/)).toHaveLength(3)
+    expect(screen.getAllByText(/^−1$/)).toHaveLength(2)
   })
   it('shows automatic diary points and pending wellbeing without confirmation controls', () => {
     const data = active()
@@ -70,7 +70,7 @@ describe('points recap', () => {
   })
   it('opens the recap directly with points already active', () => {
     render(<Subject />)
-    expect(screen.getByRole('heading', { name: 'Punti per giorno' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'mar 3 nov' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Attiva i punti' })).toBeNull()
     expect(screen.getByText('Come si guadagnano i punti')).toBeTruthy()
   })

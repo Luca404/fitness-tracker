@@ -1,7 +1,8 @@
 import FormActions from '../common/FormActions'
 import { Fragment, useRef, useState } from 'react'
 import FoodSearch from './FoodSearch'
-import type { DishItemDraft, DishMealType, PieceSize } from '../../types'
+import type { DishCategory, DishItemDraft, DishMealType, PieceSize } from '../../types'
+import { DISH_CATEGORIES } from '../../data/dishCategories'
 import { DISH_MEAL_TYPES } from '../../data/dishMealTypes'
 import IngredientPortionCard from './IngredientPortionCard'
 import { formatDecimal } from '../../utils/decimal'
@@ -13,7 +14,8 @@ interface Props {
   initialName: string
   initialItems: DishItemDraft[]
   initialMealTypes?: DishMealType[]
-  onSave: (name: string, items: DishItemDraft[], mealTypes: DishMealType[]) => Promise<void>
+  initialCategories?: DishCategory[]
+  onSave: (name: string, items: DishItemDraft[], mealTypes: DishMealType[], categories: DishCategory[]) => Promise<void>
   onCancel: () => void
   requireName?: boolean
   saveLabel?: string
@@ -23,11 +25,12 @@ interface Props {
 }
 
 export default function DishEditor({
-  initialName, initialItems, initialMealTypes = ['lunch'], onSave, onCancel,
+  initialName, initialItems, initialMealTypes = ['lunch'], initialCategories = [], onSave, onCancel,
   requireName = true, saveLabel = 'Salva piatto', showMealTypes = true, separateCustomizations = false, editing = false,
 }: Props) {
   const [name, setName] = useState(initialName)
   const [mealTypes, setMealTypes] = useState<DishMealType[]>(initialMealTypes)
+  const [categories, setCategories] = useState<DishCategory[]>(initialCategories)
   const [items, setItems] = useState<DishItemDraft[]>(initialItems)
   const [itemKeys, setItemKeys] = useState(() => initialItems.map((_, index) => index))
   const nextItemKey = useRef(initialItems.length)
@@ -68,7 +71,7 @@ export default function DishEditor({
     setSaving(true)
     setError(null)
     try {
-      await onSave(name.trim(), items, mealTypes)
+      await onSave(name.trim(), items, mealTypes, categories)
     } catch {
       setError('Operazione non riuscita. Riprova.')
     } finally {
@@ -88,9 +91,9 @@ export default function DishEditor({
       )}
 
       {showMealTypes && (
+        <>
         <fieldset className="rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
-          <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-gray-400">Categorie del piatto</legend>
-          <p className="mb-3 text-xs text-gray-500">Puoi sceglierne più di una.</p>
+          <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-gray-400">Momenti del giorno</legend>
           <div className="grid grid-cols-2 gap-2">
             {DISH_MEAL_TYPES.map(type => (
               <label key={type.id} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm ${mealTypes.includes(type.id)
@@ -105,6 +108,18 @@ export default function DishEditor({
           </div>
           {mealTypes.length === 0 && <p className="mt-2 text-xs text-amber-400">Scegli almeno una categoria.</p>}
         </fieldset>
+        <fieldset>
+          <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Tipo di piatto</legend>
+          <div className="flex flex-wrap gap-2">
+            {DISH_CATEGORIES.map(category => <label key={category.id}
+              className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 text-sm ${categories.includes(category.id) ? 'border-primary-500/60 bg-primary-500/15 text-white' : 'border-gray-700 text-gray-400'}`}>
+              <input type="checkbox" checked={categories.includes(category.id)} className="accent-primary-500"
+                onChange={event => setCategories(current => event.target.checked ? [...current, category.id] : current.filter(value => value !== category.id))} />
+              {category.label}
+            </label>)}
+          </div>
+        </fieldset>
+        </>
       )}
 
       <section>

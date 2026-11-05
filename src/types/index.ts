@@ -5,6 +5,7 @@ export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'ver
 export type Objective = 'lose_weight' | 'gain_muscle' | 'maintain' | 'recomposition'
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'drinks'
 export type DishMealType = Exclude<MealType, 'drinks'>
+export type DishCategory = 'pasta' | 'rice' | 'vegetables' | 'meat' | 'fish' | 'toast' | 'pizza' | 'legumes' | 'eggs' | 'dairy' | 'soup' | 'dessert' | 'beverages'
 export type FoodSource = 'manual' | 'basic' | 'openfoodfacts' | 'ai_photo' | 'ai_meal_photo' | 'barcode' | 'pantry'
 export type PantryUnit = 'g' | 'ml' | 'pz'
 export type MealItemUnit = 'g' | 'ml'
@@ -289,6 +290,9 @@ export interface Dish {
   icon: string | null
   is_preparation?: boolean
   meal_types: DishMealType[]
+  categories?: DishCategory[]
+  recent_use_count?: number
+  last_used_on?: string | null
   created_at: string
   updated_at: string
   cooking_signature?: string | null

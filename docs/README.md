@@ -19,6 +19,7 @@ Revisione del 16 ottobre 2026: Storico esclude il giorno corrente da grafici e m
 | [Buone abitudini](buone-abitudini.md) | Quadratini a riempimento, limiti e media sugli ultimi 7 giorni |
 | [Tour interattivo](tutorial.md) | Pagine reali, pulsanti evidenziati, esempi temporanei e riavvio dalle impostazioni |
 | [Gamification](gamification.md) | Punti, streak, classifica, nome utente, riepilogo giornaliero, formule e verifiche |
+| [Interfaccia e ricettario](interfaccia-e-ricettario.md) | Font, categorie secondarie dei piatti, ricerca e ordine per utilizzo recente |
 | [Peso dei piatti preparati](peso-piatti-preparati.md) | Cottura, stime, peso misurato e ricalcolo delle porzioni passate |
 | [Allenamenti in palestra](allenamenti-palestra.md) | Schede, riordino, sessioni, calorie stimate ed esempi |
 | [Attività e storico](attivita-e-storico.md) | Chilometri facoltativi, fasce di velocità e palestra nei grafici |

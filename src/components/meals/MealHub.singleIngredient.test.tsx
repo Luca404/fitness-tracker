@@ -64,8 +64,41 @@ describe('saved dish meal flow', () => {
     }],
   }
 
+  it('combines search and secondary categories while retaining recent-usage order', async () => {
+    const examples: Dish[] = [
+      { ...dish, id: 'rice', name: 'Riso al limone', categories: ['rice'], recent_use_count: 2 },
+      { ...dish, id: 'pasta', name: 'Pasta alle verdure', categories: ['pasta', 'vegetables'], recent_use_count: 5 },
+      { ...dish, id: 'toast', name: 'Toast', categories: ['toast'], recent_use_count: 0 },
+    ]
+    mocks.getDishes.mockResolvedValue(examples)
+    const onAddEntry = vi.fn()
+    render(<TestHub onAddEntry={onAddEntry} />)
+    const pasta = await screen.findByRole('button', { name: /^Pasta alle verdure/ })
+    const rice = screen.getByRole('button', { name: /^Riso al limone/ })
+    expect(pasta.compareDocumentPosition(rice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    fireEvent.change(screen.getByRole('combobox', { name: 'Tipo di piatto' }), { target: { value: 'vegetables' } })
+    expect(screen.queryByRole('button', { name: /^Riso al limone/ })).toBeNull()
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Cerca un piatto' }), { target: { value: 'riso' } })
+    expect(screen.getByText('Nessun piatto trovato.')).toBeTruthy()
+    fireEvent.change(screen.getByRole('combobox', { name: 'Tipo di piatto' }), { target: { value: 'all' } })
+    expect(screen.getByRole('button', { name: /^Riso al limone/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Pasta alle verdure/ })).toBeNull()
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Cerca un piatto' }), { target: { value: '' } })
+    expect(screen.getByRole('button', { name: /^Toast/ })).toBeTruthy()
+    expect(onAddEntry).not.toHaveBeenCalled()
+  })
+
+  it('allows retry when the recipe or usage read fails', async () => {
+    mocks.getDishes.mockResolvedValue([dish]).mockRejectedValueOnce(new Error('unavailable'))
+    render(<TestHub onAddEntry={vi.fn()} />)
+    expect(await screen.findByRole('alert')).toBeTruthy()
+    expect(screen.queryByText('Nessun piatto salvato per questo pasto.')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Riprova' }))
+    expect(await screen.findByRole('button', { name: /^Pasta al pomodoro/ })).toBeTruthy()
+  })
+
   it('registers the whole saved recipe without creating a prepared batch', async () => {
-    mocks.getDishes.mockResolvedValueOnce([dish])
+    mocks.getDishes.mockResolvedValue([dish])
     const onAddEntry = vi.fn().mockResolvedValue(undefined)
     render(<TestHub onAddEntry={onAddEntry} />)
 
@@ -80,7 +113,7 @@ describe('saved dish meal flow', () => {
   })
 
   it('opens portion preparation only through the explicit action', async () => {
-    mocks.getDishes.mockResolvedValueOnce([dish])
+    mocks.getDishes.mockResolvedValue([dish])
     mocks.createPreparedBatch.mockResolvedValueOnce(undefined)
     const onAddEntry = vi.fn().mockResolvedValue(undefined)
     render(<TestHub onAddEntry={onAddEntry} />)
@@ -97,7 +130,7 @@ describe('saved dish meal flow', () => {
   })
 
   it('displays rounded quantities without changing an untouched saved recipe', async () => {
-    mocks.getDishes.mockResolvedValueOnce([{
+    mocks.getDishes.mockResolvedValue([{
       ...dish,
       items: [{ ...dish.items[0], quantity_g: 80.13, calories: 280.46 }],
     }])
@@ -125,7 +158,7 @@ describe('saved dish meal flow', () => {
         quantity_g: 50, calories: 15, protein_g: 0.5, carbs_g: 3, fat_g: 0,
       }],
     }
-    mocks.getDishes.mockResolvedValueOnce([twoIngredientDish])
+    mocks.getDishes.mockResolvedValue([twoIngredientDish])
     const onAddEntry = vi.fn().mockResolvedValue(undefined)
     render(<TestHub onAddEntry={onAddEntry} />)
 
@@ -147,7 +180,7 @@ describe('saved dish meal flow', () => {
       ...dish, cooking_signature: recipeSignature(dish.items),
       cooking_methods: ['boiled'], measured_yield_ratio: 2,
     }
-    mocks.getDishes.mockResolvedValueOnce([measuredDish])
+    mocks.getDishes.mockResolvedValue([measuredDish])
     mocks.createPreparedBatch.mockResolvedValueOnce(undefined)
     render(<TestHub onAddEntry={vi.fn()} />)
 
@@ -164,7 +197,7 @@ describe('saved dish meal flow', () => {
   })
 
   it('stores the full measured ratio when 1200 g of ingredients yield 800 g cooked', async () => {
-    mocks.getDishes.mockResolvedValueOnce([dish])
+    mocks.getDishes.mockResolvedValue([dish])
     mocks.createPreparedBatch.mockResolvedValueOnce(undefined)
     render(<TestHub onAddEntry={vi.fn()} />)
 

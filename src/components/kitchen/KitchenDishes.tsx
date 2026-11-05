@@ -9,7 +9,9 @@ import DishIconChoices from './DishIconChoices'
 import { getDishIcon, getFoodIcon } from '../../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
 import { DISH_MEAL_TYPES, dishMealTypeLabels } from '../../data/dishMealTypes'
-import type { Dish, DishMealType } from '../../types'
+import type { Dish, DishCategory, DishMealType } from '../../types'
+import { dishCategoryLabels, matchesDish, type DishCategoryFilter } from '../../data/dishCategories'
+import DishFilters from '../meals/DishFilters'
 import ExtendedNutrition from '../meals/ExtendedNutrition'
 import PreparedDishesPanel from '../meals/PreparedDishesPanel'
 import { formatDecimal } from '../../utils/decimal'
@@ -27,6 +29,7 @@ export default function KitchenDishes() {
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<DishMealType | 'all'>('all')
+  const [dishCategory, setDishCategory] = useState<DishCategoryFilter>('all')
   const [mode, setMode] = useState<EditorMode>(tutorial?.scene === 'dish-editor' ? 'create' : 'closed')
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null)
   const [iconReturnMode, setIconReturnMode] = useState<'closed' | 'detail'>('closed')
@@ -46,7 +49,7 @@ export default function KitchenDishes() {
   useEffect(() => { refresh() }, [refresh])
 
   const visibleDishes = dishes.filter(dish => (category === 'all' || dish.meal_types.includes(category))
-    && dish.name.toLowerCase().includes(query.trim().toLowerCase()))
+    && matchesDish(dish, query, dishCategory))
 
   function openDetail(dish: Dish) {
     setSelectedDish(dish)
@@ -81,10 +84,10 @@ export default function KitchenDishes() {
     }
   }
 
-  async function createDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[]) {
+  async function createDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[], categories: DishCategory[]) {
     if (!user) return
     try {
-      await api.createDish(user.id, name, items, mealTypes)
+      await api.createDish(user.id, name, items, mealTypes, categories)
       await refresh()
       setMode('closed')
       showToast('Piatto salvato')
@@ -94,10 +97,10 @@ export default function KitchenDishes() {
     }
   }
 
-  async function updateDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[]) {
+  async function updateDish(name: string, items: DishItemDraft[], mealTypes: DishMealType[], categories: DishCategory[]) {
     if (!selectedDish) return
     try {
-      await api.updateDish(selectedDish.id, name, items, mealTypes)
+      await api.updateDish(selectedDish.id, name, items, mealTypes, categories)
       await refreshDiary()
       await refresh()
       setSelectedDish(null)
@@ -126,7 +129,7 @@ export default function KitchenDishes() {
 
   return (
     <div className="space-y-6">
-      <PreparedDishesPanel mealType={category === 'all' ? undefined : category} />
+      <PreparedDishesPanel mealType={category === 'all' ? undefined : category} query={query} category={dishCategory} />
       <button type="button" data-tour="dish-new" onClick={() => { setSelectedDish(null); setMode('create') }}
         className="flex w-full items-center gap-3 rounded-2xl bg-primary-500 px-4 lg:w-auto lg:pr-6 py-3.5 text-left font-semibold shadow-lg shadow-primary-950/30 hover:bg-primary-400">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-xl">+</span>
@@ -150,8 +153,7 @@ export default function KitchenDishes() {
             </button>
           ))}
         </div>
-        <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Cerca un piatto..."
-          className="mb-3 w-full rounded-2xl border border-gray-700 bg-gray-800/70 px-4 py-3 text-sm outline-none focus:border-primary-500" />
+        <DishFilters query={query} onQueryChange={setQuery} category={dishCategory} onCategoryChange={setDishCategory} />
         {loading ? (
           <div className="h-32 animate-pulse rounded-2xl bg-gray-800" />
         ) : visibleDishes.length === 0 ? (
@@ -171,7 +173,7 @@ export default function KitchenDishes() {
                     {getDishIcon(dish)}<span aria-hidden="true" className="absolute -bottom-1 -right-1 rounded-full bg-gray-700 px-1 text-[10px]">✎</span>
                   </button>
                   <button type="button" onClick={() => openDetail(dish)} className="flex min-w-0 flex-1 items-center gap-2 py-1 pr-1 text-left">
-                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{dish.name}</span><span className="text-xs text-gray-500">{dish.items.length} ingredienti · {formatDecimal(totals.weight)} g{totals.volumeMl > 0 && <> + {formatDecimal(totals.volumeMl)} ml</>}</span><span className="block truncate text-[11px] text-primary-400/80">{dishMealTypeLabels(dish.meal_types)}</span></span>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{dish.name}</span><span className="text-xs text-gray-500">{dish.items.length} {dish.items.length === 1 ? 'ingrediente' : 'ingredienti'} · {formatDecimal(totals.weight)} g{totals.volumeMl > 0 && <> + {formatDecimal(totals.volumeMl)} ml</>}</span><span className="block truncate text-[11px] text-primary-400/80">{dishMealTypeLabels(dish.meal_types)}</span></span>
                     <span className="text-sm font-semibold text-primary-400">{formatDecimal(totals.calories)}<small className="ml-1 text-[9px]">kcal</small></span>
                     <span className="text-gray-600">›</span>
                   </button>
@@ -205,7 +207,7 @@ export default function KitchenDishes() {
         ) : mode === 'edit' && selectedDish ? (
           <div className="space-y-5">
             <div className="pr-12 lg:pr-0"><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Modifica ricetta</p><h2 className="text-xl font-bold">{selectedDish.name}</h2></div>
-            <DishEditor initialName={selectedDish.name} initialItems={selectedDish.items.map(dishItemToDraft)} initialMealTypes={selectedDish.meal_types} onSave={updateDish} onCancel={() => setMode('detail')} saveLabel="Salva modifiche" editing />
+            <DishEditor initialName={selectedDish.name} initialItems={selectedDish.items.map(dishItemToDraft)} initialMealTypes={selectedDish.meal_types} initialCategories={selectedDish.categories} onSave={updateDish} onCancel={() => setMode('detail')} saveLabel="Salva modifiche" editing />
           </div>
         ) : selectedDish ? (
           <DishDetail
@@ -239,6 +241,7 @@ function DishDetail({ dish, onEdit, onChangeIcon, onDelete }: {
         ) : <span className="text-3xl">{getDishIcon(dish)}</span>}
         <h2 className="mt-3 text-2xl font-bold">{dish.name}</h2>
         <p className="mt-1 text-xs text-primary-400">{dishMealTypeLabels(dish.meal_types ?? ['lunch'])}</p>
+        {!!dish.categories?.length && <p className="mt-1 text-sm text-gray-300">{dishCategoryLabels(dish.categories)}</p>}
         <p className="mt-1 text-sm text-gray-400">{formatDecimal(totals.weight)} g{totals.volumeMl > 0 && <> + {formatDecimal(totals.volumeMl)} ml</>} · {formatDecimal(totals.calories)} kcal</p>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
           <span className="rounded-xl bg-black/15 py-2">P <b>{formatDecimal(totals.protein)}g</b></span>

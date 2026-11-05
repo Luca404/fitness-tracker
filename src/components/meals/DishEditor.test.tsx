@@ -27,7 +27,7 @@ describe('DishEditor', () => {
 
     await waitFor(() => expect(onSave).toHaveBeenCalledWith('Pasta', [expect.objectContaining({
       id: 'ingredient-1', quantity_g: 200, calories: 300, protein_g: 10,
-    })], ['lunch']))
+    })], ['lunch'], []))
   })
 
   it('saves multiple meal categories for one dish', async () => {
@@ -35,11 +35,13 @@ describe('DishEditor', () => {
     render(<DishEditor initialName="Pasta" initialItems={[{
       food_name: 'Pasta', quantity_g: 100, calories: 150, protein_g: 5, carbs_g: 30, fat_g: 1,
       category: 'grain', food_key: null, source: 'manual', off_food_id: null,
-    }]} initialMealTypes={['lunch']} onSave={onSave} onCancel={() => {}} />)
+    }]} initialMealTypes={['lunch']} initialCategories={['pasta']} onSave={onSave} onCancel={() => {}} />)
 
+    expect((screen.getByRole('checkbox', { name: 'Pasta' }) as HTMLInputElement).checked).toBe(true)
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Verdure' }))
     fireEvent.click(screen.getByRole('checkbox', { name: /Cena/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Salva piatto' }))
-    await waitFor(() => expect(onSave).toHaveBeenCalledWith('Pasta', expect.any(Array), ['lunch', 'dinner']))
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith('Pasta', expect.any(Array), ['lunch', 'dinner'], ['pasta', 'vegetables']))
   })
 
   it('shows added ingredients separately and removes one without changing the base', async () => {
@@ -58,7 +60,7 @@ describe('DishEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Salva piatto' }))
     await waitFor(() => expect(onSave).toHaveBeenCalledWith('Pasta con formaggio', [
       expect.objectContaining({ food_name: 'Pasta', is_customization: false }),
-    ], ['lunch']))
+    ], ['lunch'], []))
   })
 
   it('keeps an invalid quantity visible when an earlier ingredient is removed and blocks saving', async () => {
@@ -76,6 +78,6 @@ describe('DishEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Salva piatto' }))
     await waitFor(() => expect(onSave).toHaveBeenCalledWith('Pasta', [expect.objectContaining({
       food_name: 'Pomodoro', quantity_g: 50, calories: 75,
-    })], ['lunch']))
+    })], ['lunch'], []))
   })
 })

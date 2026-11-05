@@ -72,8 +72,8 @@ export function createTutorialStore(date: string) {
       return saved
     },
     getDishes: async () => snapshot.dishes,
-    createDish: async (_userId, name, items, mealTypes) => {
-      const saved = dish(name, items, mealTypes)
+    createDish: async (_userId, name, items, mealTypes, categories = []) => {
+      const saved = { ...dish(name, items, mealTypes), categories }
       notify({ dishes: [saved], toast: 'Piatto di esempio salvato' }, 'dish-saved')
       return saved
     },

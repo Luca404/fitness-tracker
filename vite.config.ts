@@ -8,7 +8,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'],
+      workbox: { globPatterns: ['**/*.{js,wasm,css,html,woff2}'] },
+      includeAssets: ['fonts/source-serif-4-OFL.txt', 'favicon.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'fitTrackr',
         short_name: 'fitTrackr',

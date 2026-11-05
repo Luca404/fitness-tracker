@@ -5,17 +5,20 @@ import { useData } from '../../contexts/DataContext'
 import { useSettings } from '../../contexts/SettingsContext'
 import type { DishMealType, PreparedBatch } from '../../types'
 import { DISH_MEAL_TYPES } from '../../data/dishMealTypes'
+import { matchesDish, type DishCategoryFilter } from '../../data/dishCategories'
 import PreparedPortionInput from './PreparedPortionInput'
 import PreparedWeightCorrection from './PreparedWeightCorrection'
 import { getDishIcon } from '../../utils/foodIcons'
 import { formatDecimal } from '../../utils/decimal'
 
-export default function PreparedDishesPanel({ mealType, onConsumed, compact = false, onCountChange, onSelect }: {
+export default function PreparedDishesPanel({ mealType, onConsumed, compact = false, onCountChange, onSelect, query = '', category = 'all' }: {
   mealType?: DishMealType
   onConsumed?: () => Promise<void>
   compact?: boolean
   onCountChange?: (count: number) => void
   onSelect?: (batch: PreparedBatch) => void
+  query?: string
+  category?: DishCategoryFilter
 }) {
   const api = useAppService('api', productionApi)
   const { selectedDate } = useSettings()
@@ -30,11 +33,10 @@ export default function PreparedDishesPanel({ mealType, onConsumed, compact = fa
     try {
       const nextBatches = await api.getPreparedBatches()
       setBatches(nextBatches)
-      onCountChange?.(mealType ? nextBatches.filter(batch => batch.dish.meal_types.includes(mealType)).length : nextBatches.length)
     } catch {
       showToast('Errore caricamento piatti preparati')
     }
-  }, [api, showToast, onCountChange, mealType])
+  }, [api, showToast])
 
   useEffect(() => { void refresh() }, [refresh])
 
@@ -69,7 +71,8 @@ export default function PreparedDishesPanel({ mealType, onConsumed, compact = fa
     }
   }
 
-  const visibleBatches = mealType ? batches.filter(batch => batch.dish.meal_types.includes(mealType)) : batches
+  const visibleBatches = batches.filter(batch => (!mealType || batch.dish.meal_types.includes(mealType)) && matchesDish(batch.dish, query, category))
+  useEffect(() => { onCountChange?.(visibleBatches.length) }, [onCountChange, visibleBatches.length])
   if (visibleBatches.length === 0) return null
 
   return <section className={compact ? 'space-y-2' : 'space-y-3'}>
