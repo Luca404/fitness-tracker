@@ -133,7 +133,7 @@ export default function KitchenDishes() {
         <span><span className="block">Crea un nuovo piatto</span><span className="block text-xs font-normal text-primary-100">Componi la ricetta ingrediente per ingrediente</span></span>
       </button>
 
-      <section>
+      <section data-tour="dish-list">
         <div className="mb-3 flex items-end justify-between px-1">
           <div><p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Ricettario</p><h2 className="mt-1 text-lg font-bold">I tuoi piatti</h2></div>
           <span className="rounded-full bg-gray-800 px-2.5 py-1 text-xs text-gray-500">{visibleDishes.length}</span>

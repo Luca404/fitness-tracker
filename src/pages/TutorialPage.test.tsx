@@ -15,6 +15,9 @@ describe('TutorialPage lifecycle', () => {
     const { unmount } = render(<TutorialPage onFinish={() => {}} />)
     expect(document.body.style.overflow).toBe('hidden')
     expect(document.documentElement.style.overflow).toBe('hidden')
+    expect(document.documentElement.getAttribute('data-tutorial')).toBe('active')
+    document.documentElement.style.setProperty('--tutorial-coach-height', '240px')
+    document.documentElement.style.setProperty('--tutorial-viewport-height', '844px')
     document.body.scrollTop = 120
     document.documentElement.scrollTop = 120
     unmount()
@@ -22,6 +25,9 @@ describe('TutorialPage lifecycle', () => {
     expect(document.documentElement.scrollTop).toBe(0)
     expect(document.body.style.overflow).toBe(previousBodyOverflow)
     expect(document.documentElement.style.overflow).toBe(previousRootOverflow)
+    expect(document.documentElement.hasAttribute('data-tutorial')).toBe(false)
+    expect(document.documentElement.style.getPropertyValue('--tutorial-coach-height')).toBe('')
+    expect(document.documentElement.style.getPropertyValue('--tutorial-viewport-height')).toBe('')
   })
 
   it('lets the parent close the isolated router', () => {

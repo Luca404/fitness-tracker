@@ -64,7 +64,42 @@
 }
 
 .tutorial-coach {
+  inset: 0 auto auto 50%;
+  width: min(100%, 448px);
+  max-height: min(42dvh, 260px);
+  max-height: min(calc(var(--tutorial-viewport-height, 100dvh) * .42), 260px);
+  transform: translateX(-50%);
+  border-bottom-width: 1px;
   animation: tutorial-appear 160ms ease-out;
+}
+
+html[data-tutorial='active'] .app-shell,
+html[data-tutorial='active'] .tutorial-modal-frame {
+  top: var(--tutorial-coach-height, 212px);
+  height: calc(var(--tutorial-viewport-height, 100dvh) - var(--tutorial-coach-height, 212px));
+}
+
+html[data-tutorial='active'] .tutorial-modal-frame > [role='dialog'] {
+  max-height: 100%;
+}
+
+/* Reserve the side rail only when the remaining app still fits its desktop layout. */
+@media (min-width: 1440px) {
+  .tutorial-coach {
+    inset: 0 0 0 auto;
+    width: 340px;
+    max-height: none;
+    transform: none;
+    border-bottom-width: 0;
+    border-left-width: 1px;
+  }
+  html[data-tutorial='active'] .app-shell,
+  html[data-tutorial='active'] .tutorial-modal-frame {
+    top: 0;
+    right: 340px;
+    height: var(--tutorial-viewport-height, 100dvh);
+  }
+  .tutorial-coach > :nth-child(2) { flex: 1; }
 }
 
 @keyframes tutorial-appear {

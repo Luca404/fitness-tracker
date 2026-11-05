@@ -28,21 +28,17 @@ function guide() {
 }
 
 describe('tutorial spotlight accessibility and recovery', () => {
-  it('cancels native navigation before advancing from a highlighted link', async () => {
+  it('lets the real highlighted control run before progressing and offers no simulated-click shortcut', async () => {
     const onNext = vi.fn()
+    const actualClick = vi.fn(() => expect(onNext).not.toHaveBeenCalled())
     render(<>
-      <a href="/kitchen" data-test-target>Cucina</a>
+      <button data-test-target onClick={actualClick}>Cucina</button>
       <TutorialSpotlight step={step} index={0} total={3} onNext={onNext} onBack={() => {}} onChapter={() => {}} onFinish={() => {}} />
     </>)
-    let preventedBeforeDefault = false
-    const inspect = (event: MouseEvent) => {
-      preventedBeforeDefault = event.defaultPrevented
-      event.preventDefault() // Keep the regression test from actually navigating if it fails.
-    }
-    document.addEventListener('click', inspect, { capture: true, once: true })
-    await act(async () => { screen.getByRole('link', { name: 'Cucina' }).click() })
-    expect(preventedBeforeDefault).toBe(true)
-    expect(onNext).toHaveBeenCalledOnce()
+    expect(screen.queryByRole('button', { name: 'Continua' })).toBeNull()
+    await act(async () => { screen.getByRole('button', { name: 'Cucina' }).click() })
+    expect(actualClick).toHaveBeenCalledOnce()
+    await waitFor(() => expect(onNext).toHaveBeenCalledOnce())
   })
 
   it('follows the target after scrolling and restores its original description on close', async () => {
@@ -68,7 +64,7 @@ describe('tutorial spotlight accessibility and recovery', () => {
     fireEvent.keyDown(document, { key: 'Tab' })
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Pulsante reale' }))
     fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Continua' }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Salta' }))
     fireEvent.click(screen.getByRole('button', { name: 'Elimina dati' }))
     expect(unrelated).not.toHaveBeenCalled()
     fireEvent.keyDown(document, { key: 'Escape' })
@@ -80,7 +76,8 @@ describe('tutorial spotlight accessibility and recovery', () => {
     const onNext = vi.fn()
     render(<TutorialSpotlight step={step} index={0} total={3} onNext={onNext} onBack={() => {}} onChapter={() => {}} onFinish={() => {}} />)
     await act(async () => { vi.advanceTimersByTime(8000) })
-    fireEvent.click(screen.getByRole('button', { name: 'Prosegui' }))
+    expect(onNext).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Salta passaggio' }))
     expect(onNext).toHaveBeenCalledOnce()
   })
 })

@@ -67,7 +67,7 @@ export default function Modal({ open, onClose, children, title, fullScreenOnMobi
 
   if (!open) return null
   return createPortal(
-    <div className={`fixed inset-0 z-[100] flex h-[100dvh] justify-center lg:items-center lg:p-4 ${fullScreenOnMobile ? 'items-stretch bg-gray-800 lg:bg-transparent' : 'items-end'}`}>
+    <div className={`tutorial-modal-frame fixed inset-0 z-[100] flex h-[100dvh] justify-center lg:items-center lg:p-4 ${fullScreenOnMobile ? 'items-stretch bg-gray-800 lg:bg-transparent' : 'items-end'}`}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       <div
         ref={panelRef}

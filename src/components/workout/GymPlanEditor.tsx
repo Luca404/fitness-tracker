@@ -100,7 +100,7 @@ export default function GymPlanEditor({ plan, customExercises = [], catalogError
     }
   }
 
-  return <div className="space-y-5">
+  return <div data-tour="gym-plan-editor" className="space-y-5">
     <div>
       <p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Scheda palestra</p>
       <h2 className="mt-1 text-xl font-bold">{plan ? 'Modifica scheda' : 'Nuova scheda'}</h2>

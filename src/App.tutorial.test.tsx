@@ -42,7 +42,7 @@ describe('tutorial within the complete app', () => {
     await screen.findByRole('heading', { name: 'Partiamo dalla Cucina' }, { timeout: 6000 })
     await waitFor(() => expect(document.querySelector('[data-tour="nav-kitchen"]')?.hasAttribute('aria-describedby')).toBe(true), { timeout: 6000 })
     await act(async () => { screen.getByRole('link', { name: 'Cucina' }).click() })
-    expect(await screen.findByRole('heading', { name: 'Ingredienti in tre modi' }, { timeout: 6000 })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Aggiungi un ingrediente' }, { timeout: 6000 })).toBeTruthy()
     expect(window.location.pathname).toBe('/tutorial')
     expect(screen.getByRole('region', { name: 'Tutorial interattivo' })).toBeTruthy()
     expect(document.querySelector('[data-tutorial-demo]')).toBeTruthy()
@@ -58,6 +58,9 @@ describe('tutorial within the complete app', () => {
     expect(document.documentElement.scrollTop).toBe(0)
     expect(document.body.style.overflow).toBe('')
     expect(document.documentElement.style.overflow).toBe('')
+    expect(document.documentElement.hasAttribute('data-tutorial')).toBe(false)
+    expect(document.documentElement.style.getPropertyValue('--tutorial-coach-height')).toBe('')
+    expect(document.documentElement.style.getPropertyValue('--tutorial-viewport-height')).toBe('')
     expect(document.querySelector('[data-tutorial-demo]')).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'fitTrackr' }))

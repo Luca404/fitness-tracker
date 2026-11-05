@@ -244,7 +244,7 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
     setCookingMethods(remembered ? dish.cooking_methods! : items.map(defaultCookingMethod))
     setRememberedYieldRatio(remembered ? dish.measured_yield_ratio ?? null : null)
     setCookedWeightOverride(null)
-    setFirstPortionG(null)
+    setFirstPortionG(tutorial ? 0 : null)
     setMode('prepare')
   }
 

@@ -319,6 +319,7 @@ export default function MealsPage() {
               </div>
               <button
                 type="button"
+                data-tour="meal-hub-close"
                 onClick={() => setFoodSearchOpen(false)}
                 className="flex h-10 w-10 items-center justify-center rounded-xl text-xl text-gray-400 hover:bg-gray-700"
                 aria-label="Chiudi"
