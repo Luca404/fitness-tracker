@@ -33,7 +33,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const page = location.pathname === '/points'
-    ? { label: 'Punti e costanza', description: 'Il riepilogo dei tuoi punti, giorno per giorno.' }
+    ? { label: 'Punti e costanza', description: 'I tuoi progressi e la classifica della community.' }
     : location.pathname === '/settings'
     ? { label: 'Impostazioni', description: 'Il tuo profilo e i tuoi obiettivi personali.' }
     : location.pathname === '/meals/wellbeing'

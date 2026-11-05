@@ -1,5 +1,30 @@
 # Shared Supabase workflow
 
+## Fitness leaderboard and usernames — 2026-11-05
+
+`20261105150000_fitness_leaderboard` was applied after a dry-run listing only
+this migration and mirrored identically in Trackr (SHA-256 checked). It adds
+owner-readable `fitness_usernames`, backfills existing fitness profiles, and
+assigns unique `user` + nine random digits on health-profile creation during
+onboarding. No shared Auth trigger or finance account is changed. Authenticated
+rename RPC normalizes/validates names and rejects duplicates atomically.
+
+The authenticated leaderboard exposes username, total, rank and self marker
+only, with bounded pagination and a separate own position. Only completed
+fitness profiles participate. The private explicit-account scorer is shared
+with the existing own-account wrapper; rules v4, periods, targets and RLS on
+source records are preserved. No client execution grant exists on helpers;
+the new public RPC grants are explicit.
+
+`tests/fitness_leaderboard.sql` and the existing v4 goal/penalty suite with the
+new migration passed in `fittrackr_gamification_test_leaderboard_20261105`,
+using synthetic fixtures and rollback. Frontend tests, build and lint passed;
+mocked browser checks at 320/390/768/1440 px covered tab/date preservation,
+pagination, own position, rename/duplicate and read failure/retry. There were
+no runtime errors or horizontal overflows; simulated 409/503 network errors
+were expected. The older local application database was not upgraded and the
+frontend was not deployed. See [the feature guide](../docs/gamification.md).
+
 ## Two food moments and goal deductions — 2026-11-05
 
 `20261105120000_fitness_points_goals_and_penalties` was applied after a dry-run

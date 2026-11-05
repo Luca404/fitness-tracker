@@ -4,6 +4,45 @@ Implementata il 4 novembre 2026, senza avatar. I punti sono attivi per tutti e
 si calcolano automaticamente: nessun pulsante di attivazione, conferma della
 giornata o dichiarazione sulle bevande. Le formule sono regole di gioco.
 
+## Classifica e nome utente
+
+Dal 5 novembre 2026 `/points` contiene le schede **I miei punti** e
+**Classifica** (`?tab=leaderboard`). Tornando al riepilogo si conserva la
+data selezionata. La classifica generale include tutti i profili FitTrackr
+completati, anche con zero punti; gli account delle altre app Trackrs senza
+profilo salute sono esclusi. L’ordine è per punti totali decrescenti, con
+posizioni a pari merito (1, 1, 3); i nomi ordinano in modo stabile i pari punti.
+Le pagine contengono 25 utenti e la propria posizione resta visibile anche
+fuori dalla pagina corrente. Aggiornamento all’apertura, al ritorno sulla
+finestra, ogni minuto, al cambio del proprio totale o con **Aggiorna**.
+
+Alla creazione del profilo durante l’onboarding viene assegnato un nome
+univoco `user` seguito da nove cifre casuali. La migrazione assegna il nome
+anche ai profili esistenti. Non si installano trigger sull’Auth condivisa.
+In **Impostazioni → Nome utente** è possibile cambiarlo: 3–24 caratteri ASCII,
+lettere, numeri e underscore, normalizzati in minuscolo. Un nome occupato
+produce un errore e conserva il nome precedente. Gli upsert del profilo
+salute non sovrascrivono un nome scelto.
+
+La classifica condivide lo stesso calcolo del riepilogo personale: include
+detrazioni, limite del saldo a zero, correzioni storiche e scadenze nei fusi
+salvati. Nessun punteggio arriva dal client. `fitness_usernames` ha RLS e
+lettura solo del proprio nome; modifica soltanto tramite RPC autenticata.
+`get_fitness_leaderboard` restituisce esclusivamente nome, totale, posizione
+e indicatore del proprio account, senza UUID, email o dati salute. Il helper
+`fitness_points_days_for_user(uuid)` è privato e non eseguibile dai client.
+L’accesso alla classifica richiede un profilo FitTrackr completato.
+
+La migrazione è `20261105150000_fitness_leaderboard.sql`; il test SQL
+autonomo `supabase/tests/fitness_leaderboard.sql` richiede un database vuoto
+`fittrackr_gamification_test_*` e usa solo fixture sintetiche in rollback.
+Copre backfill, nuovi profili, nomi duplicati/non validi, permessi, isolamento,
+pari merito, paginazione, correzioni e coerenza col riepilogo. È stata verificata
+anche la suite SQL delle regole v4 dopo l’introduzione del helper condiviso.
+Le prove browser con API simulate a 320/390/768/1440 px coprono schede, data,
+pagine, propria posizione, cambio nome, duplicati e errore/riprova. Nessun
+errore runtime o overflow; 409 e 503 simulati sono gli errori di rete attesi.
+
 ## Uso e tempi del calcolo
 
 Punti totali e streak compaiono a sinistra della rotella delle impostazioni;

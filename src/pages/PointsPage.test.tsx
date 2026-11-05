@@ -5,6 +5,7 @@ import type { ActiveFitnessPoints, PointsDay } from '../services/fitnessPoints'
 const mock = vi.hoisted(() => ({ value: {} as Record<string, unknown>, setDate: vi.fn() }))
 vi.mock('../contexts/FitnessPointsContext', () => ({ useFitnessPoints: () => mock.value }))
 vi.mock('../contexts/SettingsContext', () => ({ useSettings: () => ({ selectedDate: '2026-11-04', setSelectedDate: mock.setDate }) }))
+vi.mock('../components/points/Leaderboard', () => ({ default: () => <h2>Classifica generale</h2> }))
 import PointsPage from './PointsPage'
 import PointsHeader from '../components/common/PointsHeader'
 
@@ -28,6 +29,16 @@ beforeEach(() => {
 })
 afterEach(cleanup)
 describe('points recap', () => {
+  it('switches to the leaderboard and restores the selected recap day', () => {
+    render(<Subject />)
+    fireEvent.click(screen.getByRole('link', { name: 'Classifica' }))
+    expect(screen.getByRole('heading', { name: 'Classifica generale' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Giorno precedente' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Punti per giorno' })).toBeNull()
+    fireEvent.click(screen.getByRole('link', { name: 'I miei punti' }))
+    expect(screen.getByRole('heading', { name: 'Punti per giorno' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'mar 3 nov' })).toBeTruthy()
+  })
   it('shows total and streak in the header with an accessible recap link', () => {
     render(<Subject />)
     const link = screen.getByRole('link', { name: `${(123).toLocaleString('it-IT')} punti totali, streak di 0 giorni. Apri riepilogo punti` })

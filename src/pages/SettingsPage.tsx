@@ -6,10 +6,13 @@ import { calculateNutritionGoals, type NutritionGoalRecommendation } from '../ut
 import { NUTRITION_GOAL_CONFIG, RECOMPOSITION_TRAINING_ADVICE } from '../config/nutritionGoals'
 import Modal from '../components/common/Modal'
 import ProfileGoalEditor from '../components/settings/ProfileGoalEditor'
+import UsernameEditor from '../components/settings/UsernameEditor'
+import { useTutorialEnvironment } from '../contexts/TutorialEnvironment'
 import type { UserHealthProfile } from '../types'
 import { formatDecimal, roundToTwo } from '../utils/decimal'
 
 export default function SettingsPage() {
+  const tutorial = useTutorialEnvironment()
   const { user, signOut } = useAuth()
   const {
     profile, currentWeightKg, rollingWeightKg, rollingWeightSampleCount, goals,
@@ -93,6 +96,8 @@ export default function SettingsPage() {
   return (
     <div className="desktop-page desktop-settings p-4 pb-24 space-y-6">
       <h1 className="text-xl font-bold lg:hidden">Impostazioni</h1>
+
+      {profile && user && !tutorial && <UsernameEditor key={user.id} />}
 
       {profile && (
         <div className="card settings-profile space-y-2 text-sm">

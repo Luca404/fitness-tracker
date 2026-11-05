@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock('./contexts/AuthContext', () => ({ useAuth: () => mocks.auth }))
 vi.mock('./services/supabase', () => ({ supabase: { from: mocks.from, rpc: mocks.rpc, functions: { invoke: mocks.invoke } } }))
 vi.mock('./services/fitnessPoints', () => ({ getFitnessPoints: vi.fn().mockResolvedValue({ enabled: true, total: 0, streak: 0 }) }))
+// Settings also loads the public identity before entering/re-entering the guide.
+vi.mock('./services/fitnessLeaderboard', () => ({ getFitnessUsername: vi.fn().mockResolvedValue('user123456789') }))
 import App from './App'
 
 function Application() {

@@ -7,6 +7,7 @@ import { MET_ACTIVITIES } from '../utils/met'
 import { formatDecimal } from '../utils/decimal'
 import DaySelector from '../components/common/DaySelector'
 import { useSettings } from '../contexts/SettingsContext'
+import Leaderboard from '../components/points/Leaderboard'
 
 const signed = (value: number) => `${value > 0 ? '+' : value < 0 ? '−' : ''}${Math.abs(value).toLocaleString('it-IT')}`
 const displayDate = (value: string) => format(new Date(`${value}T12:00:00`), 'EEE d MMM', { locale: it })
@@ -84,18 +85,30 @@ export default function PointsPage() {
   const points = useFitnessPoints()
   const [searchParams, setSearchParams] = useSearchParams()
   const { selectedDate } = useSettings()
+  const showLeaderboard = searchParams.get('tab') === 'leaderboard'
   if (!points) return null
   const { data, loading, error } = points
   const active = data ?? undefined
   const routeDate = searchParams.get('date')
   const selectorDate = active?.selected_date ?? (routeDate && /^\d{4}-\d{2}-\d{2}$/.test(routeDate) && isValid(parseISO(routeDate)) ? routeDate : selectedDate)
   function selectDate(date: string) {
-    setSearchParams({ date })
+    setSearchParams(previous => { const next = new URLSearchParams(previous); next.set('date', date); return next })
     document.getElementById('main-content')?.scrollTo({ top: 0 })
   }
   return <div className="desktop-page space-y-5 p-4 pb-24">
-    <div className="desktop-date"><DaySelector date={selectorDate} onChange={selectDate} /></div>
+    {!showLeaderboard && <div className="desktop-date"><DaySelector date={selectorDate} onChange={selectDate} /></div>}
     <h1 className="text-xl font-bold lg:hidden">Punti e costanza</h1>
+    <nav aria-label="Sezioni punti" className="flex gap-1 rounded-xl bg-gray-800 p-1">
+      {[{ label: 'I miei punti', value: 'personal' }, { label: 'Classifica', value: 'leaderboard' }].map(tab => {
+        const selected = showLeaderboard === (tab.value === 'leaderboard')
+        const params = new URLSearchParams(searchParams)
+        if (tab.value === 'leaderboard') params.set('tab', 'leaderboard')
+        else params.delete('tab')
+        return <Link key={tab.value} to={{ pathname: '/points', search: params.toString() }} aria-current={selected ? 'page' : undefined}
+          className={`flex min-h-12 flex-1 items-center justify-center rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400 ${selected ? 'bg-gray-700 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}>{tab.label}</Link>
+      })}
+    </nav>
+    {showLeaderboard ? <Leaderboard total={active?.total} /> : <>
     {error ? <div role="alert" className="card space-y-3"><p className="text-sm text-orange-300">{error}</p><button className="btn-secondary min-h-11" onClick={() => void points.refresh()}>Riprova</button></div>
       : !active ? <p role="status" className="py-8 text-sm text-gray-400">Caricamento punti…</p> : <>
           <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Riepilogo punti">
@@ -129,5 +142,6 @@ export default function PointsPage() {
           {active.net_total < 0 && <p className="text-xs text-gray-400">Saldo netto: {signed(active.net_total)} PT. Il totale visualizzato rimane a zero finché i nuovi punti non compensano le detrazioni.</p>}
         </>}
     <Rules data={active} />
+    </>}
   </div>
 }
