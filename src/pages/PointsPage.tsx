@@ -40,18 +40,12 @@ function DayDetail({ day, data }: { day: PointsDay; data: ActiveFitnessPoints })
   ]
   return <section className="card min-w-0" aria-labelledby="points-day-title">
     <div className="flex items-start justify-between gap-3">
-      <div><p className="text-xs font-semibold uppercase tracking-wider text-primary-400">Dettaglio giornata</p>
-        <h2 id="points-day-title" className="mt-1 text-xl font-bold capitalize">{displayDate(day.date)}</h2>
+      <div><h2 id="points-day-title" className="text-xl font-bold capitalize">{displayDate(day.date)}</h2>
         <p className="mt-1 text-xs text-gray-400">{day.registered ? 'Diario registrato' : `${Math.min(day.meal_count,2)} di 2 momenti alimentari`}</p>
       </div>
       <span className="text-2xl font-bold tabular-nums">{signed(day.points)} <small className="text-xs font-medium text-gray-400">PT</small></span>
     </div>
-    {day.date === data.today && <p className="mt-4 text-sm text-gray-400">Giornata in corso. I punti benessere si calcolano alla fine della giornata.</p>}
-    {!day.registered && <div className="mt-5 rounded-xl border border-gray-700 bg-gray-900/40 p-4">
-      <p className="text-sm font-medium">Registra almeno due momenti alimentari</p>
-      <p className="mt-2 text-xs leading-relaxed text-gray-400">Fra colazione, pranzo, cena e spuntino, ciascuno con un alimento e una quantità valida. Bevande, integratori e soli condimenti non bastano. I punti si aggiornano automaticamente.</p>
-      <Link to="/meals" onClick={() => setSelectedDate(day.date)} className="mt-2 inline-flex min-h-11 items-center text-sm text-primary-300">Completa il diario →</Link>
-    </div>}
+    {!day.registered && <Link to="/meals" onClick={() => setSelectedDate(day.date)} className="mt-3 inline-flex min-h-11 items-center text-sm text-primary-300">Completa il diario →</Link>}
     {groups.map(group => {
       const awards = day.awards.filter(a => group.kinds.includes(a.kind))
       return <div key={group.label} className="mt-6">
@@ -60,8 +54,7 @@ function DayDetail({ day, data }: { day: PointsDay; data: ActiveFitnessPoints })
           : <p className="mt-3 text-sm text-gray-400">Nessuna attività o allenamento concluso.</p>}
       </div>
     })}
-    {day.movement_raw > 12 && <p className="mt-3 text-xs text-gray-400">Movimento: applicato il massimo di 12 PT per giornata.</p>}
-    <p className="mt-4 border-t border-gray-700 pt-4 text-xs leading-relaxed text-gray-400">Le modifiche al diario ricalcolano automaticamente punti e streak, anche per i giorni successivi. Checkpoint settimanale: {displayDate(checkpoint)}.</p>
+    <p className="mt-4 border-t border-gray-700 pt-4 text-xs text-gray-400">Checkpoint settimanale: {displayDate(checkpoint)}</p>
   </section>
 }
 
@@ -77,7 +70,7 @@ function Rules({ data }: { data?: ActiveFitnessPoints }) {
       <div><dt className="font-semibold text-gray-200">Allenamenti · tempo e calorie stimate</dt><dd className="mt-1 leading-relaxed text-gray-400">0,04 × minuti + 0,003 × kcal stimate, arrotondati al punto intero sul cumulato del movimento. Serve una sessione conclusa con almeno una serie svolta. Contributo limitato a 120 minuti e 1.200 kcal; sessioni oltre quattro ore non danno punti. Gli intervalli sovrapposti fra sessioni palestra contano una sola volta.</dd></div>
       <div><dt className="font-semibold text-gray-200">Movimento · massimo 12 PT al giorno</dt><dd className="mt-1 leading-relaxed text-gray-400">Tetto condiviso fra attività e palestra. Registra ogni allenamento una sola volta. Non ci sono penalità per il riposo, né punti per il peso perso o per mangiare meno.</dd></div>
     </dl>
-    <p className="mt-5 border-t border-gray-700 pt-4 text-xs leading-relaxed text-gray-400">{data ? `Punti dal ${displayDate(data.started_on)} · ${data.timezone}. ` : ''}I punti sono attivi automaticamente per tutti. I riferimenti personali sono fissati all’inizio del conteggio. Le stime non sono misure esatte; i punti non sono una valutazione della salute. Il saldo mostrato ha un minimo di zero.</p>
+    <p className="mt-5 border-t border-gray-700 pt-4 text-xs leading-relaxed text-gray-400">{data ? `Punti dal ${displayDate(data.started_on)} · ${data.timezone}. ` : ''}Il saldo minimo è zero. I punti non sono una valutazione della salute.</p>
   </details>
 }
 
@@ -123,7 +116,6 @@ export default function PointsPage() {
           <div className="grid items-start gap-5 xl:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)]">
             <section className="card order-2 min-w-0 xl:order-1" aria-labelledby="points-history-title">
               <h2 id="points-history-title" className="text-lg font-bold">Punti per giorno</h2>
-              <p className="mt-1 text-xs text-gray-400">Seleziona una giornata per il dettaglio</p>
               <ul className="mt-4 divide-y divide-gray-700/60">{active.history.map(day => <li key={day.date}>
                 <button type="button" onClick={() => selectDate(day.date)} aria-pressed={active.selected_date === day.date}
                   className={`flex min-h-16 w-full items-center justify-between gap-3 rounded-lg px-2 py-3 text-left transition-colors hover:bg-gray-700/40 ${active.selected_date === day.date ? 'bg-primary-500/10' : ''}`}>
@@ -137,9 +129,9 @@ export default function PointsPage() {
                 {active.selected_date < active.today && <button type="button" className="min-h-11 text-sm text-primary-300" onClick={() => selectDate([shiftDate(active.selected_date,30),active.today].sort()[0])}>Più recenti →</button>}
               </div>
             </section>
-            <div className="order-1 min-w-0 xl:order-2">{active.day ? <DayDetail key={active.day.date} day={active.day} data={active} /> : <div className="card text-sm text-gray-400">Questa data è fuori dal periodo punti. I punti iniziano dal {displayDate(active.started_on)} e non vengono assegnati a giorni futuri.</div>}</div>
+            <div className="order-1 min-w-0 xl:order-2">{active.day ? <DayDetail key={active.day.date} day={active.day} data={active} /> : <div className="card text-sm text-gray-400">Data fuori dal periodo punti. Inizio: {displayDate(active.started_on)}.</div>}</div>
           </div>
-          {active.net_total < 0 && <p className="text-xs text-gray-400">Saldo netto: {signed(active.net_total)} PT. Il totale visualizzato rimane a zero finché i nuovi punti non compensano le detrazioni.</p>}
+          {active.net_total < 0 && <p className="text-xs text-gray-400">Saldo netto: {signed(active.net_total)} PT</p>}
         </>}
     <Rules data={active} />
     </>}

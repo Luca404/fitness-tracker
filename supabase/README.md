@@ -1,5 +1,27 @@
 # Shared Supabase workflow
 
+## Consecutive leaderboard positions — 2026-11-05
+
+`20261105160000_fitness_leaderboard_positions` was applied after a dry-run
+listing only this migration and mirrored in Trackr. It replaces tied ranks
+with consecutive positions ordered by total descending, then username using
+the same C collation as pagination. Own position follows the same ordering;
+points formulas, account scope and explicit authenticated RPC grants are kept.
+
+The isolated leaderboard SQL fixture passed, including three tied zero scores,
+alphabetical order, renamed users, global positions across pages, own position
+and existing security checks. Targeted frontend tests, build and lint passed.
+Browser fixtures at 320/390/1440 px verified gold/silver/bronze, removed manual
+refresh and explanatory copy, pagination, automatic refresh and error/retry.
+Rules remain available in the collapsed section. No runtime errors or overflow
+were observed; the simulated 503 read failure was expected. Local application
+tables were not upgraded; the frontend deployment is not verified here.
+
+Username settings now use a text field with `autocomplete="off"` rather than
+credential autocomplete, with inline Save and only format limits as help.
+Save, duplicate errors and inline layout passed browser fixtures at
+320/390/768/1440 px; 20 focused frontend tests, build and lint passed.
+
 ## Fitness leaderboard and usernames — 2026-11-05
 
 `20261105150000_fitness_leaderboard` was applied after a dry-run listing only

@@ -60,7 +60,7 @@ describe('points recap', () => {
     expect(screen.queryByRole('button', { name: /Conferma/ })).toBeNull()
     expect(screen.getByText('Diario registrato')).toBeTruthy()
     expect(screen.getAllByText('A fine giornata')).toHaveLength(2)
-    expect(screen.getByText(/Giornata in corso/)).toBeTruthy()
+    expect(screen.queryByText(/Giornata in corso/)).toBeNull()
   })
   it('opens the diary on the day being reviewed', () => {
     render(<Subject />)
@@ -72,15 +72,16 @@ describe('points recap', () => {
     render(<Subject />)
     expect(screen.getByRole('heading', { name: 'Punti per giorno' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Attiva i punti' })).toBeNull()
-    expect(screen.getByText(/I punti sono attivi automaticamente per tutti/)).toBeTruthy()
+    expect(screen.getByText('Come si guadagnano i punti')).toBeTruthy()
   })
-  it('explains the two-moment requirement and shows missed goals as deductions', () => {
+  it('shows diary progress and missed goals without repeated explanations', () => {
     const data = active()
     data.day!.awards.push({ key: 'fruit', kind: 'penalty', label: 'Frutta', points: -1,
       detail: { status: 'missed', value: 0, target: 360, unit: 'g' } })
     mock.value.data = data
     render(<Subject />)
-    expect(screen.getByText('Registra almeno due momenti alimentari')).toBeTruthy()
+    expect(screen.getByText('1 di 2 momenti alimentari')).toBeTruthy()
+    expect(screen.queryByText(/Seleziona una giornata/)).toBeNull()
     expect(screen.getByText('Obiettivo non raggiunto')).toBeTruthy()
     expect(screen.queryByText(/tre momenti alimentari/)).toBeNull()
     expect(screen.getByText(/da 15 g costa 3 PT/)).toBeTruthy()

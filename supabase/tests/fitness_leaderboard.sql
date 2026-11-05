@@ -44,6 +44,7 @@ insert into public.user_health_profiles(user_id,age,sex,weight_kg) values
 ('00000000-0000-0000-0000-000000000001',30,'female',70),
 ('00000000-0000-0000-0000-000000000002',30,'male',80);
 \ir ../migrations/20261105150000_fitness_leaderboard.sql
+\ir ../migrations/20261105160000_fitness_leaderboard_positions.sql
 select pg_temp.assert((select count(*)=2 from public.fitness_usernames),'Only fitness profiles backfilled');
 select pg_temp.assert((select bool_and(username ~ '^user[0-9]{9}$') from public.fitness_usernames),'Automatic random names');
 insert into public.user_health_profiles(user_id,age,sex,weight_kg) values
@@ -64,8 +65,10 @@ select pg_temp.assert(public.set_fitness_username('  Runner_1  ')='runner_1','Na
 select pg_temp.assert((public.get_fitness_leaderboard()->>'total_users')::int=3,'Every fitness account included, finance excluded');
 select pg_temp.assert((public.get_fitness_leaderboard()->'me'->>'total')::int=(public.get_fitness_points()->>'total')::int,'Same canonical total as own recap');
 select pg_temp.assert((public.get_fitness_leaderboard()->'me'->>'rank')::int=1,'Leading rank');
-select pg_temp.assert((public.get_fitness_leaderboard()->'entries'->1->>'rank')::int=1,'Equal points equal rank');
-select pg_temp.assert((public.get_fitness_leaderboard()->'entries'->2->>'rank')::int=3,'Competition rank after tie');
+select pg_temp.assert((public.get_fitness_leaderboard()->'entries'->1->>'rank')::int=2,'Equal points get consecutive positions');
+select pg_temp.assert((public.get_fitness_leaderboard()->'entries'->2->>'rank')::int=3,'Third position follows second');
+select pg_temp.assert(public.get_fitness_leaderboard(1,0)->'entries'->0->>'username'='runner_1','Alphabetical tiebreak is used before pagination');
+select pg_temp.assert((public.get_fitness_leaderboard(1,1)->'entries'->0->>'rank')::int=2,'Second page retains global position');
 select pg_temp.assert(jsonb_array_length(public.get_fitness_leaderboard(1,0)->'entries')=1,'Page size');
 select pg_temp.assert((public.get_fitness_leaderboard(1,0)->>'has_more')::boolean,'More pages');
 select pg_temp.assert(not(public.get_fitness_leaderboard(1,2)->>'has_more')::boolean,'Last page');
@@ -92,6 +95,9 @@ do $$ begin
 end $$;
 select pg_temp.assert((select username<>'runner_1' from public.fitness_usernames),'Duplicate failure retains old name');
 select public.set_fitness_username('other_runner');
+select pg_temp.assert((public.get_fitness_leaderboard()->'me'->>'rank')::int=1,'Rename changes alphabetical tiebreak');
+select pg_temp.assert(public.get_fitness_leaderboard()->'entries'->0->>'username'='other_runner','Renamed tied user leads alphabetically');
+select pg_temp.assert((public.get_fitness_leaderboard()->'entries'->1->>'rank')::int=2,'One second place after rename');
 reset role;
 -- Source edits immediately rerank without a refresh job or cached old award.
 delete from public.workouts where user_id='00000000-0000-0000-0000-000000000001';
@@ -100,6 +106,13 @@ set local role authenticated;
 select pg_temp.assert((public.get_fitness_leaderboard()->'me'->>'total')::int=0,'Source deletion recalculated');
 select pg_temp.assert((public.get_fitness_leaderboard()->'me'->>'rank')::int=2,'Rerank after deletion');
 select pg_temp.assert(public.get_fitness_leaderboard()->'entries'->0->>'username'='other_runner','Other user score independent of caller');
+reset role;
+-- Three equal zero scores still occupy 1, 2, 3, ordered by name.
+delete from public.workouts;
+set local role authenticated;
+select pg_temp.assert((select jsonb_agg(e->'rank' order by n)='[1,2,3]'::jsonb from jsonb_array_elements(public.get_fitness_leaderboard()->'entries') with ordinality a(e,n)),'Three tied users have distinct consecutive positions');
+select pg_temp.assert(public.get_fitness_leaderboard()->'entries'->0->>'username'='other_runner','Alphabetical order with three tied users');
+select pg_temp.assert((public.get_fitness_leaderboard()->'me'->>'rank')::int=2,'Own position matches alphabetical tiebreak with three ties');
 reset role;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000003',true);
 set local role authenticated;

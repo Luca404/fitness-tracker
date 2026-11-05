@@ -11,18 +11,24 @@ Dal 5 novembre 2026 `/points` contiene le schede **I miei punti** e
 data selezionata. La classifica generale include tutti i profili FitTrackr
 completati, anche con zero punti; gli account delle altre app Trackrs senza
 profilo salute sono esclusi. L’ordine è per punti totali decrescenti, con
-posizioni a pari merito (1, 1, 3); i nomi ordinano in modo stabile i pari punti.
+posizioni consecutive (1, 2, 3), anche a pari punti: decide l’ordine alfabetico
+dei nomi utente. Le prime tre posizioni sono oro, argento e bronzo.
 Le pagine contengono 25 utenti e la propria posizione resta visibile anche
 fuori dalla pagina corrente. Aggiornamento all’apertura, al ritorno sulla
-finestra, ogni minuto, al cambio del proprio totale o con **Aggiorna**.
+finestra, ogni minuto e al cambio del proprio totale. Non serve un pulsante
+di aggiornamento. Le due schede mostrano dati e stati essenziali; le regole
+restano nel riquadro espandibile **Come si guadagnano i punti**.
 
 Alla creazione del profilo durante l’onboarding viene assegnato un nome
 univoco `user` seguito da nove cifre casuali. La migrazione assegna il nome
 anche ai profili esistenti. Non si installano trigger sull’Auth condivisa.
 In **Impostazioni → Nome utente** è possibile cambiarlo: 3–24 caratteri ASCII,
 lettere, numeri e underscore, normalizzati in minuscolo. Un nome occupato
-produce un errore e conserva il nome precedente. Gli upsert del profilo
-salute non sovrascrivono un nome scelto.
+produce un errore e conserva il nome precedente. Campo e pulsante **Salva**
+sono sulla stessa riga; l’unico aiuto permanente indica i caratteri ammessi.
+Il campo è testo con autocomplete disattivato, senza la marcatura di
+credenziale `username`. Gli upsert del profilo salute non sovrascrivono
+un nome scelto.
 
 La classifica condivide lo stesso calcolo del riepilogo personale: include
 detrazioni, limite del saldo a zero, correzioni storiche e scadenze nei fusi
@@ -33,11 +39,13 @@ e indicatore del proprio account, senza UUID, email o dati salute. Il helper
 `fitness_points_days_for_user(uuid)` è privato e non eseguibile dai client.
 L’accesso alla classifica richiede un profilo FitTrackr completato.
 
-La migrazione è `20261105150000_fitness_leaderboard.sql`; il test SQL
+Le migrazioni sono `20261105150000_fitness_leaderboard.sql` e
+`20261105160000_fitness_leaderboard_positions.sql`; il test SQL
 autonomo `supabase/tests/fitness_leaderboard.sql` richiede un database vuoto
 `fittrackr_gamification_test_*` e usa solo fixture sintetiche in rollback.
 Copre backfill, nuovi profili, nomi duplicati/non validi, permessi, isolamento,
-pari merito, paginazione, correzioni e coerenza col riepilogo. È stata verificata
+ordine alfabetico a pari punti, posizioni consecutive, paginazione,
+correzioni e coerenza col riepilogo. È stata verificata
 anche la suite SQL delle regole v4 dopo l’introduzione del helper condiviso.
 Le prove browser con API simulate a 320/390/768/1440 px coprono schede, data,
 pagine, propria posizione, cambio nome, duplicati e errore/riprova. Nessun

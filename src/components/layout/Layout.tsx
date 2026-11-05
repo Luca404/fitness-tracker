@@ -33,7 +33,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const page = location.pathname === '/points'
-    ? { label: 'Punti e costanza', description: 'I tuoi progressi e la classifica della community.' }
+    ? { label: 'Punti e costanza', description: '' }
     : location.pathname === '/settings'
     ? { label: 'Impostazioni', description: 'Il tuo profilo e i tuoi obiettivi personali.' }
     : location.pathname === '/meals/wellbeing'
@@ -99,7 +99,7 @@ export default function Layout() {
         <div className={`app-content ${location.pathname === '/meals' ? 'app-content-meals' : ''}`}>
           <div className="desktop-page-heading hidden lg:block">
             <h1 className="text-3xl font-bold tracking-tight">{page.label}</h1>
-            <p className="mt-2 text-sm text-gray-400">{page.description}</p>
+            {page.description && <p className="mt-2 text-sm text-gray-400">{page.description}</p>}
           </div>
           <AppErrorBoundary key={`${location.pathname}${location.search}`}>
             <Suspense fallback={<PageLoading />}>

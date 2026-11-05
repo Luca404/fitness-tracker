@@ -6,7 +6,7 @@ import type { FitnessLeaderboard, LeaderboardEntry } from '../../services/fitnes
 
 function ScoreRow({ entry }: { entry: LeaderboardEntry }) {
   return <div className={`flex min-h-16 items-center gap-3 rounded-xl px-3 py-3 ${entry.is_me ? 'bg-primary-500/10 ring-1 ring-inset ring-primary-500/30' : ''}`}>
-    <span className={`w-10 shrink-0 text-center text-lg font-bold tabular-nums ${entry.rank === 1 ? 'text-amber-300' : entry.rank <= 3 ? 'text-primary-300' : 'text-gray-400'}`}>
+    <span className={`w-10 shrink-0 text-center text-lg font-bold tabular-nums ${entry.rank === 1 ? 'text-amber-300' : entry.rank === 2 ? 'text-slate-300' : entry.rank === 3 ? 'text-[#cd7f32]' : 'text-gray-400'}`}>
       <span className="sr-only">Posizione </span>{entry.rank}
     </span>
     <span className="min-w-0 flex-1 break-all text-sm font-medium">{entry.username}{entry.is_me && <span className="ml-2 inline-block rounded bg-primary-500/20 px-1.5 py-0.5 text-xs text-primary-300">Tu</span>}</span>
@@ -35,11 +35,7 @@ function LeaderboardContent({ total }: { total?: number }) {
   const loading = state?.key !== key
   const data = state?.key === key ? state.data : null
   return <section className="space-y-5" aria-labelledby="leaderboard-title">
-    <div className="flex flex-wrap items-start justify-between gap-3">
-      <div><h2 id="leaderboard-title" className="text-lg font-bold">Classifica generale</h2>
-        <p className="mt-1 text-sm text-gray-400">Punti totali · a parità di punti, stessa posizione.</p></div>
-      <button type="button" className="btn-secondary min-h-11 disabled:opacity-50" disabled={loading} onClick={() => setAttempt(n => n + 1)}>Aggiorna</button>
-    </div>
+    <h2 id="leaderboard-title" className="text-lg font-bold">Classifica generale</h2>
     {loading ? <p role="status" className="py-8 text-sm text-gray-400">Caricamento classifica…</p>
       : state?.error ? <div role="alert" className="card space-y-3"><p className="text-sm text-orange-300">Impossibile caricare la classifica.</p><button type="button" className="btn-secondary min-h-11" onClick={() => setAttempt(n => n + 1)}>Riprova</button></div>
       : data && <>
@@ -58,7 +54,6 @@ function LeaderboardContent({ total }: { total?: number }) {
             <button type="button" className="min-h-11 text-sm text-primary-300 disabled:text-gray-500" disabled={!data.has_more} onClick={() => setOffset(n => n + LEADERBOARD_PAGE_SIZE)}>Successivi →</button>
           </div>}
         </div>
-        <p className="text-xs leading-relaxed text-gray-400">Partecipano tutti gli utenti di FitTrackr con un profilo completato. I punti si ricalcolano anche dopo modifiche al diario.</p>
       </>}
   </section>
 }
