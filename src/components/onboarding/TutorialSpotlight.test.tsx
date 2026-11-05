@@ -58,6 +58,22 @@ describe('tutorial spotlight accessibility and recovery', () => {
     expect(target.getAttribute('aria-describedby')).toBe('existing-help')
   })
 
+  it.each([0, 1, 2, 3, 4])('centers the outline on bottom navigation item %i, including viewport edges', async index => {
+    const target = new DOMRect(index * 78, 780, 78, 64)
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(target)
+    guide()
+    await waitFor(() => {
+      const outline = document.querySelector<HTMLElement>('.tutorial-spotlight')
+      expect(outline).toBeTruthy()
+      const { left, top, width, height } = outline!.style
+      expect(parseFloat(left) + parseFloat(width) / 2).toBe(target.x + target.width / 2)
+      expect(parseFloat(top) + parseFloat(height) / 2).toBe(target.y + target.height / 2)
+      expect(parseFloat(left)).toBeGreaterThanOrEqual(2)
+      expect(parseFloat(left) + parseFloat(width)).toBeLessThanOrEqual(388)
+      expect(parseFloat(top) + parseFloat(height)).toBeLessThanOrEqual(842)
+    })
+  })
+
   it('keeps keyboard focus in the guide and highlighted control, blocks unrelated actions and closes with Escape', async () => {
     const { unrelated, onFinish } = guide()
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Prova guidata' })).toBe(document.activeElement))

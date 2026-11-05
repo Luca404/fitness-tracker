@@ -93,6 +93,15 @@ export default function TutorialSpotlight({ step, completed = false, index, tota
       const top = Math.max(8, bounds.top - 6)
       const rect = { left, top, width: Math.max(24, Math.min(bounds.right + 6, width - 8) - left),
         height: Math.max(24, Math.min(bounds.bottom + 6, height - 8) - top) }
+      if (bounds.width > 4 && bounds.height > 4
+        && bounds.left >= 0 && bounds.top >= 0 && bounds.right <= width && bounds.bottom <= height) {
+        // At viewport edges reduce both sides equally, keeping the outline
+        // centered on the control rather than clipping only its outer edge.
+        const paddingX = Math.min(6, bounds.left - 2, width - 2 - bounds.right)
+        const paddingY = Math.min(6, bounds.top - 2, height - 2 - bounds.bottom)
+        Object.assign(rect, { left: bounds.left - paddingX, top: bounds.top - paddingY,
+          width: bounds.width + paddingX * 2, height: bounds.height + paddingY * 2 })
+      }
       setMeasurement(previous => {
         if (previous?.id === phase && previous.width === width && previous.height === height
           && Object.entries(rect).every(([key, value]) => previous.rect[key as keyof SpotlightRect] === value)) return previous
