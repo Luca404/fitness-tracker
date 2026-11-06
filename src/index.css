@@ -135,8 +135,10 @@ html[data-tutorial='active'] .tutorial-modal-frame > [role='dialog'] {
   bottom: calc(4.75rem + env(safe-area-inset-bottom));
 }
 
+/* Recharts' internal SVG layers also receive focus on pointer clicks. */
 .recharts-wrapper:focus,
 .recharts-surface:focus,
+.recharts-surface [tabindex="-1"]:focus,
 .recharts-tooltip-wrapper:focus {
   outline: none;
 }

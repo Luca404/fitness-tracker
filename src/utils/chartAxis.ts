@@ -13,7 +13,7 @@ export function buildChartAxis(values: (number | null | undefined)[], {
   const minimum = finite.length ? Math.min(...finite) : 0
   const maximum = finite.length ? Math.max(...finite) : minimumStep * 5
   const padding = Math.max((maximum - minimum) * 0.06, maximum === minimum ? Math.max(minimumStep * 2, Math.abs(maximum) * 0.02) : minimumStep)
-  const lower = includeZero ? Math.min(0, minimum - padding) : minimum >= 0 ? Math.max(0, minimum - padding) : minimum - padding
+  const lower = includeZero ? Math.min(0, minimum) : minimum >= 0 ? Math.max(0, minimum - padding) : minimum - padding
   const upper = Math.max(lower + minimumStep, maximum + padding)
   const budget = Math.max(4, Math.min(14, Math.floor((height - reservedHeight) / 22) + 1))
   const exponent = Math.floor(Math.log10((upper - lower) / (budget - 1)))

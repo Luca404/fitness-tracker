@@ -13,12 +13,15 @@ la scala lo consente. Le etichette non si sovrappongono.
 Serie costanti, valori nulli e periodi vuoti mantengono limiti validi.
 Le misure non vengono modificate o interpolate dal calcolo della scala.
 
-I bordi bianchi al click provenivano dal focus nativo delle superfici SVG.
+I bordi bianchi al click provenivano dal focus nativo delle superfici SVG
+e dei gruppi interni Recharts con `tabindex="-1"` (griglia, serie, assi e
+relative etichette). Il reset del contorno copre anche questi livelli.
 Mouse e touch non mostrano quei bordi; la navigazione da tastiera mantiene
 un contorno verde. I tooltip restano disponibili, con sfondo scuro coerente
 su tutti i grafici, insieme alla navigazione con i tasti freccia.
 
 Le utilità sono in `src/utils/chartAxis.ts` e `src/hooks/useChartAxis.ts`.
 I test verificano copertura dei valori, passo regolare, densità responsiva,
-ripetizioni intere e casi degeneri. Le prove nel browser usano fixture
+ripetizioni intere, minimo delle calorie a zero anche con giornate a zero
+o molto basse e casi degeneri. Le prove nel browser usano fixture
 sintetiche e controllano click, tastiera e dimensioni mobile/desktop.

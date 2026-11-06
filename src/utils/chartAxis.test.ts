@@ -26,6 +26,16 @@ describe('readable chart axes', () => {
     expect(axis.ticks.every(Number.isInteger)).toBe(true)
     expect(axis.ticks.length).toBeLessThanOrEqual(8)
   })
+  it('keeps calorie axes at zero even when padding exceeds the lowest value', () => {
+    for (const values of [[0, 2500], [10, 4500], [null, 0], []]) {
+      for (const height of [200, 320]) {
+        const axis = buildChartAxis(values, { height, minimumStep: 1, includeZero: true, reservedHeight: 68 })
+        expect(axis.domain[0]).toBe(0)
+        expect(axis.ticks[0]).toBe(0)
+        expect(axis.ticks.every(tick => tick >= 0)).toBe(true)
+      }
+    }
+  })
   it('handles flat, empty, zero and missing series without invalid or duplicate ticks', () => {
     for (const values of [[75, 75], [0, 0], [], [null, undefined, NaN, Infinity]]) {
       const axis = buildChartAxis(values)
