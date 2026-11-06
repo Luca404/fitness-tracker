@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuth } from '../contexts/AuthContext'
@@ -7,6 +7,7 @@ import { getCompletedGymSessions } from '../services/gymApi'
 import { getLatestWeightLog, getWeightLogs } from '../services/api'
 import type { GymSession, WeightLog } from '../types'
 import GymSessionCard from '../components/workout/GymSessionCard'
+import GymProgressPicker, { type ProgressMuscleFilter } from '../components/workout/GymProgressPicker'
 import { buildGymProgress, exerciseDescription, formatGymPerformance } from '../utils/gymProgress'
 import { formatDecimal } from '../utils/decimal'
 import { useChartAxis } from '../hooks/useChartAxis'
@@ -26,6 +27,8 @@ export default function GymProgressPage() {
   const [error, setError] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const [selectedKey, setSelectedKey] = useState('')
+  const [muscle, setMuscle] = useState<ProgressMuscleFilter>('Tutti')
+  const [query, setQuery] = useState('')
   const [showAllSessions, setShowAllSessions] = useState(false)
 
   useEffect(() => {
@@ -58,8 +61,13 @@ export default function GymProgressPage() {
     return () => { current = false }
   }, [user?.id, attempt])
 
-  const exercises = buildGymProgress(sessions)
-  const selected = exercises.find(exercise => exercise.key === selectedKey) ?? exercises[0]
+  const exercises = useMemo(() => buildGymProgress(sessions), [sessions])
+  const terms = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().split(/\s+/).filter(Boolean)
+  const filtered = exercises.filter(exercise => {
+    const text = `${exercise.name} ${exerciseDescription(exercise)} ${exercise.muscle}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    return (muscle === 'Tutti' || exercise.muscle === muscle) && terms.every(term => text.includes(term))
+  })
+  const selected = filtered.find(exercise => exercise.key === selectedKey) ?? filtered[0]
   const latest = selected?.points.at(-1)
   const previous = selected?.points.at(-2)
   const difference = latest && previous
@@ -107,14 +115,15 @@ export default function GymProgressPage() {
       <section className="card space-y-4" aria-label="Progressi per esercizio">
         <div>
           <h2 className="text-lg font-semibold">Progressi per esercizio</h2>
-          <p className="mt-1 text-xs text-gray-400">Confronta le serie completate con lo stesso attrezzo e la stessa inclinazione.</p>
         </div>
+        {exercises.length > 0 && <GymProgressPicker exercises={exercises} filtered={filtered} selectedKey={selected?.key}
+          group={muscle} query={query} onGroupChange={group => { setMuscle(group); setSelectedKey('') }}
+          onQueryChange={setQuery} onSelect={setSelectedKey} />}
         {selected && latest ? <>
-          <label className="block text-xs font-medium text-gray-400">Esercizio
-            <select value={selected.key} onChange={event => setSelectedKey(event.target.value)} className="input-field mt-2 text-sm">
-              {exercises.map(exercise => <option key={exercise.key} value={exercise.key}>{exercise.name} · {exerciseDescription(exercise)}</option>)}
-            </select>
-          </label>
+          <div className="border-t border-gray-700 pt-4" aria-live="polite">
+            <h3 className="font-semibold">{selected.name}</h3>
+            <p className="mt-1 text-xs text-gray-400">{exerciseDescription(selected)}</p>
+          </div>
           {selected.equipment.toLowerCase() === 'manubri' && <p className="text-xs text-gray-400">Carico indicato per singolo manubrio.</p>}
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-xl bg-gray-900/60 p-3">
@@ -150,7 +159,7 @@ export default function GymProgressPage() {
             </div>
           </div> : <p className="text-sm text-gray-400">Serve una seconda sessione con questo esercizio per mostrare l’andamento.</p>}
           <button type="button" onClick={() => openSession(latest.sessionId)} className="w-full rounded-xl border border-gray-600 py-2.5 text-sm font-medium text-gray-200">Apri ultima sessione</button>
-        </> : <p className="text-sm text-gray-400">Le sessioni ci sono, ma non contengono serie completate con ripetizioni valide da confrontare.</p>}
+        </> : exercises.length === 0 ? <p className="text-sm text-gray-400">Le sessioni ci sono, ma non contengono serie completate con ripetizioni valide da confrontare.</p> : null}
       </section>
 
       <section className="space-y-3" aria-label="Sessioni recenti">

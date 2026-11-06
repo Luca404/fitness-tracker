@@ -30,14 +30,14 @@ export const GYM_EXERCISES: GymExerciseDefinition[] = [
   { key: 'lateral-raise', name: 'Alzate laterali', equipment: 'Manubri', muscle: 'Spalle', aliases: ['dumbbell lateral raise', 'lateral raise'] },
   { key: 'reverse-fly', name: 'Croci inverse', equipment: 'Macchina', muscle: 'Spalle' },
   { key: 'face-pull', name: 'Face pull', equipment: 'Cavi', muscle: 'Spalle' },
-  { key: 'barbell-curl', name: 'Curl bicipiti', equipment: 'Bilanciere', muscle: 'Braccia' },
-  { key: 'dumbbell-curl', name: 'Curl bicipiti', equipment: 'Manubri', muscle: 'Braccia', aliases: ['dumbbell curl'] },
-  { key: 'hammer-curl', name: 'Curl a martello', equipment: 'Manubri', muscle: 'Braccia', aliases: ['hammer curl'] },
-  { key: 'preacher-curl', name: 'Curl panca Scott', equipment: 'Macchina', muscle: 'Braccia' },
-  { key: 'triceps-pushdown', name: 'Pushdown tricipiti', equipment: 'Cavi', muscle: 'Braccia', aliases: ['cable triceps pushdown', 'triceps pushdown'] },
-  { key: 'overhead-triceps', name: 'French press', equipment: 'Manubri', muscle: 'Braccia', aliases: ['dumbbell triceps extension', 'triceps extension'] },
-  { key: 'cable-triceps-extension', name: 'Estensioni tricipiti', equipment: 'Cavi', muscle: 'Braccia', aliases: ['cable triceps extension', 'triceps extension'] },
-  { key: 'dips', name: 'Dip', equipment: 'Corpo libero', muscle: 'Braccia' },
+  { key: 'barbell-curl', name: 'Curl bicipiti', equipment: 'Bilanciere', muscle: 'Bicipiti' },
+  { key: 'dumbbell-curl', name: 'Curl bicipiti', equipment: 'Manubri', muscle: 'Bicipiti', aliases: ['dumbbell curl'] },
+  { key: 'hammer-curl', name: 'Curl a martello', equipment: 'Manubri', muscle: 'Bicipiti', aliases: ['hammer curl'] },
+  { key: 'preacher-curl', name: 'Curl panca Scott', equipment: 'Macchina', muscle: 'Bicipiti' },
+  { key: 'triceps-pushdown', name: 'Pushdown tricipiti', equipment: 'Cavi', muscle: 'Tricipiti', aliases: ['cable triceps pushdown', 'triceps pushdown'] },
+  { key: 'overhead-triceps', name: 'French press', equipment: 'Manubri', muscle: 'Tricipiti', aliases: ['dumbbell triceps extension', 'triceps extension'] },
+  { key: 'cable-triceps-extension', name: 'Estensioni tricipiti', equipment: 'Cavi', muscle: 'Tricipiti', aliases: ['cable triceps extension', 'triceps extension'] },
+  { key: 'dips', name: 'Dip', equipment: 'Corpo libero', muscle: 'Tricipiti' },
   { key: 'squat', name: 'Squat', equipment: 'Bilanciere', muscle: 'Gambe', aliases: ['back squat', 'barbell back squat'] },
   { key: 'bulgarian-split-squat', name: 'Squat bulgaro', equipment: 'Manubri', muscle: 'Gambe', aliases: ['bulgarian split squat'] },
   { key: 'leg-press', name: 'Leg press', equipment: 'Macchina', muscle: 'Gambe' },
@@ -46,9 +46,9 @@ export const GYM_EXERCISES: GymExerciseDefinition[] = [
   { key: 'lying-leg-curl', name: 'Leg curl da sdraiato', equipment: 'Macchina', muscle: 'Gambe', aliases: ['lying leg curl'] },
   { key: 'dumbbell-lunge', name: 'Affondi', equipment: 'Manubri', muscle: 'Gambe', aliases: ['dumbbell lunges', 'dumbbell lunge'] },
   { key: 'romanian-deadlift', name: 'Stacco rumeno', equipment: 'Bilanciere', muscle: 'Gambe', aliases: ['romanian deadlift', 'rdl'] },
-  { key: 'hip-thrust', name: 'Hip thrust', equipment: 'Bilanciere', muscle: 'Glutei' },
-  { key: 'calf-raise', name: 'Calf raise', equipment: 'Macchina', muscle: 'Polpacci' },
-  { key: 'abductor', name: 'Abductor', equipment: 'Macchina', muscle: 'Glutei' },
+  { key: 'hip-thrust', name: 'Hip thrust', equipment: 'Bilanciere', muscle: 'Gambe' },
+  { key: 'calf-raise', name: 'Calf raise', equipment: 'Macchina', muscle: 'Gambe' },
+  { key: 'abductor', name: 'Abductor', equipment: 'Macchina', muscle: 'Gambe' },
   { key: 'adductor', name: 'Adductor', equipment: 'Macchina', muscle: 'Gambe' },
   { key: 'cable-crunch', name: 'Crunch ai cavi', equipment: 'Cavi', muscle: 'Addome' },
   { key: 'ab-crunch', name: 'Crunch', equipment: 'Macchina', muscle: 'Addome' },
@@ -56,13 +56,74 @@ export const GYM_EXERCISES: GymExerciseDefinition[] = [
   { key: 'reverse-crunch', name: 'Crunch inverso', equipment: 'Corpo libero', muscle: 'Addome', aliases: ['reverse crunch'] },
 ]
 
+export const GYM_MUSCLE_GROUPS = ['Petto', 'Bicipiti', 'Schiena', 'Tricipiti', 'Spalle', 'Gambe', 'Addome'] as const
+export type GymMuscleGroup = typeof GYM_MUSCLE_GROUPS[number] | 'Altro'
+
 function normalize(value: string): string {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
 }
 
+const EQUIPMENT_NAMES: Record<string, string> = {
+  bilanciere: 'Bilanciere', bilancieri: 'Bilanciere', barbell: 'Bilanciere',
+  manubrio: 'Manubri', manubri: 'Manubri', dumbbell: 'Manubri', dumbbells: 'Manubri',
+  cavo: 'Cavi', cavi: 'Cavi', cable: 'Cavi', cables: 'Cavi',
+  macchina: 'Macchina', machine: 'Macchina',
+  'corpo libero': 'Corpo libero', bodyweight: 'Corpo libero', sbarra: 'Sbarra',
+}
+
+function cleanName(value: string): string {
+  return value.trim().replace(/\s*\(?\s*(?:a\s+)?(?:corpo libero|bodyweight)\s*\)?\s*$/i, '').trim() || value.trim()
+}
+
+function nameIdentity(name: string, equipment: string): string {
+  const normalized = normalize(cleanName(name))
+  // Equipment is already part of the identity; redundant suffixes add no variant.
+  const suffixes = Object.keys(EQUIPMENT_NAMES).filter(key => EQUIPMENT_NAMES[key] === equipment)
+  for (const suffix of suffixes) {
+    if (normalized.endsWith(` ${suffix}`)) {
+      return normalized.slice(0, -suffix.length).trim().replace(/\s+(con|al|ai|alla|alle)$/, '')
+    }
+  }
+  return normalized
+}
+
+const MUSCLE_PATTERNS: [GymMuscleGroup, RegExp][] = [
+  ['Addome', /\b(crunch|addominali|addome|plank|knee raise|leg raise|ab wheel|sit up)\b/],
+  ['Gambe', /\b(squat|leg|affondi?|lunge|stacco rumeno|romanian|rdl|hip thrust|calf|polpacci|glutei|femorali|abductor|adductor|goblet)\b/],
+  ['Tricipiti', /\b(tricipiti|triceps|pushdown|push down|french press|dip|dips)\b/],
+  ['Bicipiti', /\b(bicipiti|biceps|curl|scott)\b/],
+  ['Spalle', /\b(spalle|shoulder|military|alzate|lateral raise|croci inverse|reverse fly|face pull|arnold press)\b/],
+  ['Schiena', /\b(schiena|dorsali|lat|pulley|rematore|row|trazioni|pull up|chin up|stacco|deadlift|pulldown|pull down)\b/],
+  ['Petto', /\b(petto|panca|bench press|chest|pec deck|croci|fly|piegamenti|push up)\b/],
+]
+
+type ExerciseIdentityInput = { key?: string | null; name: string; equipment: string }
+
+/** Resolve only matching movements/equipment; never rewrite saved plans or sets. */
+export function resolveGymExercise(exercise: ExerciseIdentityInput): {
+  key: string; name: string; equipment: string; muscle: GymMuscleGroup
+} {
+  const equipment = EQUIPMENT_NAMES[normalize(exercise.equipment)] ?? exercise.equipment.trim()
+  const name = nameIdentity(exercise.name, equipment)
+  const sameEquipment = (definition: GymExerciseDefinition) => definition.equipment === equipment
+  const definition = GYM_EXERCISES.find(item => item.key === exercise.key && sameEquipment(item))
+    ?? GYM_EXERCISES.find(item => sameEquipment(item)
+      && [item.name, ...(item.aliases ?? [])].some(alias => nameIdentity(alias, equipment) === name))
+  return {
+    key: definition?.key ?? `name:${name}`,
+    name: definition?.name ?? cleanName(exercise.name),
+    equipment,
+    muscle: definition ? definition.muscle as GymMuscleGroup
+      : MUSCLE_PATTERNS.find(([, pattern]) => pattern.test(name))?.[0] ?? 'Altro',
+  }
+}
+
 export function searchGymExercises(query: string, customExercises: GymExerciseDefinition[] = []): GymExerciseDefinition[] {
-  const identityOf = (exercise: GymExerciseDefinition) => `${normalize(exercise.name)}:${normalize(exercise.equipment)}`
+  const identityOf = (exercise: GymExerciseDefinition) => {
+    const resolved = resolveGymExercise(exercise)
+    return `${resolved.key}:${normalize(resolved.equipment)}`
+  }
   const seen = new Set(GYM_EXERCISES.map(identityOf))
   const personal = customExercises.filter(exercise => {
     const identity = identityOf(exercise)

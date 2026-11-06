@@ -23,13 +23,28 @@ soltanto a queste sessioni, non a un record assoluto su tutti gli allenamenti.
 Le serie vengono lette a pagine per evitare di troncare storici con oltre
 1000 serie tra le sessioni selezionate.
 
-Il selettore distingue esercizio, attrezzo, inclinazione panca (anche vuota
-rispetto a 0°), ripetizioni per lato e carico registrato rispetto al corpo
-libero. Ogni sessione contribuisce con una serie di riferimento: il carico
+La scelta dell'esercizio usa pulsanti per **Petto, Bicipiti, Schiena,
+Tricipiti, Spalle, Gambe e Addome**, una ricerca per nome/attrezzo e schede
+selezionabili. I gruppi senza progressi sono disabilitati. Glutei e polpacci
+rientrano in Gambe; i dip in Tricipiti. I personalizzati riconoscibili sono
+assegnati automaticamente; nomi non riconoscibili restano in **Altro**.
+
+I progressi accorpano nomi del catalogo e relativi alias personali, differenze
+di maiuscole e nomi con il suffisso ridondante «corpo libero». Per la **panca
+piana**, l'inclinazione vuota e 0° appartengono alla stessa serie storica.
+Le inclinazioni reali differenti, o non specificate su una panca inclinata,
+restano distinte, così come attrezzi e ripetizioni per lato differenti.
+Le registrazioni originali restano intatte: la normalizzazione avviene in
+lettura e non richiede una migrazione del database. La ricerca nel catalogo
+evita anche di riproporre personalizzati equivalenti a esercizi già presenti.
+
+Ogni sessione contribuisce con una serie di riferimento: il carico
 più alto e, a pari carico, il maggior numero di ripetizioni. A corpo libero
 si usa la serie con più ripetizioni. Le serie non completate o con valori
-non validi non entrano nei confronti. Un peso registrato pari a zero resta
-distinto dal peso non indicato.
+non validi non entrano nei confronti. Carichi e ripetizioni a corpo libero
+mantengono confronti separati. Zero kg e peso vuoto restano distinti per gli
+esercizi con carico; per Corpo libero e Sbarra, zero kg di carico esterno
+equivale al corpo libero. Il descrittore mostra «Corpo libero» una sola volta.
 
 La pagina mostra ultima sessione, migliore serie nel periodo e differenza di
 carico (o ripetizioni a corpo libero) rispetto alla sessione precedente.
@@ -95,8 +110,8 @@ Avviando una scheda, l'app crea le serie da registrare. Per ciascuna puoi
 modificare peso e ripetizioni effettive e premere **Fatto**. Il peso può restare
 vuoto per gli esercizi a corpo libero. L'ultimo peso e le ultime ripetizioni
 registrati per lo stesso esercizio, attrezzo e inclinazione vengono proposti
-alla sessione successiva. Anche i progressi separano le diverse inclinazioni;
-un angolo non specificato rimane distinto da uno 0° esplicito.
+alla sessione successiva. I progressi accorpano panca piana con angolo vuoto/0°;
+le altre inclinazioni mantengono serie storiche separate.
 Puoi aggiungere o rimuovere serie, riprendere una sessione iniziata e consultare
 le sessioni recenti. Modificare o eliminare una scheda non riscrive le sessioni
 già registrate.

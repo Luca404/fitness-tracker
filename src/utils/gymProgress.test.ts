@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GymSession, GymSet } from '../types'
-import { buildGymProgress, formatGymPerformance } from './gymProgress'
+import { buildGymProgress, exerciseDescription, formatGymPerformance } from './gymProgress'
 
 const baseSet: GymSet = {
   id: 'set', session_id: 'session', exercise_position: 0, exercise_key: 'bench',
@@ -66,5 +66,49 @@ describe('gym progress', () => {
     expect(progress.bodyweight).toBe(false)
     expect(progress.points).toHaveLength(1)
     expect(formatGymPerformance(progress.best.best)).toBe('0 kg × 12 rip.')
+  })
+
+  it('merges flat benches across catalog keys, personal names, aliases and missing or zero angles without mutating sets', () => {
+    const rows = [session('first', '2026-10-01', [
+      { exercise_key: 'bench-press', exercise_name: 'Panca piana', bench_angle: null, weight_kg: 40 },
+      { exercise_key: null, exercise_name: 'Panca piana con bilancieri', equipment: 'Bilancieri', bench_angle: 0, weight_kg: 45 },
+    ]), session('latest', '2026-10-28', [
+      { exercise_key: null, exercise_name: 'Barbell bench press', bench_angle: 0, weight_kg: 50 },
+    ])]
+    const original = structuredClone(rows)
+    const [progress] = buildGymProgress(rows)
+    expect(buildGymProgress(rows)).toHaveLength(1)
+    expect(progress).toMatchObject({ name: 'Panca piana', equipment: 'Bilanciere', benchAngle: null, muscle: 'Petto' })
+    expect(progress.points.map(point => point.best.weight_kg)).toEqual([45, 50])
+    expect(progress.points[0].sets).toBe(2)
+    expect(exerciseDescription(progress)).toBe('Bilanciere')
+    expect(rows).toEqual(original)
+  })
+
+  it('keeps unspecified incline benches separate from flat and explicit incline variants', () => {
+    const rows = [session('incline', '2026-10-28', [null, 0, 30, 45].map(bench_angle => ({
+      exercise_key: 'incline-barbell-press', exercise_name: 'Panca inclinata', bench_angle,
+    })))]
+    expect(buildGymProgress(rows)).toHaveLength(4)
+  })
+
+  it('merges redundant bodyweight names and zero external load while keeping added weights separate', () => {
+    const rows = [session('pullups', '2026-10-28', [
+      { exercise_key: 'pull-up', exercise_name: 'Trazioni', equipment: 'Sbarra', bench_angle: null, weight_kg: null, reps: 8 },
+      { exercise_key: null, exercise_name: 'Trazioni (corpo libero)', equipment: 'Sbarra', bench_angle: null, weight_kg: 0, reps: 12 },
+      { exercise_key: 'pull-up', exercise_name: 'Trazioni', equipment: 'Sbarra', bench_angle: null, weight_kg: 10, reps: 6 },
+    ])]
+    const groups = buildGymProgress(rows)
+    expect(groups).toHaveLength(2)
+    const bodyweight = groups.find(group => group.bodyweight)!
+    expect(bodyweight.points[0].sets).toBe(2)
+    expect(bodyweight.points[0].best.reps).toBe(12)
+    expect(formatGymPerformance(bodyweight.best.best)).toBe('Corpo libero × 12 rip.')
+    expect(bodyweight.muscle).toBe('Schiena')
+    const [pushups] = buildGymProgress([session('pushups', '2026-10-28', [{
+      exercise_key: null, exercise_name: 'Piegamenti corpo libero', equipment: 'Corpo libero', bench_angle: null, weight_kg: null,
+    }])])
+    expect(pushups.name).toBe('Piegamenti')
+    expect(exerciseDescription(pushups)).toBe('Corpo libero')
   })
 })

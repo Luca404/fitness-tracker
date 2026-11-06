@@ -11,7 +11,7 @@ it('loads saved personal exercises as reusable custom search results', async () 
   ], error: null })
   mocks.from.mockReturnValue({ select: vi.fn(() => ({ order })) })
   expect(await getCustomGymExercises()).toEqual([
-    { key: 'custom:exercise-1', name: 'Croci su panca', equipment: 'Manubri', muscle: 'Personalizzato', custom: true },
+    { key: 'custom:exercise-1', name: 'Croci su panca', equipment: 'Manubri', muscle: 'Petto', custom: true },
   ])
   expect(mocks.from).toHaveBeenCalledWith('gym_custom_exercises')
   expect(order).toHaveBeenCalledWith('exercise_name')

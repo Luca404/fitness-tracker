@@ -64,11 +64,49 @@ describe('fitness progress', () => {
       session('loaded', '2026-10-28', 50), session('body-old', '2026-10-01', null, 8), session('body-new', '2026-10-28', null, 12),
     ])
     setup()
-    const selector = await screen.findByRole('combobox', { name: 'Esercizio' })
-    const bodyweight = within(selector).getByRole('option', { name: /corpo libero/ }) as HTMLOptionElement
-    fireEvent.change(selector, { target: { value: bodyweight.value } })
+    const selector = await screen.findByRole('group', { name: 'Esercizio' })
+    fireEvent.click(within(selector).getByRole('button', { name: /corpo libero/ }))
     expect(screen.getByText('+4 rip.')).toBeTruthy()
     expect(JSON.parse(screen.getByTestId('progress-chart').textContent!).map((point: { value: number }) => point.value)).toEqual([8, 12])
+  })
+
+  it('filters exercises by muscle and search, selects their progress, and recovers from an empty search', async () => {
+    const rows = [session('bench-old', '2026-10-01', 40), session('bench-new', '2026-10-28', 45),
+      session('curl-old', '2026-10-01', 10), session('curl-new', '2026-10-28', 12)]
+    rows.slice(2).forEach(row => Object.assign(row.sets[0], {
+      exercise_key: 'dumbbell-curl', exercise_name: 'Curl bicipiti', equipment: 'Manubri', bench_angle: null,
+    }))
+    mocks.getCompletedGymSessions.mockResolvedValue(rows)
+    setup()
+    const groups = await screen.findByRole('group', { name: 'Gruppo muscolare' })
+    expect(within(groups).getAllByRole('button')).toHaveLength(8)
+    expect((within(groups).getByRole('button', { name: /^Addome/ }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(within(groups).getByRole('button', { name: /^Bicipiti/ }))
+    const picker = screen.getByRole('group', { name: 'Esercizio' })
+    expect(within(picker).getAllByRole('button')).toHaveLength(1)
+    expect(within(picker).getByRole('button', { name: 'Curl bicipiti · Manubri' }).getAttribute('aria-pressed')).toBe('true')
+    expect(JSON.parse(screen.getByTestId('progress-chart').textContent!).map((point: { value: number }) => point.value)).toEqual([10, 12])
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'manubri' } })
+    expect(within(picker).getAllByRole('button')).toHaveLength(1)
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'inesistente' } })
+    expect(screen.getByText('Nessun esercizio trovato.')).toBeTruthy()
+    expect(screen.queryByTestId('progress-chart')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Mostra tutti' }))
+    expect(screen.getByRole('searchbox').getAttribute('value')).toBe('')
+    expect(within(screen.getByRole('group', { name: 'Esercizio' })).getAllByRole('button')).toHaveLength(2)
+  })
+
+  it('offers one flat-bench choice for implicit and explicit zero angles and combines its points', async () => {
+    const rows = [session('old', '2026-10-01', 40), session('new', '2026-10-28', 45)]
+    rows.forEach((row, index) => Object.assign(row.sets[0], {
+      exercise_key: index ? null : 'bench-press', exercise_name: 'Panca piana', bench_angle: index ? 0 : null,
+    }))
+    mocks.getCompletedGymSessions.mockResolvedValue(rows)
+    setup()
+    const picker = await screen.findByRole('group', { name: 'Esercizio' })
+    expect(within(picker).getAllByRole('button')).toHaveLength(1)
+    expect(within(picker).getByRole('button', { name: 'Panca piana · Bilanciere' })).toBeTruthy()
+    expect(JSON.parse(screen.getByTestId('progress-chart').textContent!).map((point: { value: number }) => point.value)).toEqual([40, 45])
   })
 
   it('lists newest sessions first, expands older sessions and excludes an unfinished session', async () => {

@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 import { groupBy } from '../utils/groupBy'
-import type { GymExerciseDefinition } from '../data/gymExercises'
+import { resolveGymExercise, type GymExerciseDefinition } from '../data/gymExercises'
 import type { GymPlan, GymPlanExercise, GymSession, GymSet } from '../types'
 
 export type GymPlanExerciseInput = Pick<GymPlanExercise,
@@ -11,7 +11,7 @@ export async function getCustomGymExercises(): Promise<GymExerciseDefinition[]> 
   if (error) throw error
   return (data ?? []).map(exercise => ({
     key: `custom:${exercise.id}`, name: exercise.exercise_name, equipment: exercise.equipment,
-    muscle: 'Personalizzato', custom: true,
+    muscle: resolveGymExercise({ name: exercise.exercise_name, equipment: exercise.equipment }).muscle, custom: true,
   }))
 }
 
