@@ -1,7 +1,9 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
+import NumberInput from '../common/NumberInput'
 import { useState } from 'react'
 import type { UserHealthProfile, SuggestedGoals } from '../../types'
 import { calculateNutritionGoals } from '../../utils/bmr'
-import { formatDecimal, roundToTwo } from '../../utils/decimal'
+import { roundToTwo, formatInputDecimal } from '../../utils/decimal'
 
 interface Props {
   profile: Omit<UserHealthProfile, 'user_id' | 'created_at' | 'updated_at'>
@@ -10,6 +12,7 @@ interface Props {
 }
 
 export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
+  const { formatDecimal, formatNumericText } = useNumberFormat()
   const recommendation = calculateNutritionGoals({
     ...profile,
     user_id: '',
@@ -48,7 +51,7 @@ export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
 
       {recommendation.warnings.map(warning => (
         <p key={warning.code} className="rounded-lg bg-orange-400/10 p-3 text-sm text-orange-300">
-          ⚠️ {warning.message}
+          ⚠️ {formatNumericText(warning.message)}
         </p>
       ))}
 
@@ -68,12 +71,11 @@ export default function StepConfirm({ profile, onConfirm, onBack }: Props) {
       ].map(({ label, val, set }) => (
         <div key={label}>
           <label className="text-sm text-gray-400 mb-1 block">{label}</label>
-          <input
-            type="number"
+          <NumberInput
             min={label.startsWith('Calorie') ? 1 : 0}
             step={label.startsWith('Calorie') ? 1 : 0.1}
-            value={val === 0 ? '' : formatDecimal(val)}
-            onChange={e => set(label.startsWith('Calorie') ? parseInt(e.target.value) || 0 : roundToTwo(Number(e.target.value) || 0))}
+            value={val === 0 ? '' : formatInputDecimal(val)}
+            onValueChange={rawValue => set(label.startsWith('Calorie') ? parseInt(rawValue) || 0 : roundToTwo(Number(rawValue) || 0))}
             className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
           />
         </div>

@@ -1,9 +1,11 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
+import NumberInput from '../common/NumberInput'
 import { useState } from 'react'
 import type { PreparedBatch } from '../../types'
 import { useData } from '../../contexts/DataContext'
 import * as productionApi from '../../services/api'
 import { useAppService } from '../../contexts/TutorialEnvironment'
-import { formatDecimal, roundToTwo } from '../../utils/decimal'
+import { roundToTwo } from '../../utils/decimal'
 
 export default function PreparedWeightCorrection({ batch, disabled, onBusyChange, onCorrected }: {
   batch: PreparedBatch
@@ -11,6 +13,7 @@ export default function PreparedWeightCorrection({ batch, disabled, onBusyChange
   onBusyChange: (busy: boolean) => void
   onCorrected: (batch: PreparedBatch) => void | Promise<void>
 }) {
+  const { formatDecimal } = useNumberFormat()
   const { refreshDiary, showToast } = useData()
   const { correctPreparedBatchWeight } = useAppService('api', productionApi)
   const [editing, setEditing] = useState(false)
@@ -51,8 +54,8 @@ export default function PreparedWeightCorrection({ batch, disabled, onBusyChange
 
   return <div className="space-y-3 rounded-2xl border border-primary-700/40 bg-gray-900/30 p-4">
     <label className="block text-xs text-gray-400">Peso reale rimasto (g)
-      <input type="number" min="0" step="0.01" inputMode="decimal" value={draft}
-        disabled={disabled} onChange={event => setDraft(event.target.value)}
+      <NumberInput min="0" step="0.01" inputMode="decimal" value={draft}
+        disabled={disabled} onValueChange={rawValue => setDraft(rawValue)}
         className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-lg outline-none focus:border-primary-500" />
     </label>
     <p className="text-xs text-gray-400">Pesa tutto il piatto rimasto, prima di prelevare la porzione e senza il contenitore. Le calorie e i nutrienti dei pasti precedenti saranno ricalcolati; i grammi mangiati restano quelli pesati.</p>

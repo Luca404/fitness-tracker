@@ -1,7 +1,9 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
+import NumberInput from '../common/NumberInput'
 import { useState } from 'react'
 import type { FoodCategory, MealItemUnit, PieceSize } from '../../types'
 import { getPortionEstimates, type PortionEstimateId } from '../../utils/portionEstimates'
-import { formatDecimal, roundToTwo } from '../../utils/decimal'
+import { roundToTwo, formatInputDecimal } from '../../utils/decimal'
 
 interface Props {
   foodName: string
@@ -27,6 +29,7 @@ function isPieceSize(mode: QuantityMode): mode is PieceSize {
 }
 
 export default function IngredientQuantityInput({ foodName, category, grams, onChange, onValidityChange, compact = false, unit = 'g', pieceSize, pieceCount, onPieceChange }: Props) {
+  const { formatDecimal } = useNumberFormat()
   const selectionKey = `${category}:${foodName}:${unit}`
   const [selection, setSelection] = useState<{ key: string; mode: QuantityMode }>({
     key: selectionKey,
@@ -70,12 +73,11 @@ export default function IngredientQuantityInput({ foodName, category, grams, onC
   return (
     <div className={compact ? 'min-w-0' : ''}>
       <div className={`flex items-center overflow-hidden rounded-xl border border-gray-600 bg-gray-800/70 ${compact ? '' : 'mt-1'}`}>
-        <input
-          type="number"
+        <NumberInput
           min={activeEstimate ? 0.5 : 1}
           step={activeEstimate ? 0.5 : 0.1}
-          value={draftValue ?? (displayedQuantity > 0 ? formatDecimal(displayedQuantity) : '')}
-          onChange={event => changeQuantity(event.target.value)}
+          value={draftValue ?? (displayedQuantity > 0 ? formatInputDecimal(displayedQuantity) : '')}
+          onValueChange={rawValue => changeQuantity(rawValue)}
           onBlur={() => {
             if (draftValue === null || validQuantity(draftValue)) setDraftValue(null)
           }}

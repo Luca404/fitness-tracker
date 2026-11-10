@@ -1,3 +1,4 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 import { Link } from 'react-router-dom'
 import { useFitnessPoints } from '../../contexts/FitnessPointsContext'
 
@@ -8,13 +9,14 @@ export function PointsIcon({ streak = false }: { streak?: boolean }) {
 }
 
 export default function PointsHeader() {
+  const { formatDecimal } = useNumberFormat()
   const points = useFitnessPoints()
   if (!points) return null
   const active = points.summary
   return <Link to="/points" className="inline-flex min-h-11 items-center gap-3 rounded-xl px-2 text-sm font-semibold leading-none tabular-nums transition-colors hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400 lg:w-full lg:justify-between lg:border lg:border-gray-700 lg:px-3"
-    aria-label={active ? `${active.total.toLocaleString('it-IT')} punti totali, streak di ${active.streak} giorni. Apri riepilogo punti` : 'Apri riepilogo punti e streak'}>
+    aria-label={active ? `${formatDecimal(active.total, 0)} punti totali, streak di ${active.streak} giorni. Apri riepilogo punti` : 'Apri riepilogo punti e streak'}>
     <span className="inline-flex h-5 items-center gap-1.5 text-primary-300"><PointsIcon />
-      {active ? active.total.toLocaleString('it-IT') : points.loading ? '…' : points.error ? '—' : '0'}
+      {active ? formatDecimal(active.total, 0) : points.loading ? '…' : points.error ? '—' : '0'}
       <span className="hidden text-xs lg:inline">PT</span>
     </span>
     <span className="inline-flex h-5 items-center gap-1 text-amber-300"><PointsIcon streak />{active ? active.streak : points.loading ? '…' : points.error ? '—' : '0'}</span>

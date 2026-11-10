@@ -1,5 +1,6 @@
+import NumberInput from '../common/NumberInput'
 import type { Sex } from '../../types'
-import { formatDecimal, roundToTwo } from '../../utils/decimal'
+import { roundToTwo, formatInputDecimal } from '../../utils/decimal'
 
 interface PhysicalData {
   age: number
@@ -50,13 +51,12 @@ export default function StepPhysical({ data, onChange, onNext }: Props) {
       ].map(({ label, key, min, max }) => (
         <div key={key}>
           <label className="text-sm text-gray-400 mb-1 block">{label}</label>
-          <input
-            type="number"
+          <NumberInput
             min={min}
             max={max}
             step={key === 'age' ? 1 : 0.1}
-            value={data[key] ? (key === 'age' ? data[key] : formatDecimal(data[key])) : ''}
-            onChange={e => set(key, key === 'age' ? Math.round(Number(e.target.value) || 0) : roundToTwo(parseFloat(e.target.value) || 0))}
+            value={data[key] ? (key === 'age' ? data[key] : formatInputDecimal(data[key])) : ''}
+            onValueChange={rawValue => set(key, key === 'age' ? Math.round(Number(rawValue) || 0) : roundToTwo(parseFloat(rawValue) || 0))}
             className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
           />
         </div>
@@ -64,13 +64,12 @@ export default function StepPhysical({ data, onChange, onNext }: Props) {
 
       <div>
         <label className="text-sm text-gray-400 mb-1 block">% Grasso corporeo (opzionale)</label>
-        <input
-          type="number"
+        <NumberInput
           min={1}
           max={75}
           step={0.1}
-          value={data.body_fat_pct == null ? '' : formatDecimal(data.body_fat_pct)}
-          onChange={e => set('body_fat_pct', e.target.value ? roundToTwo(parseFloat(e.target.value)) : null)}
+          value={data.body_fat_pct == null ? '' : formatInputDecimal(data.body_fat_pct)}
+          onValueChange={rawValue => set('body_fat_pct', rawValue ? roundToTwo(parseFloat(rawValue)) : null)}
           className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
         />
       </div>

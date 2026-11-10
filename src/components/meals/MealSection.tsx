@@ -1,7 +1,7 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 import { mealItems } from '../../utils/mealEntries'
 import type { Meal } from '../../types'
 import MealItemRow from './MealItemRow'
-import { formatDecimal } from '../../utils/decimal'
 
 const LABELS: Record<string, string> = {
   breakfast: '☀️ Colazione',
@@ -17,6 +17,7 @@ interface Props {
 }
 
 export default function MealSection({ meal, onDeleteItem, onAddItem }: Props) {
+  const { formatDecimal } = useNumberFormat()
   const total = mealItems(meal).reduce((s, i) => s + i.calories, 0)
 
   return (

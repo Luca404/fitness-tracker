@@ -61,13 +61,13 @@ describe('IngredientQuantityInput', () => {
     expect(screen.getByLabelText('Grammi calcolati').textContent).toBe('150')
   })
 
-  it('displays one decimal after editing while keeping measurement precision', () => {
+  it('keeps the two supported decimals visible after editing', () => {
     render(<BreadQuantityHarness />)
     const input = screen.getByLabelText('Quantità di Pane in cassetta')
     fireEvent.change(input, { target: { value: '12.345' } })
     expect(screen.getByLabelText('Grammi calcolati').textContent).toBe('12.35')
     fireEvent.blur(input)
-    expect((input as HTMLInputElement).value).toBe('12.4')
+    expect((input as HTMLInputElement).value).toBe('12.35')
     expect(screen.getByLabelText('Grammi calcolati').textContent).toBe('12.35')
   })
 

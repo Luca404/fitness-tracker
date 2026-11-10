@@ -1,3 +1,4 @@
+import { useNumberFormat } from '../hooks/useNumberFormat'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
@@ -16,7 +17,6 @@ const NutritionLabelPhoto = lazy(() => import('../components/pantry/NutritionLab
 import { FOOD_CATEGORIES, FOOD_CATEGORY_BY_ID } from '../data/foodCategories'
 import type { PantryItem, FoodCategory } from '../types'
 import { validAlcoholStrength } from '../utils/alcohol'
-import { formatDecimal } from '../utils/decimal'
 
 type Mode = 'list' | 'choose' | 'scan' | 'photo' | 'manual'
 type Flow = { mode: Mode } | { mode: 'quantity'; pending: PendingFood; editingItemId: string | null }
@@ -27,6 +27,7 @@ export default function PantryPage({ embedded = false, onSaved, onCancel, initia
   onCancel?: () => void
   initialMode?: Mode
 }) {
+  const { formatDecimal } = useNumberFormat()
   const api = useAppService('api', productionApi)
   const tutorial = useTutorialEnvironment()
   const { user } = useAuth()

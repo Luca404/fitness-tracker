@@ -1,3 +1,4 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 import { useCallback, useEffect, useState } from 'react'
 import * as productionApi from '../../services/api'
 import { useAppService } from '../../contexts/TutorialEnvironment'
@@ -9,10 +10,10 @@ import { matchesDish, type DishCategoryFilter } from '../../data/dishCategories'
 import PreparedPortionInput from './PreparedPortionInput'
 import PreparedWeightCorrection from './PreparedWeightCorrection'
 import { getDishIcon } from '../../utils/foodIcons'
-import { formatDecimal } from '../../utils/decimal'
 
-export default function PreparedDishesPanel({ mealType, onConsumed, compact = false, onCountChange, onSelect, query = '', category = 'all' }: {
+export default function PreparedDishesPanel({ mealType, filterMealType, onConsumed, compact = false, onCountChange, onSelect, query = '', category = 'all' }: {
   mealType?: DishMealType
+  filterMealType?: DishMealType
   onConsumed?: () => Promise<void>
   compact?: boolean
   onCountChange?: (count: number) => void
@@ -20,6 +21,7 @@ export default function PreparedDishesPanel({ mealType, onConsumed, compact = fa
   query?: string
   category?: DishCategoryFilter
 }) {
+  const { formatDecimal } = useNumberFormat()
   const api = useAppService('api', productionApi)
   const { selectedDate } = useSettings()
   const { fetchForDate, showToast } = useData()
@@ -71,7 +73,7 @@ export default function PreparedDishesPanel({ mealType, onConsumed, compact = fa
     }
   }
 
-  const visibleBatches = batches.filter(batch => (!mealType || batch.dish.meal_types.includes(mealType)) && matchesDish(batch.dish, query, category))
+  const visibleBatches = batches.filter(batch => (!filterMealType || batch.dish.meal_types.includes(filterMealType)) && matchesDish(batch.dish, query, category))
   useEffect(() => { onCountChange?.(visibleBatches.length) }, [onCountChange, visibleBatches.length])
   if (visibleBatches.length === 0) return null
 

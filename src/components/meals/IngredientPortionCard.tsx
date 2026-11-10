@@ -1,5 +1,5 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 import type { DishItemDraft, PieceSize } from '../../types'
-import { formatDecimal } from '../../utils/decimal'
 import IngredientQuantityInput from './IngredientQuantityInput'
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
 }
 
 export default function IngredientPortionCard({ item, onQuantityChange, onValidityChange, onPieceChange, onRemove, disabled = false }: Props) {
+  const { formatDecimal } = useNumberFormat()
   return <fieldset disabled={disabled} className="min-w-0 rounded-xl border border-gray-700 bg-gray-900/30 p-3 text-sm">
     <div className="flex items-center gap-2">
       <span className="min-w-0 flex-1 truncate font-medium text-gray-300">{item.food_name}</span>

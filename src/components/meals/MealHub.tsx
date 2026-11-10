@@ -1,3 +1,5 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
+import NumberInput from '../common/NumberInput'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
@@ -21,7 +23,7 @@ import PreparedPortionInput from './PreparedPortionInput'
 import PreparedWeightCorrection from './PreparedWeightCorrection'
 import PreparedDishesPanel from './PreparedDishesPanel'
 import { defaultCookingMethod, estimateCookedItemWeights, estimateCookedWeight, recipeSignature, type CookingMethod } from '../../utils/preparedDishes'
-import { formatDecimal, roundToTwo } from '../../utils/decimal'
+import { roundToTwo, formatInputDecimal } from '../../utils/decimal'
 import { dishItemToDraft, dishTotals } from '../../utils/dishes'
 import { scaleIngredient, scaleNutrition } from '../../utils/nutrition'
 
@@ -46,6 +48,7 @@ function totalKcal(dish: Dish): number { return dishTotals(dish).calories }
 export type MealHubMode = 'list' | 'ingredients' | 'ingredient' | 'new' | 'oneoff-manual' | 'oneoff-photo' | 'edit' | 'pick' | 'prepare' | 'prepared-pick'
 
 export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beveragesOnly = false, mode, setMode, mealType, date }: Props) {
+  const { formatDecimal } = useNumberFormat()
   const api = useAppService('api', productionApi)
   const tutorial = useTutorialEnvironment()
   const { user } = useAuth()
@@ -487,9 +490,9 @@ export default function MealHub({ onAddEntry, onDishUpdated, onPrepared, beverag
           ))}
         </div>
         <label className="mt-3 block text-xs text-gray-400">Correggi il peso cotto totale (facoltativo)
-          <input type="number" min={1} step="0.1" inputMode="decimal"
-            value={cookedWeightOverride == null ? '' : formatDecimal(cookedWeightOverride)}
-            onChange={event => setCookedWeightOverride(event.target.value === '' ? null : roundToTwo(Number(event.target.value)))}
+          <NumberInput min={1} step="0.1" inputMode="decimal"
+            value={cookedWeightOverride == null ? '' : formatInputDecimal(cookedWeightOverride)}
+            onValueChange={rawValue => setCookedWeightOverride(rawValue === '' ? null : roundToTwo(Number(rawValue)))}
             placeholder={`${formatDecimal(rememberedWeight ?? estimated)} g suggeriti`}
             className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm outline-none focus:border-primary-500" />
         </label>
@@ -738,6 +741,7 @@ function ComposerHeader({ icon, eyebrow, title }: {
 }
 
 function MacroPill({ label, value }: { label: string; value: number }) {
+  const { formatDecimal } = useNumberFormat()
   return (
     <div className="rounded-xl bg-black/15 p-2">
       <p className="text-[10px] uppercase tracking-wide text-gray-500">{label}</p>

@@ -1,3 +1,5 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
+import NumberInput from '../common/NumberInput'
 import FormActions from '../common/FormActions'
 import { useRef, useState } from 'react'
 import type { DishItemDraft, FoodCategory } from '../../types'
@@ -7,7 +9,6 @@ import { consumedPhotoItems } from '../../utils/mealPhoto'
 import { nutritionTotals, nutritionValidationError, scaleIngredient } from '../../utils/nutrition'
 import { getExtendedNutritionTotals } from '../../utils/extendedNutrition'
 import ExtendedNutrition from './ExtendedNutrition'
-import { formatDecimal } from '../../utils/decimal'
 import FoodSearch from './FoodSearch'
 
 const nutrientLabels = {
@@ -69,6 +70,7 @@ interface Props {
 }
 
 export default function MealPhotoReview({ initialName, initialItems, analysis, editing = false, onSave, onCancel }: Props) {
+  const { formatDecimal } = useNumberFormat()
   const [name, setName] = useState(initialName)
   const [rows, setRows] = useState(() => initialItems.map((item, index) => createRow(item, index, analysis?.items[index])))
   const nextId = useRef(initialItems.length)
@@ -147,8 +149,8 @@ export default function MealPhotoReview({ initialName, initialItems, analysis, e
           </button>)}
         </div>
         <label className="mt-3 block text-xs text-gray-400">Percentuale mangiata
-          <input type="number" min="1" max="100" step="1" inputMode="decimal" value={percentage}
-            onChange={event => setPercentage(event.target.value)} className={inputClass} />
+          <NumberInput min="1" max="100" step="1" inputMode="decimal" value={percentage}
+            onValueChange={rawValue => setPercentage(rawValue)} className={inputClass} />
         </label>
       </section>}
       <p className="text-xs leading-relaxed text-gray-400">Quantità, ingredienti e valori nutrizionali sono approssimativi. Controlla soprattutto porzione e condimenti.</p>
@@ -173,8 +175,8 @@ export default function MealPhotoReview({ initialName, initialItems, analysis, e
             </label>
             <div className="mt-2 grid grid-cols-2 gap-2">
               <label className="min-w-0 text-xs text-gray-400">Quantità ({row.reference.unit ?? 'g'})
-                <input aria-label={`Quantità ingrediente ${index + 1} (${row.reference.unit ?? 'g'})`} type="number" min="0.1" max="10000" step="any" inputMode="decimal" value={row.amount}
-                  onChange={event => changeQuantity(row.id, event.target.value)} className={inputClass} />
+                <NumberInput aria-label={`Quantità ingrediente ${index + 1} (${row.reference.unit ?? 'g'})`} min="0.1" max="10000" step="any" inputMode="decimal" value={row.amount}
+                  onValueChange={rawValue => changeQuantity(row.id, rawValue)} className={inputClass} />
               </label>
               <label className="min-w-0 text-xs text-gray-400">Categoria
                 <select aria-label={`Categoria ingrediente ${index + 1}`} value={row.category} onChange={event => setRows(current => current.map(item => item.id === row.id
@@ -183,8 +185,8 @@ export default function MealPhotoReview({ initialName, initialItems, analysis, e
                 </select>
               </label>
               {nutrientKeys.map(key => <label key={key} className="min-w-0 text-xs text-gray-400">{nutrientLabels[key]}
-                <input aria-label={`${nutrientLabels[key]} ingrediente ${index + 1}`} type="number" min="0" step="any" inputMode="decimal" value={row.nutrients[key]}
-                  onChange={event => changeNutrient(row.id, key, event.target.value)} className={inputClass} />
+                <NumberInput aria-label={`${nutrientLabels[key]} ingrediente ${index + 1}`} min="0" step="any" inputMode="decimal" value={row.nutrients[key]}
+                  onValueChange={rawValue => changeNutrient(row.id, key, rawValue)} className={inputClass} />
               </label>)}
             </div>
             <details className="mt-3 rounded-xl border border-gray-700 p-3">
@@ -192,8 +194,8 @@ export default function MealPhotoReview({ initialName, initialItems, analysis, e
               <p className="mt-2 text-xs text-gray-500">Valori della quantità indicata. Un campo vuoto resta sconosciuto.</p>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 {extendedKeys.map(key => <label key={key} className="min-w-0 text-xs text-gray-400">{extendedLabels[key]}
-                  <input aria-label={`${extendedLabels[key]} ingrediente ${index + 1}`} type="number" min="0" step="any" inputMode="decimal" value={row.nutrients[key]}
-                    onChange={event => changeNutrient(row.id, key, event.target.value)} className={inputClass} />
+                  <NumberInput aria-label={`${extendedLabels[key]} ingrediente ${index + 1}`} min="0" step="any" inputMode="decimal" value={row.nutrients[key]}
+                    onValueChange={rawValue => changeNutrient(row.id, key, rawValue)} className={inputClass} />
                 </label>)}
               </div>
             </details>

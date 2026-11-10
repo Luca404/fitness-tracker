@@ -1,5 +1,5 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 // src/components/meals/CalorieRing.tsx
-import { formatDecimal } from '../../utils/decimal'
 
 interface Props {
   consumed: number
@@ -7,6 +7,7 @@ interface Props {
 }
 
 export default function CalorieRing({ consumed, target }: Props) {
+  const { formatDecimal } = useNumberFormat()
   const r = 60
   const circumference = 2 * Math.PI * r
   const pct = target > 0 ? Math.min(consumed / target, 1) : 0

@@ -110,15 +110,19 @@ dell’invio; il destinatario ha poi confermato la ricezione. Il test non ha
 usato il link per cambiare password e non ha creato nuovi account.
 
 Il controllo SMTP dal computer locale era stato rifiutato con `525` per il
-filtro IP di Brevo. Il filtro non è stato modificato: la successiva richiesta
-dal servizio Auth ospitato è stata accettata e l’email ricevuta. Se un invio
-futuro viene bloccato, verificare l’IP effettivo del server di invio nella
-sezione **Security → Authorized IPs** di Brevo; l’IP del computer locale non
-identifica quello di Supabase. Vedere la
+filtro IP di Brevo. L’avviso di sicurezza ricevuto in seguito riportava lo
+stesso IP pubblico del computer locale, precedente alla richiesta di recupero
+dal servizio Auth ospitato. Durante questa configurazione il filtro non è stato
+modificato dall’assistente. Successivamente il proprietario ha comunicato di
+aver rimosso la restrizione IP in Brevo e confermato che gli invii funzionano.
+Questa è la configurazione finale riferita dal proprietario; non occorre
+aggiungere IP per usare il filtro disattivato. Vedere la
 [guida Brevo al filtro IP](https://help.brevo.com/hc/en-us/articles/5740111683858-Authorize-and-block-IP-addresses-for-API-and-SMTP-security).
 
-L’attivazione SMTP è distinta dal rilascio del frontend: la ricezione di questa
-email non verifica la schermata di reset sulla versione online precedente.
+Il proprietario ha poi pubblicato il frontend con il commit `b9fda2d`
+(**sistemata pagina login**) e comunicato di averlo testato con esito positivo.
+La ricezione email è stata confermata durante la configurazione; la verifica
+del frontend pubblicato è riferita dal proprietario.
 
 ## Login con Google
 
@@ -148,5 +152,6 @@ invii doppi, callback scaduti con una sessione già presente, modalità di recup
 redirect, aggiornamento password e disponibilità di Google. Non creano utenti,
 non inviano email e non cambiano password reali. La consegna email ospitata è
 stata verificata separatamente con Brevo e confermata dal destinatario, come
-descritto sopra. L’accesso Google e il flusso completo sulla nuova versione del
-frontend restano da verificare prima del rilascio.
+descritto sopra. Il proprietario ha confermato anche la pubblicazione e i test
+positivi della nuova versione del frontend. Google resta predisposto nel codice
+e richiede ancora l’attivazione del provider con le credenziali OAuth.

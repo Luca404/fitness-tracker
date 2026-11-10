@@ -1,5 +1,5 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 import type { Workout } from '../../types'
-import { formatDecimal } from '../../utils/decimal'
 import { MET_ACTIVITIES } from '../../utils/met'
 
 interface Props {
@@ -8,6 +8,7 @@ interface Props {
 }
 
 export default function WorkoutRow({ workout, onDelete }: Props) {
+  const { formatDecimal } = useNumberFormat()
   const activity = MET_ACTIVITIES[workout.activity]
   return (
     <div className="flex items-center justify-between py-3 border-b border-gray-800">

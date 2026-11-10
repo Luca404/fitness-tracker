@@ -20,4 +20,17 @@ describe('PreparedPortionInput', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Grammi mangiati' }), { target: { value: '12.345' } })
     expect(onChange).toHaveBeenCalledWith(12.35)
   })
+
+  it('highlights only a shortcut matching the current amount', () => {
+    const props = { totalCookedG: 600, remainingG: 300, onChange: vi.fn() }
+    const { rerender } = render(<PreparedPortionInput {...props} value={0} />)
+    expect(screen.queryAllByRole('button', { pressed: true })).toHaveLength(0)
+    rerender(<PreparedPortionInput {...props} value={150} />)
+    expect(screen.getByRole('button', { pressed: true }).textContent).toBe('1/4')
+    rerender(<PreparedPortionInput {...props} value={300} />)
+    expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(1)
+    expect(screen.getByRole('button', { pressed: true }).textContent?.trim()).toBe('Tutto il resto')
+    rerender(<PreparedPortionInput {...props} value={123.45} />)
+    expect(screen.getAllByRole('button', { pressed: false })).toHaveLength(4)
+  })
 })

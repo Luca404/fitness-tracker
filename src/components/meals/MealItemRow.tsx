@@ -1,7 +1,7 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 // src/components/meals/MealItemRow.tsx
 import type { MealItem } from '../../types'
 import { formatPieceQuantity } from '../../utils/portionEstimates'
-import { formatDecimal } from '../../utils/decimal'
 
 interface Props {
   item: MealItem
@@ -9,6 +9,7 @@ interface Props {
 }
 
 export default function MealItemRow({ item, onDelete }: Props) {
+  const { formatDecimal } = useNumberFormat()
   const hasExtendedNutrition = [item.fiber_g, item.sugars_g, item.salt_g]
     .some(value => value != null)
   return (
@@ -17,7 +18,7 @@ export default function MealItemRow({ item, onDelete }: Props) {
         <p className="text-sm font-medium truncate">{item.food_name}</p>
         <p className="text-xs text-gray-500">
           {item.piece_size && item.piece_count
-            ? `${formatPieceQuantity(item.category, item.food_name, item.piece_size, item.piece_count)} · ≈ ${formatDecimal(item.quantity_g)} g`
+            ? `${formatPieceQuantity(item.category, item.food_name, item.piece_size, item.piece_count, formatDecimal)} · ≈ ${formatDecimal(item.quantity_g)} g`
             : `${formatDecimal(item.quantity_g)}${item.unit ?? 'g'}`}
           {' · '}P {formatDecimal(item.protein_g)}g · C {formatDecimal(item.carbs_g)}g · G {formatDecimal(item.fat_g)}g
         </p>

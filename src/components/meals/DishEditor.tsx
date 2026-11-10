@@ -1,3 +1,4 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 import FormActions from '../common/FormActions'
 import { Fragment, useRef, useState } from 'react'
 import FoodSearch from './FoodSearch'
@@ -5,7 +6,6 @@ import type { DishCategory, DishItemDraft, DishMealType, PieceSize } from '../..
 import { dishCategoriesForMeal } from '../../data/dishCategories'
 import { DISH_MEAL_TYPES } from '../../data/dishMealTypes'
 import IngredientPortionCard from './IngredientPortionCard'
-import { formatDecimal } from '../../utils/decimal'
 
 export type { DishItemDraft } from '../../types'
 import { nutritionTotals, nutritionValidationError, scaleIngredient } from '../../utils/nutrition'
@@ -29,6 +29,7 @@ export default function DishEditor({
   initialName, initialItems, initialMealTypes = ['lunch'], preferredMealType, initialCategories = [], onSave, onCancel,
   requireName = true, saveLabel = 'Salva piatto', showMealTypes = true, separateCustomizations = false, editing = false,
 }: Props) {
+  const { formatDecimal } = useNumberFormat()
   const [name, setName] = useState(initialName)
   const [mealTypes, setMealTypes] = useState<DishMealType[]>(initialMealTypes)
   const [categories, setCategories] = useState<DishCategory[]>(initialCategories)

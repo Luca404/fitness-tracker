@@ -47,10 +47,10 @@ export function habitTileFill(row: HabitRow): number {
 }
 
 /** Multiple of the limit, rather than the percentage above it. */
-export function habitExcessLabel(row: HabitRow): string | null {
+export function habitExcessLabel(row: HabitRow, format = formatDecimal): string | null {
   if (row.direction !== 'max' || row.value == null || row.target == null || row.value <= row.target) return null
   if (row.target <= 0) return '↑'
-  const ratio = formatDecimal(row.value / row.target)
+  const ratio = format(row.value / row.target)
   // A small excess must not round to "1x", which would imply no excess.
   return ratio === '1' ? '>1x' : `${row.partial ? '≥' : ''}${ratio}x`
 }

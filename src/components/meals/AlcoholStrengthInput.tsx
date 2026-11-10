@@ -1,14 +1,17 @@
-import { formatDecimal } from '../../utils/decimal'
+import { useNumberFormat } from '../../hooks/useNumberFormat'
+import NumberInput from '../common/NumberInput'
+import { formatInputDecimal } from '../../utils/decimal'
 import { alcoholUnits, validAlcoholStrength } from '../../utils/alcohol'
 
 export default function AlcoholStrengthInput({ value, onChange, volumeMl, estimated = false, disabled = false }: {
   value: number | null; onChange: (value: number | null) => void; volumeMl?: number; estimated?: boolean; disabled?: boolean
 }) {
+  const { formatDecimal } = useNumberFormat()
   return <div className="space-y-2">
     <label className="block text-xs text-gray-400">Gradazione (% vol)
-      <input type="number" min={0} max={100} step="0.1" inputMode="decimal"
-        value={value == null ? '' : formatDecimal(value)} disabled={disabled}
-        onChange={event => onChange(event.target.value === '' ? null : Number(event.target.value))}
+      <NumberInput min={0} max={100} step="0.1" inputMode="decimal"
+        value={value == null ? '' : formatInputDecimal(value)} disabled={disabled}
+        onValueChange={rawValue => onChange(rawValue === '' ? null : Number(rawValue))}
         className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm outline-none focus:border-primary-500" />
     </label>
     {value != null && !validAlcoholStrength(value) && <p className="text-xs text-orange-400">Inserisci una gradazione tra 0 e 100.</p>}

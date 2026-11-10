@@ -1,8 +1,8 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 import type { MealEntry } from '../../types'
 import { getMealEntryTotals } from '../../utils/mealEntries'
 import { getFoodIcon } from '../../utils/foodIcons'
 import { alcoholStrength } from '../../utils/alcohol'
-import { formatDecimal } from '../../utils/decimal'
 import { isMealPhotoEntry } from '../../utils/mealPhoto'
 
 interface Props {
@@ -11,6 +11,7 @@ interface Props {
 }
 
 export default function MealEntryCard({ entry, onOpen }: Props) {
+  const { formatDecimal } = useNumberFormat()
   const totals = getMealEntryTotals(entry)
   const strength = entry.items.length === 1 ? alcoholStrength(entry.items[0]) : null
   const quantityLabel = entry.cooked_portion_g != null

@@ -1,3 +1,4 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useData } from '../../contexts/DataContext'
@@ -14,13 +15,13 @@ import { dishCategoryLabels, matchesDish, type DishCategoryFilter } from '../../
 import DishFilters from '../meals/DishFilters'
 import ExtendedNutrition from '../meals/ExtendedNutrition'
 import PreparedDishesPanel from '../meals/PreparedDishesPanel'
-import { formatDecimal } from '../../utils/decimal'
 
 import { dishTotals, dishItemToDraft } from '../../utils/dishes'
 
 type EditorMode = 'closed' | 'create' | 'detail' | 'edit' | 'icon'
 
 export default function KitchenDishes() {
+  const { formatDecimal } = useNumberFormat()
   const api = useAppService('api', productionApi)
   const tutorial = useTutorialEnvironment()
   const { user } = useAuth()
@@ -129,7 +130,7 @@ export default function KitchenDishes() {
 
   return (
     <div className="space-y-6">
-      <PreparedDishesPanel mealType={category === 'all' ? undefined : category} query={query} category={dishCategory} />
+      <PreparedDishesPanel mealType={category === 'all' ? undefined : category} filterMealType={category === 'all' ? undefined : category} query={query} category={dishCategory} />
       <button type="button" data-tour="dish-new" onClick={() => { setSelectedDish(null); setMode('create') }}
         className="flex w-full items-center gap-3 rounded-2xl bg-primary-500 px-4 lg:w-auto lg:pr-6 py-3.5 text-left font-semibold shadow-lg shadow-primary-950/30 hover:bg-primary-400">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-xl">+</span>
@@ -228,6 +229,7 @@ function DishDetail({ dish, onEdit, onChangeIcon, onDelete }: {
   onChangeIcon?: () => void
   onDelete?: () => void
 }) {
+  const { formatDecimal } = useNumberFormat()
   const totals = dishTotals(dish)
   const extendedTotals = getExtendedNutritionTotals(dish.items)
   return (

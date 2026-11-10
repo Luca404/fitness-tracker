@@ -1,5 +1,5 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 import type { FoodResult } from '../../types'
-import { formatDecimal } from '../../utils/decimal'
 
 interface Props {
   food: Partial<Pick<FoodResult,
@@ -12,11 +12,13 @@ interface Props {
 }
 
 function Nutrient({ label, value }: { label: string; value: number | null | undefined }) {
+  const { formatDecimal } = useNumberFormat()
   if (value === null || value === undefined) return null
   return <span className="rounded-lg bg-black/10 px-2 py-1">{label} <b>{formatDecimal(value)} g</b></span>
 }
 
 export default function OpenFoodFactsDetails({ food, detailedLabels = false }: Props) {
+  const { formatDecimal } = useNumberFormat()
   const hasOtherNutrition = food.fiber_100g != null || food.salt_100g != null
   const hasScores = food.nutrition_grade || food.nutrition_score !== null && food.nutrition_score !== undefined
     || food.nova_group !== null && food.nova_group !== undefined || food.ecoscore_grade

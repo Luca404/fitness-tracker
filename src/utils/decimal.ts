@@ -11,6 +11,11 @@ export function roundToTwo(value: number): number {
 }
 
 /** Display at most one decimal place, or whole numbers in overviews. */
-export function formatDecimal(value: number, places: 0 | 1 = 1): string {
-  return String(roundToPlaces(value, places))
+export function formatDecimal(value: number, places = 1, separator: '.' | ',' = '.'): string {
+  return String(roundToPlaces(value, places)).replace('.', separator)
+}
+
+/** Editable measurements retain the two supported decimal places. */
+export function formatInputDecimal(value: number): string {
+  return String(roundToTwo(value))
 }

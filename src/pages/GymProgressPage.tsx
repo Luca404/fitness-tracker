@@ -1,3 +1,4 @@
+import { useNumberFormat } from '../hooks/useNumberFormat'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
@@ -9,7 +10,6 @@ import type { GymSession, WeightLog } from '../types'
 import GymSessionCard from '../components/workout/GymSessionCard'
 import GymProgressPicker, { type ProgressMuscleFilter } from '../components/workout/GymProgressPicker'
 import { buildGymProgress, exerciseDescription, formatGymPerformance } from '../utils/gymProgress'
-import { formatDecimal } from '../utils/decimal'
 import { useChartAxis } from '../hooks/useChartAxis'
 import { chartTooltipStyle } from '../utils/chartAxis'
 
@@ -18,6 +18,7 @@ function sessionDate(date: string): string {
 }
 
 export default function GymProgressPage() {
+  const { formatDecimal } = useNumberFormat()
   const { user } = useAuth()
   const { currentWeightKg } = useData()
   const navigate = useNavigate()
@@ -79,7 +80,7 @@ export default function GymProgressPage() {
     date: new Date(`${point.date}T00:00:00`).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }),
     fullDate: sessionDate(point.date),
     value: selected.bodyweight ? point.best.reps : point.best.weight_kg,
-    performance: formatGymPerformance(point.best),
+    performance: formatGymPerformance(point.best, formatDecimal),
   })) ?? []
   const { axis, onResize } = useChartAxis(chartData.map(point => point.value), { minimumStep: selected?.bodyweight ? 1 : 0.1 })
 
@@ -128,12 +129,12 @@ export default function GymProgressPage() {
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-xl bg-gray-900/60 p-3">
               <p className="text-xs text-gray-400">Ultima sessione</p>
-              <p className="mt-2 text-sm font-semibold">{formatGymPerformance(latest.best)}</p>
+              <p className="mt-2 text-sm font-semibold">{formatGymPerformance(latest.best, formatDecimal)}</p>
               <p className="mt-1 text-xs text-gray-500">{sessionDate(latest.date)} · {latest.sets} serie</p>
             </div>
             <div className="rounded-xl bg-primary-950/30 p-3 ring-1 ring-primary-800/40">
               <p className="text-xs text-primary-300">Migliore nel periodo</p>
-              <p className="mt-2 text-sm font-semibold">{formatGymPerformance(selected.best.best)}</p>
+              <p className="mt-2 text-sm font-semibold">{formatGymPerformance(selected.best.best, formatDecimal)}</p>
               <p className="mt-1 text-xs text-gray-500">{sessionDate(selected.best.date)}</p>
             </div>
           </div>

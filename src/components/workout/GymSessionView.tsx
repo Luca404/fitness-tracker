@@ -1,8 +1,9 @@
+import NumberInput from '../common/NumberInput'
 import { useEffect, useState } from 'react'
 import { useData } from '../../contexts/DataContext'
 import * as gymApi from '../../services/gymApi'
 import type { GymSession, GymSet } from '../../types'
-import { formatDecimal, roundToTwo } from '../../utils/decimal'
+import { roundToTwo, formatInputDecimal } from '../../utils/decimal'
 
 const REST_DURATION_KEY = 'gym-rest-duration'
 
@@ -66,7 +67,7 @@ function GymSetRow({ set, draft, onDraftChange, onSaved, onDeleted, canDelete }:
   canDelete: boolean
 }) {
   const { showToast } = useData()
-  const [weight, setWeight] = useState(draft?.weight ?? (set.weight_kg == null ? '' : formatDecimal(set.weight_kg)))
+  const [weight, setWeight] = useState(draft?.weight ?? (set.weight_kg == null ? '' : formatInputDecimal(set.weight_kg)))
   const [reps, setReps] = useState(draft?.reps ?? (set.reps ?? set.target_reps ?? '').toString())
   const [saving, setSaving] = useState(false)
   const valid = reps.trim() !== '' && Number.isInteger(Number(reps)) && Number(reps) > 0
@@ -106,24 +107,24 @@ function GymSetRow({ set, draft, onDraftChange, onSaved, onDeleted, canDelete }:
     </div>
     <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
       <label className="text-xs text-gray-400">Peso (kg)
-        <input type="number" min={0} step="0.1" inputMode="decimal" value={weight}
-          onChange={event => {
-            setWeight(event.target.value)
-            onDraftChange({ weight: event.target.value, reps })
+        <NumberInput min={0} step="0.1" inputMode="decimal" value={weight}
+          onValueChange={rawValue => {
+            setWeight(rawValue)
+            onDraftChange({ weight: rawValue, reps })
           }} onBlur={() => {
             const value = Number(weight)
             if (weight.trim() !== '' && Number.isFinite(value)) {
-              setWeight(formatDecimal(value))
-              onDraftChange({ weight: formatDecimal(value), reps })
+              setWeight(formatInputDecimal(value))
+              onDraftChange({ weight: formatInputDecimal(value), reps })
             }
           }} placeholder="Corpo libero"
           className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-2 py-2 text-white" />
       </label>
       <label className="text-xs text-gray-400">{set.per_side ? 'Ripetizioni per lato' : 'Ripetizioni'}
-        <input type="number" min={1} max={100} step={1} inputMode="numeric" value={reps}
-          onChange={event => {
-            setReps(event.target.value)
-            onDraftChange({ weight, reps: event.target.value })
+        <NumberInput min={1} max={100} step={1} inputMode="numeric" value={reps}
+          onValueChange={rawValue => {
+            setReps(rawValue)
+            onDraftChange({ weight, reps: rawValue })
           }}
           className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-900 px-2 py-2 text-white" />
       </label>

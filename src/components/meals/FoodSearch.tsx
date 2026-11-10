@@ -1,3 +1,4 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import * as productionNutrition from '../../services/nutrition'
 import * as productionApi from '../../services/api'
@@ -12,7 +13,6 @@ import IngredientQuantityInput from './IngredientQuantityInput'
 import NutritionFields from './NutritionFields'
 import IngredientEntryActions from './IngredientEntryActions'
 import { nutritionValidationError } from '../../utils/nutrition'
-import { formatDecimal } from '../../utils/decimal'
 
 const IngredientCatalog = lazy(() => import('../../pages/PantryPage'))
 
@@ -58,6 +58,7 @@ interface Props {
 }
 
 export default function FoodSearch({ onAdd, onClose, hideHeader, allowManualEntry = true, addLabel = '+ Aggiungi ingrediente', saving = false, resetAfterAdd = false }: Props) {
+  const { formatDecimal } = useNumberFormat()
   const api = useAppService('api', productionApi)
   const { searchBasicFoods, searchFood, calcNutrition } = useAppService('nutrition', productionNutrition)
   const { showToast } = useData()

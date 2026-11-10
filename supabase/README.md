@@ -248,14 +248,15 @@ confirmed receipt. The reset link was not used to change a password in this
 verification. No application user or migration was created.
 
 A preliminary SMTP authentication check from the local computer returned
-`525` (unauthorized IP). Brevo's IP protection was not changed by this setup;
-the subsequent recovery request from hosted Auth was accepted and received.
-Only actual sending-server addresses should be authorized if later requests
-are blocked; the local check does not establish which IP hosted Auth uses.
+`525` (unauthorized IP). The subsequent security notification's reported IP
+matched the local computer's public IPv4. The assistant did not change Brevo's
+IP protection during setup. The owner subsequently reported removing the IP
+restriction in Brevo and confirmed that sending works with that configuration.
 
-This configures the shared email service. The login/reset frontend changes
-remain a separate release; email receipt does not verify that a deployed
-frontend shows the new password-reset screen.
+The owner then pushed frontend commit `b9fda2d` (**sistemata pagina login**) and
+reported successful tests of the published version. Email receipt was confirmed
+during the setup; deployed frontend validation is owner-reported. Google remains
+disabled pending OAuth provider credentials.
 
 ## Authentication redirects — 2026-10-30
 

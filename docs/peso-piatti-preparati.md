@@ -13,6 +13,27 @@ una seconda conversione di cottura ai grammi stimati dalla foto. Il percorso
 manuale di Occasionale continua a usare la preparazione descritta qui.
 Vedi [pasti occasionali da foto](pasti-da-foto.md).
 
+## Avanzi e modifica di una porzione
+
+In **Pasti → Aggiungi pasto** compaiono tutti i piatti preparati ancora
+disponibili, anche se associati a un altro momento della giornata. Puoi
+registrare a pranzo un avanzo della cena del giorno precedente: la scelta del
+pasto indica dove registrare la porzione. Ricerca e filtro per tipo di piatto
+continuano a funzionare. In **Cucina**, i filtri per momento del giorno scelti
+esplicitamente continuano a restringere la lista.
+
+Le scorciatoie **1/4**, **1/2**, **3/4** si riferiscono al peso cotto totale
+originale; quelle superiori alla disponibilità sono disabilitate. **Tutto il
+resto** usa la disponibilità attuale. Una scorciatoia è evidenziata solo quando
+corrisponde alla quantità inserita; con quantità zero non c'è selezione.
+
+Aprendo un piatto registrato e scegliendo **Modifica piatto**, la modifica di
+una porzione preparata mostra il peso precedente, la nuova porzione, l'avanzo
+risultante e l'anteprima delle calorie e dei macronutrienti. L'anteprima segue
+i grammi inseriti e non salva finché non premi **Salva porzione**. **Annulla**
+torna al dettaglio senza cambiare la registrazione. La ricetta e gli altri
+pasti non vengono modificati da questa operazione.
+
 ## Scegliere l'alimento nello stato giusto
 
 I valori nutrizionali degli alimenti base da cuocere si riferiscono di norma a

@@ -1,3 +1,5 @@
+import { useNumberFormat } from '../hooks/useNumberFormat'
+import NumberInput from '../components/common/NumberInput'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -7,11 +9,13 @@ import { NUTRITION_GOAL_CONFIG, RECOMPOSITION_TRAINING_ADVICE } from '../config/
 import Modal from '../components/common/Modal'
 import ProfileGoalEditor from '../components/settings/ProfileGoalEditor'
 import UsernameEditor from '../components/settings/UsernameEditor'
+import NumberFormatSettings from '../components/settings/NumberFormatSettings'
 import { useTutorialEnvironment } from '../contexts/TutorialEnvironment'
 import type { UserHealthProfile } from '../types'
-import { formatDecimal, roundToTwo } from '../utils/decimal'
+import { roundToTwo, formatInputDecimal } from '../utils/decimal'
 
 export default function SettingsPage() {
+  const { formatDecimal, formatNumericText } = useNumberFormat()
   const tutorial = useTutorialEnvironment()
   const { user, signOut } = useAuth()
   const {
@@ -139,7 +143,7 @@ export default function SettingsPage() {
               {recommendation.usesAdjustedWeight && ` · peso di riferimento ${formatDecimal(recommendation.referenceWeightKg)} kg`}
             </p>
             {recommendation.warnings.map(warning => (
-              <p key={warning.code} className="text-orange-300">⚠️ {warning.message}</p>
+              <p key={warning.code} className="text-orange-300">⚠️ {formatNumericText(warning.message)}</p>
             ))}
           </div>
         )}
@@ -152,8 +156,8 @@ export default function SettingsPage() {
         ].map(({ label, val, set }) => (
           <div key={label} className="settings-goal-field">
             <label className="text-sm text-gray-400 mb-1 block">{label}</label>
-            <input type="number" min={label.startsWith('Calorie') ? 1 : 0} step={label.startsWith('Calorie') ? 1 : 0.1} value={val === 0 ? '' : formatDecimal(val)}
-              onChange={e => set(label.startsWith('Calorie') ? parseInt(e.target.value) || 0 : roundToTwo(Number(e.target.value) || 0))}
+            <NumberInput min={label.startsWith('Calorie') ? 1 : 0} step={label.startsWith('Calorie') ? 1 : 0.1} value={val === 0 ? '' : formatInputDecimal(val)}
+              onValueChange={rawValue => set(label.startsWith('Calorie') ? parseInt(rawValue) || 0 : roundToTwo(Number(rawValue) || 0))}
               className="input-field py-3" />
           </div>
         ))}
@@ -163,6 +167,8 @@ export default function SettingsPage() {
           Salva goal
         </button>
       </div>
+
+      <NumberFormatSettings />
 
       <div className="card space-y-3">
         <h2 className="font-semibold">Guida rapida</h2>

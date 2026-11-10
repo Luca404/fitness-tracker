@@ -1,20 +1,21 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Meal, MealEntry } from '../types'
 
-const mocks = vi.hoisted(() => ({ meals: [] as Meal[] }))
+const mocks = vi.hoisted(() => ({ meals: [] as Meal[], getPreparedBatchAmounts: vi.fn(), updatePreparedPortion: vi.fn(), fetchForDate: vi.fn() }))
+vi.mock('../services/api', () => ({ getPreparedBatchAmounts: mocks.getPreparedBatchAmounts, updatePreparedPortion: mocks.updatePreparedPortion }))
 vi.mock('../contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'user-1' } }) }))
 vi.mock('../contexts/SettingsContext', () => ({ useSettings: () => ({ selectedDate: '2026-10-28', setSelectedDate: vi.fn() }) }))
 vi.mock('../contexts/DataContext', () => ({ useData: () => ({
   meals: mocks.meals, goals: null, loading: false,
   daySummary: { calories: 450, protein_g: 20, carbs_g: 40, fat_g: 15, calories_burned: 0 },
-  fetchForDate: vi.fn(), addMealEntry: vi.fn(), updateMealEntry: vi.fn(), removeMealEntry: vi.fn(), showToast: vi.fn(),
+  fetchForDate: mocks.fetchForDate, addMealEntry: vi.fn(), updateMealEntry: vi.fn(), removeMealEntry: vi.fn(), showToast: vi.fn(),
 }) }))
 vi.mock('../components/meals/GoodHabits', () => ({ default: () => null }))
 vi.mock('../components/meals/MealHub', () => ({ default: () => <p>Scelta inserimento</p> }))
 import MealsPage from './MealsPage'
 
-afterEach(cleanup)
+afterEach(() => { cleanup(); vi.clearAllMocks() })
 
 function entry(id: string, hour: string, calories: number): MealEntry {
   return { id, meal_id: 'meal-dinner', name: id, created_at: `2026-10-28T${hour}:00Z`, items: [{
@@ -25,6 +26,27 @@ function entry(id: string, hour: string, calories: number): MealEntry {
 }
 
 describe('meal diary', () => {
+  it('cancels a prepared edit without saving and saves a new portion through the existing API', async () => {
+    const prepared = { ...entry('Riso preparato', '19:00', 400), prepared_batch_id: 'batch', cooked_portion_g: 200 }
+    mocks.meals = [{ id: 'meal-dinner', user_id: 'user-1', date: '2026-10-28', name: null, created_at: '', meal_type: 'dinner', entries: [prepared] }]
+    mocks.getPreparedBatchAmounts.mockResolvedValue({ total_cooked_g: 600, remaining_g: 200 })
+    mocks.updatePreparedPortion.mockResolvedValue(undefined)
+    render(<MealsPage />)
+    fireEvent.click(screen.getByRole('button', { name: /Riso preparato/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Modifica piatto' }))
+    const input = await screen.findByRole('spinbutton', { name: 'Grammi mangiati' })
+    fireEvent.change(input, { target: { value: '100' } })
+    expect(within(screen.getByRole('region', { name: 'Anteprima porzione' })).getByText('200 kcal')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Annulla' }))
+    expect(mocks.updatePreparedPortion).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Modifica piatto' }))
+    expect((screen.getByRole('spinbutton', { name: 'Grammi mangiati' }) as HTMLInputElement).value).toBe('200')
+    fireEvent.click(screen.getByRole('button', { name: '1/4' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Salva porzione' }))
+    await waitFor(() => expect(mocks.updatePreparedPortion).toHaveBeenCalledWith('Riso preparato', 150))
+    expect(mocks.fetchForDate).toHaveBeenCalledWith('2026-10-28')
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
   it('keeps a single dinner with combined calories and newest dishes first after a post-dinner snack', () => {
     const base = { user_id: 'user-1', date: '2026-10-28', name: null, created_at: '2026-10-28T19:00:00Z' }
     mocks.meals = [

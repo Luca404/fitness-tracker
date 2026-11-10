@@ -1,3 +1,4 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
@@ -5,16 +6,18 @@ import { getFitnessLeaderboard, LEADERBOARD_PAGE_SIZE } from '../../services/fit
 import type { FitnessLeaderboard, LeaderboardEntry } from '../../services/fitnessLeaderboard'
 
 function ScoreRow({ entry }: { entry: LeaderboardEntry }) {
+  const { formatDecimal } = useNumberFormat()
   return <div className={`flex min-h-16 items-center gap-3 rounded-xl px-3 py-3 ${entry.is_me ? 'bg-primary-500/10 ring-1 ring-inset ring-primary-500/30' : ''}`}>
     <span className={`w-10 shrink-0 text-center text-lg font-bold tabular-nums ${entry.rank === 1 ? 'text-amber-300' : entry.rank === 2 ? 'text-slate-300' : entry.rank === 3 ? 'text-[#cd7f32]' : 'text-gray-400'}`}>
       <span className="sr-only">Posizione </span>{entry.rank}
     </span>
     <span className="min-w-0 flex-1 break-all text-sm font-medium">{entry.username}{entry.is_me && <span className="ml-2 inline-block rounded bg-primary-500/20 px-1.5 py-0.5 text-xs text-primary-300">Tu</span>}</span>
-    <span className="shrink-0 text-right font-bold tabular-nums">{entry.total.toLocaleString('it-IT')} <small className="text-xs font-normal text-gray-400">PT</small></span>
+    <span className="shrink-0 text-right font-bold tabular-nums">{formatDecimal(entry.total, 0)} <small className="text-xs font-normal text-gray-400">PT</small></span>
   </div>
 }
 
 function LeaderboardContent({ total }: { total?: number }) {
+  const { formatDecimal } = useNumberFormat()
   const [offset, setOffset] = useState(0)
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<{ key: string; data: FitnessLeaderboard | null; error: boolean } | null>(null)
@@ -45,7 +48,7 @@ function LeaderboardContent({ total }: { total?: number }) {
           <Link to="/settings" className="inline-flex min-h-11 items-center text-sm text-primary-300">Modifica nome utente →</Link>
         </div>}
         <div className="card min-w-0">
-          <p className="mb-3 text-sm text-gray-400">{data.total_users.toLocaleString('it-IT')} {data.total_users === 1 ? 'partecipante' : 'partecipanti'}</p>
+          <p className="mb-3 text-sm text-gray-400">{formatDecimal(data.total_users, 0)} {data.total_users === 1 ? 'partecipante' : 'partecipanti'}</p>
           {data.entries.length ? <ol aria-label="Classifica utenti" className="space-y-1">{data.entries.map(entry => <li key={entry.username}><ScoreRow entry={entry} /></li>)}</ol>
             : <p className="py-5 text-sm text-gray-400">{data.total_users ? 'Nessun utente in questa pagina.' : 'La classifica è ancora vuota.'}</p>}
           {(offset > 0 || data.has_more) && <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-700 pt-3">

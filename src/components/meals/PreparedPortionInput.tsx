@@ -1,6 +1,8 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
+import NumberInput from '../common/NumberInput'
 import { useState } from 'react'
 import { fractionOfPreparedDish } from '../../utils/preparedDishes'
-import { formatDecimal, roundToTwo } from '../../utils/decimal'
+import { roundToTwo, formatInputDecimal } from '../../utils/decimal'
 
 interface Props {
   totalCookedG: number
@@ -11,7 +13,12 @@ interface Props {
 }
 
 export default function PreparedPortionInput({ totalCookedG, remainingG, value, onChange, allowZero = false }: Props) {
+  const { formatDecimal } = useNumberFormat()
   const [draftValue, setDraftValue] = useState<string | null>(null)
+  const isRest = value > 0 && roundToTwo(value) === roundToTwo(remainingG)
+  const shortcutClass = (selected: boolean) => `rounded-lg border px-2 py-2 text-sm disabled:opacity-35 ${selected
+    ? 'border-primary-400 bg-primary-500/15 font-semibold text-primary-200'
+    : 'border-gray-600 bg-gray-700 hover:bg-gray-600'}`
 
   function choose(grams: number) {
     setDraftValue(null)
@@ -29,20 +36,21 @@ export default function PreparedPortionInput({ totalCookedG, remainingG, value, 
           const grams = fractionOfPreparedDish(totalCookedG, numerator)
           return <button key={numerator} type="button" onClick={() => choose(grams)}
             disabled={grams <= 0 || grams > remainingG}
-            className="rounded-lg bg-gray-700 px-2 py-2 text-sm hover:bg-gray-600 disabled:opacity-35">
+            aria-pressed={!isRest && value > 0 && roundToTwo(value) === roundToTwo(grams)}
+            className={shortcutClass(!isRest && value > 0 && roundToTwo(value) === roundToTwo(grams))}>
             {numerator === 2 ? '1/2' : `${numerator}/4`}
           </button>
         })}
         <button type="button" onClick={() => choose(remainingG)} disabled={remainingG <= 0}
-          className="rounded-lg bg-primary-900/50 px-2 py-2 text-xs text-primary-200 hover:bg-primary-900 disabled:opacity-35">
+          aria-pressed={isRest} className={`${shortcutClass(isRest)} text-xs`}>
           Tutto il resto
         </button>
       </div>
       <label data-tour={allowZero ? 'preparation-amount' : undefined} className="block text-xs text-gray-400">Grammi mangiati
-        <input type="number" min={allowZero ? 0 : 0.1} max={remainingG} step="0.1" inputMode="decimal"
-          value={draftValue ?? (value === 0 ? '' : formatDecimal(value))}
-          onChange={event => {
-            const raw = event.target.value
+        <NumberInput min={allowZero ? 0 : 0.1} max={remainingG} step="0.1" inputMode="decimal"
+          value={draftValue ?? (value === 0 ? '' : formatInputDecimal(value))}
+          onValueChange={rawValue => {
+            const raw = rawValue
             setDraftValue(raw)
             if (raw === '') { onChange(0); return }
             const number = Number(raw)

@@ -1,10 +1,10 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useData } from '../../contexts/DataContext'
 import { getGuideline } from '../../data/nutritionGuidelines'
 import { calculateHabitRows, habitExcessLabel, habitStatus, habitTileFill, habitWindow, summarizeHabitRows } from '../../utils/goodHabits'
 import type { Meal } from '../../types'
-import { formatDecimal } from '../../utils/decimal'
 
 interface Props {
   selectedDate: string
@@ -13,6 +13,7 @@ interface Props {
 }
 
 export default function GoodHabits({ selectedDate, currentMeals, compact = false }: Props) {
+  const { formatDecimal } = useNumberFormat()
   const { profile, goals, mealRevision, getWeeklyMeals } = useData()
   const { from, to } = habitWindow(selectedDate)
   const requestKey = `${from}:${to}:${mealRevision}`
@@ -68,7 +69,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
             const statusLabel = status === 'ok' ? 'in linea' : status === 'attention' ? 'da migliorare' : status === 'informative' ? 'informativo' : 'dato incompleto'
             const fill = habitTileFill(row)
             const overMaximum = row.direction === 'max' && row.value != null && row.value > (row.target ?? Infinity)
-            const excessLabel = habitExcessLabel(row)
+            const excessLabel = habitExcessLabel(row, formatDecimal)
             const valueLabel = row.value == null ? 'dato non disponibile' : `${row.partial ? 'almeno ' : ''}${formatDecimal(row.value)} ${row.unit ?? 'g'}`
             const limitLabel = row.target == null ? '' : `, limite ${formatDecimal(row.target)} ${row.unit ?? 'g'}`
             const progressLabel = row.value == null || row.target == null ? '' : row.direction === 'min'
@@ -107,7 +108,7 @@ export default function GoodHabits({ selectedDate, currentMeals, compact = false
     return habitRows.map(row => {
       const progress = row.value == null || row.target == null ? 0 : row.target <= 0 ? (row.value > 0 ? 100 : 0) : Math.min(100, Math.round((row.value / row.target) * 100))
       const overMaximum = row.direction === 'max' && row.value != null && row.value > (row.target ?? Infinity)
-      const excessLabel = habitExcessLabel(row)
+      const excessLabel = habitExcessLabel(row, formatDecimal)
       const displayValue = row.value == null ? null : formatDecimal(row.value)
       return (
         <div key={row.label} className="rounded-2xl border border-gray-800 bg-gray-800/55 p-3">

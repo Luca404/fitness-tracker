@@ -1,3 +1,4 @@
+import { useNumberFormat } from '../hooks/useNumberFormat'
 import { useEffect, useState, useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from 'recharts'
 import { useData } from '../contexts/DataContext'
@@ -7,13 +8,13 @@ import { buildHistoryData, historyAverage, historyWindow } from '../utils/histor
 import { useAuth } from '../contexts/AuthContext'
 import { useSettings } from '../contexts/SettingsContext'
 import type { GymSession, Meal, WeightLog, Workout } from '../types'
-import { formatDecimal } from '../utils/decimal'
 import { useChartAxis } from '../hooks/useChartAxis'
 import { chartTooltipStyle } from '../utils/chartAxis'
 
 type Range = 7 | 30
 
 export default function HistoryPage() {
+  const { formatDecimal } = useNumberFormat()
   const { goals, showToast, currentWeightKg } = useData()
   const { user } = useAuth()
   const { today } = useSettings()

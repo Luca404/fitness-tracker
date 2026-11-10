@@ -1,5 +1,5 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 import type { GymSession, WeightLog } from '../../types'
-import { formatDecimal } from '../../utils/decimal'
 import { estimateGymSessionCalories, formatGymDuration, sessionDurationMinutes, weightForSessionDate } from '../../utils/gymSessionSummary'
 
 export default function GymSessionCard({ session, weightLogs, fallbackWeightKg, showDate, onOpen }: {
@@ -9,6 +9,7 @@ export default function GymSessionCard({ session, weightLogs, fallbackWeightKg, 
   showDate?: boolean
   onOpen: () => void
 }) {
+  const { formatDecimal } = useNumberFormat()
   const duration = sessionDurationMinutes(session)
   const bodyWeightKg = weightForSessionDate(session.date, weightLogs, fallbackWeightKg)
   const calories = estimateGymSessionCalories(session, bodyWeightKg)

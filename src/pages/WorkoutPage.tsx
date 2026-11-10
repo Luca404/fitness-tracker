@@ -1,7 +1,7 @@
+import { useNumberFormat } from '../hooks/useNumberFormat'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
-import { formatDecimal } from '../utils/decimal'
 import { useSettings } from '../contexts/SettingsContext'
 import ActivityGrid from '../components/workout/ActivityGrid'
 import WorkoutDrawer from '../components/workout/WorkoutDrawer'
@@ -12,6 +12,7 @@ import Modal from '../components/common/Modal'
 import { useTutorialEnvironment } from '../contexts/TutorialEnvironment'
 
 export default function WorkoutPage({ embedded = false }: { embedded?: boolean }) {
+  const { formatDecimal } = useNumberFormat()
   const tutorial = useTutorialEnvironment()
   const { user } = useAuth()
   const { workouts, currentWeightKg, addWorkout, removeWorkout, showToast } = useData()

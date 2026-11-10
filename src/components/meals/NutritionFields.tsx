@@ -1,3 +1,4 @@
+import NumberInput from '../common/NumberInput'
 import { roundToTwo } from '../../utils/decimal'
 
 export interface NutritionFieldValues {
@@ -31,9 +32,9 @@ export default function NutritionFields({ values, onChange, basis = 'portion', i
     const value = values[key]
     return <label key={key} className="block min-w-0 text-xs text-gray-400">
       {labels[key]} ({unit}{suffix})
-      <input type="number" min={0} step="any" inputMode="decimal" disabled={disabled}
+      <NumberInput min={0} step="any" inputMode="decimal" disabled={disabled}
         value={value == null ? '' : String(value)}
-        onChange={event => onChange(key, event.target.value === '' ? (optional ? null : 0) : roundToTwo(Number(event.target.value)))}
+        onValueChange={rawValue => onChange(key, rawValue === '' ? (optional ? null : 0) : roundToTwo(Number(rawValue)))}
         className="mt-1 w-full rounded-xl border border-gray-600 bg-gray-800 px-3 py-2.5 text-sm outline-none focus:border-primary-500" />
     </label>
   }

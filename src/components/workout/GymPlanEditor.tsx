@@ -1,3 +1,4 @@
+import NumberInput from '../common/NumberInput'
 import { useState } from 'react'
 import { searchGymExercises, type GymExerciseDefinition } from '../../data/gymExercises'
 import type { GymPlan } from '../../types'
@@ -124,18 +125,18 @@ export default function GymPlanEditor({ plan, customExercises = [], catalogError
         </div>
         <div data-tour={index === 0 ? 'gym-plan-reps' : undefined} className="mt-3 grid grid-cols-3 gap-2">
           <label className="text-xs text-gray-400">Serie
-            <input type="number" min={1} max={20} value={exercise.target_sets}
-              onChange={event => updateExercise(index, { target_sets: event.target.value === '' ? '' : Number(event.target.value) })}
+            <NumberInput min={1} max={20} value={exercise.target_sets}
+              onValueChange={rawValue => updateExercise(index, { target_sets: rawValue === '' ? '' : Number(rawValue) })}
               className="mt-1 w-full rounded-lg bg-gray-800 px-3 py-2 text-white" />
           </label>
           <label className="text-xs text-gray-400">Rip. min
-            <input type="number" min={1} max={100} value={exercise.target_reps ?? ''} placeholder="Libere"
-              onChange={event => updateExercise(index, { target_reps: optionalNumber(event.target.value) })}
+            <NumberInput min={1} max={100} value={exercise.target_reps ?? ''} placeholder="Libere"
+              onValueChange={rawValue => updateExercise(index, { target_reps: optionalNumber(rawValue) })}
               className="mt-1 w-full rounded-lg bg-gray-800 px-3 py-2 text-white" />
           </label>
           <label className="text-xs text-gray-400">Rip. max
-            <input type="number" min={1} max={100} value={exercise.target_reps_max ?? ''} placeholder="—"
-              onChange={event => updateExercise(index, { target_reps_max: optionalNumber(event.target.value) })}
+            <NumberInput min={1} max={100} value={exercise.target_reps_max ?? ''} placeholder="—"
+              onValueChange={rawValue => updateExercise(index, { target_reps_max: optionalNumber(rawValue) })}
               className="mt-1 w-full rounded-lg bg-gray-800 px-3 py-2 text-white" />
           </label>
         </div>
@@ -150,8 +151,8 @@ export default function GymPlanEditor({ plan, customExercises = [], catalogError
           Usa una panca
         </label>
         {exercise.usesBench && <label className="mt-3 block text-xs text-gray-400">Inclinazione panca (°)
-          <input type="number" min={-90} max={90} step={1} value={exercise.bench_angle ?? ''} placeholder="Facoltativa"
-            onChange={event => updateExercise(index, { bench_angle: optionalNumber(event.target.value) })}
+          <NumberInput min={-90} max={90} step={1} value={exercise.bench_angle ?? ''} placeholder="Facoltativa"
+            onValueChange={rawValue => updateExercise(index, { bench_angle: optionalNumber(rawValue) })}
             className="mt-1 w-full rounded-lg bg-gray-800 px-3 py-2 text-white" />
           <span className="mt-1 block text-gray-500">0° piana, valori positivi inclinata, negativi declinata.</span>
         </label>}

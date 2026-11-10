@@ -39,8 +39,8 @@ function compareSets(a: GymSet, b: GymSet): number {
   return (a.weight_kg ?? 0) - (b.weight_kg ?? 0) || (a.reps ?? 0) - (b.reps ?? 0)
 }
 
-export function formatGymPerformance(set: GymSet): string {
-  return `${exerciseIdentity(set).bodyweight ? 'Corpo libero' : `${formatDecimal(set.weight_kg!)} kg`} × ${set.reps} rip.${set.per_side ? ' per lato' : ''}`
+export function formatGymPerformance(set: GymSet, format = formatDecimal): string {
+  return `${exerciseIdentity(set).bodyweight ? 'Corpo libero' : `${format(set.weight_kg!)} kg`} × ${set.reps} rip.${set.per_side ? ' per lato' : ''}`
 }
 
 export function exerciseDescription(exercise: ExerciseProgress): string {

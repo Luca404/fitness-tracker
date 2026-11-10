@@ -1,8 +1,9 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
+import NumberInput from '../common/NumberInput'
 import { useRef, useState } from 'react'
 import { BASIC_FOODS, type BasicFood } from '../../data/basicFoods'
 import type { DishItemDraft } from '../../types'
 import { scaleNutrition } from '../../utils/nutrition'
-import { formatDecimal } from '../../utils/decimal'
 import { validAlcoholStrength, withAlcoholStrength } from '../../utils/alcohol'
 import AlcoholStrengthInput from './AlcoholStrengthInput'
 
@@ -20,6 +21,7 @@ function beverageIcon(food: BasicFood) {
 export default function BeveragePicker({ onAddEntry }: {
   onAddEntry: (name: string, items: DishItemDraft[]) => Promise<void>
 }) {
+  const { formatDecimal } = useNumberFormat()
   const [selected, setSelected] = useState<BasicFood | null>(null)
   const [volume, setVolume] = useState(330)
   const [abv, setAbv] = useState<number | null>(null)
@@ -51,8 +53,8 @@ export default function BeveragePicker({ onAddEntry }: {
     {selected && <div className="space-y-3 rounded-2xl border border-gray-700 bg-gray-900/30 p-4">
       <p className="font-semibold">{selected.name}</p>
       <label className="block text-xs text-gray-400">Quantità (ml)
-        <input type="number" min={0.1} step="0.1" inputMode="decimal" value={volume || ''} disabled={saving}
-          onChange={event => setVolume(Number(event.target.value))} onFocus={event => event.currentTarget.select()}
+        <NumberInput min={0.1} step="0.1" inputMode="decimal" value={volume || ''} disabled={saving}
+          onValueChange={rawValue => setVolume(Number(rawValue))} onFocus={event => event.currentTarget.select()}
           className="mt-1 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-lg font-bold outline-none focus:border-primary-500" />
       </label>
       {alcoholic && <AlcoholStrengthInput value={abv} onChange={setAbv} volumeMl={volume} estimated={selected.cocktail} disabled={saving} />}

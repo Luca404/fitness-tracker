@@ -1,5 +1,5 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 import type { ExtendedNutritionTotals } from '../../utils/extendedNutrition'
-import { formatDecimal } from '../../utils/decimal'
 
 interface Props {
   totals: ExtendedNutritionTotals
@@ -13,6 +13,7 @@ const NUTRIENTS = [
 ]
 
 export default function ExtendedNutrition({ totals, detailedLabels = false }: Props) {
+  const { formatDecimal } = useNumberFormat()
   return (
     <div className="mt-2 grid grid-cols-3 gap-2 text-center">
       {NUTRIENTS.map(({ key, label }) => {

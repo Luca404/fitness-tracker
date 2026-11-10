@@ -1,3 +1,4 @@
+import { useNumberFormat } from '../hooks/useNumberFormat'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
@@ -18,13 +19,12 @@ import { buildMealTimeline } from '../utils/mealTimeline'
 import { getFoodIcon } from '../utils/foodIcons'
 import { getExtendedNutritionTotals } from '../utils/extendedNutrition'
 import { splitMealItems } from '../utils/mealCustomizations'
-import PreparedPortionInput from '../components/meals/PreparedPortionInput'
+import PreparedPortionEditor from '../components/meals/PreparedPortionEditor'
 import SingleIngredientEditor from '../components/meals/SingleIngredientEditor'
 import MealPhotoReview from '../components/meals/MealPhotoReview'
 import { isMealPhotoEntry } from '../utils/mealPhoto'
 import * as productionApi from '../services/api'
 import { useAppService, useTutorialEnvironment } from '../contexts/TutorialEnvironment'
-import { formatDecimal } from '../utils/decimal'
 
 const MEAL_TYPES: { type: MealType; label: string }[] = [
   { type: 'breakfast', label: '☀️ Colazione' },
@@ -60,6 +60,7 @@ function mealItemToDraft(item: MealEntry['items'][number]): DishItemDraft {
 }
 
 export default function MealsPage() {
+  const { formatDecimal } = useNumberFormat()
   const api = useAppService('api', productionApi)
   const tutorial = useTutorialEnvironment()
   const tutorialMealFlow = tutorial && ['meal-type', 'meal-hub', 'meal-ingredient-options', 'dish-pick', 'dish-prepare', 'prepared-list', 'prepared-pick', 'photo-method', 'photo-review'].includes(tutorial.scene)
@@ -400,15 +401,11 @@ export default function MealsPage() {
                 <button type="button" onClick={() => setFoodSearchOpen(false)} className="text-gray-400 text-xl" aria-label="Chiudi">✕</button>
               </div>
               {selectedEntry.prepared_batch_id ? (
-                preparedAmounts ? <div className="space-y-4">
-                  <PreparedPortionInput
-                    totalCookedG={preparedAmounts.total_cooked_g}
-                    remainingG={preparedAmounts.remaining_g + (selectedEntry.cooked_portion_g ?? 0)}
-                    value={preparedEditG} onChange={setPreparedEditG} />
-                  <button type="button" onClick={() => void handleUpdatePreparedPortion()}
-                    disabled={savingPreparedEdit || preparedEditG <= 0 || preparedEditG > preparedAmounts.remaining_g + (selectedEntry.cooked_portion_g ?? 0)}
-                    className="w-full rounded-xl bg-primary-500 py-3 font-semibold disabled:opacity-40">Salva porzione</button>
-                </div> : <p className="text-sm text-gray-500">Caricamento preparazione…</p>
+                preparedAmounts ? <PreparedPortionEditor entry={selectedEntry} amounts={preparedAmounts}
+                  grams={preparedEditG} onChange={setPreparedEditG} saving={savingPreparedEdit}
+                  onSave={() => void handleUpdatePreparedPortion()}
+                  onCancel={() => { setPreparedEditG(selectedEntry.cooked_portion_g ?? 0); setModalStep('view-entry') }}
+                /> : <p className="text-sm text-gray-500">Caricamento preparazione…</p>
               ) : isMealPhotoEntry(selectedEntry) ? <MealPhotoReview
                 key={selectedEntry.id} editing initialName={selectedEntry.name}
                 initialItems={selectedEntry.items.map(mealItemToDraft)}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDecimal, roundToTwo } from './decimal'
+import { formatDecimal, formatInputDecimal, roundToTwo } from './decimal'
 
 describe('two-decimal measurements', () => {
   it('rounds positive and negative values without padding whole numbers', () => {
@@ -11,6 +11,13 @@ describe('two-decimal measurements', () => {
 })
 
 describe('display formatting', () => {
+  it('keeps editable precision separate from display and supports either separator', () => {
+    expect(formatInputDecimal(12.345)).toBe('12.35')
+    expect(formatInputDecimal(12)).toBe('12')
+    expect(formatDecimal(12.35, 2, ',')).toBe('12,35')
+    expect(formatDecimal(0.003, 3, ',')).toBe('0,003')
+    expect(formatDecimal(1200, 0, ',')).toBe('1200')
+  })
   it('uses at most one decimal in details', () => {
     expect(formatDecimal(12.345)).toBe('12.3')
     expect(formatDecimal(12.35)).toBe('12.4')

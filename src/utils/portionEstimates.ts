@@ -42,12 +42,12 @@ function isFeminine(food: PieceFood, plural: boolean): boolean {
   return food.singular !== 'pomodoro' && (food.singular !== 'uovo' || plural)
 }
 
-export function formatPieceQuantity(category: FoodCategory, foodName: string, size: PieceSize, count: number): string {
+export function formatPieceQuantity(category: FoodCategory, foodName: string, size: PieceSize, count: number, format = formatDecimal): string {
   const food = pieceFood(category, foodName)
   const plural = count !== 1
   const feminine = food ? isFeminine(food, plural) : false
   const noun = food ? (plural ? food.plural : food.singular) : (plural ? 'pezzi' : 'pezzo')
-  return `${formatDecimal(count)} ${noun} ${adjective(size, plural, feminine)}`
+  return `${format(count)} ${noun} ${adjective(size, plural, feminine)}`
 }
 
 const SLICE: PortionEstimate = {

@@ -1,3 +1,4 @@
+import NumberInput from '../common/NumberInput'
 import FormActions from '../common/FormActions'
 import AlcoholStrengthInput from '../meals/AlcoholStrengthInput'
 import { validAlcoholStrength } from '../../utils/alcohol'
@@ -6,7 +7,7 @@ import { FOOD_CATEGORIES, FOOD_CATEGORY_BY_ID } from '../../data/foodCategories'
 import { normalizeBarcode } from '../../services/barcodeProducts'
 import type { FoodCategory } from '../../types'
 import { manualNutritionError, type PendingFood } from '../../utils/pantryDraft'
-import { formatDecimal, roundToTwo } from '../../utils/decimal'
+import { roundToTwo, formatInputDecimal } from '../../utils/decimal'
 import { PendingNutritionFields } from './PantryNutritionFields'
 
 export default function PantryReview({ pending, setPending, editingItemId, analysisReviewAcknowledged,
@@ -74,18 +75,18 @@ export default function PantryReview({ pending, setPending, editingItemId, analy
           <div className="grid grid-cols-2 gap-3">
             <label className="text-xs text-gray-400">
               Pezzi per confezione
-              <input type="number" min={1} step={1} value={pending.package_piece_count ?? ''}
-                onChange={event => {
-                  const value = event.target.value ? Math.max(1, Math.round(Number(event.target.value))) : null
+              <NumberInput min={1} step={1} value={pending.package_piece_count ?? ''}
+                onValueChange={rawValue => {
+                  const value = rawValue ? Math.max(1, Math.round(Number(rawValue))) : null
                   setPending({ ...pending, package_piece_count: value })
                 }}
                 className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />
             </label>
             <label className="text-xs text-gray-400">
               Peso/volume netto
-              <input type="number" min={0} step="0.1" value={pending.package_net_quantity_value == null ? '' : formatDecimal(pending.package_net_quantity_value)}
-                onChange={event => {
-                  const value = event.target.value ? Math.max(0, roundToTwo(Number(event.target.value))) : null
+              <NumberInput min={0} step="0.1" value={pending.package_net_quantity_value == null ? '' : formatInputDecimal(pending.package_net_quantity_value)}
+                onValueChange={rawValue => {
+                  const value = rawValue ? Math.max(0, roundToTwo(Number(rawValue))) : null
                   setPending({ ...pending, package_net_quantity_value: value })
                 }}
                 className="mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm outline-none focus:border-primary-500" />

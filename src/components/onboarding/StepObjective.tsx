@@ -1,8 +1,10 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
+import NumberInput from '../common/NumberInput'
 import { useMemo } from 'react'
 import type { Objective } from '../../types'
 import { differenceInDays, format, addMonths } from 'date-fns'
 import { NUTRITION_GOAL_CONFIG } from '../../config/nutritionGoals'
-import { formatDecimal, roundToTwo } from '../../utils/decimal'
+import { roundToTwo, formatInputDecimal } from '../../utils/decimal'
 
 interface ObjectiveData {
   objective: Objective
@@ -26,6 +28,7 @@ const OBJECTIVES: { key: Objective; label: string; desc: string; icon: string }[
 ]
 
 export default function StepObjective({ data, currentWeightKg, onChange, onNext, onBack }: Props) {
+  const { formatDecimal } = useNumberFormat()
   function set<K extends keyof ObjectiveData>(key: K, val: ObjectiveData[K]) {
     onChange({ ...data, [key]: val })
   }
@@ -86,13 +89,12 @@ export default function StepObjective({ data, currentWeightKg, onChange, onNext,
           <label className="text-sm text-gray-400 mb-1 block">
             Peso target (kg){data.objective === 'gain_muscle' ? ' — opzionale' : ''}
           </label>
-          <input
-            type="number"
+          <NumberInput
             min={30}
             max={300}
             step={0.1}
-            value={data.target_weight_kg == null ? '' : formatDecimal(data.target_weight_kg)}
-            onChange={e => set('target_weight_kg', e.target.value ? roundToTwo(parseFloat(e.target.value)) : null)}
+            value={data.target_weight_kg == null ? '' : formatInputDecimal(data.target_weight_kg)}
+            onValueChange={rawValue => set('target_weight_kg', rawValue ? roundToTwo(parseFloat(rawValue)) : null)}
             className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-primary-500 outline-none"
           />
           {invalidLossTarget && (

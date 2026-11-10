@@ -1,5 +1,5 @@
+import { useNumberFormat } from '../../hooks/useNumberFormat'
 // src/components/meals/MacroBars.tsx
-import { formatDecimal } from '../../utils/decimal'
 
 interface MacroBarProps {
   label: string
@@ -9,6 +9,7 @@ interface MacroBarProps {
 }
 
 function MacroBar({ label, value, target, color }: MacroBarProps) {
+  const { formatDecimal } = useNumberFormat()
   const pct = target > 0 ? Math.min((value / target) * 100, 100) : 0
   return (
     <div>

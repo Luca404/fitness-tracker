@@ -1,3 +1,5 @@
+import { useNumberFormat } from '../hooks/useNumberFormat'
+import NumberInput from '../components/common/NumberInput'
 import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
@@ -7,7 +9,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts'
 import type { WeightLog } from '../types'
-import { formatDecimal, roundToTwo } from '../utils/decimal'
+import { roundToTwo, formatInputDecimal } from '../utils/decimal'
 import { useChartAxis } from '../hooks/useChartAxis'
 import { chartTooltipStyle } from '../utils/chartAxis'
 
@@ -18,6 +20,7 @@ function toLocalISODate(d: Date) {
 }
 
 export default function WeightPage() {
+  const { formatDecimal } = useNumberFormat()
   const { getWeightLogs, upsertWeightLog, deleteWeightLog } = useAppService('api', productionApi)
   const tutorial = useTutorialEnvironment()
   const { user } = useAuth()
@@ -183,16 +186,15 @@ export default function WeightPage() {
             className="min-w-0 flex-1 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 outline-none focus:border-primary-500 text-sm"
           />
           <div className="flex min-w-0 items-center gap-1 flex-1 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 focus-within:border-primary-500">
-            <input
-              type="number"
+            <NumberInput
               step="0.1"
               min="20"
               max="400"
               value={weightInput}
-              onChange={e => setWeightInput(e.target.value)}
+              onValueChange={rawValue => setWeightInput(rawValue)}
               onBlur={() => {
                 const value = Number(weightInput)
-                if (weightInput !== '' && Number.isFinite(value)) setWeightInput(formatDecimal(value))
+                if (weightInput !== '' && Number.isFinite(value)) setWeightInput(formatInputDecimal(value))
               }}
               placeholder="es. 75.5"
               className="min-w-0 flex-1 bg-transparent outline-none text-sm"
