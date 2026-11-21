@@ -81,7 +81,7 @@ export default function Modal({ open, onClose, children, title, fullScreenOnMobi
         {title && (
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">{title}</h2>
-            <button type="button" onClick={onClose} aria-label="Chiudi" className="text-gray-400 text-xl">✕</button>
+            <button type="button" onClick={onClose} aria-label="Chiudi" className="-my-2 -mr-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-xl text-gray-400 transition-colors hover:bg-gray-700 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400">✕</button>
           </div>
         )}
         {!title && fullScreenOnMobile && (

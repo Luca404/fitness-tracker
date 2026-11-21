@@ -64,6 +64,7 @@ supabase functions deploy analyze-nutrition-label
 supabase functions deploy analyze-meal-photo --no-verify-jwt
 supabase functions deploy resolve-barcode-product
 supabase functions deploy confirm-barcode-product
+supabase functions deploy fittrackr-chat --no-verify-jwt
 ```
 
 The hosted database is shared. Review the dry-run and apply only this repository's pending migrations. **Never run `supabase db reset --linked`.**
@@ -71,6 +72,8 @@ The hosted database is shared. Review the dry-run and apply only this repository
 The seven Trackr security versions `20261004165900`–`20261004170500` are already applied to the hosted project. FitTrackr records the actual meal-item correction and six finance ledger markers; do not replay them. [The database workflow](supabase/README.md) explains grants for future RPCs and the distinction between hosted and local databases. Local `.env.local` URLs at `127.0.0.1:54321` target a separate instance; the existing local instance has older fitness migrations and is not claimed to mirror the complete hosted schema.
 
 Keep the OpenAI key in Edge Function secrets, never in a `VITE_` variable. The optional `OPENAI_VISION_MODEL` secret overrides the default `gpt-4.1-mini`.
+
+Sagebite is available from the authenticated header on mobile and the sidebar on desktop. Deploy `fittrackr-chat` before releasing the frontend that calls it. It uses the existing `OPENAI_API_KEY` and accepts an optional `OPENAI_FITTRACKR_CHAT_MODEL` override. The initial chat answers general nutrition questions and keeps the conversation in memory while navigating the main sections. It sends the current message and up to four prior exchanges to OpenAI with `store: false`. Diary access and synced chat history are future features.
 
 Occasional meal photos use the separate `analyze-meal-photo` function, which validates the user's session through Supabase Auth. `OPENAI_MEAL_PHOTO_MODEL` can override the vision model for this task. Photo estimates use cooked/ready-to-eat quantities and are reviewed before direct diary registration. No recipe, prepared batch or stored photo is created. See [meal photos](docs/pasti-da-foto.md) for setup and behavior.
 

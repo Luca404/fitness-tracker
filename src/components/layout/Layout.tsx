@@ -3,6 +3,8 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import AppErrorBoundary from '../common/AppErrorBoundary'
 import PageLoading from '../common/PageLoading'
 import PointsHeader from '../common/PointsHeader'
+import FitnessChat from './FitnessChat'
+import { useTutorialEnvironment } from '../../contexts/TutorialEnvironment'
 
 const NAV = [
   { to: '/fitness', label: 'Fitness', icon: '💪', description: 'Allenamenti, schede e progressi.' },
@@ -32,6 +34,7 @@ function NavigationIcon({ to, className }: { to: string; className?: string }) {
 export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const tutorial = useTutorialEnvironment()
   const page = location.pathname === '/points'
     ? { label: 'Punti e costanza', description: '' }
     : location.pathname === '/settings'
@@ -83,6 +86,7 @@ export default function Layout() {
         </nav>
         <div className="app-header-actions flex min-w-0 items-center gap-1 lg:flex-col lg:items-stretch lg:gap-3">
           <PointsHeader />
+          {!tutorial && <FitnessChat />}
           <NavLink
             to="/settings"
             aria-label="Impostazioni"
