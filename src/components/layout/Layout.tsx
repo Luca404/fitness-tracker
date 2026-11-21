@@ -31,7 +31,7 @@ function NavigationIcon({ to, className }: { to: string; className?: string }) {
   )
 }
 
-export default function Layout() {
+export default function Layout({ onDiaryChange }: { onDiaryChange?: () => Promise<void> }) {
   const navigate = useNavigate()
   const location = useLocation()
   const tutorial = useTutorialEnvironment()
@@ -86,7 +86,7 @@ export default function Layout() {
         </nav>
         <div className="app-header-actions flex min-w-0 items-center gap-1 lg:flex-col lg:items-stretch lg:gap-3">
           <PointsHeader />
-          {!tutorial && <FitnessChat />}
+          {!tutorial && <FitnessChat onDiaryChange={onDiaryChange} />}
           <NavLink
             to="/settings"
             aria-label="Impostazioni"

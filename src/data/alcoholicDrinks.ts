@@ -1,4 +1,4 @@
-import type { BasicFood } from './basicFoods'
+import type { BasicFood } from './basicFoods.ts'
 
 // Indicative recipes, before ice melts. Volumes, ABV and carbohydrates vary
 // with the bartender and brands. These are tracker estimates, not label data.

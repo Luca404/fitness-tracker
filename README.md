@@ -64,7 +64,7 @@ supabase functions deploy analyze-nutrition-label
 supabase functions deploy analyze-meal-photo --no-verify-jwt
 supabase functions deploy resolve-barcode-product
 supabase functions deploy confirm-barcode-product
-supabase functions deploy fittrackr-chat --no-verify-jwt
+supabase functions deploy fittrackr-chat --no-verify-jwt --use-api
 ```
 
 The hosted database is shared. Review the dry-run and apply only this repository's pending migrations. **Never run `supabase db reset --linked`.**
@@ -73,7 +73,9 @@ The seven Trackr security versions `20261004165900`–`20261004170500` are alrea
 
 Keep the OpenAI key in Edge Function secrets, never in a `VITE_` variable. The optional `OPENAI_VISION_MODEL` secret overrides the default `gpt-4.1-mini`.
 
-Sagebite is available from the authenticated header on mobile and the sidebar on desktop. Deploy `fittrackr-chat` before releasing the frontend that calls it. It uses the existing `OPENAI_API_KEY` and accepts an optional `OPENAI_FITTRACKR_CHAT_MODEL` override. The initial chat answers general nutrition questions and keeps the conversation in memory while navigating the main sections. It sends the current message and up to four prior exchanges to OpenAI with `store: false`. Diary access and synced chat history are future features.
+Sagebite is available from the authenticated header on mobile and the sidebar on desktop. It reads food diary summaries, current nutrition targets, weight and recorded activities. It can log foods from the basic catalog and pantry, portions of saved recipes and weighed portions from prepared batches. Clear single-food statements can be logged in the same turn; other resolved requests show a confirmation. It keeps the conversation in memory while navigating the main sections and sends the relevant tool results with the current message and up to four prior exchanges to OpenAI with `store: false`.
+
+Apply `20261121220000_fitness_chat_diary` first, then deploy `fittrackr-chat` with `--use-api` to bundle the shared application catalog before releasing the frontend. The function uses the existing `OPENAI_API_KEY` and accepts `OPENAI_FITTRACKR_CHAT_MODEL` for a production model override.
 
 Occasional meal photos use the separate `analyze-meal-photo` function, which validates the user's session through Supabase Auth. `OPENAI_MEAL_PHOTO_MODEL` can override the vision model for this task. Photo estimates use cooked/ready-to-eat quantities and are reviewed before direct diary registration. No recipe, prepared batch or stored photo is created. See [meal photos](docs/pasti-da-foto.md) for setup and behavior.
 

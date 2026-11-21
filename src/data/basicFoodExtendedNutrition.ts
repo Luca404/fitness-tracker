@@ -8,7 +8,7 @@
 // https://fdc.nal.usda.gov/download-datasets/
 // Le aggiunte del 29 ottobre 2026 usano profili completi CREA o svizzeri:
 // riferimenti e conversioni in docs/ingredienti-base.md.
-import { ALCOHOLIC_DRINKS } from './alcoholicDrinks'
+import { ALCOHOLIC_DRINKS } from './alcoholicDrinks.ts'
 
 export const BASIC_FOOD_EXTENDED_NUTRITION: Record<string, readonly [fiber: number, sugars: number, salt: number]> = {
   ...Object.fromEntries(ALCOHOLIC_DRINKS.map(food => [food.id, [food.fiber_g, food.sugars_g, food.salt_g] as const])),

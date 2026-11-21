@@ -1,4 +1,4 @@
-import { roundToTwo } from './decimal'
+import { roundToTwo } from './decimal.ts'
 
 interface NutritionValues {
   calories: number

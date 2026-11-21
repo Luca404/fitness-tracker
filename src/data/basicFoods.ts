@@ -6,9 +6,9 @@
 // Ampliamento del 29 ottobre 2026: CREA e Banca dati svizzera v7.1;
 // riferimenti per ingrediente e conversioni in docs/ingredienti-base.md.
 // Il peso è della parte edibile: escludere ossa, gusci e altri scarti.
-import type { FoodCategory } from '../types'
-import { ALCOHOLIC_DRINKS } from './alcoholicDrinks'
-import { BASIC_FOOD_EXTENDED_NUTRITION } from './basicFoodExtendedNutrition'
+import type { FoodCategory } from '../types/index.ts'
+import { ALCOHOLIC_DRINKS } from './alcoholicDrinks.ts'
+import { BASIC_FOOD_EXTENDED_NUTRITION } from './basicFoodExtendedNutrition.ts'
 
 export interface BasicFood {
   id: string

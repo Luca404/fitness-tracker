@@ -1,11 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import Modal from '../common/Modal'
-import { askFitnessChat } from '../../services/fitnessChat'
-import { ASSISTANT_NAME, CHAT_CONTEXT_TURNS, CHAT_MESSAGE_LIMIT } from '../../../supabase/functions/_shared/fitnessChat'
-import type { ChatMessage } from '../../../supabase/functions/_shared/fitnessChat'
+import { askFitnessChat, confirmFitnessChatMeal } from '../../services/fitnessChat'
+import { ASSISTANT_NAME, CHAT_CONTEXT_TURNS, CHAT_MEAL_LABELS, CHAT_MESSAGE_LIMIT } from '../../../supabase/functions/_shared/fitnessChat'
+import type { ChatMealProposal, ChatMessage } from '../../../supabase/functions/_shared/fitnessChat'
 
-const PROMPTS = ['Idee per una colazione salata?', 'Che differenza c’è tra peso crudo e cotto?']
+const PROMPTS = ['Quante proteine ho registrato questa settimana?', 'Oggi a pranzo ho mangiato 150 g di riso basmati cotto']
 
 function ChatIcon({ size = 22 }: { size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -14,37 +14,67 @@ function ChatIcon({ size = 22 }: { size?: number }) {
   </svg>
 }
 
-export default function FitnessChat() {
+export default function FitnessChat({ onDiaryChange }: { onDiaryChange?: () => Promise<void> }) {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [proposal, setProposal] = useState<{ meal: ChatMealProposal; requestId: string } | null>(null)
   const [error, setError] = useState('')
   const messageId = useId()
   const transcript = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLTextAreaElement>(null)
+  const retry = useRef<{ content: string; id: string } | null>(null)
   const visibleMessages: ChatMessage[] = sending ? [...messages, { role: 'user', content: draft.trim() }] : messages
 
   useEffect(() => {
     const log = transcript.current
     if (open && log) log.scrollTop = log.scrollHeight
-  }, [open, messages, sending])
+  }, [open, messages, sending, proposal])
+
+  function refreshDiary() {
+    void onDiaryChange?.().catch(() => { /* The registration is already committed in Supabase. */ })
+  }
 
   async function send(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const content = draft.trim()
-    if (sending || !content) return
+    if (sending || saving || !content) return
     setSending(true)
     setError('')
     const userMessage: ChatMessage = { role: 'user', content }
+    const requestId = retry.current?.content === content ? retry.current.id : crypto.randomUUID()
+    retry.current = { content, id: requestId }
     try {
-      const reply = await askFitnessChat([...messages.slice(-CHAT_CONTEXT_TURNS * 2), userMessage])
-      setMessages(current => [...current, userMessage, { role: 'assistant', content: reply }])
+      const result = await askFitnessChat([...messages.slice(-CHAT_CONTEXT_TURNS * 2), userMessage], requestId)
+      setMessages(current => [...current, userMessage, { role: 'assistant', content: result.reply }])
+      setProposal(result.proposal ? { meal: result.proposal, requestId } : null)
+      if (result.saved) refreshDiary()
+      retry.current = null
       setDraft('')
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Invio non riuscito. Riprova tra poco.')
     } finally {
       setSending(false)
+    }
+  }
+
+  async function confirm() {
+    if (!proposal || sending || saving) return
+    setSaving(true)
+    setError('')
+    try {
+      const result = await confirmFitnessChatMeal(proposal.meal, proposal.requestId)
+      if (!result.saved) throw new Error('Registrazione non confermata. Riprova tra poco.')
+      setMessages(current => [...current.slice(0, -1), { role: 'assistant', content: result.reply }])
+      setProposal(null)
+      transcript.current?.focus()
+      refreshDiary()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Registrazione non riuscita. Riprova tra poco.')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -65,7 +95,7 @@ export default function FitnessChat() {
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-white">Come posso aiutarti?</h3>
-                <p className="mt-1 text-sm text-gray-300">Fammi una domanda su alimenti, porzioni o abitudini.</p>
+                <p className="mt-1 text-sm text-gray-300">Chiedimi dei tuoi pasti o dimmi cosa hai mangiato.</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {PROMPTS.map(prompt => (
@@ -85,6 +115,14 @@ export default function FitnessChat() {
                 </div>
               ))}
               {sending && <p role="status" className="px-1 text-sm text-gray-300">{ASSISTANT_NAME} sta rispondendo…</p>}
+              {proposal && !sending && <div className="space-y-2 rounded-xl border border-primary-500/30 bg-gray-900 p-3">
+                <p className="text-sm font-semibold text-primary-200">{CHAT_MEAL_LABELS[proposal.meal.draft.meal_type]} del {proposal.meal.draft.date.split('-').reverse().join('/')}</p>
+                <p className="break-words text-sm text-gray-200">{proposal.meal.description}</p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className="btn-primary min-h-11 text-sm disabled:opacity-60" disabled={saving} onClick={() => void confirm()}>{saving ? 'Registrazione…' : 'Registra pasto'}</button>
+                  <button type="button" className="btn-secondary min-h-11 text-sm disabled:opacity-60" disabled={saving} onClick={() => { setProposal(null); setError(''); input.current?.focus() }}>Scarta</button>
+                </div>
+              </div>}
             </div>
           )}
         </div>
@@ -92,17 +130,17 @@ export default function FitnessChat() {
           {error && <p role="alert" className="mb-2 text-sm text-red-300">{error}</p>}
           <label htmlFor={messageId} className="mb-1 block text-sm font-semibold text-gray-200">Messaggio</label>
           <div className="flex items-end gap-2">
-            <textarea ref={input} id={messageId} rows={2} maxLength={CHAT_MESSAGE_LIMIT} value={sending ? '' : draft} readOnly={sending}
+            <textarea ref={input} id={messageId} rows={2} maxLength={CHAT_MESSAGE_LIMIT} value={sending ? '' : draft} readOnly={sending || saving}
               aria-describedby={`${messageId}-scope`} onChange={event => setDraft(event.target.value)}
               className="input-field min-w-0 resize-none bg-gray-900 text-base leading-5" />
-            <button type="submit" aria-label="Invia messaggio" disabled={sending || !draft.trim()}
+            <button type="submit" aria-label="Invia messaggio" disabled={sending || saving || !draft.trim()}
               className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-400 text-gray-950 hover:bg-primary-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400 disabled:bg-gray-700 disabled:text-gray-300">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="m4 4 17 8-17 8 3-8-3-8Zm3 8h14" />
               </svg>
             </button>
           </div>
-          <p id={`${messageId}-scope`} className="mt-2 text-xs text-gray-300">I messaggi vengono elaborati da OpenAI. {ASSISTANT_NAME} è un assistente AI e non sostituisce un nutrizionista.</p>
+          <p id={`${messageId}-scope`} className="mt-2 text-xs text-gray-300">OpenAI elabora i messaggi e i dati pertinenti alla richiesta. {ASSISTANT_NAME} è un assistente AI e non sostituisce un nutrizionista.</p>
         </form>
       </div>
     </Modal>

@@ -1,5 +1,5 @@
-import type { DishItem } from '../types'
-import { roundToTwo } from './decimal'
+import type { DishItem } from '../types/index.ts'
+import { roundToTwo } from './decimal.ts'
 
 export type CookingMethod = 'raw' | 'boiled' | 'pan'
 type Ingredient = Pick<DishItem, 'food_name' | 'food_key' | 'category' | 'quantity_g'> & { unit?: 'g' | 'ml' }

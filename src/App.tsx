@@ -38,7 +38,7 @@ function TutorialLauncher({ onStart }: { onStart: (returnToSettings: boolean) =>
 
 function AppRoutes({ onStartTutorial }: { onStartTutorial: (returnToSettings: boolean) => void }) {
   const { user, loading: authLoading, isPasswordRecovery } = useAuth()
-  const { profile, profileStatus, profileUserId, fetchProfile } = useData()
+  const { profile, profileStatus, profileUserId, fetchProfile, refreshDiary } = useData()
   const location = useLocation()
 
   if (authLoading) return <LoadingScreen />
@@ -73,7 +73,7 @@ function AppRoutes({ onStartTutorial }: { onStartTutorial: (returnToSettings: bo
 
   return (
     <Routes>
-      <Route element={<FitnessPointsProvider><Layout /></FitnessPointsProvider>}>
+      <Route element={<FitnessPointsProvider><Layout key={user.id} onDiaryChange={refreshDiary} /></FitnessPointsProvider>}>
         <Route index element={<Navigate to="/meals" replace />} />
         <Route path="/meals" element={<MealsPage />} />
         <Route path="/fitness" element={<FitnessPage />} />
