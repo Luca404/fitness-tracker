@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
-import type { PreparedBatch } from '../../types'
+import type { DishMealType, PreparedBatch } from '../../types'
 import PreparedDishesPanel from './PreparedDishesPanel'
 
 const mocks = vi.hoisted(() => ({
@@ -16,7 +16,7 @@ vi.mock('../../contexts/SettingsContext', () => ({ useSettings: () => ({ selecte
 
 afterEach(() => { cleanup(); vi.clearAllMocks() })
 
-function batch(id: string, name: string, mealType: 'breakfast' | 'lunch' | 'dinner'): PreparedBatch {
+function batch(id: string, name: string, mealType: DishMealType): PreparedBatch {
   return {
     id, user_id: 'user-1', snapshot_dish_id: `snapshot-${id}`, source_dish_id: null,
     total_cooked_g: 400, remaining_g: 200, closed_at: null, created_at: '2026-10-01',
@@ -33,38 +33,48 @@ function batch(id: string, name: string, mealType: 'breakfast' | 'lunch' | 'dinn
   }
 }
 
-it('shows leftovers from every meal and opens their detail', async () => {
+it('shows only leftovers assigned to the selected meal and opens their detail', async () => {
   const lunch = batch('lunch', 'Risotto pronto', 'lunch')
   lunch.dish.icon = null
+  lunch.dish.meal_types.push('snack')
   mocks.getPreparedBatches.mockResolvedValue([batch('breakfast', 'Porridge pronto', 'breakfast'), lunch])
   const onSelect = vi.fn()
   const onCountChange = vi.fn()
-  render(<PreparedDishesPanel mealType="lunch" compact onSelect={onSelect} onCountChange={onCountChange} />)
+  const { rerender } = render(<PreparedDishesPanel mealType="lunch" compact onSelect={onSelect} onCountChange={onCountChange} />)
 
   const button = await screen.findByRole('button', { name: /Risotto pronto/ })
-  expect(screen.getByText('Porridge pronto')).toBeTruthy()
+  expect(screen.queryByText('Porridge pronto')).toBeNull()
   expect(screen.getByText('🍚')).toBeTruthy()
-  expect(onCountChange).toHaveBeenCalledWith(2)
+  expect(onCountChange).toHaveBeenLastCalledWith(1)
   fireEvent.click(button)
   expect(onSelect).toHaveBeenCalledWith(lunch)
   expect(screen.queryByLabelText('Grammi mangiati')).toBeNull()
+
+  rerender(<PreparedDishesPanel mealType="snack" compact onSelect={onSelect} onCountChange={onCountChange} />)
+  expect(screen.getByText('Risotto pronto')).toBeTruthy()
+  expect(screen.queryByText('Porridge pronto')).toBeNull()
+
+  rerender(<PreparedDishesPanel mealType="breakfast" compact onSelect={onSelect} onCountChange={onCountChange} />)
+  expect(screen.getByText('Porridge pronto')).toBeTruthy()
+  expect(screen.queryByText('Risotto pronto')).toBeNull()
   await waitFor(() => expect(mocks.getPreparedBatches).toHaveBeenCalledTimes(1))
 })
 
-it('records a previous dinner leftover at lunch and preserves search filters', async () => {
+it('combines search with the meal filter and records a leftover from a previous day', async () => {
   const dinner = batch('dinner', 'Pasta avanzata dalla cena', 'dinner')
   dinner.created_at = '2026-09-30T20:00:00Z'
-  mocks.getPreparedBatches.mockResolvedValue([dinner, batch('breakfast', 'Porridge pronto', 'breakfast')])
+  mocks.getPreparedBatches.mockResolvedValue([dinner, batch('lunch', 'Pasta al pomodoro', 'lunch'), batch('soup', 'Zuppa pronta', 'dinner')])
   mocks.consumePreparedBatch.mockResolvedValue(undefined)
-  const { rerender } = render(<PreparedDishesPanel mealType="lunch" query="pasta" />)
+  const { rerender } = render(<PreparedDishesPanel mealType="dinner" query="pasta" />)
   fireEvent.click(await screen.findByRole('button', { name: /Pasta avanzata dalla cena/ }))
-  expect(screen.queryByText('Porridge pronto')).toBeNull()
+  expect(screen.queryByText('Zuppa pronta')).toBeNull()
+  expect(screen.queryByText('Pasta al pomodoro')).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: '1/4' }))
   fireEvent.click(screen.getByRole('button', { name: 'Registra porzione' }))
-  await waitFor(() => expect(mocks.consumePreparedBatch).toHaveBeenCalledWith('dinner', '2026-10-01', 'lunch', 100))
-  rerender(<PreparedDishesPanel mealType="lunch" query="porridge" />)
+  await waitFor(() => expect(mocks.consumePreparedBatch).toHaveBeenCalledWith('dinner', '2026-10-01', 'dinner', 100))
+  rerender(<PreparedDishesPanel mealType="lunch" query="pasta" />)
   expect(screen.queryByText('Pasta avanzata dalla cena')).toBeNull()
-  expect(screen.getByText('Porridge pronto')).toBeTruthy()
+  expect(screen.getByText('Pasta al pomodoro')).toBeTruthy()
 })
 
 it('corrects a kitchen remainder and uses the new amount for the next portion', async () => {

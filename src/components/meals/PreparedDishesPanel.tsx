@@ -11,9 +11,8 @@ import PreparedPortionInput from './PreparedPortionInput'
 import PreparedWeightCorrection from './PreparedWeightCorrection'
 import { getDishIcon } from '../../utils/foodIcons'
 
-export default function PreparedDishesPanel({ mealType, filterMealType, onConsumed, compact = false, onCountChange, onSelect, query = '', category = 'all' }: {
+export default function PreparedDishesPanel({ mealType, onConsumed, compact = false, onCountChange, onSelect, query = '', category = 'all' }: {
   mealType?: DishMealType
-  filterMealType?: DishMealType
   onConsumed?: () => Promise<void>
   compact?: boolean
   onCountChange?: (count: number) => void
@@ -73,7 +72,7 @@ export default function PreparedDishesPanel({ mealType, filterMealType, onConsum
     }
   }
 
-  const visibleBatches = batches.filter(batch => (!filterMealType || batch.dish.meal_types.includes(filterMealType)) && matchesDish(batch.dish, query, category))
+  const visibleBatches = batches.filter(batch => (!mealType || batch.dish.meal_types.includes(mealType)) && matchesDish(batch.dish, query, category))
   useEffect(() => { onCountChange?.(visibleBatches.length) }, [onCountChange, visibleBatches.length])
   if (visibleBatches.length === 0) return null
 

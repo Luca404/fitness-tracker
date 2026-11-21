@@ -130,7 +130,7 @@ export default function KitchenDishes() {
 
   return (
     <div className="space-y-6">
-      <PreparedDishesPanel mealType={category === 'all' ? undefined : category} filterMealType={category === 'all' ? undefined : category} query={query} category={dishCategory} />
+      <PreparedDishesPanel mealType={category === 'all' ? undefined : category} query={query} category={dishCategory} />
       <button type="button" data-tour="dish-new" onClick={() => { setSelectedDish(null); setMode('create') }}
         className="flex w-full items-center gap-3 rounded-2xl bg-primary-500 px-4 lg:w-auto lg:pr-6 py-3.5 text-left font-semibold shadow-lg shadow-primary-950/30 hover:bg-primary-400">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-xl">+</span>
