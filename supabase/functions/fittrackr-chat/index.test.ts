@@ -172,6 +172,52 @@ describe('Sagebite diary tools', () => {
     expect(writes[0]).toMatchObject({ p_batch_id: batchId, p_grams: 150, p_items: [] })
   })
 })
+
+describe('Sagebite profile context', () => {
+  it.each([false, true])('sends only relevant profile fields to OpenAI (latest weight requested: %s)', async includeWeight => {
+    const today = localDate()
+    const { writes, modelInputs } = mockDiaryBackend(({ input }) => (input as unknown[]).length === 1
+      ? toolResponse('read_profile_context', { include_latest_weight: includeWeight, user_id: 'other-user' })
+      : messageResponse('Il tuo obiettivo è la ricomposizione.'), {
+      user_health_profiles: [{ objective: 'recomposition', age: 38, body_fat_pct: 23 }],
+      user_goals: [{ calorie_target: 2200, protein_g: 140, carbs_g: 220 }],
+      weight_logs: [{ date: today, weight_kg: 78.4, notes: 'private note' }],
+    })
+
+    const response = await handleRequest(request(mealMessage(includeWeight ? 'Quali sono il mio obiettivo e l’ultima pesata?' : 'Qual è il mio obiettivo?'), true, { request_id: requestId }))
+    expect(response.status).toBe(200)
+    expect(writes).toEqual([])
+    const result = (modelInputs[1].input as { type?: string; output?: string }[]).find(item => item.type === 'function_call_output')
+    expect(JSON.parse(result!.output!)).toEqual({ objective: 'recomposition', daily_targets: { calories: 2200, protein_g: 140 },
+      ...(includeWeight ? { latest_weight: { date: today, weight_kg: 78.4 } } : {}),
+    })
+
+    const urls = fetchMock.mock.calls.map(([url]) => new URL(url))
+    const profileRead = urls.find(url => url.pathname.endsWith('/user_health_profiles'))
+    const goalsRead = urls.find(url => url.pathname.endsWith('/user_goals'))
+    const weightRead = urls.find(url => url.pathname.endsWith('/weight_logs'))
+    expect(profileRead?.searchParams.get('select')).toBe('objective')
+    expect(goalsRead?.searchParams.get('select')).toBe('calorie_target,protein_g')
+    if (includeWeight) {
+      expect(Object.fromEntries(weightRead!.searchParams)).toEqual({
+        select: 'date,weight_kg', date: `lte.${today}`, order: 'date.desc', limit: '1', user_id: `eq.${owner}`,
+      })
+    } else {
+      expect(weightRead).toBeUndefined()
+    }
+  })
+
+  it('represents missing goals and dated weights as unknown', async () => {
+    const { modelInputs } = mockDiaryBackend(({ input }) => (input as unknown[]).length === 1
+      ? toolResponse('read_profile_context', { include_latest_weight: true })
+      : messageResponse('Non hai ancora registrato una pesata.'))
+    const response = await handleRequest(request(mealMessage('Quanto pesavo all’ultima pesata?')))
+    expect(response.status).toBe(200)
+    const result = (modelInputs[1].input as { type?: string; output?: string }[]).find(item => item.type === 'function_call_output')
+    expect(JSON.parse(result!.output!)).toEqual({ objective: null, daily_targets: null, latest_weight: null })
+  })
+})
+
 afterEach(() => vi.unstubAllGlobals())
 
 describe('fitTrackr chat endpoint', () => {

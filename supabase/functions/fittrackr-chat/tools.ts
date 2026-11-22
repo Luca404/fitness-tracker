@@ -1,4 +1,5 @@
 import { CHAT_FOOD_SOURCES, CHAT_FOOD_UNITS, CHAT_MEAL_TYPES } from '../_shared/fitnessChat.ts'
+import type { UserGoals, UserHealthProfile, WeightLog } from '../../../src/types/index.ts'
 import { DiaryInputError, findFoods, rangeLength } from './diary.ts'
 import type { diaryApi } from './diary.ts'
 
@@ -16,6 +17,9 @@ const date = { type: 'string', description: 'Data inclusiva nel formato YYYY-MM-
 const range = { from: date, to: date }
 
 export const tools = [
+  tool('read_profile_context', 'Legge l’obiettivo del profilo e i target giornalieri correnti di calorie e proteine. Usalo per dare un consiglio personalizzato o valutare i progressi. Per l’andamento nel tempo usa anche lo storico del peso.', {
+    include_latest_weight: { type: 'boolean', description: 'Vero solo se la domanda riguarda il peso o i progressi e serve l’ultima pesata con la sua data.' },
+  }),
   tool('read_food_diary', 'Legge calorie, macro, obiettivi correnti, giornate registrate e facoltativamente i nomi dei pasti dell’utente. Per lo storico usa al massimo 90 giorni; dettagli per al massimo 7 giorni.', {
     ...range, include_details: { type: 'boolean', description: 'Vero se l’utente chiede quali piatti ha registrato o una spiegazione basata sui pasti.' },
   }),
@@ -45,7 +49,26 @@ function checkRange(args: Record<string, unknown>, today: string, max: number) {
   return { from: String(args.from), to: String(args.to) }
 }
 
+async function readProfileContext(db: DiaryApi, today: string, includeLatestWeight: boolean) {
+  const [[profile], [goals], [weight]] = await Promise.all([
+    db.rows<Pick<UserHealthProfile, 'objective'>>('user_health_profiles', { select: 'objective', limit: '1' }),
+    db.rows<Pick<UserGoals, 'calorie_target' | 'protein_g'>>('user_goals', { select: 'calorie_target,protein_g', limit: '1' }),
+    includeLatestWeight ? db.rows<Pick<WeightLog, 'date' | 'weight_kg'>>('weight_logs', {
+      select: 'date,weight_kg', date: `lte.${today}`, order: 'date.desc', limit: '1',
+    }) : [],
+  ])
+  return {
+    objective: profile?.objective ?? null,
+    daily_targets: goals ? { calories: goals.calorie_target, protein_g: goals.protein_g } : null,
+    ...(includeLatestWeight ? { latest_weight: weight ? { date: weight.date, weight_kg: weight.weight_kg } : null } : {}),
+  }
+}
+
 export async function readTool(db: DiaryApi, name: string, args: Record<string, unknown>, today: string): Promise<unknown> {
+  if (name === 'read_profile_context') {
+    if (typeof args.include_latest_weight !== 'boolean') throw new DiaryInputError('Specifica se serve anche l’ultima pesata.')
+    return readProfileContext(db, today, args.include_latest_weight)
+  }
   if (name === 'find_diary_food') {
     if (typeof args.name !== 'string') throw new DiaryInputError('Indica il nome da cercare.')
     return findFoods(db, args.name)
