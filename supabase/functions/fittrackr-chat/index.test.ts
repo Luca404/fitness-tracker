@@ -271,6 +271,22 @@ describe('Sagebite weight history', () => {
   })
 })
 
+it('uses low reasoning with GPT-6.2 Sol before and after a tool call', async () => {
+  const originalEnv = env.getMockImplementation()!
+  const { modelInputs } = mockDiaryBackend(({ input }) => (input as unknown[]).length === 1
+    ? toolResponse('read_profile_context', { include_latest_weight: false })
+    : messageResponse('Il tuo obiettivo è il mantenimento.'), { user_health_profiles: [{ objective: 'maintain' }] })
+
+  await env.withImplementation(name => name === 'OPENAI_FITTRACKR_CHAT_MODEL' ? 'gpt-6.2-sol' : originalEnv(name), async () => {
+    const response = await handleRequest(request(mealMessage('Qual è il mio obiettivo?')))
+    expect(response.status).toBe(200)
+  })
+  expect(modelInputs).toHaveLength(2)
+  for (const input of modelInputs) {
+    expect(input).toMatchObject({ model: 'gpt-6.2-sol', reasoning: { effort: 'low' }, max_output_tokens: 3_000 })
+  }
+})
+
 afterEach(() => vi.unstubAllGlobals())
 
 describe('fitTrackr chat endpoint', () => {
@@ -292,6 +308,7 @@ describe('fitTrackr chat endpoint', () => {
     expect(url).toBe('https://api.openai.com/v1/responses')
     expect(init.headers.Authorization).toBe('Bearer test-key')
     expect(JSON.parse(init.body)).toMatchObject({ store: false, input: [userMessage] })
+    expect(JSON.parse(init.body)).not.toHaveProperty('reasoning')
     expect(init.body).not.toContain('private-user-id')
   })
 

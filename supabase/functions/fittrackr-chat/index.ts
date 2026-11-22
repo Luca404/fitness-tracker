@@ -84,6 +84,9 @@ export async function handleRequest(request: Request): Promise<Response> {
 
   const apiKey = Deno.env.get('OPENAI_API_KEY')
   const model = Deno.env.get('OPENAI_FITTRACKR_CHAT_MODEL') || 'gpt-4.1-mini'
+  const modelOptions = model === 'gpt-6.2-sol'
+    ? { reasoning: { effort: 'low' }, max_output_tokens: 3_000 }
+    : { max_output_tokens: 900 }
 
   try {
     if (requestId) {
@@ -109,8 +112,8 @@ export async function handleRequest(request: Request): Promise<Response> {
       const response = await fetch('https://api.openai.com/v1/responses', {
         method: 'POST', signal: deadline,
         headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, instructions: `${instructions}\nOggi è ${today}, fuso Europe/Rome.`, input,
-          store: false, max_output_tokens: 900, tools, parallel_tool_calls: false,
+        body: JSON.stringify({ model, ...modelOptions, instructions: `${instructions}\nOggi è ${today}, fuso Europe/Rome.`, input,
+          store: false, tools, parallel_tool_calls: false,
           tool_choice: toolChoice, include: ['reasoning.encrypted_content'] }),
       })
       if (!response.ok) {
