@@ -45,7 +45,7 @@ it('shows only leftovers assigned to the selected meal and opens their detail', 
   const button = await screen.findByRole('button', { name: /Risotto pronto/ })
   expect(screen.queryByText('Porridge pronto')).toBeNull()
   expect(screen.getByText('🍚')).toBeTruthy()
-  expect(onCountChange).toHaveBeenLastCalledWith(1)
+  await waitFor(() => expect(onCountChange).toHaveBeenLastCalledWith(1))
   fireEvent.click(button)
   expect(onSelect).toHaveBeenCalledWith(lunch)
   expect(screen.queryByLabelText('Grammi mangiati')).toBeNull()
