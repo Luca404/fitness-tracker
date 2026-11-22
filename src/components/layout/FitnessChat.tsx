@@ -7,6 +7,12 @@ import type { ChatMealProposal, ChatMessage } from '../../../supabase/functions/
 
 const PROMPTS = ['Quante proteine ho registrato questa settimana?', 'Oggi a pranzo ho mangiato 150 g di riso basmati cotto']
 
+function formatReply(content: string) {
+  return content.split(/(?<![\\*])\*\*(?![\s*])([^*\r\n]+?)(?<!\s)\*\*(?!\*)/g).map((part, index) =>
+    index % 2 === 1 ? <strong key={index} className="font-bold text-white">{part}</strong> : part,
+  )
+}
+
 function ChatIcon({ size = 22 }: { size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l1.6-4A8.5 8.5 0 1 1 21 11.5Z" />
@@ -111,7 +117,7 @@ export default function FitnessChat({ onDiaryChange }: { onDiaryChange?: () => P
               {visibleMessages.map(({ role, content }, index) => (
                 <div key={index} className={role === 'user' ? 'ml-auto w-fit max-w-[90%] rounded-2xl bg-primary-900/60 px-4 py-2.5 text-primary-50' : 'mr-auto w-fit max-w-full rounded-2xl bg-gray-900 px-4 py-3 text-gray-100'}>
                   <p className="mb-1 text-xs font-semibold text-primary-300">{role === 'user' ? 'Tu' : ASSISTANT_NAME}</p>
-                  <p className="whitespace-pre-wrap break-words text-sm leading-relaxed [overflow-wrap:anywhere]">{content}</p>
+                  <p className="whitespace-pre-wrap break-words text-sm leading-relaxed [overflow-wrap:anywhere]">{role === 'assistant' ? formatReply(content) : content}</p>
                 </div>
               ))}
               {sending && <p role="status" className="px-1 text-sm text-gray-300">{ASSISTANT_NAME} sta rispondendo…</p>}
