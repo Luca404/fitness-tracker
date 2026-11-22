@@ -107,10 +107,14 @@ export interface Workout {
   activity: string   // key in MET_ACTIVITIES
   duration_min: number
   distance_km?: number | null
+  incline_pct?: number | null
+  stroke_rate_spm?: number | null
   calories_burned: number
   notes: string | null
   created_at: string
 }
+
+export type WorkoutDraft = Pick<Workout, 'activity' | 'duration_min' | 'distance_km' | 'incline_pct' | 'stroke_rate_spm' | 'calories_burned'>
 
 export interface GymPlanExercise {
   id: string

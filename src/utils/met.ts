@@ -33,7 +33,7 @@ export const MET_ACTIVITIES: Record<string, ActivityInfo> = {
 }
 
 export const BASIC_ACTIVITY_KEYS = [
-  'weights', 'walking', 'running', 'cycling', 'swimming', 'treadmill', 'rowing_machine',
+  'walking', 'running', 'cycling', 'swimming', 'treadmill', 'rowing_machine',
 ] as const
 
 export const DISTANCE_ACTIVITY_KEYS = ['walking', 'running', 'cycling', 'treadmill'] as const

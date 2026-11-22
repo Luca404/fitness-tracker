@@ -2,12 +2,25 @@ import { useNumberFormat } from '../../hooks/useNumberFormat'
 import NumberInput from '../common/NumberInput'
 import { useRef, useState } from 'react'
 import { MET_ACTIVITIES, calculateCaloriesBurned, supportsWorkoutDistance, workoutDistanceError } from '../../utils/met'
+import { roundToTwo } from '../../utils/decimal'
+import type { WorkoutDraft } from '../../types'
 import Modal from '../common/Modal'
+
+const ACTIVITY_DETAILS: Partial<Record<string, {
+  field: 'incline_pct' | 'stroke_rate_spm'
+  label: string
+  min: number
+  max: number
+  placeholder: string
+}>> = {
+  treadmill: { field: 'incline_pct', label: 'Inclinazione (%, facoltativa)', min: -100, max: 100, placeholder: 'Es. 6.5' },
+  rowing_machine: { field: 'stroke_rate_spm', label: 'Cadenza (colpi/min, facoltativa)', min: 0.01, max: 100, placeholder: 'Es. 26' },
+}
 
 interface Props {
   activityKey: string | null
   weightKg: number
-  onSave: (activityKey: string, durationMin: number, caloriesBurned: number, distanceKm: number | null) => void | Promise<void>
+  onSave: (workout: WorkoutDraft) => void | Promise<void>
   onClose: () => void
 }
 
@@ -20,6 +33,7 @@ function WorkoutForm({ activityKey, weightKg, onSave, onClose }: Props & { activ
   const { formatDecimal } = useNumberFormat()
   const [durationText, setDuration] = useState('30')
   const [distanceText, setDistance] = useState('')
+  const [detailText, setDetail] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(false)
   const saveLock = useRef(false)
@@ -27,8 +41,11 @@ function WorkoutForm({ activityKey, weightKg, onSave, onClose }: Props & { activ
   const duration = Number(durationText)
   const distanceKm = supportsWorkoutDistance(activityKey) && distanceText.trim() !== '' ? Number(distanceText) : null
   const distanceError = workoutDistanceError(activityKey, duration, distanceKm)
+  const detail = ACTIVITY_DETAILS[activityKey]
+  const detailValue = detail && detailText !== '' ? Number(detailText) : null
+  const detailError = detail && detailValue != null && (!Number.isFinite(detailValue) || detailValue < detail.min || detailValue > detail.max)
   const valid = Number.isInteger(duration) && duration >= 1 && duration <= 300
-    && Number.isFinite(weightKg) && weightKg > 0 && !distanceError
+    && Number.isFinite(weightKg) && weightKg > 0 && !distanceError && !detailError
   const calories = valid ? calculateCaloriesBurned(activityKey, duration, weightKg, distanceKm) : 0
 
   async function save() {
@@ -36,7 +53,11 @@ function WorkoutForm({ activityKey, weightKg, onSave, onClose }: Props & { activ
     saveLock.current = true
     setSaving(true)
     setSaveError(false)
-    try { await onSave(activityKey, duration, calories, distanceKm) }
+    try {
+      const workout: WorkoutDraft = { activity: activityKey, duration_min: duration, calories_burned: calories, distance_km: distanceKm }
+      if (detail && detailValue != null) workout[detail.field] = roundToTwo(detailValue)
+      await onSave(workout)
+    }
     catch { setSaveError(true) }
     finally { saveLock.current = false; setSaving(false) }
   }
@@ -68,6 +89,14 @@ function WorkoutForm({ activityKey, weightKg, onSave, onClose }: Props & { activ
           {valid && distanceKm != null && <p className="mt-2 text-xs text-gray-400">Velocità media: {formatDecimal(distanceKm * 60 / duration)} km/h</p>}
           <p className="mt-1 text-xs text-gray-500">Con i km, la stima considera anche la velocità media su percorso pianeggiante.</p>
           {distanceError && <p role="alert" className="mt-2 text-xs text-amber-300">{distanceError}</p>}
+        </div>}
+        {detail && <div>
+          <label htmlFor="workout-detail" className="mb-1 block text-sm text-gray-400">{detail.label}</label>
+          <NumberInput id="workout-detail" min={detail.min} max={detail.max} step="any"
+            value={detailText} disabled={saving} onValueChange={setDetail} placeholder={detail.placeholder}
+            aria-invalid={detailError ? true : undefined} aria-describedby={detailError ? 'workout-detail-error' : undefined}
+            className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-3 text-lg outline-none focus:border-primary-500" />
+          {detailError && <p id="workout-detail-error" role="alert" className="mt-2 text-xs text-amber-300">Inserisci un valore tra {formatDecimal(detail.min, 2)} e {formatDecimal(detail.max)}, oppure lascia il campo vuoto.</p>}
         </div>}
         <div className="bg-gray-700 rounded-lg px-4 py-3 flex justify-between items-center">
           <span className="text-gray-400 text-sm">Calorie bruciate</span>

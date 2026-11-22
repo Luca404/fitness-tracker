@@ -22,6 +22,21 @@ e quelle di corsa da 9,7 km/h. Sono stime su percorso pianeggiante: dislivello,
 carichi, resistenza e differenze individuali non sono misurati. L'app segnala
 distanze non valide o velocità medie oltre i limiti di inserimento previsti.
 
+Il **Tapis roulant** permette di salvare anche l'**Inclinazione (%)**. Usa 0 per il
+piano e un valore negativo per la discesa. Il **Vogatore** registra la
+**Cadenza** in colpi al minuto (SPM). Entrambi i campi sono facoltativi e
+compaiono accanto alla durata quando sono compilati. La stima calorica
+continua a usare la durata e, per il tapis roulant, la velocità quando è
+disponibile la distanza. Le nuove sessioni di **Pesi** si registrano dalle
+schede palestra. Quelle già registrate da Altre attività restano nell'elenco
+del giorno.
+
+La migrazione `20261122150000_workout_machine_details` aggiunge i due campi
+facoltativi a `workouts`. È stata verificata su PostgreSQL con dati fittizi,
+applicata su Supabase dopo il dry-run e copiata nel repository Trackr.
+
+## Calorie nello Storico
+
 In **Storico**, sia il grafico a 7 giorni sia quello a 30 giorni includono
 nelle calorie **Bruciato** le attività registrate e le sessioni di palestra
 completate. Anche la media giornaliera comprende entrambe. Le sessioni ancora

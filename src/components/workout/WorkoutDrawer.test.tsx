@@ -12,19 +12,47 @@ describe('workout registration', () => {
     fireEvent.change(screen.getByLabelText('Distanza (km, facoltativa)'), { target: { value: '5' } })
     expect(screen.getByText('Velocità media: 5 km/h')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Salva workout' }))
-    await waitFor(() => expect(onSave).toHaveBeenCalledWith('walking', 60, 304, 5))
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith({
+      activity: 'walking', duration_min: 60, calories_burned: 304, distance_km: 5,
+    }))
   })
 
   it('allows duration-only workouts and resets distance between activities', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined)
     const { rerender } = render(<WorkoutDrawer activityKey="walking" weightKg={80} onSave={onSave} onClose={() => {}} />)
     fireEvent.click(screen.getByRole('button', { name: 'Salva workout' }))
-    await waitFor(() => expect(onSave).toHaveBeenCalledWith('walking', 30, 140, null))
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith({
+      activity: 'walking', duration_min: 30, calories_burned: 140, distance_km: null,
+    }))
     fireEvent.change(screen.getByLabelText('Distanza (km, facoltativa)'), { target: { value: '2' } })
-    rerender(<WorkoutDrawer activityKey="weights" weightKg={80} onSave={onSave} onClose={() => {}} />)
+    rerender(<WorkoutDrawer activityKey="swimming" weightKg={80} onSave={onSave} onClose={() => {}} />)
     expect(screen.queryByLabelText('Distanza (km, facoltativa)')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Salva workout' }))
-    await waitFor(() => expect(onSave).toHaveBeenLastCalledWith('weights', 30, 200, null))
+    await waitFor(() => expect(onSave).toHaveBeenLastCalledWith({
+      activity: 'swimming', duration_min: 30, calories_burned: 320, distance_km: null,
+    }))
+  })
+
+  it('accepts zero treadmill incline and validates rowing cadence separately', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    const { rerender } = render(<WorkoutDrawer activityKey="treadmill" weightKg={80} onSave={onSave} onClose={() => {}} />)
+    fireEvent.change(screen.getByLabelText('Inclinazione (%, facoltativa)'), { target: { value: '0' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salva workout' }))
+    await waitFor(() => expect(onSave).toHaveBeenLastCalledWith({
+      activity: 'treadmill', duration_min: 30, calories_burned: 232, distance_km: null, incline_pct: 0,
+    }))
+
+    rerender(<WorkoutDrawer activityKey="rowing_machine" weightKg={80} onSave={onSave} onClose={() => {}} />)
+    expect(screen.queryByLabelText('Inclinazione (%, facoltativa)')).toBeNull()
+    const cadence = screen.getByLabelText<HTMLInputElement>('Cadenza (colpi/min, facoltativa)')
+    expect(cadence.value).toBe('')
+    fireEvent.change(cadence, { target: { value: '0' } })
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Salva workout' }).disabled).toBe(true)
+    fireEvent.change(cadence, { target: { value: '26,5' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salva workout' }))
+    await waitFor(() => expect(onSave).toHaveBeenLastCalledWith({
+      activity: 'rowing_machine', duration_min: 30, calories_burned: 200, distance_km: null, stroke_rate_spm: 26.5,
+    }))
   })
 
   it('blocks invalid inputs and keeps values after a failed save', async () => {

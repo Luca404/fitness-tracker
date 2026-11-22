@@ -10,6 +10,7 @@ import DaySelector from '../components/common/DaySelector'
 import GymTraining from '../components/workout/GymTraining'
 import Modal from '../components/common/Modal'
 import { useTutorialEnvironment } from '../contexts/TutorialEnvironment'
+import type { WorkoutDraft } from '../types'
 
 export default function WorkoutPage({ embedded = false }: { embedded?: boolean }) {
   const { formatDecimal } = useNumberFormat()
@@ -22,16 +23,13 @@ export default function WorkoutPage({ embedded = false }: { embedded?: boolean }
 
   const totalBurned = workouts.reduce((s, w) => s + w.calories_burned, 0)
 
-  async function handleSave(activityKey: string, durationMin: number, caloriesBurned: number, distanceKm: number | null) {
+  async function handleSave(workout: WorkoutDraft) {
     if (!user) throw new Error('Sessione non valida')
     try {
       await addWorkout({
         user_id: user.id,
         date: selectedDate,
-        activity: activityKey,
-        duration_min: durationMin,
-        distance_km: distanceKm,
-        calories_burned: caloriesBurned,
+        ...workout,
         notes: null,
       })
       setSelectedActivity(null)
@@ -77,7 +75,6 @@ export default function WorkoutPage({ embedded = false }: { embedded?: boolean }
 
       {/* Drawer */}
       <Modal open={activityPickerOpen} onClose={() => setActivityPickerOpen(false)} title="Altre attività">
-        <p className="mb-4 text-sm text-gray-400">Scegli l’attività: potrai inserire durata e, quando prevista, distanza.</p>
         <ActivityGrid onSelect={key => { setActivityPickerOpen(false); setSelectedActivity(key) }} />
       </Modal>
       <WorkoutDrawer

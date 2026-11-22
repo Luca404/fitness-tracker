@@ -5,7 +5,7 @@ import { BASIC_ACTIVITY_KEYS, MET_ACTIVITIES, calculateCaloriesBurned, workoutDi
 describe('MET_ACTIVITIES', () => {
   it('keeps the basic activity picker focused', () => {
     expect(BASIC_ACTIVITY_KEYS).toEqual([
-      'weights', 'walking', 'running', 'cycling', 'swimming', 'treadmill', 'rowing_machine',
+      'walking', 'running', 'cycling', 'swimming', 'treadmill', 'rowing_machine',
     ])
   })
 
