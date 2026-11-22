@@ -61,7 +61,8 @@ function mockDiaryBackend(model: (input: Record<string, unknown>) => Response, f
       expect(url.searchParams.get('user_id')).toBe(`eq.${owner}`)
     }
     if (resource === 'fitness_chat_meal_receipts') return Response.json(receipt ? [receipt] : [])
-    const fixture = fixtures[resource] ?? []
+    const configured = fixtures[resource]
+    const fixture = typeof configured === 'function' ? configured(url) : configured ?? []
     const id = url.searchParams.get('id')?.slice(3)
     return Response.json(id && Array.isArray(fixture) ? fixture.filter(item => item.id === id) : fixture)
   })
@@ -215,6 +216,58 @@ describe('Sagebite profile context', () => {
     expect(response.status).toBe(200)
     const result = (modelInputs[1].input as { type?: string; output?: string }[]).find(item => item.type === 'function_call_output')
     expect(JSON.parse(result!.output!)).toEqual({ objective: null, daily_targets: null, latest_weight: null })
+  })
+})
+
+describe('Sagebite weight history', () => {
+  it.each([
+    mealMessage('Come sta andando il mio peso?'),
+    [{ role: 'user', content: 'Quanto pesavo all’ultima pesata?' }, { role: 'assistant', content: 'L’ultima pesata era 78,4 kg.' }, { role: 'user', content: 'E l’andamento?' }],
+  ].map(messages => ({ messages })))('checks the history before answering a personal trend query', async ({ messages }) => {
+    const today = localDate()
+    const earlier = new Date(Date.parse(today) - 40 * 86_400_000).toISOString().slice(0, 10)
+    const last = { date: today, weight_kg: 78.4 }
+    const first = { date: earlier, weight_kg: 80.1 }
+    const weightReads: URL[] = []
+    const { modelInputs } = mockDiaryBackend(({ input }) => (input as unknown[]).length === messages.length
+      ? toolResponse('read_weight_history', { from: null, to: null })
+      : messageResponse('Il peso è sceso di 1,7 kg tra le due pesate.'), {
+      weight_logs: (url: URL) => {
+        weightReads.push(url)
+        return weightReads.length === 1 ? [last] : [first, last]
+      },
+    })
+
+    const response = await handleRequest(request(messages, true, { request_id: requestId }))
+    expect(await response.json()).toEqual({ reply: 'Il peso è sceso di 1,7 kg tra le due pesate.' })
+    expect(modelInputs[0].tool_choice).toEqual({ type: 'function', name: 'read_weight_history' })
+    expect(weightReads.map(url => url.searchParams.get('and'))).toEqual([29, 89].map(days => {
+      const from = new Date(Date.parse(today) - days * 86_400_000).toISOString().slice(0, 10)
+      return `(date.gte.${from},date.lte.${today})`
+    }))
+    const output = (modelInputs[1].input as { type?: string; output?: string }[]).find(item => item.type === 'function_call_output')
+    expect(JSON.parse(output!.output!)).toMatchObject({ count: 2, first, last, change_kg: -1.7, measurements: [first, last] })
+  })
+
+  it('keeps a requested period even when only one weight is recorded', async () => {
+    const to = localDate()
+    const from = new Date(Date.parse(to) - 6 * 86_400_000).toISOString().slice(0, 10)
+    const { modelInputs } = mockDiaryBackend(({ input }) => (input as unknown[]).length === 1
+      ? toolResponse('read_weight_history', { from, to })
+      : messageResponse('Negli ultimi 7 giorni risulta una sola pesata.'), { weight_logs: [{ date: to, weight_kg: 78.4 }] })
+    const response = await handleRequest(request(mealMessage('Come è cambiato il mio peso negli ultimi 7 giorni?')))
+    expect(response.status).toBe(200)
+    expect(fetchMock.mock.calls.filter(([url]) => new URL(url).pathname.endsWith('/weight_logs'))).toHaveLength(1)
+    const output = (modelInputs[1].input as { type?: string; output?: string }[]).find(item => item.type === 'function_call_output')
+    expect(JSON.parse(output!.output!)).toMatchObject({ from, to, count: 1, change_kg: null })
+  })
+
+  it('leaves a general question about food weight or weight trends in automatic mode', async () => {
+    const { modelInputs } = mockDiaryBackend(() => messageResponse('Il peso può fluttuare per l’acqua.'))
+    const response = await handleRequest(request(mealMessage('In generale che cosa influenza l’andamento del peso?')))
+    expect(response.status).toBe(200)
+    expect(modelInputs[0].tool_choice).toBe('auto')
+    expect(fetchMock.mock.calls.some(([url]) => new URL(url).pathname.endsWith('/weight_logs'))).toBe(false)
   })
 })
 
