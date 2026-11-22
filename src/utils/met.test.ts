@@ -39,6 +39,16 @@ describe('calculateCaloriesBurned', () => {
     expect(calculateCaloriesBurned('treadmill', 60, 80, 5)).toBe(304)
   })
 
+  it('adjusts treadmill walking and running for a known incline', () => {
+    expect(calculateCaloriesBurned('treadmill', 60, 80, 5, -5)).toBe(229)
+    expect(calculateCaloriesBurned('treadmill', 60, 80, 5, 0)).toBe(304)
+    expect(calculateCaloriesBurned('treadmill', 60, 80, 5, 6)).toBe(425)
+    expect(calculateCaloriesBurned('treadmill', 60, 80, 10, -5)).toBe(586)
+    expect(calculateCaloriesBurned('treadmill', 60, 80, 10, 6)).toBe(989)
+    expect(calculateCaloriesBurned('treadmill', 60, 80, 5, 46)).toBe(304)
+    expect(calculateCaloriesBurned('treadmill', 60, 80, null, 6)).toBe(464)
+  })
+
   it('rejects invalid measurements and incoherent walking speed', () => {
     for (const invalid of [0, -1, NaN, Infinity]) {
       expect(calculateCaloriesBurned('walking', invalid, 80, 5)).toBe(0)

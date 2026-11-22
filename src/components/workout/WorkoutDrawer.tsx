@@ -46,7 +46,9 @@ function WorkoutForm({ activityKey, weightKg, onSave, onClose }: Props & { activ
   const detailError = detail && detailValue != null && (!Number.isFinite(detailValue) || detailValue < detail.min || detailValue > detail.max)
   const valid = Number.isInteger(duration) && duration >= 1 && duration <= 300
     && Number.isFinite(weightKg) && weightKg > 0 && !distanceError && !detailError
-  const calories = valid ? calculateCaloriesBurned(activityKey, duration, weightKg, distanceKm) : 0
+  const savedDetail = detailValue == null ? null : roundToTwo(detailValue)
+  const inclinePct = detail?.field === 'incline_pct' ? savedDetail : null
+  const calories = valid ? calculateCaloriesBurned(activityKey, duration, weightKg, distanceKm, inclinePct) : 0
 
   async function save() {
     if (!valid || saveLock.current) return
@@ -55,7 +57,7 @@ function WorkoutForm({ activityKey, weightKg, onSave, onClose }: Props & { activ
     setSaveError(false)
     try {
       const workout: WorkoutDraft = { activity: activityKey, duration_min: duration, calories_burned: calories, distance_km: distanceKm }
-      if (detail && detailValue != null) workout[detail.field] = roundToTwo(detailValue)
+      if (detail && savedDetail != null) workout[detail.field] = savedDetail
       await onSave(workout)
     }
     catch { setSaveError(true) }
@@ -83,12 +85,11 @@ function WorkoutForm({ activityKey, weightKg, onSave, onClose }: Props & { activ
         </div>
         {supportsWorkoutDistance(activityKey) && <div>
           <label htmlFor="workout-distance" className="mb-1 block text-sm text-gray-400">Distanza (km, facoltativa)</label>
+          {distanceError && <p id="workout-distance-error" role="alert" className="mb-1 text-xs text-amber-300">{distanceError}</p>}
           <NumberInput id="workout-distance" min="0.01" max="1000" step="any" inputMode="decimal"
             value={distanceText} disabled={saving} onValueChange={rawValue => setDistance(rawValue)} placeholder="Es. 3.5"
+            aria-invalid={distanceError ? true : undefined} aria-describedby={distanceError ? 'workout-distance-error' : undefined}
             className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-3 text-lg outline-none focus:border-primary-500" />
-          {valid && distanceKm != null && <p className="mt-2 text-xs text-gray-400">Velocità media: {formatDecimal(distanceKm * 60 / duration)} km/h</p>}
-          <p className="mt-1 text-xs text-gray-500">Con i km, la stima considera anche la velocità media su percorso pianeggiante.</p>
-          {distanceError && <p role="alert" className="mt-2 text-xs text-amber-300">{distanceError}</p>}
         </div>}
         {detail && <div>
           <label htmlFor="workout-detail" className="mb-1 block text-sm text-gray-400">{detail.label}</label>

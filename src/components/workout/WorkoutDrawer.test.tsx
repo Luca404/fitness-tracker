@@ -10,10 +10,24 @@ describe('workout registration', () => {
     render(<WorkoutDrawer activityKey="walking" weightKg={80} onSave={onSave} onClose={() => {}} />)
     fireEvent.change(screen.getByLabelText('Durata (minuti)'), { target: { value: '60' } })
     fireEvent.change(screen.getByLabelText('Distanza (km, facoltativa)'), { target: { value: '5' } })
-    expect(screen.getByText('Velocità media: 5 km/h')).toBeTruthy()
+    expect(screen.queryByText(/Velocità media|Con i km/)).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Salva workout' }))
     await waitFor(() => expect(onSave).toHaveBeenCalledWith({
       activity: 'walking', duration_min: 60, calories_burned: 304, distance_km: 5,
+    }))
+  })
+
+  it('updates the calorie preview and saved estimate for a treadmill incline', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    render(<WorkoutDrawer activityKey="treadmill" weightKg={80} onSave={onSave} onClose={() => {}} />)
+    fireEvent.change(screen.getByLabelText('Durata (minuti)'), { target: { value: '60' } })
+    fireEvent.change(screen.getByLabelText('Distanza (km, facoltativa)'), { target: { value: '5' } })
+    expect(screen.getByText('304 kcal')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Inclinazione (%, facoltativa)'), { target: { value: '6' } })
+    expect(screen.getByText('425 kcal')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Salva workout' }))
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith({
+      activity: 'treadmill', duration_min: 60, calories_burned: 425, distance_km: 5, incline_pct: 6,
     }))
   })
 
@@ -59,6 +73,7 @@ describe('workout registration', () => {
     const onSave = vi.fn().mockRejectedValue(new Error('offline'))
     render(<WorkoutDrawer activityKey="walking" weightKg={80} onSave={onSave} onClose={() => {}} />)
     fireEvent.change(screen.getByLabelText('Distanza (km, facoltativa)'), { target: { value: '-2' } })
+    expect(screen.getByRole('alert').textContent).toMatch(/distanza valida/)
     expect((screen.getByRole('button', { name: 'Salva workout' }) as HTMLButtonElement).disabled).toBe(true)
     fireEvent.change(screen.getByLabelText('Distanza (km, facoltativa)'), { target: { value: '' } })
     fireEvent.change(screen.getByLabelText('Durata (minuti)'), { target: { value: '30.5' } })

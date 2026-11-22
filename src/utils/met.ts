@@ -37,6 +37,8 @@ export const BASIC_ACTIVITY_KEYS = [
 ] as const
 
 export const DISTANCE_ACTIVITY_KEYS = ['walking', 'running', 'cycling', 'treadmill'] as const
+const MAX_TREADMILL_ESTIMATE_INCLINE_PCT = 45
+const TREADMILL_RUNNING_SPEED_KMH = 9.7
 
 export function supportsWorkoutDistance(activityKey: string): boolean {
   return DISTANCE_ACTIVITY_KEYS.some(key => key === activityKey)
@@ -72,8 +74,22 @@ function activityMet(activityKey: string, durationMin: number, distanceKm: numbe
   if (distanceKm == null || !supportsWorkoutDistance(activityKey)) return reference
   const speed = distanceKm * 60 / durationMin
   // Above the walking treadmill table, use the level-running speed bands.
-  const bands = activityKey === 'treadmill' && speed >= 9.7 ? SPEED_METS.running : SPEED_METS[activityKey]
+  const bands = activityKey === 'treadmill' && speed >= TREADMILL_RUNNING_SPEED_KMH ? SPEED_METS.running : SPEED_METS[activityKey]
   return [...bands].reverse().find(([minimum]) => speed >= minimum)?.[1] ?? reference
+}
+
+function treadmillInclineFactor(inclinePct: number, running: boolean): number {
+  // Minetti et al. (2002), net cost per metre relative to level ground.
+  // https://doi.org/10.1152/japplphysiol.01177.2001
+  const grade = inclinePct / 100
+  if (running) {
+    const cost = 3.6 + 19.5 * grade + 46.3 * grade ** 2 - 43.3 * grade ** 3
+      - 30.4 * grade ** 4 + 155.4 * grade ** 5
+    return cost / 3.6
+  }
+  const cost = 2.5 + 19.6 * grade + 51.9 * grade ** 2 - 76.8 * grade ** 3
+    - 58.7 * grade ** 4 + 280.5 * grade ** 5
+  return cost / 2.5
 }
 
 export function calculateCaloriesBurned(
@@ -81,9 +97,18 @@ export function calculateCaloriesBurned(
   durationMin: number,
   weightKg: number,
   distanceKm: number | null = null,
+  inclinePct: number | null = null,
 ): number {
   const activity = MET_ACTIVITIES[activityKey]
   if (!activity || !Number.isFinite(durationMin) || durationMin <= 0
     || !Number.isFinite(weightKg) || weightKg <= 0 || workoutDistanceError(activityKey, durationMin, distanceKm)) return 0
-  return Math.round(activityMet(activityKey, durationMin, distanceKm) * weightKg * (durationMin / 60))
+  let met = activityMet(activityKey, durationMin, distanceKm)
+  if (activityKey === 'treadmill' && distanceKm != null && inclinePct != null
+    && inclinePct !== 0 && Math.abs(inclinePct) <= MAX_TREADMILL_ESTIMATE_INCLINE_PCT) {
+    const speed = distanceKm * 60 / durationMin
+    const factor = treadmillInclineFactor(inclinePct, speed >= TREADMILL_RUNNING_SPEED_KMH)
+    // The slope adjusts movement cost. The resting portion is 1 MET.
+    met = 1 + (met - 1) * factor
+  }
+  return Math.round(met * weightKg * (durationMin / 60))
 }

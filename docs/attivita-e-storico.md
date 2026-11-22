@@ -6,7 +6,7 @@ permettono di inserire anche la **Distanza (km, facoltativa)**. La durata resta
 obbligatoria; lasciando vuoti i chilometri si usa la stima precedente basata
 sul tipo di attività, sulla durata e sul peso corporeo.
 
-Con i chilometri, l'app mostra la velocità media e sceglie un MET dalla fascia
+Con i chilometri, l'app calcola la velocità media e sceglie un MET dalla fascia
 di velocità corrispondente. Per esempio, una camminata di 60 minuti e 5 km usa
 la fascia di 5 km/h. La formula resta `MET × peso (kg) × durata (ore)`,
 arrotondata alle calorie intere. La distanza viene salvata e mostrata accanto
@@ -18,18 +18,26 @@ Le fasce derivano dal Compendio 2024 per
 [corsa](https://pacompendium.com/running/) e
 [bicicletta](https://pacompendium.com/bicycling/), con soglie convertite e
 arrotondate in km/h. Il tapis roulant usa le fasce di camminata senza pendenza
-e quelle di corsa da 9,7 km/h. Sono stime su percorso pianeggiante: dislivello,
-carichi, resistenza e differenze individuali non sono misurati. L'app segnala
+e quelle di corsa da 9,7 km/h come riferimento in piano. L'app segnala
 distanze non valide o velocità medie oltre i limiti di inserimento previsti.
 
 Il **Tapis roulant** permette di salvare anche l'**Inclinazione (%)**. Usa 0 per il
 piano e un valore negativo per la discesa. Il **Vogatore** registra la
 **Cadenza** in colpi al minuto (SPM). Entrambi i campi sono facoltativi e
-compaiono accanto alla durata quando sono compilati. La stima calorica
-continua a usare la durata e, per il tapis roulant, la velocità quando è
-disponibile la distanza. Le nuove sessioni di **Pesi** si registrano dalle
-schede palestra. Quelle già registrate da Altre attività restano nell'elenco
-del giorno.
+compaiono accanto alla durata quando sono compilati.
+
+Con distanza e pendenza media, la stima del tapis roulant applica al costo
+del movimento il fattore relativo al piano di Minetti et al., distinto per
+camminata e corsa. Con pendenze oltre ±45% usa il riferimento in piano.
+[Studio di Minetti et al.](https://doi.org/10.1152/japplphysiol.01177.2001)
+
+Sul vogatore la cadenza misura la frequenza dei colpi. A parità di SPM, la
+potenza può cambiare da una sessione all'altra. La stima usa il MET di
+riferimento, la durata e il peso.
+[Concept2 sulla cadenza e l'intensità](https://www.concept2.com/blog/low-stroke-rates-rowing-faster-by-going-slower)
+
+Le nuove sessioni di **Pesi** si registrano dalle schede palestra. Quelle già
+registrate da Altre attività restano nell'elenco del giorno.
 
 La migrazione `20261122150000_workout_machine_details` aggiunge i due campi
 facoltativi a `workouts`. È stata verificata su PostgreSQL con dati fittizi,
