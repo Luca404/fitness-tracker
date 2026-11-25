@@ -28,3 +28,19 @@ export function askFitnessChat(messages: ChatMessage[], requestId: string) {
 export function confirmFitnessChatMeal({ draft, revision }: ChatMealConfirmation, requestId: string) {
   return invokeChat({ confirmation: { draft, revision }, request_id: requestId })
 }
+
+export async function transcribeFitnessChat(audio: Blob, signal: AbortSignal): Promise<string> {
+  const { data, error } = await supabase.functions.invoke<{ text: string }>('transcribe-fitness-chat', {
+    body: audio, headers: { 'Content-Type': audio.type }, signal, timeout: 30_000,
+  })
+  if (error?.context instanceof Response) {
+    const response = error.context
+    if (response.status === 404) throw new Error('La dettatura non è ancora disponibile in questo ambiente.')
+    const body = await response.json().catch(() => null) as { error?: unknown } | null
+    if (typeof body?.error === 'string') throw new Error(body.error)
+  }
+  if (error || typeof data?.text !== 'string' || !data.text.trim()) {
+    throw new Error('Trascrizione non riuscita. Riprova o scrivi il messaggio.')
+  }
+  return data.text.trim()
+}

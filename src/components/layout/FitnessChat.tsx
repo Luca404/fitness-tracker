@@ -1,11 +1,17 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import Modal from '../common/Modal'
+import { useFitnessDictation } from '../../hooks/useFitnessDictation'
 import { askFitnessChat, confirmFitnessChatMeal } from '../../services/fitnessChat'
 import { ASSISTANT_NAME, CHAT_CONTEXT_TURNS, CHAT_MEAL_LABELS, CHAT_MESSAGE_LIMIT } from '../../../supabase/functions/_shared/fitnessChat'
 import type { ChatMealProposal, ChatMessage } from '../../../supabase/functions/_shared/fitnessChat'
+import { DICTATION_MAX_SECONDS } from '../../../supabase/functions/_shared/fitnessDictation'
 
 const PROMPTS = ['Quante proteine ho registrato questa settimana?', 'Oggi a pranzo ho mangiato 150 g di riso basmati cotto']
+const DICTATION_STATUS = {
+  idle: '', permission: 'In attesa del microfono…',
+  recording: `Registrazione in corso (max ${DICTATION_MAX_SECONDS} s)`, transcribing: 'Trascrizione in corso…',
+}
 
 function formatReply(content: string) {
   return content.split(/(?<![\\*])\*\*(?![\s*])([^*\r\n]+?)(?<!\s)\*\*(?!\*)/g).map((part, index) =>
@@ -33,6 +39,16 @@ export default function FitnessChat({ onDiaryChange }: { onDiaryChange?: () => P
   const input = useRef<HTMLTextAreaElement>(null)
   const retry = useRef<{ content: string; id: string } | null>(null)
   const visibleMessages: ChatMessage[] = sending ? [...messages, { role: 'user', content: draft.trim() }] : messages
+  const dictation = useFitnessDictation(text => {
+    const combined = [draft.trimEnd(), text].filter(Boolean).join(' ')
+    if (combined.length > CHAT_MESSAGE_LIMIT) {
+      setError('La dettatura non entra nel messaggio. Accorcia il testo e riprova.')
+      return
+    }
+    setDraft(combined)
+  }, setError)
+  const recording = dictation.phase === 'recording'
+  const locked = sending || saving || dictation.busy
 
   useEffect(() => {
     const log = transcript.current
@@ -46,7 +62,7 @@ export default function FitnessChat({ onDiaryChange }: { onDiaryChange?: () => P
   async function send(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const content = draft.trim()
-    if (sending || saving || !content) return
+    if (locked || !content) return
     setSending(true)
     setError('')
     const userMessage: ChatMessage = { role: 'user', content }
@@ -67,7 +83,7 @@ export default function FitnessChat({ onDiaryChange }: { onDiaryChange?: () => P
   }
 
   async function confirm() {
-    if (!proposal || sending || saving) return
+    if (!proposal || locked) return
     setSaving(true)
     setError('')
     try {
@@ -91,7 +107,7 @@ export default function FitnessChat({ onDiaryChange }: { onDiaryChange?: () => P
       <ChatIcon />
       <span className="hidden text-sm font-semibold lg:inline">{ASSISTANT_NAME}</span>
     </button>
-    <Modal open={open} onClose={() => setOpen(false)} title={ASSISTANT_NAME}>
+    <Modal open={open} onClose={() => { dictation.cancel(); setOpen(false) }} title={ASSISTANT_NAME}>
       <div className="flex h-[min(33rem,66dvh)] flex-col">
         <div className="flex min-h-0 flex-1 flex-col">
           {visibleMessages.length === 0 ? (
@@ -105,8 +121,8 @@ export default function FitnessChat({ onDiaryChange }: { onDiaryChange?: () => P
               </div>
               <div className="flex flex-wrap gap-2">
                 {PROMPTS.map(prompt => (
-                  <button key={prompt} type="button" onClick={() => { setDraft(prompt); input.current?.focus() }}
-                    className="min-h-11 rounded-xl border border-gray-600 bg-gray-900/40 px-3 py-2 text-left text-sm text-primary-200 hover:border-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400">
+                  <button key={prompt} type="button" disabled={dictation.busy} onClick={() => { setDraft(prompt); input.current?.focus() }}
+                    className="min-h-11 rounded-xl border border-gray-600 bg-gray-900/40 px-3 py-2 text-left text-sm text-primary-200 hover:border-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400 disabled:opacity-60">
                     {prompt}
                   </button>
                 ))}
@@ -125,7 +141,7 @@ export default function FitnessChat({ onDiaryChange }: { onDiaryChange?: () => P
                 <p className="text-sm font-semibold text-primary-200">{CHAT_MEAL_LABELS[proposal.meal.draft.meal_type]} del {proposal.meal.draft.date.split('-').reverse().join('/')}</p>
                 <p className="break-words text-sm text-gray-200">{proposal.meal.description}</p>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" className="btn-primary min-h-11 text-sm disabled:opacity-60" disabled={saving} onClick={() => void confirm()}>{saving ? 'Registrazione…' : 'Registra pasto'}</button>
+                  <button type="button" className="btn-primary min-h-11 text-sm disabled:opacity-60" disabled={locked} onClick={() => void confirm()}>{saving ? 'Registrazione…' : 'Registra pasto'}</button>
                   <button type="button" className="btn-secondary min-h-11 text-sm disabled:opacity-60" disabled={saving} onClick={() => { setProposal(null); setError(''); input.current?.focus() }}>Scarta</button>
                 </div>
               </div>}
@@ -136,17 +152,33 @@ export default function FitnessChat({ onDiaryChange }: { onDiaryChange?: () => P
           {error && <p role="alert" className="mb-2 text-sm text-red-300">{error}</p>}
           <label htmlFor={messageId} className="mb-1 block text-sm font-semibold text-gray-200">Messaggio</label>
           <div className="flex items-end gap-2">
-            <textarea ref={input} id={messageId} rows={2} maxLength={CHAT_MESSAGE_LIMIT} value={sending ? '' : draft} readOnly={sending || saving}
+            <textarea ref={input} id={messageId} rows={2} maxLength={CHAT_MESSAGE_LIMIT} value={sending ? '' : draft} readOnly={locked}
               aria-describedby={`${messageId}-scope`} onChange={event => setDraft(event.target.value)}
               className="input-field min-w-0 resize-none bg-gray-900 text-base leading-5" />
-            <button type="submit" aria-label="Invia messaggio" disabled={sending || saving || !draft.trim()}
+            {dictation.available && <button type="button"
+              aria-label={recording ? 'Termina dettatura' : 'Detta messaggio'} title={recording ? 'Termina dettatura' : 'Detta messaggio'}
+              aria-describedby={`${messageId}-scope`} disabled={locked && !recording}
+              onClick={recording ? dictation.stop : () => void dictation.start()}
+              className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400 disabled:opacity-60 ${recording ? 'border-red-400/50 bg-red-500/15 text-red-200 hover:bg-red-500/25' : 'border-gray-600 bg-gray-900 text-primary-200 hover:border-primary-500'}`}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
+                {recording ? <rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" /> : <>
+                  <rect x="9" y="3" width="6" height="12" rx="3" />
+                  <path d="M5 11a7 7 0 0 0 14 0M12 18v3m-3 0h6" />
+                </>}
+              </svg>
+            </button>}
+            <button type="submit" aria-label="Invia messaggio" disabled={locked || !draft.trim()}
               className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-400 text-gray-950 hover:bg-primary-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400 disabled:bg-gray-700 disabled:text-gray-300">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="m4 4 17 8-17 8 3-8-3-8Zm3 8h14" />
               </svg>
             </button>
           </div>
-          <p id={`${messageId}-scope`} className="mt-2 text-xs text-gray-300">OpenAI elabora i messaggi e i dati pertinenti alla richiesta. {ASSISTANT_NAME} è un assistente AI e non sostituisce un nutrizionista.</p>
+          {dictation.available && <div className={dictation.busy ? 'mt-1 flex items-center justify-between gap-2' : 'sr-only'}>
+            <p role="status" className="text-xs text-gray-300">{DICTATION_STATUS[dictation.phase]}</p>
+            {dictation.busy && <button type="button" className="min-h-11 shrink-0 rounded-lg px-2 text-sm text-primary-200 hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400" onClick={dictation.cancel}>Annulla dettatura</button>}
+          </div>}
+          <p id={`${messageId}-scope`} className="mt-2 text-xs text-gray-300">OpenAI elabora i messaggi e i dati pertinenti alla richiesta.{dictation.available && ' L’audio dettato viene inviato a OpenAI per la trascrizione.'} {ASSISTANT_NAME} è un assistente AI e non sostituisce un nutrizionista.</p>
         </form>
       </div>
     </Modal>

@@ -391,6 +391,12 @@ enabled = true
 verify_jwt = false
 entrypoint = "./functions/fittrackr-chat/index.ts"
 
+[functions.transcribe-fitness-chat]
+enabled = true
+# The handler validates the session through Supabase Auth before processing audio.
+verify_jwt = false
+entrypoint = "./functions/transcribe-fitness-chat/index.ts"
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

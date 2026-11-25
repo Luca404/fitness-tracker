@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GymSession } from '../../types'
 
@@ -25,7 +25,29 @@ describe('GymSessionView', () => {
     localStorage.clear()
     vi.clearAllMocks()
   })
-  afterEach(cleanup)
+  afterEach(() => {
+    cleanup()
+    vi.useRealTimers()
+  })
+
+  it('counts from the saved session start and shows elapsed time only during the workout', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-29T10:59:59Z'))
+    const props = { onBack: vi.fn(), onCompleted: vi.fn(), onDeleted: vi.fn() }
+    const view = render(<GymSessionView {...props} session={session} />)
+
+    expect(screen.getByRole('timer', { name: 'Tempo trascorso' }).textContent).toBe('00:59:59')
+    act(() => { vi.advanceTimersByTime(2000) })
+    expect(screen.getByRole('timer', { name: 'Tempo trascorso' }).textContent).toBe('01:00:01')
+
+    view.unmount()
+    vi.setSystemTime(new Date('2026-09-29T11:15:00Z'))
+    const resumed = render(<GymSessionView {...props} session={session} />)
+    expect(screen.getByRole('timer', { name: 'Tempo trascorso' }).textContent).toBe('01:15:00')
+
+    resumed.rerender(<GymSessionView {...props} session={{ ...session, completed_at: '2026-09-29T11:15:00Z' }} />)
+    expect(screen.queryByRole('timer', { name: 'Tempo trascorso' })).toBeNull()
+  })
 
   it.each([0, 30])('shows the saved bench angle %s and copies it into extra sets', async angle => {
     const set = { ...session.sets[0], bench_angle: angle }
@@ -72,12 +94,12 @@ describe('GymSessionView', () => {
     expect(screen.getByRole('button', { name: 'Esercizio precedente' }).hasAttribute('disabled')).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Fatto' }))
     expect(await screen.findByText('Recupero in corso')).toBeTruthy()
-    expect(screen.getByRole('timer').textContent).toBe('01:30')
+    expect(screen.getByRole('timer', { name: 'Riposo' }).textContent).toBe('01:30')
 
     fireEvent.click(screen.getByRole('button', { name: 'Esercizio successivo' }))
     expect(screen.getByRole('region', { name: 'Rematore' })).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Lat machine' })).toBeNull()
-    expect(screen.getByRole('timer').textContent).toBe('01:30')
+    expect(screen.getByRole('timer', { name: 'Riposo' }).textContent).toBe('01:30')
     expect(screen.getByRole('button', { name: 'Termina allenamento' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Elimina sessione' })).toBeTruthy()
     fireEvent.change(screen.getByLabelText('Peso (kg)'), { target: { value: '52' } })

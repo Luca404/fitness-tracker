@@ -53,6 +53,24 @@ function formatTime(seconds: number): string {
   return `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`
 }
 
+function GymSessionElapsed({ startedAt }: { startedAt: number }) {
+  const [now, setNow] = useState(Date.now)
+  const seconds = Math.max(0, Math.floor((now - startedAt) / 1000))
+  const hours = Math.floor(seconds / 3600).toString().padStart(2, '0')
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(interval)
+  }, [])
+
+  return <span className="inline-flex items-baseline gap-2 text-sm">
+    <span className="text-gray-400" aria-hidden="true">Tempo trascorso</span>
+    <span role="timer" aria-label="Tempo trascorso" className="font-semibold tabular-nums text-primary-200">
+      {hours}:{formatTime(seconds % 3600)}
+    </span>
+  </span>
+}
+
 interface SetDraft {
   weight: string
   reps: string
@@ -159,6 +177,7 @@ export default function GymSessionView({ session, onBack, onCompleted, onDeleted
   const [restTimer, setRestTimer] = useState(() => readRestTimer(session))
   const [now, setNow] = useState(Date.now)
   const completed = sets.filter(set => set.done).length
+  const startedAt = Date.parse(session.started_at)
   const activeGroup = groups[Math.min(activeIndex, groups.length - 1)]
   const remaining = restTimer ? Math.max(0, Math.ceil((restTimer.endsAt - now) / 1000)) : 0
 
@@ -256,7 +275,10 @@ export default function GymSessionView({ session, onBack, onCompleted, onDeleted
     <div className="rounded-2xl bg-primary-950/20 p-4 ring-1 ring-primary-800/30">
       <p className="text-xs uppercase tracking-wide text-primary-400">{session.completed_at ? 'Allenamento completato' : 'Allenamento in corso'}</p>
       <h2 className="mt-1 text-xl font-bold">{session.plan_name}</h2>
-      <p className="mt-1 text-sm text-gray-400">{completed}/{sets.length} serie completate</p>
+      <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <p className="text-sm text-gray-400">{completed}/{sets.length} serie completate</p>
+        {!session.completed_at && Number.isFinite(startedAt) && <GymSessionElapsed startedAt={startedAt} />}
+      </div>
     </div>
     {activeGroup && <>
       <nav aria-label="Navigazione esercizi" className="flex items-center gap-3">
@@ -300,7 +322,7 @@ export default function GymSessionView({ session, onBack, onCompleted, onDeleted
           {restTimer ? <p className="mt-1 text-xs text-gray-400">Dopo la serie {restTimer.setNumber} · {restTimer.exerciseName}</p>
             : <p className="mt-1 text-xs text-gray-400">Parte quando segni una serie come fatta, anche dopo l’ultima.</p>}
         </div>
-        <span role="timer" className="font-mono text-3xl font-bold tabular-nums text-white">{restTimer ? formatTime(remaining) : formatTime(restDuration)}</span>
+        <span role="timer" aria-label="Riposo" className="font-mono text-3xl font-bold tabular-nums text-white">{restTimer ? formatTime(remaining) : formatTime(restDuration)}</span>
       </div>
       {restTimer && <div className="mt-3 flex items-center justify-between gap-3">
         <span className={`text-sm font-medium ${remaining === 0 ? 'text-primary-300' : 'text-gray-300'}`}>{remaining === 0 ? 'Riposo terminato' : 'Recupero in corso'}</span>
