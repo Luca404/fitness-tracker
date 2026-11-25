@@ -7,6 +7,7 @@ Part of the **Trackrs ecosystem**, alongside [Trackr](https://github.com/Luca404
 ## Features
 
 - **Meals:** daily calories and macros, saved recipes, single foods, drinks, editable recipe additions and occasional meals estimated from photos with editable ingredient details.
+- **Sagebite** reads your nutrition and fitness history and logs meals using the basic catalog, your pantry, saved recipes and prepared batches. [Sagebite guide](docs/sagebite.md)
 - **Kitchen:** personal ingredients, recipe categories, custom icons and prepared batches with cooked-weight estimates and remaining portions.
 - **Food import:** basic-food search, Open Food Facts, barcode scanning, nutrition-label photos and manual entry through shared ingredient forms with expandable optional nutrients.
 - **Fitness:** separate Training and Progress sections, reusable gym plans, set logging, rest timers, recent sessions and exercise load/repetition charts; other activities are accessible above the plans, with optional kilometres for walking, running, cycling and treadmill.
@@ -75,7 +76,7 @@ Keep the OpenAI key in Edge Function secrets, never in a `VITE_` variable. The o
 
 Sagebite is available from the authenticated header on mobile and the sidebar on desktop. It reads food diary summaries, current nutrition targets, weight and recorded activities. It can log foods from the basic catalog and pantry, portions of saved recipes and weighed portions from prepared batches. Clear single-food statements can be logged in the same turn; other resolved requests show a confirmation. It keeps the conversation in memory while navigating the main sections and sends the relevant tool results with the current message and up to four prior exchanges to OpenAI with `store: false`.
 
-Apply `20261121220000_fitness_chat_diary` first, then deploy `fittrackr-chat` with `--use-api` to bundle the shared application catalog before releasing the frontend. The function uses the existing `OPENAI_API_KEY` and accepts `OPENAI_FITTRACKR_CHAT_MODEL` for a production model override.
+Apply `20261121220000_fitness_chat_diary` first, then deploy `fittrackr-chat` with `--use-api` to bundle the shared application catalog before releasing the frontend. The function uses the existing `OPENAI_API_KEY`. Hosted Sagebite uses `OPENAI_FITTRACKR_CHAT_MODEL=gpt-6.2-sol` with low reasoning effort. [Sagebite configuration and verification](docs/sagebite.md#configurazione-e-pubblicazione)
 
 Occasional meal photos use the separate `analyze-meal-photo` function, which validates the user's session through Supabase Auth. `OPENAI_MEAL_PHOTO_MODEL` can override the vision model for this task. Photo estimates use cooked/ready-to-eat quantities and are reviewed before direct diary registration. No recipe, prepared batch or stored photo is created. See [meal photos](docs/pasti-da-foto.md) for setup and behavior.
 
@@ -99,6 +100,7 @@ SQL tests require an isolated PostgreSQL database:
 
 - `supabase/tests/alcohol_strength.sql`: run after replaying all migrations; checks alcohol persistence, energy calculations, portions and user isolation.
 - `supabase/tests/prepared_weight_correction.sql`: run after all migrations; checks remainder corrections, historical nutrition, unchanged weighed portions, validation and user isolation.
+- `supabase/tests/fitness_chat_diary.sql` runs in a `fittrackr_chat_test_*` database with the fitness migrations applied. It checks diary coverage, repeat submissions, prepared portions and account isolation, then rolls back its fixtures.
 - `supabase/tests/ordering.sql`: run after migrations through `20261004140000` only. The test creates historical fixtures, applies both ordering migrations inside a transaction, verifies diary and plan ordering, then rolls back.
 - `supabase/tests/workout_distance.sql`: use a fresh `fittrackr_distance_test_*` database with the minimal fixture table described in the file, then apply `20261014120000_workout_distance.sql`. Checks nullable distance, decimal storage and invalid values; refuses application databases.
 - `supabase/tests/gym_exercise_catalog_and_bench.sql`: self-contained test for a fresh empty `fittrackr_gym_test_*` database. Covers personal exercise backfill/deduplication, atomic saves, bench snapshots, previous-load matching, user isolation and explicit grants. Rolls back its fixture schema.
@@ -129,6 +131,7 @@ Ingredient corrections update linked recipes and historical diary entries. Prepa
 Use [the documentation index](docs/README.md) for current guides, shared security status and historical plans. Detailed feature guides are in Italian:
 
 - [Diary and ingredient ordering](docs/meal-diary-order.md)
+- [Sagebite chat and diary](docs/sagebite.md)
 - [Occasional meals from photos](docs/pasti-da-foto.md)
 - [Habit recap and rolling seven-day averages](docs/buone-abitudini.md)
 - [Prepared dishes and cooked weight](docs/peso-piatti-preparati.md)

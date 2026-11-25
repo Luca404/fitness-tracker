@@ -1,5 +1,13 @@
 # Shared Supabase workflow
 
+## Sagebite diary access — 2026-11-21
+
+`20261121220000_fitness_chat_diary` was applied to the hosted database after the dry-run listed only that migration. An identical copy was made in the adjacent Trackr checkout. The migration adds `get_fitness_chat_diary` for date-scoped summaries and `record_fitness_chat_meal` for logging. Both RPCs run with invoker privileges and explicitly grant execution to `authenticated`.
+
+The logging RPC calls the existing diary and prepared-portion RPCs. It takes a transaction lock for the account and request ID, then stores the receipt in `fitness_chat_meal_receipts`. Repeating the request returns the same receipt. The receipt survives deletion of the meal entry so a retry cannot recreate it. Row-level security limits receipts to their owner.
+
+`tests/fitness_chat_diary.sql` passed in an isolated `fittrackr_chat_test_*` database with synthetic accounts. It verifies coverage, explicit grants, repeat submissions, prepared batch balances and account isolation. The hosted `fittrackr-chat` function was deployed after the migration, and a request without a session returned `401`. [Sagebite guide and release verification](../docs/sagebite.md#configurazione-e-pubblicazione)
+
 ## Refined dish types and chart presentation — 2026-11-05
 
 `20261105220000_refine_dish_categories` was applied after a dry-run listing

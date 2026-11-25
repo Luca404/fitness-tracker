@@ -22,6 +22,10 @@ pasto indica dove registrare la porzione. Ricerca e filtro per tipo di piatto
 continuano a funzionare. In **Cucina**, i filtri per momento del giorno scelti
 esplicitamente continuano a restringere la lista.
 
+Puoi registrare un avanzo anche dalla chat. Indica il nome del piatto pronto,
+i grammi cotti mangiati e il pasto in cui vuoi registrarli. Se esistono più
+preparazioni con quel nome, indica la data di preparazione. [Guida a Sagebite](sagebite.md#registrare-un-pasto)
+
 Le scorciatoie **1/4**, **1/2**, **3/4** si riferiscono al peso cotto totale
 originale; quelle superiori alla disponibilità sono disabilitate. **Tutto il
 resto** usa la disponibilità attuale. Una scorciatoia è evidenziata solo quando

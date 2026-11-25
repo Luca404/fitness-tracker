@@ -15,6 +15,7 @@ Revisione del 16 ottobre 2026: Storico esclude il giorno corrente da grafici e m
 | [Autenticazione](autenticazione.md) | Accesso, registrazione, email già usate, recupero password e configurazione Google/SMTP |
 | [Aggiornamento della sicurezza](../supabase/README-trackr-security-sync.md) | Migrazioni già applicate, correzione meal-item e commit pubblicato |
 | [Ordine del diario](meal-diary-order.md) | Registrazioni, ingredienti, icone e posizioni |
+| [Sagebite](sagebite.md) | Chat, lettura del diario, registrazione da dispensa e ricettario, dati e deploy |
 | [Pasti da foto](pasti-da-foto.md) | Uso, ingredienti espandibili, porzione mangiata, configurazione e pubblicazione verificata |
 | [Buone abitudini](buone-abitudini.md) | Quadratini a riempimento, limiti e media sugli ultimi 7 giorni |
 | [Tour interattivo](tutorial.md) | Pagine reali, pulsanti evidenziati, esempi temporanei e riavvio dalle impostazioni |
