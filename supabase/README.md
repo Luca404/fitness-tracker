@@ -263,8 +263,12 @@ restriction in Brevo and confirmed that sending works with that configuration.
 
 The owner then pushed frontend commit `b9fda2d` (**sistemata pagina login**) and
 reported successful tests of the published version. Email receipt was confirmed
-during the setup; deployed frontend validation is owner-reported. Google remains
-disabled pending OAuth provider credentials.
+during the setup, and deployed frontend validation is owner-reported. At the
+time, Google was still awaiting OAuth provider credentials.
+
+On 2026-11-26 the owner set the shared Auth sender to
+`support@trackrs.org` and confirmed delivery and reply forwarding. The
+production Auth settings endpoint also reported Google enabled. [Current sender and routing](../docs/autenticazione.md#mittente-trackrs-e-inoltro-delle-risposte)
 
 ## Authentication redirects — 2026-10-30
 

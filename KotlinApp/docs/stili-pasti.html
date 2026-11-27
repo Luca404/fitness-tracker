@@ -1,0 +1,52 @@
+<div id="fittrackr-stili" class="viz-carousel viz-dotted-background" aria-label="Proposte per il diario Pasti" data-previous-label="Precedente" data-next-label="Successiva">
+  <section data-variant="Diario" aria-label="Diario scuro"><article class="ft-phone ft-diary">
+    <header>fitTrackr <i data-lucide="settings" aria-hidden="true"></i></header>
+    <main><small>Mercoledì 25 novembre</small><h2>Pasti</h2>
+      <div class="ft-meter"><strong>1.260</strong> / 2.000 kcal<meter value="1260" min="0" max="2000" aria-label="Calorie registrate"></meter></div>
+      <details open><summary>Pranzo <b>640 kcal</b></summary><p>Pasta al pomodoro <span>480 kcal</span></p><p>Yogurt greco <span>160 kcal</span></p></details>
+      <details><summary>Colazione <b>620 kcal</b></summary><p>Pane, uova e frutta <span>620 kcal</span></p></details>
+    </main><footer>Fitness　 Cucina　 <b>Pasti</b>　 Peso　 Storico</footer>
+  </article></section>
+  <section data-variant="Registro" aria-label="Registro compatto" hidden><article class="ft-phone ft-log">
+    <header>fitTrackr <i data-lucide="settings" aria-hidden="true"></i></header>
+    <main><small>Mercoledì 25 novembre</small><h2>Registro pasti</h2>
+      <div class="ft-meter"><strong>1.260</strong> / 2.000 kcal</div>
+      <div class="ft-columns"><small>Ora</small><small>Alimento</small><small>kcal</small>
+      <span>13.15</span><span>Pasta al pomodoro</span><b>480</b><span>13.15</span><span>Yogurt greco</span><b>160</b><span>08.30</span><span>Pane, uova e frutta</span><b>620</b></div>
+    </main><footer>Fitness　 Cucina　 <b>Pasti</b>　 Peso　 Storico</footer>
+  </article></section>
+  <section data-variant="Quaderno" aria-label="Quaderno chiaro" hidden><article class="ft-phone ft-paper">
+    <header>fitTrackr <i data-lucide="settings" aria-hidden="true"></i></header>
+    <main><small>Mercoledì 25 novembre</small><h2>Diario dei pasti</h2>
+      <div class="ft-meter">Energia del giorno <b>1.260 / 2.000 kcal</b></div>
+      <details open><summary>Pranzo <b>13.15</b></summary><p>Pasta al pomodoro <span>480 kcal</span></p><p>Yogurt greco <span>160 kcal</span></p></details>
+      <details><summary>Colazione <b>08.30</b></summary><p>Pane, uova e frutta <span>620 kcal</span></p></details>
+    </main><footer>Fitness　 Cucina　 <b>Pasti</b>　 Peso　 Storico</footer>
+  </article></section>
+</div>
+<style>
+#fittrackr-stili section {min-height:475px;padding:12px 0}
+#fittrackr-stili .ft-phone {--ink:#f1f5f9;--base:#111827;--line:#344154;--accent:#6ee7b7;--quiet:#bac6d4;display:flex;flex-direction:column;max-width:355px;min-height:440px;margin:auto;background:var(--base);color:var(--ink);border:1px solid var(--line);border-radius:18px;font:16px system-ui,sans-serif;overflow:hidden}
+#fittrackr-stili header,#fittrackr-stili footer {padding:14px 18px}
+#fittrackr-stili header {display:flex;justify-content:space-between;align-items:center;color:var(--accent);font:600 22px Georgia,serif;border-bottom:1px solid var(--line)}
+#fittrackr-stili main {padding:22px 18px;flex:1}
+#fittrackr-stili h2 {font:500 36px Georgia,serif;margin:4px 0 14px}
+#fittrackr-stili small,#fittrackr-stili p span {color:var(--quiet);font-size:13px}
+#fittrackr-stili .ft-meter {margin-bottom:18px;color:var(--quiet);font-size:14px}
+#fittrackr-stili strong {font-size:26px;color:var(--ink)}
+#fittrackr-stili meter {width:100%;display:block;accent-color:var(--accent)}
+#fittrackr-stili details {border-top:1px solid var(--line)}
+#fittrackr-stili summary {padding:12px 0;min-height:44px;box-sizing:border-box}
+#fittrackr-stili summary b,#fittrackr-stili .ft-meter b {float:right;font:500 14px system-ui}
+#fittrackr-stili p {display:flex;justify-content:space-between;gap:10px;margin:0 0 8px;font-size:15px}
+#fittrackr-stili footer {border-top:1px solid var(--line);text-align:center;font-size:12px;color:var(--quiet)}
+#fittrackr-stili footer b {color:var(--accent)}
+#fittrackr-stili .ft-log {--base:#171c20;--line:#39454a;font-variant-numeric:tabular-nums}
+#fittrackr-stili .ft-log h2 {font:650 28px system-ui}
+#fittrackr-stili .ft-columns {display:grid;grid-template-columns:auto 1fr auto;column-gap:10px;font-size:14px}
+#fittrackr-stili .ft-columns>* {padding:10px 0;border-top:1px solid var(--line)}
+#fittrackr-stili .ft-columns b {text-align:right}
+#fittrackr-stili .ft-paper {--base:#fbf7ee;--ink:#26302a;--line:#cdc7b6;--accent:#22634d;--quiet:#525d54}
+#fittrackr-stili .ft-paper summary {font:italic 22px Georgia,serif}
+#fittrackr-stili .ft-paper p {font-family:Georgia,serif}
+</style>

@@ -1,0 +1,30 @@
+<resources>
+    <string name="habit_open">Apri il dettaglio delle buone abitudini</string>
+    <string name="habit_summary_count">%1$d su %2$d in linea</string>
+    <string name="habit_summary_window">Legumi e pesce · media degli ultimi 7 giorni</string>
+    <string name="habit_last_seven_days">Ultimi 7 giorni</string>
+    <string name="habit_vegetables">Verdura</string>
+    <string name="habit_fruit">Frutta</string>
+    <string name="habit_legumes">Legumi</string>
+    <string name="habit_fish">Pesce</string>
+    <string name="habit_fiber">Fibre</string>
+    <string name="habit_sugars">Zuccheri totali</string>
+    <string name="habit_alcohol">Unità alcoliche</string>
+    <string name="habit_salt">Sale</string>
+    <string name="habit_on_track">in linea</string>
+    <string name="habit_attention">da migliorare</string>
+    <string name="habit_incomplete">dato incompleto</string>
+    <string name="habit_tile_status">%1$s, %2$s</string>
+    <string name="habit_unknown_value">Dato non disponibile</string>
+    <string name="habit_alcohol_units">%1$s UA</string>
+    <string name="habit_minimum">≥ %1$s</string>
+    <string name="habit_maximum">≤ %1$s</string>
+    <string name="habit_amount_and_target">%1$s %2$s</string>
+    <string name="habit_partial_amount">≈ %1$s</string>
+    <string name="habit_partial">Dato parziale</string>
+    <string name="habit_daily_average">Media di %1$s g al giorno</string>
+    <string name="habit_limit_exceeded">Limite superato</string>
+    <string name="habit_limit_just_over">&gt;%1$s× il limite</string>
+    <string name="habit_limit_at_least">≥%1$s× il limite</string>
+    <string name="habit_limit_multiple">%1$s× il limite</string>
+</resources>

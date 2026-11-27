@@ -124,6 +124,29 @@ Il proprietario ha poi pubblicato il frontend con il commit `b9fda2d`
 La ricezione email è stata confermata durante la configurazione; la verifica
 del frontend pubblicato è riferita dal proprietario.
 
+### Mittente Trackrs e inoltro delle risposte
+
+Dal 26 novembre 2026 Supabase Auth invia le email di conferma e recupero
+tramite Brevo con mittente `Trackrs <support@trackrs.org>`. Il mittente è
+configurato in **Authentication → SMTP Settings** del progetto Supabase
+condiviso da web e Android. Le credenziali SMTP risiedono nelle impostazioni
+server di Supabase. [Impostazioni SMTP di Supabase](https://supabase.com/docs/guides/auth/auth-smtp)
+
+`trackrs.org` è registrato su GoDaddy e il DNS è gestito da Cloudflare. Brevo
+autentica il dominio con un TXT di verifica, i CNAME DKIM
+`brevo1._domainkey` e `brevo2._domainkey` in modalità **DNS only** e il
+record DMARC su `_dmarc`. Per ricreare i record, copiare i valori mostrati
+da Brevo per il dominio. [Autenticazione del dominio in Brevo](https://help.brevo.com/hc/en-us/articles/35337929909778-Set-up-your-domain-in-Brevo)
+
+Gli MX sono gestiti da **Cloudflare Email Routing**. La regola per
+`support@trackrs.org` inoltra i messaggi a `trackrs00@gmail.com`. Le
+risposte manuali inviate con il mittente predefinito di Gmail mostrano
+l’indirizzo Gmail. [Configurazione dell’inoltro Cloudflare](https://developers.cloudflare.com/email-service/get-started/route-emails/)
+
+Il proprietario ha confermato la ricezione di un’email di recupero con il
+nuovo mittente e l’arrivo della risposta nella casella Gmail tramite
+l’inoltro.
+
 ## Login con Google
 
 L’integrazione è implementata con `signInWithOAuth({ provider: 'google' })`.
@@ -139,11 +162,9 @@ vanno nel provider Google della dashboard Supabase; il Secret non deve finire
 nel repository o in variabili `VITE_`. Aggiungere poi l’URL di ritorno fitTrackr
 alla lista Supabase. Il browser gestisce il ritorno con il client Auth esistente.
 
-Al controllo del 30 ottobre 2026 Google era disabilitato sia nell’istanza **locale**
-sia nel progetto **ospitato**. Quest’ultimo non aveva Client ID o Client Secret
-Google configurati. Le credenziali e il provider non sono stati modificati;
-l’accesso reale richiede quel passaggio. Vedere la
-[guida ufficiale Google con Supabase](https://supabase.com/docs/guides/auth/social-sign-in/auth-google).
+Il 26 novembre 2026 l’endpoint pubblico di Auth ha confermato che Google è
+attivo sul progetto ospitato. Android usa lo stesso provider e il Client ID
+Web pubblico nella configurazione di build. [Guida Android](../KotlinApp/docs/accesso-android.md#accesso-con-google) · [Configurazione Google in Supabase](https://supabase.com/docs/guides/auth/social-sign-in/auth-google)
 
 ## Verifica
 
@@ -153,5 +174,4 @@ redirect, aggiornamento password e disponibilità di Google. Non creano utenti,
 non inviano email e non cambiano password reali. La consegna email ospitata è
 stata verificata separatamente con Brevo e confermata dal destinatario, come
 descritto sopra. Il proprietario ha confermato anche la pubblicazione e i test
-positivi della nuova versione del frontend. Google resta predisposto nel codice
-e richiede ancora l’attivazione del provider con le credenziali OAuth.
+positivi della nuova versione del frontend.
